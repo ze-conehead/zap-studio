@@ -31,6 +31,7 @@ import { FONTS } from "../fonts";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
 import type {
+  BackgroundSource,
   CardBackground,
   ImageLayer,
   Layer,
@@ -40,7 +41,12 @@ import type {
 
 type Patch = (p: Partial<Layer>, history?: boolean) => void;
 
-export function Inspector() {
+interface InspectorProps {
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
+}
+
+export function Inspector({ consoleBg, globalBg }: InspectorProps) {
   const { state, selected, dispatch } = useStore();
 
   const patch: Patch = (p, history = true) =>
@@ -62,15 +68,15 @@ export function Inspector() {
                 Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
                 Spiel-Karten von {state.project.consoleName}.
               </>
-            )}{" "}
-            Kein eigener Kartenhintergrund – füge Bilder, Logos oder Texte hinzu.
+            )}
           </p>
+          <TemplateBackgroundControls />
         </Panel>
       );
     }
     return (
       <Panel title="Kartenhintergrund">
-        <BackgroundControls />
+        <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
         <p className="text-xs text-muted-foreground">
           Wähle eine Ebene aus, um sie zu bearbeiten.
         </p>
@@ -254,6 +260,79 @@ function BackgroundControls() {
       value={resolveBackground(state.project)}
       onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
     />
+  );
+}
+
+// Card: pick whose background paints, then edit the card's own background.
+function BackgroundSourceControl({ consoleBg, globalBg }: InspectorProps) {
+  const { state, dispatch } = useStore();
+  const src = state.project.backgroundSource ?? "card";
+  const options: { value: BackgroundSource; label: string; disabled?: boolean }[] = [
+    { value: "card", label: "Eigener Hintergrund" },
+    { value: "console", label: "Von der Konsolen-Vorlage", disabled: !consoleBg?.enabled },
+    { value: "global", label: "Von der globalen Vorlage", disabled: !globalBg?.enabled },
+  ];
+
+  return (
+    <>
+      <Field label="Hintergrund-Quelle">
+        <Select
+          value={src}
+          onValueChange={(v) => dispatch({ type: "SET_BG_SOURCE", source: v as BackgroundSource })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
+                {o.label}
+                {o.disabled && o.value !== "card" ? " (nicht gesetzt)" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      {src === "card" ? (
+        <BackgroundControls />
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Der Hintergrund kommt aus der{" "}
+          {src === "console" ? "Konsolen-Vorlage" : "globalen Vorlage"}. Dort
+          bearbeiten (Konsole/„Alle Konsolen" im Baum anklicken).
+        </p>
+      )}
+    </>
+  );
+}
+
+// Template (global or console): opt-in background, same editor as the card.
+function TemplateBackgroundControls() {
+  const { state, dispatch } = useStore();
+  const bg = resolveBackground(state.project);
+  return (
+    <div className="flex flex-col gap-2 border-t pt-3">
+      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Checkbox
+          checked={!!bg.enabled}
+          onCheckedChange={(v) =>
+            dispatch({ type: "SET_BACKGROUND", patch: { enabled: !!v } })
+          }
+        />
+        Eigenen Hintergrund für diese Vorlage
+      </label>
+      {bg.enabled && (
+        <FillEditor
+          value={bg}
+          onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
+        />
+      )}
+      <p className="text-xs text-muted-foreground">
+        Karten können in ihren Eigenschaften wählen, ob sie diesen Hintergrund
+        übernehmen.
+      </p>
+    </div>
   );
 }
 

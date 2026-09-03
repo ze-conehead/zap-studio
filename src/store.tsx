@@ -10,7 +10,7 @@ import {
 import { resolveBackground } from "./background";
 import { newProject } from "./factory";
 import { saveProject } from "./persist";
-import type { CardBackground, Layer, Project } from "./types";
+import type { BackgroundSource, CardBackground, Layer, Project } from "./types";
 
 interface State {
   project: Project;
@@ -26,6 +26,7 @@ type Action =
   | { type: "LOAD"; project: Project }
   | { type: "RENAME"; name: string }
   | { type: "SET_BACKGROUND"; patch: Partial<CardBackground>; history?: boolean }
+  | { type: "SET_BG_SOURCE"; source: BackgroundSource }
   | { type: "ADD_LAYER"; layer: Layer }
   | { type: "PATCH_LAYER"; id: string; patch: Partial<Layer>; history?: boolean }
   | {
@@ -84,6 +85,13 @@ function reducer(state: State, action: Action): State {
         ? { ...state, project: next, dirty: true }
         : commit(state, next);
     }
+
+    case "SET_BG_SOURCE":
+      return commit(state, {
+        ...project,
+        backgroundSource: action.source,
+        updatedAt: Date.now(),
+      });
 
     case "ADD_LAYER":
       return {

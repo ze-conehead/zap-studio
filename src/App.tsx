@@ -15,44 +15,51 @@ import {
   templateId,
 } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
-import {
-  lastProjectId,
-  loadGlobalTemplateLayers,
-  loadProject,
-  loadTemplateLayers,
-  saveProject,
-} from "./persist";
+import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
-import type { Layer, Project } from "./types";
+import type { CardBackground, Layer, Project } from "./types";
+
+interface Templates {
+  overlay: Layer[];
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
+}
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
-  const [overlay, setOverlay] = useState<Layer[]>([]);
+  const [templates, setTemplates] = useState<Templates>({ overlay: [] });
   const [showProjects, setShowProjects] = useState(false);
 
-  // Build the read-only overlay for the current view:
-  // - game sticker  → console template + global template (global on top)
-  // - console template edit → global template as context underlay
+  // Load the console + global template projects for the current view and
+  // derive the read-only overlay layers and their backgrounds:
+  // - game sticker → console layers + global layers (global on top)
+  // - console template edit → global layers as context underlay
   // - global template edit → nothing
   useEffect(() => {
     let alive = true;
     if (!project) return;
     (async () => {
-      let layers: Layer[] = [];
+      const consoleId = project.isGlobalTemplate
+        ? undefined
+        : project.gameKey?.split("/")[0] ?? project.consoleId;
+      const [globalP, consoleP] = await Promise.all([
+        loadProject(GLOBAL_TEMPLATE_ID),
+        consoleId ? loadProject(templateId(consoleId)) : Promise.resolve(undefined),
+      ]);
+      if (!alive) return;
+
+      const globalBg = globalP?.background;
+      const consoleBg = consoleP?.background;
+      let overlay: Layer[] = [];
       if (project.isGlobalTemplate) {
-        layers = [];
+        overlay = [];
       } else if (project.isTemplate) {
-        layers = await loadGlobalTemplateLayers();
+        overlay = globalP?.layers ?? [];
       } else {
-        const consoleId = project.gameKey?.split("/")[0];
-        const [consoleLayers, globalLayers] = await Promise.all([
-          consoleId ? loadTemplateLayers(consoleId) : Promise.resolve([] as Layer[]),
-          loadGlobalTemplateLayers(),
-        ]);
-        layers = [...consoleLayers, ...globalLayers];
+        overlay = [...(consoleP?.layers ?? []), ...(globalP?.layers ?? [])];
       }
-      if (alive) setOverlay(layers);
+      setTemplates({ overlay, consoleBg, globalBg });
     })();
     return () => {
       alive = false;
@@ -148,7 +155,9 @@ export default function App() {
   return (
     <StoreProvider key={project.id} initial={project}>
       <Shell
-        overlay={overlay}
+        overlay={templates.overlay}
+        consoleBg={templates.consoleBg}
+        globalBg={templates.globalBg}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
         activeGlobal={!!project.isGlobalTemplate}
@@ -171,6 +180,8 @@ export default function App() {
 
 function Shell({
   overlay,
+  consoleBg,
+  globalBg,
   activeGameKey,
   activeConsoleId,
   activeGlobal,
@@ -182,6 +193,8 @@ function Shell({
   onImportJson,
 }: {
   overlay: Layer[];
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
   activeGameKey?: string;
   activeConsoleId?: string;
   activeGlobal: boolean;
@@ -210,10 +223,15 @@ function Shell({
           onOpenConsole={onOpenConsole}
           onOpenGlobal={onOpenGlobal}
         />
-        <EditorCanvas handleRef={canvas} overlay={overlay} />
+        <EditorCanvas
+          handleRef={canvas}
+          overlay={overlay}
+          consoleBg={consoleBg}
+          globalBg={globalBg}
+        />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <LayerList />
-          <Inspector />
+          <Inspector consoleBg={consoleBg} globalBg={globalBg} />
         </aside>
       </div>
     </div>

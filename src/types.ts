@@ -8,7 +8,11 @@ export interface CardBackground {
   color2: string; // second gradient stop
   angle: number; // gradient direction in degrees (0 = →, 90 = ↓)
   noise: number; // grain overlay strength, 0..1 (0 = off)
+  enabled?: boolean; // templates only: false => contributes no background
 }
+
+// On a game card: which background actually shows.
+export type BackgroundSource = "card" | "console" | "global";
 
 export interface BaseLayer {
   id: string;
@@ -71,6 +75,7 @@ export interface Project {
   name: string;
   backgroundColor: string; // legacy / primary colour mirror
   background?: CardBackground;
+  backgroundSource?: BackgroundSource; // game cards only; default "card"
   layers: Layer[]; // index 0 = bottom of the stack
   createdAt: number;
   updatedAt: number;

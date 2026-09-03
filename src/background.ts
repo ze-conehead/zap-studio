@@ -7,6 +7,7 @@ export const DEFAULT_BACKGROUND: CardBackground = {
   color2: "#0f172a",
   angle: 90,
   noise: 0,
+  enabled: true,
 };
 
 export const DEFAULT_SHAPE_FILL: CardBackground = {
@@ -20,7 +21,13 @@ export const DEFAULT_SHAPE_FILL: CardBackground = {
 // Normalise a project's background, upgrading legacy `backgroundColor`-only data.
 export function resolveBackground(p: Pick<Project, "background" | "backgroundColor">): CardBackground {
   if (p.background) return { ...DEFAULT_BACKGROUND, ...p.background };
-  return { ...DEFAULT_BACKGROUND, color: p.backgroundColor || DEFAULT_BACKGROUND.color };
+  return {
+    ...DEFAULT_BACKGROUND,
+    color: p.backgroundColor && p.backgroundColor !== "transparent"
+      ? p.backgroundColor
+      : DEFAULT_BACKGROUND.color,
+    enabled: p.backgroundColor !== "transparent",
+  };
 }
 
 // Gradient start/end points that fully cover a w×h box for a given angle.

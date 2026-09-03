@@ -16,15 +16,6 @@ export async function loadProject(id: string): Promise<Project | undefined> {
   return (await get(KEY(id))) as Project | undefined;
 }
 
-export async function loadTemplateLayers(consoleId: string): Promise<Project["layers"]> {
-  const p = (await get(KEY(`tpl-${consoleId}`))) as Project | undefined;
-  return p?.layers ?? [];
-}
-
-export async function loadGlobalTemplateLayers(): Promise<Project["layers"]> {
-  const p = (await get(KEY("tpl-global"))) as Project | undefined;
-  return p?.layers ?? [];
-}
 
 export async function deleteProject(id: string): Promise<void> {
   await del(KEY(id));

@@ -27,6 +27,7 @@ export function parseProject(json: string): Project {
     name: src.name || base.name,
     backgroundColor: src.backgroundColor || base.backgroundColor,
     background: src.background ?? base.background,
+    backgroundSource: src.backgroundSource,
     layers: Array.isArray(src.layers) ? (src.layers as Layer[]).map(sanitizeLayer) : [],
     id: uid(),
     updatedAt: Date.now(),

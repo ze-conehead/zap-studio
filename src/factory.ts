@@ -24,14 +24,17 @@ export function newProject(name = "Neues Sticker-Design"): Project {
 export const templateId = (consoleId: string) => `tpl-${consoleId}`;
 export const GLOBAL_TEMPLATE_ID = "tpl-global";
 
+const TEMPLATE_BG = { ...DEFAULT_BACKGROUND, enabled: false };
+
 // The global template sits above every console: its layers are overlaid on
-// every game sticker, no matter the console. No own card background.
+// every game sticker, no matter the console. Background is opt-in.
 export function newGlobalTemplate(): Project {
   const now = Date.now();
   return {
     id: GLOBAL_TEMPLATE_ID,
     name: "Globale Vorlage",
     backgroundColor: "transparent",
+    background: { ...TEMPLATE_BG },
     layers: [],
     createdAt: now,
     updatedAt: now,
@@ -41,13 +44,14 @@ export function newGlobalTemplate(): Project {
 }
 
 // A console template is an ordinary project whose layers are overlaid on every
-// game sticker of that console. It has no own card background.
+// game sticker of that console. Background is opt-in.
 export function newConsoleTemplate(consoleId: string, consoleName: string): Project {
   const now = Date.now();
   return {
     id: templateId(consoleId),
     name: `${consoleName} – Vorlage`,
     backgroundColor: "transparent",
+    background: { ...TEMPLATE_BG },
     layers: [],
     createdAt: now,
     updatedAt: now,

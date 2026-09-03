@@ -29,6 +29,12 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 - **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
   Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
   Overlay-Blend). Wird in den PNG-Export übernommen.
+  - Auch die **globale Vorlage** und jede **Konsolen-Vorlage** können einen
+    eigenen Hintergrund festlegen (Checkbox „Eigenen Hintergrund für diese
+    Vorlage").
+  - Jede Karte wählt unter **Hintergrund-Quelle**: eigener Hintergrund,
+    „Von der Konsolen-Vorlage" oder „Von der globalen Vorlage". Nicht
+    gesetzte Quellen sind deaktiviert.
 - **Formen**: „+ Form" → Kapsel, Quadrat/Rechteck, Kreis. Jede Form hat
   dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
   optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck

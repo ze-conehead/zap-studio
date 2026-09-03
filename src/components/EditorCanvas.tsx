@@ -21,6 +21,7 @@ import { useImage } from "../hooks/useImage";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
 import type {
+  CardBackground,
   ImageLayer as TImageLayer,
   Layer as TLayer,
   Project,
@@ -34,15 +35,35 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
+// Which background actually paints for the current view.
+function effectiveBackground(
+  project: Project,
+  consoleBg?: CardBackground,
+  globalBg?: CardBackground,
+): CardBackground | null {
+  const own = resolveBackground(project);
+  if (project.isTemplate) return own.enabled ? own : null;
+
+  const src = project.backgroundSource ?? "card";
+  if (src === "global" && globalBg?.enabled) return globalBg;
+  if (src === "console" && consoleBg?.enabled) return consoleBg;
+  return own;
+}
+
 export function EditorCanvas({
   handleRef,
   overlay = [],
+  consoleBg,
+  globalBg,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
 }) {
   const { state, dispatch } = useStore();
   const { project, selectedId, showBleed, showSafe } = state;
+  const bg = effectiveBackground(project, consoleBg, globalBg);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -122,9 +143,9 @@ export function EditorCanvas({
             top: cropped ? -TRIM_RECT.y * scale : 0,
           }}
         >
-          {!project.isTemplate && (
+          {bg && (
             <Layer listening={false}>
-              <CardBackgroundNodes project={project} />
+              <CardBackgroundNodes bg={bg} />
             </Layer>
           )}
 
@@ -434,8 +455,7 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   );
 }
 
-function CardBackgroundNodes({ project }: { project: Project }) {
-  const bg = resolveBackground(project);
+function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
   const full = { x: 0, y: 0, width: CANVAS.w, height: CANVAS.h };
 
   const fill =
