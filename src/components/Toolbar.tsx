@@ -1,11 +1,14 @@
 import {
   ChevronDown,
+  Circle,
   Download,
   FilePlus2,
   FolderOpen,
   ImagePlus,
+  Pill,
   Redo2,
   Shapes,
+  Square,
   Type,
   Undo2,
 } from "lucide-react";
@@ -28,7 +31,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
 import { EXPORT_LABELS, downloadDataUrl, exportPng, type ExportMode } from "../export";
-import { makeImageLayer, makeTextLayer } from "../factory";
+import { makeImageLayer, makeShapeLayer, makeTextLayer } from "../factory";
+import type { ShapeKind } from "../types";
 import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
@@ -178,6 +182,35 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
             </div>
           </PopoverContent>
         </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Square /> Form <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {(
+              [
+                ["capsule", "Kapsel", Pill],
+                ["rect", "Quadrat", Square],
+                ["circle", "Kreis", Circle],
+              ] as const
+            ).map(([kind, label, Icon]) => (
+              <DropdownMenuItem
+                key={kind}
+                onClick={() =>
+                  dispatch({
+                    type: "ADD_LAYER",
+                    layer: makeShapeLayer(kind as ShapeKind),
+                  })
+                }
+              >
+                <Icon /> {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

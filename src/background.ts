@@ -9,25 +9,43 @@ export const DEFAULT_BACKGROUND: CardBackground = {
   noise: 0,
 };
 
+export const DEFAULT_SHAPE_FILL: CardBackground = {
+  kind: "solid",
+  color: "#38bdf8",
+  color2: "#6366f1",
+  angle: 90,
+  noise: 0,
+};
+
 // Normalise a project's background, upgrading legacy `backgroundColor`-only data.
 export function resolveBackground(p: Pick<Project, "background" | "backgroundColor">): CardBackground {
   if (p.background) return { ...DEFAULT_BACKGROUND, ...p.background };
   return { ...DEFAULT_BACKGROUND, color: p.backgroundColor || DEFAULT_BACKGROUND.color };
 }
 
-// Gradient start/end points that fully cover the card for a given angle.
-export function gradientPoints(angle: number) {
+// Gradient start/end points that fully cover a w×h box for a given angle.
+// originCentered: true when the shape's local origin is its centre (Ellipse),
+// false when it is the top-left corner (Rect, card background).
+export function gradientPointsBox(
+  w: number,
+  h: number,
+  angle: number,
+  originCentered = false,
+) {
   const rad = (angle * Math.PI) / 180;
   const dx = Math.cos(rad);
   const dy = Math.sin(rad);
-  const cx = CANVAS.w / 2;
-  const cy = CANVAS.h / 2;
-  const ext = Math.abs(dx) * (CANVAS.w / 2) + Math.abs(dy) * (CANVAS.h / 2);
+  const cx = originCentered ? 0 : w / 2;
+  const cy = originCentered ? 0 : h / 2;
+  const ext = Math.abs(dx) * (w / 2) + Math.abs(dy) * (h / 2);
   return {
     start: { x: cx - dx * ext, y: cy - dy * ext },
     end: { x: cx + dx * ext, y: cy + dy * ext },
   };
 }
+
+export const gradientPoints = (angle: number) =>
+  gradientPointsBox(CANVAS.w, CANVAS.h, angle);
 
 // Monochrome grain tile, generated once and reused for preview + export.
 let tile: HTMLCanvasElement | null = null;

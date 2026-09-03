@@ -23,10 +23,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { resolveBackground } from "../background";
 import { CANVAS } from "../card";
-import { isImage, isText } from "../factory";
+import { isImage, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
 import { useStore } from "../store";
-import type { CardBackground, ImageLayer, Layer, TextLayer } from "../types";
+import type {
+  CardBackground,
+  ImageLayer,
+  Layer,
+  ShapeLayer,
+  TextLayer,
+} from "../types";
 
 type Patch = (p: Partial<Layer>, history?: boolean) => void;
 
@@ -123,23 +129,36 @@ export function Inspector() {
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
+      {isShape(selected) && <ShapeProps layer={selected} patch={patch} />}
     </Panel>
   );
 }
 
 function BackgroundControls() {
   const { state, dispatch } = useStore();
-  const bg = resolveBackground(state.project);
-  const set = (patch: Partial<CardBackground>, history = true) =>
-    dispatch({ type: "SET_BACKGROUND", patch, history });
+  return (
+    <FillEditor
+      value={resolveBackground(state.project)}
+      onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
+    />
+  );
+}
 
+// Solid / gradient + noise editor, shared by the card background and shapes.
+function FillEditor({
+  value: f,
+  onChange: set,
+}: {
+  value: CardBackground;
+  onChange: (patch: Partial<CardBackground>, history?: boolean) => void;
+}) {
   return (
     <>
       <div className="flex gap-2">
         {(["solid", "gradient"] as const).map((k) => (
           <Button
             key={k}
-            variant={bg.kind === k ? "default" : "outline"}
+            variant={f.kind === k ? "default" : "outline"}
             size="sm"
             className="flex-1"
             onClick={() => set({ kind: k })}
@@ -149,20 +168,20 @@ function BackgroundControls() {
         ))}
       </div>
 
-      {bg.kind === "solid" ? (
-        <ColorField label="Farbe" value={bg.color} onChange={(v) => set({ color: v })} />
+      {f.kind === "solid" ? (
+        <ColorField label="Farbe" value={f.color} onChange={(v) => set({ color: v })} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2">
-            <ColorField label="Von" value={bg.color} onChange={(v) => set({ color: v })} />
-            <ColorField label="Nach" value={bg.color2} onChange={(v) => set({ color2: v })} />
+            <ColorField label="Von" value={f.color} onChange={(v) => set({ color: v })} />
+            <ColorField label="Nach" value={f.color2} onChange={(v) => set({ color2: v })} />
           </div>
           <SliderField
-            label={`Richtung ${Math.round(bg.angle)}°`}
+            label={`Richtung ${Math.round(f.angle)}°`}
             min={0}
             max={360}
             step={5}
-            value={bg.angle}
+            value={f.angle}
             onChange={(v, done) => set({ angle: v }, done)}
           />
           <div className="flex gap-1.5">
@@ -176,7 +195,7 @@ function BackgroundControls() {
             ).map(([label, a]) => (
               <Button
                 key={a}
-                variant={bg.angle === a ? "default" : "outline"}
+                variant={f.angle === a ? "default" : "outline"}
                 size="sm"
                 className="flex-1"
                 onClick={() => set({ angle: a })}
@@ -189,11 +208,11 @@ function BackgroundControls() {
       )}
 
       <SliderField
-        label={`Körnung / Noise ${Math.round(bg.noise * 100)}%`}
+        label={`Körnung / Noise ${Math.round(f.noise * 100)}%`}
         min={0}
         max={1}
         step={0.01}
-        value={bg.noise}
+        value={f.noise}
         onChange={(v, done) => set({ noise: v }, done)}
       />
     </>
@@ -221,6 +240,54 @@ function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
       <p className="text-xs text-muted-foreground">
         Original: {layer.naturalWidth}×{layer.naturalHeight} px
       </p>
+    </>
+  );
+}
+
+function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          label="Breite px"
+          value={round(layer.width)}
+          onChange={(v) => patch({ width: Math.max(4, v) })}
+        />
+        <NumberField
+          label="Höhe px"
+          value={round(layer.height)}
+          onChange={(v) => patch({ height: Math.max(4, v) })}
+        />
+      </div>
+
+      {layer.shape === "rect" && (
+        <NumberField
+          label="Ecken-Radius"
+          value={round(layer.cornerRadius)}
+          onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
+        />
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Füllung</Label>
+        <FillEditor
+          value={layer.fill}
+          onChange={(fp, history) => patch({ fill: { ...layer.fill, ...fp } }, history)}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ColorField
+          label="Kontur"
+          value={layer.stroke}
+          onChange={(v) => patch({ stroke: v })}
+        />
+        <NumberField
+          label="Konturstärke"
+          value={round(layer.strokeWidth)}
+          onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
+        />
+      </div>
     </>
   );
 }

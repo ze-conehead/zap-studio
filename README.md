@@ -29,6 +29,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 - **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
   Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
   Overlay-Blend). Wird in den PNG-Export übernommen.
+- **Formen**: „+ Form" → Kapsel, Quadrat/Rechteck, Kreis. Jede Form hat
+  dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
+  optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck
+  einen Ecken-Radius.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.

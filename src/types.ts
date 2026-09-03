@@ -1,4 +1,14 @@
-export type LayerType = "image" | "text";
+export type LayerType = "image" | "text" | "shape";
+
+export type ShapeKind = "rect" | "circle" | "capsule";
+
+export interface CardBackground {
+  kind: "solid" | "gradient";
+  color: string; // solid fill, or first gradient stop
+  color2: string; // second gradient stop
+  angle: number; // gradient direction in degrees (0 = →, 90 = ↓)
+  noise: number; // grain overlay strength, 0..1 (0 = off)
+}
 
 export interface BaseLayer {
   id: string;
@@ -40,15 +50,18 @@ export interface TextLayer extends BaseLayer {
   width: number; // wrap width in px
 }
 
-export type Layer = ImageLayer | TextLayer;
-
-export interface CardBackground {
-  kind: "solid" | "gradient";
-  color: string; // solid fill, or first gradient stop
-  color2: string; // second gradient stop
-  angle: number; // gradient direction in degrees (0 = →, 90 = ↓)
-  noise: number; // grain overlay strength, 0..1 (0 = off)
+export interface ShapeLayer extends BaseLayer {
+  type: "shape";
+  shape: ShapeKind;
+  width: number;
+  height: number;
+  cornerRadius: number; // rect only; capsule rounds automatically
+  fill: CardBackground; // solid / gradient + noise, same model as the card
+  stroke: string;
+  strokeWidth: number;
 }
+
+export type Layer = ImageLayer | TextLayer | ShapeLayer;
 
 export interface Project {
   id: string;

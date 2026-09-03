@@ -1,7 +1,7 @@
-import { DEFAULT_BACKGROUND } from "./background";
+import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
-import type { ImageLayer, Layer, Project, TextLayer } from "./types";
+import type { ImageLayer, Layer, Project, ShapeKind, ShapeLayer, TextLayer } from "./types";
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -118,9 +118,37 @@ export function makeTextLayer(text = "Dein Text"): TextLayer {
   };
 }
 
+const SHAPE_NAME: Record<ShapeKind, string> = {
+  rect: "Quadrat",
+  circle: "Kreis",
+  capsule: "Kapsel",
+};
+
+export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
+  const square = TRIM_RECT.w * 0.4;
+  const size =
+    shape === "capsule"
+      ? { w: TRIM_RECT.w * 0.62, h: TRIM_RECT.w * 0.22 }
+      : { w: square, h: square };
+  return {
+    ...base(SHAPE_NAME[shape]),
+    type: "shape",
+    shape,
+    width: size.w,
+    height: size.h,
+    cornerRadius: shape === "rect" ? 28 : 0,
+    fill: { ...DEFAULT_SHAPE_FILL },
+    stroke: "#000000",
+    strokeWidth: 0,
+  };
+}
+
 export function isImage(l: Layer): l is ImageLayer {
   return l.type === "image";
 }
 export function isText(l: Layer): l is TextLayer {
   return l.type === "text";
+}
+export function isShape(l: Layer): l is ShapeLayer {
+  return l.type === "shape";
 }

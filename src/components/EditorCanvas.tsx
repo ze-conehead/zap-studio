@@ -1,7 +1,21 @@
 import Konva from "konva";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Group, Image as KImage, Layer, Rect, Stage, Text, Transformer } from "react-konva";
-import { gradientPoints, noiseTile, resolveBackground } from "../background";
+import {
+  Ellipse,
+  Group,
+  Image as KImage,
+  Layer,
+  Rect,
+  Stage,
+  Text,
+  Transformer,
+} from "react-konva";
+import {
+  gradientPoints,
+  gradientPointsBox,
+  noiseTile,
+  resolveBackground,
+} from "../background";
 import { CANVAS, CORNER_RADIUS_PX, SAFE_RECT, TRIM_RECT } from "../card";
 import { useImage } from "../hooks/useImage";
 import { useStore } from "../store";
@@ -9,6 +23,7 @@ import type {
   ImageLayer as TImageLayer,
   Layer as TLayer,
   Project,
+  ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
 } from "../types";
 import { fontStyleString } from "../textUtil";
@@ -207,14 +222,66 @@ function LayerNode({
     },
   };
 
-  return layer.type === "image" ? (
+  return (
     <Group {...common}>
-      <ImageInner layer={layer} />
+      <LayerInner layer={layer} />
     </Group>
-  ) : (
-    <Group {...common}>
-      <TextInner layer={layer} />
-    </Group>
+  );
+}
+
+function LayerInner({ layer }: { layer: TLayer }) {
+  if (layer.type === "image") return <ImageInner layer={layer} />;
+  if (layer.type === "shape") return <ShapeInner layer={layer} />;
+  return <TextInner layer={layer} />;
+}
+
+function ShapeInner({ layer }: { layer: TShapeLayer }) {
+  const { width: w, height: h, fill } = layer;
+  const ellipse = layer.shape === "circle";
+  const radius = layer.shape === "capsule" ? Math.min(w, h) / 2 : layer.cornerRadius;
+
+  const paint =
+    fill.kind === "gradient"
+      ? (() => {
+          const { start, end } = gradientPointsBox(w, h, fill.angle, ellipse);
+          return {
+            fillLinearGradientStartPoint: start,
+            fillLinearGradientEndPoint: end,
+            fillLinearGradientColorStops: [0, fill.color, 1, fill.color2],
+          };
+        })()
+      : { fill: fill.color };
+
+  const stroke =
+    layer.strokeWidth > 0
+      ? { stroke: layer.stroke, strokeWidth: layer.strokeWidth }
+      : {};
+
+  const noise =
+    fill.noise > 0
+      ? {
+          listening: false,
+          opacity: fill.noise,
+          fillPatternImage: noiseTile() as unknown as HTMLImageElement,
+          fillPatternRepeat: "repeat" as const,
+          globalCompositeOperation: "overlay" as const,
+        }
+      : null;
+
+  if (ellipse) {
+    return (
+      <>
+        <Ellipse radiusX={w / 2} radiusY={h / 2} {...paint} {...stroke} />
+        {noise && <Ellipse radiusX={w / 2} radiusY={h / 2} {...noise} />}
+      </>
+    );
+  }
+  const box = { x: -w / 2, y: -h / 2, width: w, height: h, cornerRadius: radius };
+  return (
+    <>
+      <Rect {...box} {...paint} {...stroke} />
+      {noise && <Rect {...box} {...noise} />}
+    </>
   );
 }
 
@@ -264,7 +331,7 @@ function ReadOnlyLayer({ layer }: { layer: TLayer }) {
   };
   return (
     <Group {...common}>
-      {layer.type === "image" ? <ImageInner layer={layer} /> : <TextInner layer={layer} />}
+      <LayerInner layer={layer} />
     </Group>
   );
 }
