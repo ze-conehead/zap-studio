@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
 import { EXPORT_LABELS, downloadDataUrl, exportPng, type ExportMode } from "../export";
 import { makeImageLayer, makeTextLayer } from "../factory";
-import { dataUriDimensions, fileToLayerSource } from "../image";
+import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
@@ -20,8 +20,10 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
   const [logoOpen, setLogoOpen] = useState(false);
+  const [imgOpen, setImgOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [imgUrl, setImgUrl] = useState("");
 
   const addImageFromFile = async (file: File) => {
     try {
@@ -31,6 +33,25 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
         type: "ADD_LAYER",
         layer: makeImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") }),
       });
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const addImageFromUrl = async () => {
+    const url = imgUrl.trim();
+    if (!url) return;
+    try {
+      setBusy("Bild wird geladen …");
+      const img = await urlToLayerSource(url);
+      dispatch({
+        type: "ADD_LAYER",
+        layer: makeImageLayer({ ...img, name: nameFromUrl(url) }),
+      });
+      setImgUrl("");
+      setImgOpen(false);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -91,7 +112,37 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
         <button onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}>
           + Text
         </button>
-        <button onClick={() => fileRef.current?.click()}>+ Bild</button>
+        <div className="menu">
+          <button onClick={() => setImgOpen((v) => !v)}>+ Bild ▾</button>
+          {imgOpen && (
+            <div className="dropdown">
+              <button
+                onClick={() => {
+                  setImgOpen(false);
+                  fileRef.current?.click();
+                }}
+              >
+                Datei hochladen …
+              </button>
+              <hr />
+              <span className="dropdown-label">Von URL einfügen</span>
+              <div className="url-row">
+                <input
+                  type="url"
+                  placeholder="https://…/bild.png"
+                  value={imgUrl}
+                  onChange={(e) => setImgUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void addImageFromUrl();
+                  }}
+                />
+                <button className="primary" onClick={() => void addImageFromUrl()}>
+                  OK
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="menu">
           <button onClick={() => setLogoOpen((v) => !v)}>+ Logo ▾</button>
           {logoOpen && (

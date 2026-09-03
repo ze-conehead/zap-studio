@@ -98,6 +98,19 @@ button.danger, .icon-btn.danger:hover { color: var(--danger); }
   z-index: 30;
 }
 .dropdown button { text-align: left; border-color: transparent; }
+.dropdown-label { font-size: 11px; color: var(--muted); padding: 0 4px; }
+.url-row { display: flex; gap: 4px; padding: 2px 4px 4px; }
+.url-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+.url-row button { flex-shrink: 0; }
 .dropdown hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
 .tb-group.push .dropdown { left: auto; right: 0; }
 

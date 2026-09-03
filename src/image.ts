@@ -38,6 +38,61 @@ export async function dataUriDimensions(src: string): Promise<LoadedImage> {
   return { src, ...d };
 }
 
+const EXT_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+  avif: "image/avif",
+};
+
+// Fetch a remote image and embed it (same path as an upload), so it survives
+// in the saved project and stays export-safe. Needs the host to allow
+// cross-origin reads.
+export async function urlToLayerSource(url: string): Promise<LoadedImage> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Ungültige URL.");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Nur http(s)-URLs werden unterstützt.");
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, { mode: "cors", credentials: "omit" });
+  } catch {
+    throw new Error(
+      "Bild konnte nicht geladen werden – die Seite erlaubt keinen Zugriff von anderen Websites. Lade das Bild herunter und füge es als Datei ein.",
+    );
+  }
+  if (!res.ok) throw new Error(`Bild-URL nicht erreichbar (HTTP ${res.status}).`);
+
+  const blob = await res.blob();
+  const ext = parsed.pathname.split(".").pop()?.toLowerCase() ?? "";
+  const type =
+    blob.type && blob.type.startsWith("image/") ? blob.type : EXT_MIME[ext] ?? "";
+  if (!type) throw new Error("Die URL verweist nicht auf ein Bild.");
+
+  const name =
+    (parsed.pathname.split("/").pop() || "bild").replace(/\.[^.]+$/, "") || "Bild";
+  return fileToLayerSource(new File([blob], name, { type }));
+}
+
+export function nameFromUrl(url: string): string {
+  try {
+    const p = new URL(url).pathname.split("/").pop() || "";
+    return p.replace(/\.[^.]+$/, "") || "Bild";
+  } catch {
+    return "Bild";
+  }
+}
+
 function readAsDataURL(file: File): Promise<string> {
   return new Promise((res, rej) => {
     const fr = new FileReader();

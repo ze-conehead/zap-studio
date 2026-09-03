@@ -18,8 +18,10 @@ kein Login.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.
-- **Bild-Upload**: PNG/JPG/SVG per Datei-Dialog. Große Bilder werden auf
-  max. 2400 px heruntergerechnet, damit das Projekt klein bleibt.
+- **Bilder**: „+ Bild" → Datei hochladen oder von einer URL einfügen
+  (PNG/JPG/SVG/WebP …). URL-Bilder werden heruntergeladen und ins Projekt
+  eingebettet – der Host muss Cross-Origin-Zugriff erlauben, sonst kommt ein
+  Hinweis. Große Bilder werden auf max. 2400 px heruntergerechnet.
 - **Logo-Presets**: 6 neutrale, generische Platzhaltermarken (`src/assets/logos.ts`).
   Eigene Artwork-Dateien einfach als Bild hochladen.
 - **Schriften**: System-Fonts + Google Fonts (Oswald, Bebas Neue,
