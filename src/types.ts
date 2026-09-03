@@ -49,6 +49,8 @@ export interface Project {
   layers: Layer[]; // index 0 = bottom of the stack
   createdAt: number;
   updatedAt: number;
+  gameKey?: string; // catalogue link: "console-id/game-id"
+  consoleName?: string;
 }
 
 export interface ProjectMeta {

@@ -6,6 +6,10 @@ kein Login.
 
 ## Features
 
+- **Konsolen-/Spiele-Baum** (links): 5 Beispielkonsolen mit je den Top 10
+  Spielen ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
+  legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
+  bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.
@@ -40,6 +44,9 @@ npm run build    # Produktions-Build nach dist/
 | Datei | Zweck |
 | --- | --- |
 | `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
+| `src/data/catalog.ts` | Beispiel-Konsolen und ihre Top-10-Spiele |
+| `src/components/GameTree.tsx` | Baumansicht links |
+| `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |
 | `src/types.ts` | Datenmodell (Layer, Project) |
 | `src/store.tsx` | Reducer, Undo/Redo, Autosave, Shortcuts |
 | `src/components/EditorCanvas.tsx` | Konva-Bühne, Transformer, Hilfslinien |

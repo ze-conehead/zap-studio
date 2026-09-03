@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { TRIM_RECT } from "./card";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
+import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
 import { LayerList } from "./components/LayerList";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { Toolbar } from "./components/Toolbar";
-import { newProject } from "./factory";
+import { makeTextLayer, newProject } from "./factory";
+import { getGameProject, linkGameProject } from "./gameIndex";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
@@ -52,11 +55,41 @@ export default function App() {
     }
   };
 
+  const pickGame = async (consoleName: string, gameTitle: string, gameKey: string) => {
+    if (project?.gameKey === gameKey) return;
+
+    const linkedId = getGameProject(gameKey);
+    if (linkedId) {
+      const existing = await loadProject(linkedId);
+      if (existing) {
+        setProject(existing);
+        return;
+      }
+    }
+
+    const p = newProject(gameTitle);
+    p.gameKey = gameKey;
+    p.consoleName = consoleName;
+    p.layers = [
+      {
+        ...makeTextLayer(gameTitle),
+        name: gameTitle,
+        y: TRIM_RECT.y + TRIM_RECT.h * 0.16,
+        width: TRIM_RECT.w * 0.86,
+        fontSize: 40,
+      },
+    ];
+    linkGameProject(gameKey, p.id);
+    await swap(p);
+  };
+
   if (!project) return <div className="boot">lädt …</div>;
 
   return (
     <StoreProvider key={project.id} initial={project}>
       <Shell
+        activeGameKey={project.gameKey}
+        onPickGame={pickGame}
         onNewProject={() => swap(newProject())}
         onOpenProjects={() => setShowProjects(true)}
         onImportJson={importJson}
@@ -73,10 +106,14 @@ export default function App() {
 }
 
 function Shell({
+  activeGameKey,
+  onPickGame,
   onNewProject,
   onOpenProjects,
   onImportJson,
 }: {
+  activeGameKey?: string;
+  onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
@@ -91,6 +128,7 @@ function Shell({
         onImportJson={onImportJson}
       />
       <div className="workspace">
+        <GameTree activeGameKey={activeGameKey} onPickGame={onPickGame} />
         <EditorCanvas handleRef={canvas} />
         <aside className="sidebar">
           <LayerList />

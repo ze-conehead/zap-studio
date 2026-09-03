@@ -117,6 +117,62 @@ button.danger, .icon-btn.danger:hover { color: var(--danger); }
 /* ---------- workspace ---------- */
 .workspace { flex: 1; display: flex; min-height: 0; }
 
+/* ---------- console / game tree ---------- */
+.tree {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 12px 10px;
+}
+.tree h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.tree ul { list-style: none; margin: 0; padding: 0; }
+.tree-games { margin-left: 6px; border-left: 1px solid var(--line); padding-left: 4px; }
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 6px;
+  font: inherit;
+  color: var(--text);
+}
+.tree-node:hover { background: var(--panel); border-color: var(--line); }
+.tree-node.console { font-weight: 600; }
+.tree-node.game { color: var(--muted); font-size: 13px; }
+.tree-node.game.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+
+.twisty { width: 12px; font-size: 10px; color: var(--muted); }
+.tree-emoji { font-size: 13px; }
+.tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--panel-2);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.tree-rank {
+  width: 18px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.tree .hint { padding: 0 4px; }
+
 .canvas-wrap {
   flex: 1;
   min-width: 0;

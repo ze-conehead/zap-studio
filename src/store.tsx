@@ -204,6 +204,21 @@ export function StoreProvider({
     return () => window.clearTimeout(timer.current);
   }, [state.project, state.dirty]);
 
+  // Flush unsaved changes when the editor unmounts (project switch) or the
+  // tab goes away, so fast navigation never drops edits.
+  const live = useRef({ project: state.project, dirty: state.dirty });
+  live.current = { project: state.project, dirty: state.dirty };
+  useEffect(() => {
+    const flush = () => {
+      if (live.current.dirty) void saveProject(live.current.project);
+    };
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+  }, []);
+
   // Keyboard shortcuts.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

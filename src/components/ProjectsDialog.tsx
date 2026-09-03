@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { unlinkProject } from "../gameIndex";
 import { deleteProject, listProjects, loadProject } from "../persist";
 import type { ProjectMeta } from "../types";
 
@@ -47,6 +48,7 @@ export function ProjectsDialog({ currentId, onClose, onOpen }: Props) {
                 onClick={async () => {
                   if (confirm(`„${p.name}" wirklich löschen?`)) {
                     await deleteProject(p.id);
+                    unlinkProject(p.id);
                     refresh();
                   }
                 }}
