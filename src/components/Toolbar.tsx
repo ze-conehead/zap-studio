@@ -34,7 +34,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
-import { EXPORT_LABELS, downloadDataUrl, exportPng, type ExportMode } from "../export";
+import { exportBackup, importBackup } from "../backup";
+import {
+  EXPORT_LABELS,
+  downloadBlob,
+  downloadDataUrl,
+  exportPng,
+  type ExportMode,
+} from "../export";
 import { makeImageLayer, makeShapeLayer, makeTextLayer } from "../factory";
 import type { ShapeKind } from "../types";
 import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
@@ -64,9 +71,42 @@ export function Toolbar({
   const { project, past, future, showBleed, showSafe } = state;
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
+  const zipRef = useRef<HTMLInputElement>(null);
   const [imgOpen, setImgOpen] = useState(false);
   const [imgUrl, setImgUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+
+  const saveBackup = async () => {
+    try {
+      setBusy("Backup wird gepackt …");
+      const { blob, name } = await exportBackup();
+      downloadBlob(blob, name);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const loadBackup = async (file: File) => {
+    if (
+      !confirm(
+        "Backup laden? Projekte und Vorlagen aus der Datei werden übernommen " +
+          "(vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
+      )
+    ) {
+      return;
+    }
+    try {
+      setBusy("Backup wird geladen …");
+      const { projects, templates } = await importBackup(file);
+      alert(`${projects} Projekt(e) und ${templates} Vorlage(n) übernommen.`);
+      location.reload();
+    } catch (e) {
+      alert((e as Error).message);
+      setBusy(null);
+    }
+  };
 
   const addImageFromFile = async (file: File) => {
     try {
@@ -331,6 +371,14 @@ export function Toolbar({
             <DropdownMenuItem onClick={() => jsonRef.current?.click()}>
               JSON-Projekt öffnen …
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Komplett-Backup</DropdownMenuLabel>
+            <DropdownMenuItem onClick={saveBackup}>
+              Backup (.zip) speichern
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => zipRef.current?.click()}>
+              Backup (.zip) laden …
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -348,6 +396,17 @@ export function Toolbar({
         </div>
       )}
 
+      <input
+        ref={zipRef}
+        type="file"
+        accept=".zip,application/zip"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void loadBackup(f);
+          e.target.value = "";
+        }}
+      />
       <input
         ref={fileRef}
         type="file"

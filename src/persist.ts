@@ -36,3 +36,16 @@ export async function listProjects(): Promise<ProjectMeta[]> {
   }
   return metas.sort((a, b) => b.updatedAt - a.updatedAt);
 }
+
+// Every stored project, templates included — for the full backup.
+export async function loadAllProjects(): Promise<Project[]> {
+  const ks = (await keys()) as string[];
+  const out: Project[] = [];
+  for (const k of ks) {
+    if (typeof k === "string" && k.startsWith("project:")) {
+      const p = (await get(k)) as Project | undefined;
+      if (p) out.push(p);
+    }
+  }
+  return out;
+}

@@ -109,4 +109,10 @@ export function downloadDataUrl(dataUrl: string, filename: string) {
   a.remove();
 }
 
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  downloadDataUrl(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 export const EXPORT_DPI = DPI;

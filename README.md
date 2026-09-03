@@ -83,7 +83,11 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   - PNG Endformat (54 × 85,6 mm, 300 DPI ≈ 638 × 1011 px)
   - PNG mit 3 mm Beschnitt
   - PNG mit Beschnitt + Schnittmarken
-  - Projekt als `.json` (Bilder eingebettet) speichern / laden
+  - Einzelnes Projekt als `.json` (Bilder eingebettet) speichern / laden
+  - **Komplett-Backup als `.zip`**: alle Projekte, Vorlagen (global +
+    Konsole), Hilfslinien und der Spiel-Index; Bilder als echte,
+    deduplizierte Dateien unter `assets/`. Laden übernimmt alles (gleiche
+    IDs werden überschrieben) und lädt die Seite neu.
 - **Autosave** in IndexedDB, mehrere Designs über den „Projekte"-Dialog.
 - **Shortcuts**: ⌘Z / ⌘⇧Z (Undo/Redo), Entf (Ebene löschen), Esc (Auswahl aufheben).
 
@@ -116,6 +120,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/components/Inspector.tsx` | Eigenschaften der ausgewählten Ebene |
 | `src/export.ts` | PNG-Rendering mit Beschnitt & Schnittmarken |
 | `src/persist.ts` | IndexedDB-Speicherung (`idb-keyval`) |
+| `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
 
 ## Rechtliches
 
