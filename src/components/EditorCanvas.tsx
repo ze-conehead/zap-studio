@@ -123,7 +123,7 @@ export function EditorCanvas({
 
   return (
     <div
-      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#131c2e] p-6"
+      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#161617] p-6"
       ref={wrapRef}
     >
       <div
@@ -229,8 +229,9 @@ export function EditorCanvas({
               rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
               anchorSize={10}
               anchorCornerRadius={5}
-              borderStroke="#38bdf8"
-              anchorStroke="#38bdf8"
+              borderStroke="#d4d4d8"
+              anchorStroke="#d4d4d8"
+              anchorFill="#f4f4f5"
               boundBoxFunc={(oldBox, newBox) =>
                 newBox.width < 8 || newBox.height < 8 ? oldBox : newBox
               }
@@ -628,9 +629,9 @@ function RoundedCardOutline() {
       width={TRIM_RECT.w}
       height={TRIM_RECT.h}
       cornerRadius={CORNER_RADIUS_PX}
-      stroke="#38bdf8"
+      stroke="#e4e4e7"
       strokeWidth={1}
-      opacity={0.35}
+      opacity={0.3}
     />
   );
 }
