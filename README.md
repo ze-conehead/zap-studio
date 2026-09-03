@@ -15,6 +15,9 @@ kein Login.
   auf **allen** Spiel-Karten dieser Konsole angezeigt (schreibgeschützt,
   über dem Karteninhalt) und landen im PNG-Export. Gespeichert als
   Projekt `tpl-<konsole>`, wird nicht in der Projektliste geführt.
+- **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
+  Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
+  Overlay-Blend). Wird in den PNG-Export übernommen.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.
@@ -51,6 +54,7 @@ npm run build    # Produktions-Build nach dist/
 | Datei | Zweck |
 | --- | --- |
 | `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
+| `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
 | `src/data/catalog.ts` | Beispiel-Konsolen und ihre Top-10-Spiele |
 | `src/components/GameTree.tsx` | Baumansicht links |
 | `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |

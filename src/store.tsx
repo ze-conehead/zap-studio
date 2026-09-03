@@ -7,9 +7,10 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { resolveBackground } from "./background";
 import { newProject } from "./factory";
 import { saveProject } from "./persist";
-import type { Layer, Project } from "./types";
+import type { CardBackground, Layer, Project } from "./types";
 
 interface State {
   project: Project;
@@ -24,7 +25,7 @@ interface State {
 type Action =
   | { type: "LOAD"; project: Project }
   | { type: "RENAME"; name: string }
-  | { type: "SET_BG"; color: string }
+  | { type: "SET_BACKGROUND"; patch: Partial<CardBackground>; history?: boolean }
   | { type: "ADD_LAYER"; layer: Layer }
   | { type: "PATCH_LAYER"; id: string; patch: Partial<Layer>; history?: boolean }
   | { type: "DELETE_LAYER"; id: string }
@@ -71,8 +72,13 @@ function reducer(state: State, action: Action): State {
     case "RENAME":
       return commit(state, { ...project, name: action.name, updatedAt: Date.now() });
 
-    case "SET_BG":
-      return commit(state, { ...project, backgroundColor: action.color, updatedAt: Date.now() });
+    case "SET_BACKGROUND": {
+      const bg = { ...resolveBackground(project), ...action.patch };
+      const next = { ...project, background: bg, backgroundColor: bg.color, updatedAt: Date.now() };
+      return action.history === false
+        ? { ...state, project: next, dirty: true }
+        : commit(state, next);
+    }
 
     case "ADD_LAYER":
       return {

@@ -1,10 +1,16 @@
 import Konva from "konva";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Group, Image as KImage, Layer, Rect, Stage, Text, Transformer } from "react-konva";
+import { gradientPoints, noiseTile, resolveBackground } from "../background";
 import { CANVAS, CORNER_RADIUS_PX, SAFE_RECT, TRIM_RECT } from "../card";
 import { useImage } from "../hooks/useImage";
 import { useStore } from "../store";
-import type { ImageLayer as TImageLayer, Layer as TLayer, TextLayer as TTextLayer } from "../types";
+import type {
+  ImageLayer as TImageLayer,
+  Layer as TLayer,
+  Project,
+  TextLayer as TTextLayer,
+} from "../types";
 import { fontStyleString } from "../textUtil";
 
 export interface CanvasHandle {
@@ -98,14 +104,7 @@ export function EditorCanvas({
           }}
         >
           <Layer>
-            <Rect
-              name="bg"
-              x={0}
-              y={0}
-              width={CANVAS.w}
-              height={CANVAS.h}
-              fill={project.backgroundColor}
-            />
+            {!project.isTemplate && <CardBackgroundNodes project={project} />}
             {project.layers.map((layer) =>
               layer.visible ? (
                 <LayerNode
@@ -213,6 +212,39 @@ function LayerNode({
     <Group {...common}>
       <TextInner layer={layer} />
     </Group>
+  );
+}
+
+function CardBackgroundNodes({ project }: { project: Project }) {
+  const bg = resolveBackground(project);
+  const full = { x: 0, y: 0, width: CANVAS.w, height: CANVAS.h };
+
+  const fill =
+    bg.kind === "gradient"
+      ? (() => {
+          const { start, end } = gradientPoints(bg.angle);
+          return {
+            fillLinearGradientStartPoint: start,
+            fillLinearGradientEndPoint: end,
+            fillLinearGradientColorStops: [0, bg.color, 1, bg.color2],
+          };
+        })()
+      : { fill: bg.color };
+
+  return (
+    <>
+      <Rect name="bg" {...full} {...fill} />
+      {bg.noise > 0 && (
+        <Rect
+          {...full}
+          listening={false}
+          opacity={bg.noise}
+          fillPatternImage={noiseTile() as unknown as HTMLImageElement}
+          fillPatternRepeat="repeat"
+          globalCompositeOperation="overlay"
+        />
+      )}
+    </>
   );
 }
 

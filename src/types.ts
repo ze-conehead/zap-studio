@@ -42,10 +42,19 @@ export interface TextLayer extends BaseLayer {
 
 export type Layer = ImageLayer | TextLayer;
 
+export interface CardBackground {
+  kind: "solid" | "gradient";
+  color: string; // solid fill, or first gradient stop
+  color2: string; // second gradient stop
+  angle: number; // gradient direction in degrees (0 = →, 90 = ↓)
+  noise: number; // grain overlay strength, 0..1 (0 = off)
+}
+
 export interface Project {
   id: string;
   name: string;
-  backgroundColor: string;
+  backgroundColor: string; // legacy / primary colour mirror
+  background?: CardBackground;
   layers: Layer[]; // index 0 = bottom of the stack
   createdAt: number;
   updatedAt: number;

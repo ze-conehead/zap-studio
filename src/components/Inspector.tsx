@@ -1,8 +1,9 @@
+import { resolveBackground } from "../background";
 import { CANVAS } from "../card";
 import { FONTS } from "../fonts";
 import { isImage, isText } from "../factory";
 import { useStore } from "../store";
-import type { ImageLayer, Layer, TextLayer } from "../types";
+import type { CardBackground, ImageLayer, Layer, TextLayer } from "../types";
 
 export function Inspector() {
   const { state, selected, dispatch } = useStore();
@@ -25,15 +26,8 @@ export function Inspector() {
     }
     return (
       <section className="panel">
-        <h2>Karte</h2>
-        <label className="field">
-          <span>Hintergrundfarbe</span>
-          <input
-            type="color"
-            value={state.project.backgroundColor}
-            onChange={(e) => dispatch({ type: "SET_BG", color: e.target.value })}
-          />
-        </label>
+        <h2>Kartenhintergrund</h2>
+        <BackgroundControls />
         <p className="hint">Wähle eine Ebene aus, um sie zu bearbeiten.</p>
       </section>
     );
@@ -90,6 +84,103 @@ export function Inspector() {
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
     </section>
+  );
+}
+
+function BackgroundControls() {
+  const { state, dispatch } = useStore();
+  const bg = resolveBackground(state.project);
+  const set = (patch: Partial<CardBackground>, history = true) =>
+    dispatch({ type: "SET_BACKGROUND", patch, history });
+
+  return (
+    <>
+      <div className="row-btns">
+        <button
+          className={bg.kind === "solid" ? "toggle on" : "toggle"}
+          onClick={() => set({ kind: "solid" })}
+        >
+          Farbe
+        </button>
+        <button
+          className={bg.kind === "gradient" ? "toggle on" : "toggle"}
+          onClick={() => set({ kind: "gradient" })}
+        >
+          Verlauf
+        </button>
+      </div>
+
+      {bg.kind === "solid" ? (
+        <label className="field">
+          <span>Farbe</span>
+          <input type="color" value={bg.color} onChange={(e) => set({ color: e.target.value })} />
+        </label>
+      ) : (
+        <>
+          <div className="grid2">
+            <label className="field">
+              <span>Von</span>
+              <input
+                type="color"
+                value={bg.color}
+                onChange={(e) => set({ color: e.target.value })}
+              />
+            </label>
+            <label className="field">
+              <span>Nach</span>
+              <input
+                type="color"
+                value={bg.color2}
+                onChange={(e) => set({ color2: e.target.value })}
+              />
+            </label>
+          </div>
+          <label className="field">
+            <span>Richtung {Math.round(bg.angle)}°</span>
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={5}
+              value={bg.angle}
+              onChange={(e) => set({ angle: Number(e.target.value) }, false)}
+              onPointerUp={(e) => set({ angle: Number((e.target as HTMLInputElement).value) })}
+            />
+          </label>
+          <div className="row-btns">
+            {(
+              [
+                ["↓", 90],
+                ["→", 0],
+                ["↘", 45],
+                ["↗", 315],
+              ] as const
+            ).map(([label, a]) => (
+              <button
+                key={a}
+                className={bg.angle === a ? "toggle on" : "toggle"}
+                onClick={() => set({ angle: a })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <label className="field">
+        <span>Körnung / Noise {Math.round(bg.noise * 100)}%</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={bg.noise}
+          onChange={(e) => set({ noise: Number(e.target.value) }, false)}
+          onPointerUp={(e) => set({ noise: Number((e.target as HTMLInputElement).value) })}
+        />
+      </label>
+    </>
   );
 }
 

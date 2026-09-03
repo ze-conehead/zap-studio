@@ -1,3 +1,4 @@
+import { DEFAULT_BACKGROUND } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
 import type { ImageLayer, Layer, Project, TextLayer } from "./types";
@@ -12,7 +13,8 @@ export function newProject(name = "Neues Sticker-Design"): Project {
   return {
     id: uid(),
     name,
-    backgroundColor: "#1e293b",
+    backgroundColor: DEFAULT_BACKGROUND.color,
+    background: { ...DEFAULT_BACKGROUND },
     layers: [],
     createdAt: now,
     updatedAt: now,
