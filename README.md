@@ -38,6 +38,12 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   direkt darunter (`»In Maske«`). So legt man z. B. einen Kreis obenauf und
   lädt darunter ein Bild „in den Kreis". Die verdeckte Ebene bleibt
   frei verschiebbar; die Maske selbst wählt man über die Ebenenliste aus.
+  - **Mehrere Ebenen pro Maske**: im Masken-Inspector „Ebene aufnehmen" /
+    „Oberste lösen" bzw. „In Maske" bei den einzelnen Ebenen.
+  - **Ebenen mitbewegen** (Checkbox an der Maske, optional): Verschieben,
+    Skalieren und Drehen der Maske wirkt dann auf alle Ebenen in der Maske.
+  - „Maske auflösen" gibt Maske + alle Kinder wieder frei.
+
   Umgesetzt über `globalCompositeOperation: "destination-in"` je Masken-
   gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.

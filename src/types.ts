@@ -24,6 +24,7 @@ export interface BaseLayer {
   locked: boolean;
   mask?: boolean; // this layer's alpha clips the clipped layers directly below it
   clipped?: boolean; // this layer is clipped by the mask layer directly above it
+  groupTransform?: boolean; // mask only: moving/scaling it also moves its clipped layers
 }
 
 export interface ImageLayer extends BaseLayer {

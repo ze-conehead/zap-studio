@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,6 +28,7 @@ import { resolveBackground } from "../background";
 import { CANVAS } from "../card";
 import { isImage, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
+import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
 import type {
   CardBackground,
@@ -139,22 +141,90 @@ export function Inspector() {
 }
 
 function MaskControls({ patch }: { patch: Patch }) {
-  const { state, selected } = useStore();
+  const { state, selected, dispatch } = useStore();
   if (!selected) return null;
   const layers = state.project.layers;
   const idx = layers.findIndex((l) => l.id === selected.id);
-  const above = layers[idx + 1];
-  const canClip = !!above?.mask || !!selected.clipped;
+  const canClip = selected.clipped || canBeClipped(layers, idx);
+
+  const patchMany = (
+    ps: { id: string; patch: Partial<Layer> }[],
+    history = true,
+  ) => dispatch({ type: "PATCH_LAYERS", patches: ps, history });
+
+  if (selected.mask) {
+    const start = maskGroupStart(layers, idx);
+    const childIds = layers.slice(start, idx).map((l) => l.id);
+    const nextBelow = layers[start - 1]; // candidate to pull into the group
+    return (
+      <div className="flex flex-col gap-1.5 border-t pt-3">
+        <Label>Maske</Label>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() =>
+            patchMany([
+              { id: selected.id, patch: { mask: false } },
+              ...childIds.map((id) => ({ id, patch: { clipped: false } })),
+            ])
+          }
+        >
+          <Crop /> Maske auflösen
+        </Button>
+
+        <p className="text-xs text-muted-foreground">
+          {childIds.length} Ebene(n) in dieser Maske.
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            disabled={!nextBelow || nextBelow.mask}
+            onClick={() =>
+              nextBelow &&
+              patchMany([{ id: nextBelow.id, patch: { clipped: true, mask: false } }])
+            }
+          >
+            <CornerDownRight /> Ebene aufnehmen
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            disabled={childIds.length === 0}
+            onClick={() =>
+              patchMany(
+                childIds.slice(-1).map((id) => ({ id, patch: { clipped: false } })),
+              )
+            }
+          >
+            Oberste lösen
+          </Button>
+        </div>
+
+        <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={!!selected.groupTransform}
+            onCheckedChange={(v) => patch({ groupTransform: !!v })}
+          />
+          Ebenen mitbewegen (Verschieben / Skalieren / Drehen der Maske
+          betrifft alle Ebenen darin)
+        </label>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-1.5 border-t pt-3">
       <Label>Alpha-Maske</Label>
       <div className="flex gap-2">
         <Button
-          variant={selected.mask ? "default" : "outline"}
+          variant="outline"
           size="sm"
           className="flex-1"
-          onClick={() => patch({ mask: !selected.mask, clipped: false })}
+          onClick={() => patch({ mask: true, clipped: false })}
         >
           <Crop /> Als Maske
         </Button>
@@ -169,11 +239,9 @@ function MaskControls({ patch }: { patch: Patch }) {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        {selected.mask
-          ? "Diese Ebene ist die Maske: die Ebene(n) direkt darunter erscheinen nur dort, wo diese Ebene deckend ist."
-          : selected.clipped
-            ? "Diese Ebene wird von der Maske direkt darüber beschnitten."
-            : "»Als Maske« macht diese Ebene zum Alpha-Kanal für die Ebene darunter. »In Maske« beschneidet sie an der Maske darüber."}
+        {selected.clipped
+          ? "Diese Ebene wird von der Maske darüber beschnitten. Weitere Ebenen dazwischen ebenfalls auf »In Maske« stellen, um sie in dieselbe Maske zu legen."
+          : "»Als Maske« macht diese Ebene zum Alpha-Kanal für die Ebene(n) darunter. »In Maske« legt sie in die Maske darüber."}
       </p>
     </div>
   );

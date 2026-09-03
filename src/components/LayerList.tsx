@@ -44,6 +44,7 @@ export function LayerList() {
               className={cn(
                 "flex items-center gap-0.5 rounded-md border bg-card px-1.5 py-1 text-sm",
                 active ? "border-primary bg-accent" : "hover:bg-accent/50",
+                l.clipped && "ml-3 border-l-2 border-l-primary/50",
               )}
             >
               <button

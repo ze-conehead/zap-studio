@@ -129,13 +129,18 @@ export function EditorCanvas({
           )}
 
           {segmentLayers(project.layers).map((seg, i) => {
-            const render = (layer: TLayer, asMask = false) =>
+            const render = (
+              layer: TLayer,
+              asMask = false,
+              groupChildren?: TLayer[],
+            ) =>
               layer.visible ? (
                 <LayerNode
                   key={layer.id}
                   layer={layer}
                   asMask={asMask}
                   selected={layer.id === selectedId}
+                  groupChildren={groupChildren}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);
@@ -143,6 +148,9 @@ export function EditorCanvas({
                   onSelect={() => dispatch({ type: "SELECT", id: layer.id })}
                   onChange={(patch, history) =>
                     dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history })
+                  }
+                  onGroupChange={(patches, history) =>
+                    dispatch({ type: "PATCH_LAYERS", patches, history })
                   }
                 />
               ) : null;
@@ -154,7 +162,11 @@ export function EditorCanvas({
                   : [
                       ...seg.clipped.map((l) => render(l)),
                       // a mask with nothing under it renders normally so it stays visible
-                      render(seg.mask, seg.clipped.length > 0),
+                      render(
+                        seg.mask,
+                        seg.clipped.length > 0,
+                        seg.mask.groupTransform ? seg.clipped : undefined,
+                      ),
                     ]}
               </Layer>
             );
@@ -191,27 +203,109 @@ export function EditorCanvas({
   );
 }
 
+interface GroupSnapshot {
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  kids: {
+    id: string;
+    x: number;
+    y: number;
+    rotation: number;
+    scaleX: number;
+    scaleY: number;
+  }[];
+}
+
 function LayerNode({
   layer,
   asMask = false,
   selected = false,
+  groupChildren,
   register,
   onSelect,
   onChange,
+  onGroupChange,
 }: {
   layer: TLayer;
   asMask?: boolean;
   selected?: boolean;
+  groupChildren?: TLayer[];
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
+  onGroupChange: (
+    patches: { id: string; patch: Partial<TLayer> }[],
+    history?: boolean,
+  ) => void;
 }) {
   const ref = useRef<Konva.Group>(null);
+  const snap = useRef<GroupSnapshot | null>(null);
+  const grouped = !!groupChildren && groupChildren.length > 0;
 
   useEffect(() => {
     register(ref.current);
     return () => register(null);
   }, [register]);
+
+  const snapshot = () => {
+    snap.current = {
+      x: layer.x,
+      y: layer.y,
+      rotation: layer.rotation,
+      scaleX: layer.scaleX,
+      scaleY: layer.scaleY,
+      kids: (groupChildren ?? []).map((k) => ({
+        id: k.id,
+        x: k.x,
+        y: k.y,
+        rotation: k.rotation,
+        scaleX: k.scaleX,
+        scaleY: k.scaleY,
+      })),
+    };
+  };
+
+  const applyGroup = (history: boolean) => {
+    const n = ref.current!;
+    const o = snap.current;
+    if (!o) return;
+    const dRot = n.rotation() - o.rotation;
+    const sx = o.scaleX ? n.scaleX() / o.scaleX : 1;
+    const sy = o.scaleY ? n.scaleY() / o.scaleY : 1;
+    const rad = (dRot * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const patches = [
+      {
+        id: layer.id,
+        patch: {
+          x: n.x(),
+          y: n.y(),
+          rotation: n.rotation(),
+          scaleX: n.scaleX(),
+          scaleY: n.scaleY(),
+        },
+      },
+      ...o.kids.map((k) => {
+        const vx = (k.x - o.x) * sx;
+        const vy = (k.y - o.y) * sy;
+        return {
+          id: k.id,
+          patch: {
+            x: n.x() + (vx * cos - vy * sin),
+            y: n.y() + (vx * sin + vy * cos),
+            rotation: k.rotation + dRot,
+            scaleX: k.scaleX * sx,
+            scaleY: k.scaleY * sy,
+          },
+        };
+      }),
+    ];
+    onGroupChange(patches, history);
+  };
 
   const common = {
     ref,
@@ -228,23 +322,31 @@ function LayerNode({
     draggable: !layer.locked && (!asMask || selected),
     onMouseDown: onSelect,
     onTap: onSelect,
-    onDragMove: (e: Konva.KonvaEventObject<DragEvent>) =>
-      onChange({ x: e.target.x(), y: e.target.y() }, false),
-    onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) =>
-      onChange({ x: e.target.x(), y: e.target.y() }, true),
-    onTransformEnd: () => {
-      const n = ref.current!;
-      onChange(
-        {
-          x: n.x(),
-          y: n.y(),
-          rotation: n.rotation(),
-          scaleX: n.scaleX(),
-          scaleY: n.scaleY(),
+    onDragStart: grouped ? snapshot : undefined,
+    onDragMove: grouped
+      ? () => applyGroup(false)
+      : (e: Konva.KonvaEventObject<DragEvent>) =>
+          onChange({ x: e.target.x(), y: e.target.y() }, false),
+    onDragEnd: grouped
+      ? () => applyGroup(true)
+      : (e: Konva.KonvaEventObject<DragEvent>) =>
+          onChange({ x: e.target.x(), y: e.target.y() }, true),
+    onTransformStart: grouped ? snapshot : undefined,
+    onTransformEnd: grouped
+      ? () => applyGroup(true)
+      : () => {
+          const n = ref.current!;
+          onChange(
+            {
+              x: n.x(),
+              y: n.y(),
+              rotation: n.rotation(),
+              scaleX: n.scaleX(),
+              scaleY: n.scaleY(),
+            },
+            true,
+          );
         },
-        true,
-      );
-    },
   };
 
   return (

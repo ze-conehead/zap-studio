@@ -41,9 +41,20 @@ export function segmentLayers(layers: Layer[]): RenderSegment[] {
   return segments;
 }
 
-// Index of the layer that would clip `layer` if it were marked clipped:
-// the mask layer immediately above it in the stack. -1 when none.
-export function maskAbove(layers: Layer[], index: number): number {
-  const above = layers[index + 1];
-  return above && above.mask ? index + 1 : -1;
+// True when the layer at `index` sits in the clipped run directly below a mask
+// (so it may be toggled `clipped`).
+export function canBeClipped(layers: Layer[], index: number): boolean {
+  let j = index + 1;
+  while (j < layers.length && layers[j].clipped && !layers[j].mask) j++;
+  return j < layers.length && !!layers[j].mask;
+}
+
+// The contiguous clipped run below the mask at `maskIndex`: children are
+// layers[start .. maskIndex-1].
+export function maskGroupStart(layers: Layer[], maskIndex: number): number {
+  let start = maskIndex;
+  while (start - 1 >= 0 && layers[start - 1].clipped && !layers[start - 1].mask) {
+    start--;
+  }
+  return start;
 }

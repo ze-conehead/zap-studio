@@ -28,6 +28,11 @@ type Action =
   | { type: "SET_BACKGROUND"; patch: Partial<CardBackground>; history?: boolean }
   | { type: "ADD_LAYER"; layer: Layer }
   | { type: "PATCH_LAYER"; id: string; patch: Partial<Layer>; history?: boolean }
+  | {
+      type: "PATCH_LAYERS";
+      patches: { id: string; patch: Partial<Layer> }[];
+      history?: boolean;
+    }
   | { type: "DELETE_LAYER"; id: string }
   | { type: "DUPLICATE_LAYER"; id: string }
   | { type: "REORDER"; id: string; dir: "up" | "down" | "top" | "bottom" }
@@ -98,6 +103,17 @@ function reducer(state: State, action: Action): State {
           j === i - 1 ? ({ ...l, clipped: true } as Layer) : l,
         );
       }
+      const p = touch(project, next);
+      return action.history === false
+        ? { ...state, project: p, dirty: true }
+        : commit(state, p);
+    }
+
+    case "PATCH_LAYERS": {
+      const map = new Map(action.patches.map((x) => [x.id, x.patch]));
+      const next = layers.map((l) =>
+        map.has(l.id) ? ({ ...l, ...map.get(l.id) } as Layer) : l,
+      );
       const p = touch(project, next);
       return action.history === false
         ? { ...state, project: p, dirty: true }
