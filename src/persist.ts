@@ -9,11 +9,16 @@ const LAST = "lastProjectId";
 
 export async function saveProject(p: Project): Promise<void> {
   await set(KEY(p.id), p);
-  localStorage.setItem(LAST, p.id);
+  if (!p.isTemplate) localStorage.setItem(LAST, p.id);
 }
 
 export async function loadProject(id: string): Promise<Project | undefined> {
   return (await get(KEY(id))) as Project | undefined;
+}
+
+export async function loadTemplateLayers(consoleId: string): Promise<Project["layers"]> {
+  const p = (await get(KEY(`tpl-${consoleId}`))) as Project | undefined;
+  return p?.layers ?? [];
 }
 
 export async function deleteProject(id: string): Promise<void> {
@@ -31,7 +36,7 @@ export async function listProjects(): Promise<ProjectMeta[]> {
   const metas: ProjectMeta[] = [];
   for (const k of ids) {
     const p = (await get(k)) as Project | undefined;
-    if (p) metas.push({ id: p.id, name: p.name, updatedAt: p.updatedAt });
+    if (p && !p.isTemplate) metas.push({ id: p.id, name: p.name, updatedAt: p.updatedAt });
   }
   return metas.sort((a, b) => b.updatedAt - a.updatedAt);
 }

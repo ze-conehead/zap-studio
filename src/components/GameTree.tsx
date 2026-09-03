@@ -3,11 +3,13 @@ import { CATALOG, gameKeyOf } from "../data/catalog";
 
 interface Props {
   activeGameKey?: string;
+  activeConsoleId?: string;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
+  onOpenConsole: (consoleId: string, consoleName: string) => void;
 }
 
-export function GameTree({ activeGameKey, onPickGame }: Props) {
-  const activeConsole = activeGameKey?.split("/")[0];
+export function GameTree({ activeGameKey, activeConsoleId, onPickGame, onOpenConsole }: Props) {
+  const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     activeConsole ? { [activeConsole]: true } : { [CATALOG[0].id]: true },
   );
@@ -20,15 +22,24 @@ export function GameTree({ activeGameKey, onPickGame }: Props) {
           const expanded = !!open[c.id];
           return (
             <li key={c.id} className="tree-console">
-              <button
-                className="tree-node console"
-                onClick={() => setOpen((o) => ({ ...o, [c.id]: !o[c.id] }))}
-              >
-                <span className="twisty">{expanded ? "▾" : "▸"}</span>
-                <span className="tree-emoji">🎮</span>
-                <span className="tree-label">{c.name}</span>
-                <span className="tree-count">{c.games.length}</span>
-              </button>
+              <div className={activeConsoleId === c.id ? "tree-row console active" : "tree-row console"}>
+                <button
+                  className="twisty-btn"
+                  title={expanded ? "Zuklappen" : "Aufklappen"}
+                  onClick={() => setOpen((o) => ({ ...o, [c.id]: !o[c.id] }))}
+                >
+                  {expanded ? "▾" : "▸"}
+                </button>
+                <button
+                  className="tree-label-btn"
+                  title={`${c.name} – gemeinsame Vorlage bearbeiten`}
+                  onClick={() => onOpenConsole(c.id, c.name)}
+                >
+                  <span className="tree-emoji">🎮</span>
+                  <span className="tree-label">{c.name}</span>
+                  <span className="tree-count">{c.games.length}</span>
+                </button>
+              </div>
               {expanded && (
                 <ul className="tree-games">
                   {c.games.map((g, i) => {
@@ -54,8 +65,9 @@ export function GameTree({ activeGameKey, onPickGame }: Props) {
         })}
       </ul>
       <p className="hint">
-        Ein Spiel auswählen legt ein Sticker-Design dafür an (oder öffnet das
-        vorhandene).
+        <strong>Konsolenname</strong> anklicken: gemeinsame Vorlage (Bilder/Texte
+        auf allen Spiel-Karten). <strong>Spiel</strong> anklicken: dessen
+        Sticker-Design.
       </p>
     </nav>
   );

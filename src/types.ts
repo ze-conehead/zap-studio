@@ -51,6 +51,8 @@ export interface Project {
   updatedAt: number;
   gameKey?: string; // catalogue link: "console-id/game-id"
   consoleName?: string;
+  isTemplate?: boolean; // true => shared layer set for a whole console
+  consoleId?: string;
 }
 
 export interface ProjectMeta {

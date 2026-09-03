@@ -11,6 +11,18 @@ export function Inspector() {
     selected && dispatch({ type: "PATCH_LAYER", id: selected.id, patch: p, history });
 
   if (!selected) {
+    if (state.project.isTemplate) {
+      return (
+        <section className="panel">
+          <h2>Konsolen-Vorlage</h2>
+          <p className="hint">
+            Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
+            Spiel-Karten von {state.project.consoleName}. Kein eigener
+            Kartenhintergrund – füge Bilder, Logos oder Texte hinzu.
+          </p>
+        </section>
+      );
+    }
     return (
       <section className="panel">
         <h2>Karte</h2>

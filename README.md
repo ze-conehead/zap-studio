@@ -10,6 +10,11 @@ kein Login.
   Spielen ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
+- **Konsolen-Vorlage**: den Konsolennamen im Baum anklicken öffnet eine
+  gemeinsame Ebenen-Vorlage. Deren Bilder/Logos/Texte werden automatisch
+  auf **allen** Spiel-Karten dieser Konsole angezeigt (schreibgeschützt,
+  über dem Karteninhalt) und landen im PNG-Export. Gespeichert als
+  Projekt `tpl-<konsole>`, wird nicht in der Projektliste geführt.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.

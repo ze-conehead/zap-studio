@@ -12,7 +12,13 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
-export function EditorCanvas({ handleRef }: { handleRef: React.MutableRefObject<CanvasHandle | null> }) {
+export function EditorCanvas({
+  handleRef,
+  overlay = [],
+}: {
+  handleRef: React.MutableRefObject<CanvasHandle | null>;
+  overlay?: TLayer[];
+}) {
   const { state, dispatch } = useStore();
   const { project, selectedId, showBleed, showSafe } = state;
 
@@ -119,6 +125,14 @@ export function EditorCanvas({ handleRef }: { handleRef: React.MutableRefObject<
             )}
           </Layer>
 
+          {overlay.length > 0 && (
+            <Layer listening={false}>
+              {overlay.map((layer) =>
+                layer.visible ? <ReadOnlyLayer key={layer.id} layer={layer} /> : null,
+              )}
+            </Layer>
+          )}
+
           <Layer listening={false}>
             <Guides showBleed={showBleed} showSafe={showSafe} />
           </Layer>
@@ -198,6 +212,24 @@ function LayerNode({
   ) : (
     <Group {...common}>
       <TextInner layer={layer} />
+    </Group>
+  );
+}
+
+// Console-template layer shown on a game card: visible, never interactive.
+function ReadOnlyLayer({ layer }: { layer: TLayer }) {
+  const common = {
+    x: layer.x,
+    y: layer.y,
+    rotation: layer.rotation,
+    scaleX: layer.scaleX,
+    scaleY: layer.scaleY,
+    opacity: layer.opacity,
+    listening: false,
+  };
+  return (
+    <Group {...common}>
+      {layer.type === "image" ? <ImageInner layer={layer} /> : <TextInner layer={layer} />}
     </Group>
   );
 }

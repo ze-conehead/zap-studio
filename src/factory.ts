@@ -19,6 +19,25 @@ export function newProject(name = "Neues Sticker-Design"): Project {
   };
 }
 
+export const templateId = (consoleId: string) => `tpl-${consoleId}`;
+
+// A console template is an ordinary project whose layers are overlaid on every
+// game sticker of that console. It has no own card background.
+export function newConsoleTemplate(consoleId: string, consoleName: string): Project {
+  const now = Date.now();
+  return {
+    id: templateId(consoleId),
+    name: `${consoleName} – Vorlage`,
+    backgroundColor: "transparent",
+    layers: [],
+    createdAt: now,
+    updatedAt: now,
+    isTemplate: true,
+    consoleId,
+    consoleName,
+  };
+}
+
 const base = (name: string) => ({
   id: uid(),
   name,

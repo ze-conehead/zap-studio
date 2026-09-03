@@ -76,6 +76,7 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   return (
     <header className="toolbar">
       <div className="tb-group">
+        {project.isTemplate && <span className="mode-pill">Vorlage</span>}
         <input
           className="project-name"
           value={project.name}

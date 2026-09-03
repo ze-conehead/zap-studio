@@ -6,16 +6,33 @@ import { Inspector } from "./components/Inspector";
 import { LayerList } from "./components/LayerList";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { Toolbar } from "./components/Toolbar";
-import { makeTextLayer, newProject } from "./factory";
+import { makeTextLayer, newConsoleTemplate, newProject, templateId } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
-import { lastProjectId, loadProject, saveProject } from "./persist";
+import { lastProjectId, loadProject, loadTemplateLayers, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
-import type { Project } from "./types";
+import type { Layer, Project } from "./types";
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
+  const [overlay, setOverlay] = useState<Layer[]>([]);
   const [showProjects, setShowProjects] = useState(false);
+
+  // Load the console template layers to overlay on the current game sticker.
+  useEffect(() => {
+    let alive = true;
+    const consoleId = project && !project.isTemplate ? project.gameKey?.split("/")[0] : undefined;
+    if (!consoleId) {
+      setOverlay([]);
+      return;
+    }
+    loadTemplateLayers(consoleId).then((ls) => {
+      if (alive) setOverlay(ls);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [project]);
 
   // Boot: restore last project or start a fresh one.
   useEffect(() => {
@@ -83,13 +100,22 @@ export default function App() {
     await swap(p);
   };
 
+  const openConsoleTemplate = async (consoleId: string, consoleName: string) => {
+    if (project?.id === templateId(consoleId)) return;
+    const existing = await loadProject(templateId(consoleId));
+    setProject(existing ?? newConsoleTemplate(consoleId, consoleName));
+  };
+
   if (!project) return <div className="boot">lädt …</div>;
 
   return (
     <StoreProvider key={project.id} initial={project}>
       <Shell
+        overlay={overlay}
         activeGameKey={project.gameKey}
+        activeConsoleId={project.isTemplate ? project.consoleId : undefined}
         onPickGame={pickGame}
+        onOpenConsole={openConsoleTemplate}
         onNewProject={() => swap(newProject())}
         onOpenProjects={() => setShowProjects(true)}
         onImportJson={importJson}
@@ -106,14 +132,20 @@ export default function App() {
 }
 
 function Shell({
+  overlay,
   activeGameKey,
+  activeConsoleId,
   onPickGame,
+  onOpenConsole,
   onNewProject,
   onOpenProjects,
   onImportJson,
 }: {
+  overlay: Layer[];
   activeGameKey?: string;
+  activeConsoleId?: string;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
+  onOpenConsole: (consoleId: string, consoleName: string) => void;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
@@ -128,8 +160,13 @@ function Shell({
         onImportJson={onImportJson}
       />
       <div className="workspace">
-        <GameTree activeGameKey={activeGameKey} onPickGame={onPickGame} />
-        <EditorCanvas handleRef={canvas} />
+        <GameTree
+          activeGameKey={activeGameKey}
+          activeConsoleId={activeConsoleId}
+          onPickGame={onPickGame}
+          onOpenConsole={onOpenConsole}
+        />
+        <EditorCanvas handleRef={canvas} overlay={overlay} />
         <aside className="sidebar">
           <LayerList />
           <Inspector />
