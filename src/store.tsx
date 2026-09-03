@@ -36,7 +36,7 @@ type Action =
     }
   | { type: "DELETE_LAYER"; id: string }
   | { type: "DUPLICATE_LAYER"; id: string }
-  | { type: "REORDER"; id: string; dir: "up" | "down" | "top" | "bottom" }
+  | { type: "SET_LAYER_ORDER"; order: string[] }
   | { type: "SELECT"; id: string | null }
   | { type: "TOGGLE"; key: "showSafe" | "showBleed" }
   | { type: "UNDO" }
@@ -151,21 +151,14 @@ function reducer(state: State, action: Action): State {
       return { ...commit(state, touch(project, next)), selectedId: copy.id };
     }
 
-    case "REORDER": {
-      const i = idx(action.id);
-      if (i < 0) return state;
-      const next = [...layers];
-      const [item] = next.splice(i, 1);
-      const to =
-        action.dir === "up"
-          ? Math.min(layers.length - 1, i + 1)
-          : action.dir === "down"
-            ? Math.max(0, i - 1)
-            : action.dir === "top"
-              ? layers.length - 1
-              : 0;
-      next.splice(to, 0, item);
-      return commit(state, touch(project, next));
+    case "SET_LAYER_ORDER": {
+      const byId = new Map(layers.map((l) => [l.id, l]));
+      const next = action.order
+        .map((id) => byId.get(id))
+        .filter((l): l is Layer => !!l);
+      if (next.length !== layers.length) return state;
+      const same = next.every((l, i) => l === layers[i]);
+      return same ? state : commit(state, touch(project, next));
     }
 
     case "SELECT":

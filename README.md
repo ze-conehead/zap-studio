@@ -54,7 +54,8 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
-  Reihenfolge ändern, duplizieren.
+  duplizieren. Reihenfolge per **Drag & Drop** in der Ebenenliste
+  (Greifpunkt links, Drop-Linie zeigt die Zielposition).
 - **Bilder**: „+ Bild" → Datei hochladen oder von einer URL einfügen
   (PNG/JPG/SVG/WebP …). URL-Bilder werden heruntergeladen und ins Projekt
   eingebettet – der Host muss Cross-Origin-Zugriff erlauben, sonst kommt ein

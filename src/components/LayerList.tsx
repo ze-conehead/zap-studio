@@ -1,11 +1,10 @@
 import {
-  ArrowDown,
-  ArrowUp,
   Copy,
   CornerDownRight,
   Crop,
   Eye,
   EyeOff,
+  GripVertical,
   Image as ImageIcon,
   Lock,
   LockOpen,
@@ -13,6 +12,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isImage, isShape } from "../factory";
@@ -21,6 +21,26 @@ import { useStore } from "../store";
 export function LayerList() {
   const { state, dispatch } = useStore();
   const layers = [...state.project.layers].reverse(); // top of stack first
+
+  const dragId = useRef<string | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [over, setOver] = useState<{ id: string; after: boolean } | null>(null);
+
+  const reset = () => {
+    dragId.current = null;
+    setDragging(null);
+    setOver(null);
+  };
+
+  const applyDrop = (srcId: string, tgtId: string, after: boolean) => {
+    if (srcId === tgtId) return;
+    const ids = layers.map((l) => l.id).filter((id) => id !== srcId);
+    let ti = ids.indexOf(tgtId);
+    if (ti < 0) return;
+    if (after) ti += 1;
+    ids.splice(ti, 0, srcId);
+    dispatch({ type: "SET_LAYER_ORDER", order: [...ids].reverse() });
+  };
 
   return (
     <section className="border-b p-3">
@@ -41,12 +61,39 @@ export function LayerList() {
           return (
             <li
               key={l.id}
+              draggable
+              onDragStart={(e) => {
+                dragId.current = l.id;
+                setDragging(l.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={reset}
+              onDragOver={(e) => {
+                if (!dragId.current || dragId.current === l.id) return;
+                e.preventDefault();
+                const r = e.currentTarget.getBoundingClientRect();
+                setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const src = dragId.current;
+                const r = e.currentTarget.getBoundingClientRect();
+                if (src) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+                reset();
+              }}
               className={cn(
-                "flex items-center gap-0.5 rounded-md border bg-card px-1.5 py-1 text-sm",
+                "flex items-center gap-0.5 rounded-md border bg-card px-1 py-1 text-sm",
                 active ? "border-primary bg-accent" : "hover:bg-accent/50",
                 l.clipped && "ml-3 border-l-2 border-l-primary/50",
+                dragging === l.id && "opacity-40",
+                over?.id === l.id &&
+                  (over.after
+                    ? "border-b-2 border-b-primary"
+                    : "border-t-2 border-t-primary"),
               )}
             >
+              <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
+
               <button
                 className="flex min-w-0 flex-1 items-center gap-1.5"
                 onClick={() => dispatch({ type: "SELECT", id: l.id })}
@@ -78,18 +125,6 @@ export function LayerList() {
                 {l.locked ? <Lock /> : <LockOpen />}
               </LayerIcon>
               <LayerIcon
-                title="Nach vorne"
-                onClick={() => dispatch({ type: "REORDER", id: l.id, dir: "up" })}
-              >
-                <ArrowUp />
-              </LayerIcon>
-              <LayerIcon
-                title="Nach hinten"
-                onClick={() => dispatch({ type: "REORDER", id: l.id, dir: "down" })}
-              >
-                <ArrowDown />
-              </LayerIcon>
-              <LayerIcon
                 title="Duplizieren"
                 onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
               >
@@ -106,6 +141,12 @@ export function LayerList() {
           );
         })}
       </ul>
+
+      {layers.length > 1 && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Ziehen zum Umsortieren.
+        </p>
+      )}
     </section>
   );
 }
