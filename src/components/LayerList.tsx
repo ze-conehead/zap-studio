@@ -2,6 +2,8 @@ import {
   ArrowDown,
   ArrowUp,
   Copy,
+  CornerDownRight,
+  Crop,
   Eye,
   EyeOff,
   Image as ImageIcon,
@@ -48,10 +50,14 @@ export function LayerList() {
                 className="flex min-w-0 flex-1 items-center gap-1.5"
                 onClick={() => dispatch({ type: "SELECT", id: l.id })}
               >
+                {l.clipped && (
+                  <CornerDownRight className="size-3.5 shrink-0 text-primary" />
+                )}
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate" title={l.name}>
                   {l.name}
                 </span>
+                {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
               </button>
 
               <LayerIcon

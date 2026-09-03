@@ -22,6 +22,8 @@ export interface BaseLayer {
   opacity: number; // 0..1
   visible: boolean;
   locked: boolean;
+  mask?: boolean; // this layer's alpha clips the clipped layers directly below it
+  clipped?: boolean; // this layer is clipped by the mask layer directly above it
 }
 
 export interface ImageLayer extends BaseLayer {

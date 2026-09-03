@@ -3,6 +3,8 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  CornerDownRight,
+  Crop,
   Italic,
   MoveHorizontal,
   MoveVertical,
@@ -127,10 +129,53 @@ export function Inspector() {
         </Button>
       </div>
 
+      <MaskControls patch={patch} />
+
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
       {isShape(selected) && <ShapeProps layer={selected} patch={patch} />}
     </Panel>
+  );
+}
+
+function MaskControls({ patch }: { patch: Patch }) {
+  const { state, selected } = useStore();
+  if (!selected) return null;
+  const layers = state.project.layers;
+  const idx = layers.findIndex((l) => l.id === selected.id);
+  const above = layers[idx + 1];
+  const canClip = !!above?.mask || !!selected.clipped;
+
+  return (
+    <div className="flex flex-col gap-1.5 border-t pt-3">
+      <Label>Alpha-Maske</Label>
+      <div className="flex gap-2">
+        <Button
+          variant={selected.mask ? "default" : "outline"}
+          size="sm"
+          className="flex-1"
+          onClick={() => patch({ mask: !selected.mask, clipped: false })}
+        >
+          <Crop /> Als Maske
+        </Button>
+        <Button
+          variant={selected.clipped ? "default" : "outline"}
+          size="sm"
+          className="flex-1"
+          disabled={!canClip}
+          onClick={() => patch({ clipped: !selected.clipped, mask: false })}
+        >
+          <CornerDownRight /> In Maske
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {selected.mask
+          ? "Diese Ebene ist die Maske: die Ebene(n) direkt darunter erscheinen nur dort, wo diese Ebene deckend ist."
+          : selected.clipped
+            ? "Diese Ebene wird von der Maske direkt darüber beschnitten."
+            : "»Als Maske« macht diese Ebene zum Alpha-Kanal für die Ebene darunter. »In Maske« beschneidet sie an der Maske darüber."}
+      </p>
+    </div>
   );
 }
 

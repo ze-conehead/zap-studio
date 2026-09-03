@@ -89,9 +89,15 @@ function reducer(state: State, action: Action): State {
     case "PATCH_LAYER": {
       const i = idx(action.id);
       if (i < 0) return state;
-      const next = layers.map((l, j) =>
+      let next = layers.map((l, j) =>
         j === i ? ({ ...l, ...action.patch } as Layer) : l,
       );
+      // Turning a layer into a mask auto-clips the layer directly below it.
+      if (action.patch.mask === true && i > 0 && !next[i - 1].mask) {
+        next = next.map((l, j) =>
+          j === i - 1 ? ({ ...l, clipped: true } as Layer) : l,
+        );
+      }
       const p = touch(project, next);
       return action.history === false
         ? { ...state, project: p, dirty: true }

@@ -33,6 +33,13 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
   optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck
   einen Ecken-Radius.
+- **Alpha-Maske**: jede Ebene (Form, Bild oder Text) kann im Inspector als
+  **Maske** markiert werden – ihr Alpha-Kanal beschneidet die Ebene(n)
+  direkt darunter (`»In Maske«`). So legt man z. B. einen Kreis obenauf und
+  lädt darunter ein Bild „in den Kreis". Die verdeckte Ebene bleibt
+  frei verschiebbar; die Maske selbst wählt man über die Ebenenliste aus.
+  Umgesetzt über `globalCompositeOperation: "destination-in"` je Masken-
+  gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
 - **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
   Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
   Reihenfolge ändern, duplizieren.
@@ -74,6 +81,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | --- | --- |
 | `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
 | `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
+| `src/masking.ts` | Ebenenstapel in Plain-/Masken-Segmente aufteilen |
 | `src/data/catalog.ts` | Beispiel-Konsolen und ihre Top-10-Spiele |
 | `src/components/GameTree.tsx` | Baumansicht links |
 | `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |

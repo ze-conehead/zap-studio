@@ -18,6 +18,7 @@ import {
 } from "../background";
 import { CANVAS, CORNER_RADIUS_PX, SAFE_RECT, TRIM_RECT } from "../card";
 import { useImage } from "../hooks/useImage";
+import { segmentLayers } from "../masking";
 import { useStore } from "../store";
 import type {
   ImageLayer as TImageLayer,
@@ -121,13 +122,19 @@ export function EditorCanvas({
             top: cropped ? -TRIM_RECT.y * scale : 0,
           }}
         >
-          <Layer>
-            {!project.isTemplate && <CardBackgroundNodes project={project} />}
-            {project.layers.map((layer) =>
+          {!project.isTemplate && (
+            <Layer listening={false}>
+              <CardBackgroundNodes project={project} />
+            </Layer>
+          )}
+
+          {segmentLayers(project.layers).map((seg, i) => {
+            const render = (layer: TLayer, asMask = false) =>
               layer.visible ? (
                 <LayerNode
                   key={layer.id}
                   layer={layer}
+                  asMask={asMask}
                   selected={layer.id === selectedId}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
@@ -138,9 +145,20 @@ export function EditorCanvas({
                     dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history })
                   }
                 />
-              ) : null,
-            )}
-          </Layer>
+              ) : null;
+
+            return (
+              <Layer key={`seg-${i}`}>
+                {seg.kind === "plain"
+                  ? seg.layers.map((l) => render(l))
+                  : [
+                      ...seg.clipped.map((l) => render(l)),
+                      // a mask with nothing under it renders normally so it stays visible
+                      render(seg.mask, seg.clipped.length > 0),
+                    ]}
+              </Layer>
+            );
+          })}
 
           {overlay.length > 0 && (
             <Layer listening={false}>
@@ -175,12 +193,15 @@ export function EditorCanvas({
 
 function LayerNode({
   layer,
+  asMask = false,
+  selected = false,
   register,
   onSelect,
   onChange,
 }: {
   layer: TLayer;
-  selected: boolean;
+  asMask?: boolean;
+  selected?: boolean;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
@@ -200,7 +221,11 @@ function LayerNode({
     scaleX: layer.scaleX,
     scaleY: layer.scaleY,
     opacity: layer.opacity,
-    draggable: !layer.locked,
+    // A rendered mask is a stencil: while unselected it must not intercept
+    // canvas clicks (so clicking the visible area selects the clipped
+    // content). Once selected from the layer list it becomes draggable again.
+    listening: !asMask || selected,
+    draggable: !layer.locked && (!asMask || selected),
     onMouseDown: onSelect,
     onTap: onSelect,
     onDragMove: (e: Konva.KonvaEventObject<DragEvent>) =>
@@ -224,18 +249,23 @@ function LayerNode({
 
   return (
     <Group {...common}>
-      <LayerInner layer={layer} />
+      <LayerInner layer={layer} asMask={asMask} />
     </Group>
   );
 }
 
-function LayerInner({ layer }: { layer: TLayer }) {
-  if (layer.type === "image") return <ImageInner layer={layer} />;
-  if (layer.type === "shape") return <ShapeInner layer={layer} />;
-  return <TextInner layer={layer} />;
+function LayerInner({ layer, asMask = false }: { layer: TLayer; asMask?: boolean }) {
+  // As a mask, the node paints only its alpha into its Konva layer and keeps
+  // (destination-in) the clipped layers drawn before it.
+  const gco = asMask ? ("destination-in" as const) : undefined;
+  if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
+  if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
+  return <TextInner layer={layer} gco={gco} />;
 }
 
-function ShapeInner({ layer }: { layer: TShapeLayer }) {
+type Gco = "destination-in" | undefined;
+
+function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   const { width: w, height: h, fill } = layer;
   const ellipse = layer.shape === "circle";
   const radius = layer.shape === "capsule" ? Math.min(w, h) / 2 : layer.cornerRadius;
@@ -267,6 +297,23 @@ function ShapeInner({ layer }: { layer: TShapeLayer }) {
           globalCompositeOperation: "overlay" as const,
         }
       : null;
+
+  // As a mask only the alpha matters: paint opaque, skip stroke + noise.
+  if (gco) {
+    return ellipse ? (
+      <Ellipse radiusX={w / 2} radiusY={h / 2} fill="#000" globalCompositeOperation={gco} />
+    ) : (
+      <Rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        cornerRadius={radius}
+        fill="#000"
+        globalCompositeOperation={gco}
+      />
+    );
+  }
 
   if (ellipse) {
     return (
@@ -336,7 +383,7 @@ function ReadOnlyLayer({ layer }: { layer: TLayer }) {
   );
 }
 
-function ImageInner({ layer }: { layer: TImageLayer }) {
+function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
   const img = useImage(layer.src);
   return (
     <KImage
@@ -346,12 +393,13 @@ function ImageInner({ layer }: { layer: TImageLayer }) {
       offsetX={layer.width / 2}
       offsetY={layer.height / 2}
       cornerRadius={layer.cornerRadius}
+      globalCompositeOperation={gco}
       listening
     />
   );
 }
 
-function TextInner({ layer }: { layer: TTextLayer }) {
+function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
   const ref = useRef<Konva.Text>(null);
   const [h, setH] = useState(0);
 
@@ -380,10 +428,11 @@ function TextInner({ layer }: { layer: TTextLayer }) {
       fontSize={layer.fontSize}
       lineHeight={layer.lineHeight}
       letterSpacing={layer.letterSpacing}
-      fill={layer.fill}
-      stroke={layer.strokeWidth > 0 ? layer.stroke : undefined}
-      strokeWidth={layer.strokeWidth}
+      fill={gco ? "#000" : layer.fill}
+      stroke={!gco && layer.strokeWidth > 0 ? layer.stroke : undefined}
+      strokeWidth={gco ? 0 : layer.strokeWidth}
       fillAfterStrokeEnabled
+      globalCompositeOperation={gco}
       offsetX={layer.width / 2}
       offsetY={h / 2}
       listening
