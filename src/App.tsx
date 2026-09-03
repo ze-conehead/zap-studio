@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { TRIM_RECT } from "./card";
+import { CANVAS, TRIM_RECT } from "./card";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
 import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
@@ -15,6 +15,7 @@ import {
   templateId,
 } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
+import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
@@ -26,10 +27,38 @@ interface Templates {
   globalBg?: CardBackground;
 }
 
+export interface GuideApi {
+  state: GuidesState;
+  toggle: () => void;
+  add: (axis: "x" | "y") => void;
+  update: (id: string, pos: number) => void;
+  remove: (id: string) => void;
+}
+
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
   const [templates, setTemplates] = useState<Templates>({ overlay: [] });
   const [showProjects, setShowProjects] = useState(false);
+
+  // Global guide lines: same set on every card, on/off remembered.
+  const [guides, setGuides] = useState<GuidesState>(() => loadGuides());
+  useEffect(() => {
+    saveGuides(guides);
+  }, [guides]);
+
+  const toggleGuides = () => setGuides((g) => ({ ...g, on: !g.on }));
+  const addGuide = (axis: "x" | "y") =>
+    setGuides((g) => ({
+      on: true,
+      items: [
+        ...g.items,
+        { id: newGuideId(), axis, pos: axis === "x" ? CANVAS.w / 2 : CANVAS.h / 2 },
+      ],
+    }));
+  const updateGuide = (id: string, pos: number) =>
+    setGuides((g) => ({ ...g, items: g.items.map((x) => (x.id === id ? { ...x, pos } : x)) }));
+  const removeGuide = (id: string) =>
+    setGuides((g) => ({ ...g, items: g.items.filter((x) => x.id !== id) }));
 
   // Load the console + global template projects for the current view and
   // derive the read-only overlay layers and their backgrounds:
@@ -152,12 +181,21 @@ export default function App() {
     );
   }
 
+  const guideApi: GuideApi = {
+    state: guides,
+    toggle: toggleGuides,
+    add: addGuide,
+    update: updateGuide,
+    remove: removeGuide,
+  };
+
   return (
     <StoreProvider key={project.id} initial={project}>
       <Shell
         overlay={templates.overlay}
         consoleBg={templates.consoleBg}
         globalBg={templates.globalBg}
+        guides={guideApi}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
         activeGlobal={!!project.isGlobalTemplate}
@@ -182,6 +220,7 @@ function Shell({
   overlay,
   consoleBg,
   globalBg,
+  guides,
   activeGameKey,
   activeConsoleId,
   activeGlobal,
@@ -195,6 +234,7 @@ function Shell({
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  guides: GuideApi;
   activeGameKey?: string;
   activeConsoleId?: string;
   activeGlobal: boolean;
@@ -210,6 +250,7 @@ function Shell({
     <div className="flex h-full flex-col">
       <Toolbar
         canvas={canvas}
+        guides={guides}
         onNewProject={onNewProject}
         onOpenProjects={onOpenProjects}
         onImportJson={onImportJson}
@@ -228,10 +269,11 @@ function Shell({
           overlay={overlay}
           consoleBg={consoleBg}
           globalBg={globalBg}
+          guides={guides}
         />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <LayerList />
-          <Inspector consoleBg={consoleBg} globalBg={globalBg} />
+          <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
         </aside>
       </div>
     </div>

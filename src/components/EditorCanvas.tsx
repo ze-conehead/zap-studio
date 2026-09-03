@@ -5,11 +5,14 @@ import {
   Group,
   Image as KImage,
   Layer,
+  Line,
   Rect,
   Stage,
   Text,
   Transformer,
 } from "react-konva";
+import type { GuideApi } from "../App";
+import type { Guide } from "../guides";
 import {
   gradientPoints,
   gradientPointsBox,
@@ -55,11 +58,13 @@ export function EditorCanvas({
   overlay = [],
   consoleBg,
   globalBg,
+  guides,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
   const { project, selectedId, showBleed, showSafe } = state;
@@ -201,9 +206,22 @@ export function EditorCanvas({
             </Layer>
           )}
 
-          <Layer listening={false}>
+          <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} showSafe={showSafe} />
           </Layer>
+
+          {guides.state.on && guides.state.items.length > 0 && (
+            <Layer name="guides">
+              {guides.state.items.map((g) => (
+                <GuideLine
+                  key={g.id}
+                  guide={g}
+                  onMove={(pos) => guides.update(g.id, pos)}
+                  onRemove={() => guides.remove(g.id)}
+                />
+              ))}
+            </Layer>
+          )}
 
           <Layer>
             <Transformer
@@ -613,6 +631,56 @@ function RoundedCardOutline() {
       stroke="#38bdf8"
       strokeWidth={1}
       opacity={0.35}
+    />
+  );
+}
+
+function GuideLine({
+  guide,
+  onMove,
+  onRemove,
+}: {
+  guide: Guide;
+  onMove: (pos: number) => void;
+  onRemove: () => void;
+}) {
+  const vertical = guide.axis === "x";
+  const ref = useRef<Konva.Line>(null);
+  const limit = vertical ? CANVAS.w : CANVAS.h;
+
+  const finish = (commit: boolean) => {
+    const n = ref.current;
+    if (!n) return;
+    if (vertical) n.y(0);
+    else n.x(0);
+    const pos = vertical ? n.x() : n.y();
+    if (commit && (pos < -6 || pos > limit + 6)) {
+      onRemove();
+      return;
+    }
+    onMove(Math.max(0, Math.min(limit, pos)));
+  };
+
+  const setCursor = (e: Konva.KonvaEventObject<MouseEvent>, c: string) => {
+    const s = e.target.getStage();
+    if (s) s.container().style.cursor = c;
+  };
+
+  return (
+    <Line
+      ref={ref}
+      x={vertical ? guide.pos : 0}
+      y={vertical ? 0 : guide.pos}
+      points={vertical ? [0, 0, 0, CANVAS.h] : [0, 0, CANVAS.w, 0]}
+      stroke="#22d3ee"
+      strokeWidth={1}
+      dash={[5, 4]}
+      hitStrokeWidth={14}
+      draggable
+      onDragMove={() => finish(false)}
+      onDragEnd={() => finish(true)}
+      onMouseEnter={(e) => setCursor(e, vertical ? "ew-resize" : "ns-resize")}
+      onMouseLeave={(e) => setCursor(e, "default")}
     />
   );
 }

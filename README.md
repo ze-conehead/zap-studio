@@ -68,6 +68,12 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 - **Hilfslinien**: Beschnittkante (3 mm), Endformat, Sicherheitszone (3 mm).
   Standardmäßig **aus** – die Vorschau zeigt die reine Karte, auf das
   Endformat mit abgerundeten Ecken zugeschnitten.
+- **Eigene Hilfslinien**: vertikale/horizontale Linien (Toolbar-Lineal-Menü
+  oder Inspector), die auf **allen** Karten erscheinen. Mit einem Klick
+  („Hilfslinien"-Checkbox) an/aus. Auf der Karte ziehen zum Positionieren,
+  über den Rand ziehen oder Papierkorb im Inspector zum Löschen, mm-genaue
+  Eingabe im Inspector. Global in `localStorage` gespeichert, nicht im
+  PNG-Export.
 - **Export**:
   - PNG Endformat (54 × 85,6 mm, 300 DPI ≈ 638 × 1011 px)
   - PNG mit 3 mm Beschnitt

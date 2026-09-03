@@ -26,11 +26,19 @@ interface ExportOpts {
 // Renders the Konva stage at full 300 DPI and returns a PNG data URL.
 export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promise<string> {
   await ensureFontsLoaded();
+
+  // Guides (bleed/safe outlines + user guide lines) never belong in the file.
+  const guideLayers = stage.find(".guides");
+  const wasVisible = guideLayers.map((l) => l.visible());
+  guideLayers.forEach((l) => l.visible(false));
   stage.draw();
 
   const pixelRatio = CANVAS.w / stageWidth;
   const full = stage.toCanvas({ pixelRatio }) as HTMLCanvasElement;
   // full is CANVAS.w x CANVAS.h (trim + bleed on every side)
+
+  guideLayers.forEach((l, i) => l.visible(wasVisible[i]));
+  stage.draw();
 
   if (mode === "bleed") return full.toDataURL("image/png");
 

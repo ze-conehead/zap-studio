@@ -8,6 +8,7 @@ import {
   Italic,
   MoveHorizontal,
   MoveVertical,
+  Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { GuideApi } from "../App";
 import { resolveBackground } from "../background";
-import { CANVAS } from "../card";
+import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
 import { isImage, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
 import { canBeClipped, maskGroupStart } from "../masking";
@@ -44,9 +46,10 @@ type Patch = (p: Partial<Layer>, history?: boolean) => void;
 interface InspectorProps {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  guides: GuideApi;
 }
 
-export function Inspector({ consoleBg, globalBg }: InspectorProps) {
+export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   const { state, selected, dispatch } = useStore();
 
   const patch: Patch = (p, history = true) =>
@@ -56,31 +59,37 @@ export function Inspector({ consoleBg, globalBg }: InspectorProps) {
     if (state.project.isTemplate) {
       const global = state.project.isGlobalTemplate;
       return (
-        <Panel title={global ? "Globale Vorlage" : "Konsolen-Vorlage"}>
-          <p className="text-xs text-muted-foreground">
-            {global ? (
-              <>
-                Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-                Karten – über allen Konsolen und über den Konsolen-Vorlagen.
-              </>
-            ) : (
-              <>
-                Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-                Spiel-Karten von {state.project.consoleName}.
-              </>
-            )}
-          </p>
-          <TemplateBackgroundControls />
-        </Panel>
+        <>
+          <Panel title={global ? "Globale Vorlage" : "Konsolen-Vorlage"}>
+            <p className="text-xs text-muted-foreground">
+              {global ? (
+                <>
+                  Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
+                  Karten – über allen Konsolen und über den Konsolen-Vorlagen.
+                </>
+              ) : (
+                <>
+                  Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
+                  Spiel-Karten von {state.project.consoleName}.
+                </>
+              )}
+            </p>
+            <TemplateBackgroundControls />
+          </Panel>
+          <GuidesPanel guides={guides} />
+        </>
       );
     }
     return (
-      <Panel title="Kartenhintergrund">
-        <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
-        <p className="text-xs text-muted-foreground">
-          Wähle eine Ebene aus, um sie zu bearbeiten.
-        </p>
-      </Panel>
+      <>
+        <Panel title="Kartenhintergrund">
+          <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
+          <p className="text-xs text-muted-foreground">
+            Wähle eine Ebene aus, um sie zu bearbeiten.
+          </p>
+        </Panel>
+        <GuidesPanel guides={guides} />
+      </>
     );
   }
 
@@ -263,8 +272,79 @@ function BackgroundControls() {
   );
 }
 
+// Global guide lines — the same set on every card.
+function GuidesPanel({ guides }: { guides: GuideApi }) {
+  const { items, on } = guides.state;
+  return (
+    <Panel title="Hilfslinien">
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("x")}>
+          + Vertikal
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("y")}>
+          + Horizontal
+        </Button>
+      </div>
+
+      {items.length > 0 && (
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
+          Hilfslinien anzeigen
+        </label>
+      )}
+
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Erscheinen auf allen Karten. Auf der Karte ziehen zum Positionieren,
+          über den Rand hinaus ziehen zum Löschen.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {items.map((g) => (
+            <li key={g.id} className="flex items-center gap-2">
+              <span className="w-14 shrink-0 text-xs text-muted-foreground">
+                {g.axis === "x" ? "Vertikal" : "Horiz."}
+              </span>
+              <Input
+                type="number"
+                className="h-7"
+                value={round(pxToMm(g.pos, g.axis))}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (Number.isFinite(v)) guides.update(g.id, mmToPxGuide(v, g.axis));
+                }}
+              />
+              <span className="text-xs text-muted-foreground">mm</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground hover:text-destructive"
+                title="Löschen"
+                onClick={() => guides.remove(g.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+const pxToMm = (pos: number, axis: "x" | "y") =>
+  (pos - (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y)) / PX_PER_MM;
+const mmToPxGuide = (mm: number, axis: "x" | "y") =>
+  mm * PX_PER_MM + (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y);
+
 // Card: pick whose background paints, then edit the card's own background.
-function BackgroundSourceControl({ consoleBg, globalBg }: InspectorProps) {
+function BackgroundSourceControl({
+  consoleBg,
+  globalBg,
+}: {
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
+}) {
   const { state, dispatch } = useStore();
   const src = state.project.backgroundSource ?? "card";
   const options: { value: BackgroundSource; label: string; disabled?: boolean }[] = [

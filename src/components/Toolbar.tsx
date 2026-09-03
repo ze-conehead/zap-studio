@@ -5,8 +5,11 @@ import {
   FilePlus2,
   FolderOpen,
   ImagePlus,
+  MoveHorizontal,
+  MoveVertical,
   Pill,
   Redo2,
+  Ruler,
   Shapes,
   Square,
   Type,
@@ -36,16 +39,18 @@ import type { ShapeKind } from "../types";
 import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
+import type { GuideApi } from "../App";
 import type { CanvasHandle } from "./EditorCanvas";
 
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
+  guides: GuideApi;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
 }
 
-export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: Props) {
+export function Toolbar({ canvas, guides, onNewProject, onOpenProjects, onImportJson }: Props) {
   const { state, dispatch } = useStore();
   const { project, past, future, showBleed, showSafe } = state;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -274,6 +279,25 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
           />
           Sicherheitszone
         </label>
+        <label className="flex items-center gap-1.5">
+          <Checkbox checked={guides.state.on} onCheckedChange={() => guides.toggle()} />
+          Hilfslinien
+        </label>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" title="Hilfslinie hinzufügen">
+              <Ruler />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => guides.add("x")}>
+              <MoveVertical /> Vertikale Hilfslinie
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => guides.add("y")}>
+              <MoveHorizontal /> Horizontale Hilfslinie
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
