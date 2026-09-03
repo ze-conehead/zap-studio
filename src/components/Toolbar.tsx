@@ -1,4 +1,31 @@
+import {
+  ChevronDown,
+  Download,
+  FilePlus2,
+  FolderOpen,
+  ImagePlus,
+  Redo2,
+  Shapes,
+  Type,
+  Undo2,
+} from "lucide-react";
 import { useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
 import { EXPORT_LABELS, downloadDataUrl, exportPng, type ExportMode } from "../export";
 import { makeImageLayer, makeTextLayer } from "../factory";
@@ -19,11 +46,9 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   const { project, past, future, showBleed, showSafe } = state;
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
-  const [logoOpen, setLogoOpen] = useState(false);
   const [imgOpen, setImgOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
   const [imgUrl, setImgUrl] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
 
   const addImageFromFile = async (file: File) => {
     try {
@@ -46,10 +71,7 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
     try {
       setBusy("Bild wird geladen …");
       const img = await urlToLayerSource(url);
-      dispatch({
-        type: "ADD_LAYER",
-        layer: makeImageLayer({ ...img, name: nameFromUrl(url) }),
-      });
+      dispatch({ type: "ADD_LAYER", layer: makeImageLayer({ ...img, name: nameFromUrl(url) }) });
       setImgUrl("");
       setImgOpen(false);
     } catch (e) {
@@ -60,9 +82,7 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   };
 
   const addLogo = async (svg: string, label: string) => {
-    setLogoOpen(false);
-    const uri = logoDataUri(svg);
-    const dims = await dataUriDimensions(uri);
+    const dims = await dataUriDimensions(logoDataUri(svg));
     dispatch({
       type: "ADD_LAYER",
       layer: makeImageLayer({ ...dims, name: label, fit: "contain" }),
@@ -70,7 +90,6 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   };
 
   const runExport = async (mode: ExportMode) => {
-    setExportOpen(false);
     const stage = canvas.current?.getStage();
     const w = canvas.current?.getStageWidth() ?? 0;
     if (!stage || !w) return;
@@ -95,39 +114,55 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   };
 
   return (
-    <header className="toolbar">
-      <div className="tb-group">
-        {project.isTemplate && <span className="mode-pill">Vorlage</span>}
-        <input
-          className="project-name"
+    <header className="relative z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-sidebar px-3.5 py-2">
+      <div className="flex items-center gap-2">
+        {project.isTemplate && <Badge>Vorlage</Badge>}
+        <Input
+          className="h-8 w-52 font-semibold"
           value={project.name}
           onChange={(e) => dispatch({ type: "RENAME", name: e.target.value })}
         />
-        <span className="save-dot" title={state.dirty ? "nicht gespeichert" : "gespeichert"}>
+        <span
+          className="text-xs text-muted-foreground"
+          title={state.dirty ? "nicht gespeichert" : "gespeichert"}
+        >
           {state.dirty ? "●" : "○"}
         </span>
       </div>
 
-      <div className="tb-group">
-        <button onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}>
-          + Text
-        </button>
-        <div className="menu">
-          <button onClick={() => setImgOpen((v) => !v)}>+ Bild ▾</button>
-          {imgOpen && (
-            <div className="dropdown">
-              <button
-                onClick={() => {
-                  setImgOpen(false);
-                  fileRef.current?.click();
-                }}
-              >
-                Datei hochladen …
-              </button>
-              <hr />
-              <span className="dropdown-label">Von URL einfügen</span>
-              <div className="url-row">
-                <input
+      <Separator orientation="vertical" className="h-6" />
+
+      <div className="flex items-center gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
+        >
+          <Type /> Text
+        </Button>
+
+        <Popover open={imgOpen} onOpenChange={setImgOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm">
+              <ImagePlus /> Bild <ChevronDown className="opacity-60" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 space-y-3">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setImgOpen(false);
+                fileRef.current?.click();
+              }}
+            >
+              Datei hochladen …
+            </Button>
+            <Separator />
+            <div className="space-y-1.5">
+              <Label>Von URL einfügen</Label>
+              <div className="flex gap-1.5">
+                <Input
                   type="url"
                   placeholder="https://…/bild.png"
                   value={imgUrl}
@@ -136,90 +171,111 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
                     if (e.key === "Enter") void addImageFromUrl();
                   }}
                 />
-                <button className="primary" onClick={() => void addImageFromUrl()}>
-                  OK
-                </button>
+                <Button onClick={() => void addImageFromUrl()}>OK</Button>
               </div>
             </div>
-          )}
-        </div>
-        <div className="menu">
-          <button onClick={() => setLogoOpen((v) => !v)}>+ Logo ▾</button>
-          {logoOpen && (
-            <div className="dropdown logo-grid">
-              {LOGO_PRESETS.map((l) => (
-                <button
-                  key={l.id}
-                  className="logo-choice"
-                  onClick={() => addLogo(l.svg, l.label)}
-                  title={l.label}
-                >
-                  <img src={logoDataUri(l.svg)} alt={l.label} />
-                  <span>{l.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Shapes /> Logo <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="grid w-64 grid-cols-3 gap-1">
+            {LOGO_PRESETS.map((l) => (
+              <button
+                key={l.id}
+                className="flex flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-accent"
+                title={l.label}
+                onClick={() => addLogo(l.svg, l.label)}
+              >
+                <img
+                  src={logoDataUri(l.svg)}
+                  alt={l.label}
+                  className="h-8 w-14 object-contain"
+                />
+                <span className="truncate">{l.label}</span>
+              </button>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="tb-group">
-        <button
+      <Separator orientation="vertical" className="h-6" />
+
+      <div className="flex items-center gap-1">
+        <IconBtn
+          label="Rückgängig (⌘Z)"
           disabled={!past.length}
           onClick={() => dispatch({ type: "UNDO" })}
-          title="Rückgängig (⌘Z)"
         >
-          Undo
-        </button>
-        <button
+          <Undo2 />
+        </IconBtn>
+        <IconBtn
+          label="Wiederholen (⌘⇧Z)"
           disabled={!future.length}
           onClick={() => dispatch({ type: "REDO" })}
-          title="Wiederholen (⌘⇧Z)"
         >
-          Redo
-        </button>
+          <Redo2 />
+        </IconBtn>
       </div>
 
-      <div className="tb-group">
-        <label className="chk">
-          <input
-            type="checkbox"
+      <Separator orientation="vertical" className="h-6" />
+
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <label className="flex items-center gap-1.5">
+          <Checkbox
             checked={showBleed}
-            onChange={() => dispatch({ type: "TOGGLE", key: "showBleed" })}
+            onCheckedChange={() => dispatch({ type: "TOGGLE", key: "showBleed" })}
           />
           Beschnitt
         </label>
-        <label className="chk">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-1.5">
+          <Checkbox
             checked={showSafe}
-            onChange={() => dispatch({ type: "TOGGLE", key: "showSafe" })}
+            onCheckedChange={() => dispatch({ type: "TOGGLE", key: "showSafe" })}
           />
           Sicherheitszone
         </label>
       </div>
 
-      <div className="tb-group push">
-        <div className="menu">
-          <button className="primary" onClick={() => setExportOpen((v) => !v)}>
-            Export ▾
-          </button>
-          {exportOpen && (
-            <div className="dropdown">
-              {(Object.keys(EXPORT_LABELS) as ExportMode[]).map((m) => (
-                <button key={m} onClick={() => runExport(m)}>
-                  {EXPORT_LABELS[m]}
-                </button>
-              ))}
-              <hr />
-              <button onClick={saveJson}>Projekt als JSON speichern</button>
-              <button onClick={() => jsonRef.current?.click()}>JSON-Projekt öffnen …</button>
-            </div>
-          )}
-        </div>
-        <button onClick={onOpenProjects}>Projekte</button>
-        <button onClick={onNewProject}>Neu</button>
+      <div className="ml-auto flex items-center gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm">
+              <Download /> Export <ChevronDown className="opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            {(Object.keys(EXPORT_LABELS) as ExportMode[]).map((m) => (
+              <DropdownMenuItem key={m} onClick={() => runExport(m)}>
+                {EXPORT_LABELS[m]}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Projektdatei</DropdownMenuLabel>
+            <DropdownMenuItem onClick={saveJson}>Als JSON speichern</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => jsonRef.current?.click()}>
+              JSON-Projekt öffnen …
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="outline" size="sm" onClick={onOpenProjects}>
+          <FolderOpen /> Projekte
+        </Button>
+        <Button variant="outline" size="sm" onClick={onNewProject}>
+          <FilePlus2 /> Neu
+        </Button>
       </div>
+
+      {busy && (
+        <div className="absolute -bottom-7 right-3.5 rounded-b-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">
+          {busy}
+        </div>
+      )}
 
       <input
         ref={fileRef}
@@ -243,8 +299,29 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
           e.target.value = "";
         }}
       />
-
-      {busy && <div className="busy">{busy}</div>}
     </header>
+  );
+}
+
+function IconBtn({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="icon" disabled={disabled} onClick={onClick}>
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }

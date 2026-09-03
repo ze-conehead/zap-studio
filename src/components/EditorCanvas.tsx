@@ -80,9 +80,12 @@ export function EditorCanvas({
   const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
 
   return (
-    <div className="canvas-wrap" ref={wrapRef}>
+    <div
+      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#131c2e] p-6"
+      ref={wrapRef}
+    >
       <div
-        className="canvas-shadow"
+        className="relative overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
         style={{
           width: viewW,
           height: viewH,

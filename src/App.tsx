@@ -106,7 +106,13 @@ export default function App() {
     setProject(existing ?? newConsoleTemplate(consoleId, consoleName));
   };
 
-  if (!project) return <div className="boot">lädt …</div>;
+  if (!project) {
+    return (
+      <div className="grid h-full place-items-center text-sm text-muted-foreground">
+        lädt …
+      </div>
+    );
+  }
 
   return (
     <StoreProvider key={project.id} initial={project}>
@@ -120,13 +126,12 @@ export default function App() {
         onOpenProjects={() => setShowProjects(true)}
         onImportJson={importJson}
       />
-      {showProjects && (
-        <ProjectsDialog
-          currentId={project.id}
-          onClose={() => setShowProjects(false)}
-          onOpen={openProject}
-        />
-      )}
+      <ProjectsDialog
+        open={showProjects}
+        onOpenChange={setShowProjects}
+        currentId={project.id}
+        onOpen={openProject}
+      />
     </StoreProvider>
   );
 }
@@ -152,14 +157,14 @@ function Shell({
 }) {
   const canvas = useRef<CanvasHandle | null>(null);
   return (
-    <div className="app">
+    <div className="flex h-full flex-col">
       <Toolbar
         canvas={canvas}
         onNewProject={onNewProject}
         onOpenProjects={onOpenProjects}
         onImportJson={onImportJson}
       />
-      <div className="workspace">
+      <div className="flex min-h-0 flex-1">
         <GameTree
           activeGameKey={activeGameKey}
           activeConsoleId={activeConsoleId}
@@ -167,7 +172,7 @@ function Shell({
           onOpenConsole={onOpenConsole}
         />
         <EditorCanvas handleRef={canvas} overlay={overlay} />
-        <aside className="sidebar">
+        <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <LayerList />
           <Inspector />
         </aside>

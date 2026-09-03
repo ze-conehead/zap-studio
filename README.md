@@ -4,6 +4,10 @@ Browser-App zum Designen von Stickern in Kreditkartengröße (ISO ID-1,
 hochkant 54 × 85,6 mm) für Konsolen. Läuft komplett lokal – keine Server,
 kein Login.
 
+UI mit **shadcn/ui** (Radix + Tailwind CSS v4, „new-york"-Stil, Dark-Theme).
+UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
+`npx shadcn@latest add <komponente>`.
+
 ## Features
 
 - **Konsolen-/Spiele-Baum** (links): 5 Beispielkonsolen mit je den Top 10
@@ -48,6 +52,10 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # Produktions-Build nach dist/
 ```
+
+Stack: Vite + React 19 + TypeScript, Tailwind CSS v4 (`@tailwindcss/vite`),
+shadcn/ui, `react-konva`/`konva` für die Zeichenfläche, `idb-keyval` für die
+IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 
 ## Aufbau
 
