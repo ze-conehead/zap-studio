@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CANVAS, TRIM_RECT } from "./card";
+import { CardPreview } from "./components/CardPreview";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
 import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
@@ -246,6 +247,7 @@ function Shell({
   onImportJson: (file: File) => void;
 }) {
   const canvas = useRef<CanvasHandle | null>(null);
+  const [preview, setPreview] = useState(false);
   return (
     <div className="flex h-full flex-col">
       <Toolbar
@@ -253,6 +255,7 @@ function Shell({
         guides={guides}
         onNewProject={onNewProject}
         onOpenProjects={onOpenProjects}
+        onOpenPreview={() => setPreview(true)}
         onImportJson={onImportJson}
       />
       <div className="flex min-h-0 flex-1">
@@ -276,6 +279,8 @@ function Shell({
           <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
         </aside>
       </div>
+
+      {preview && <CardPreview canvas={canvas} onClose={() => setPreview(false)} />}
     </div>
   );
 }

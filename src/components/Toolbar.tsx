@@ -1,4 +1,5 @@
 import {
+  Box,
   ChevronDown,
   Circle,
   Download,
@@ -47,10 +48,18 @@ interface Props {
   guides: GuideApi;
   onNewProject: () => void;
   onOpenProjects: () => void;
+  onOpenPreview: () => void;
   onImportJson: (file: File) => void;
 }
 
-export function Toolbar({ canvas, guides, onNewProject, onOpenProjects, onImportJson }: Props) {
+export function Toolbar({
+  canvas,
+  guides,
+  onNewProject,
+  onOpenProjects,
+  onOpenPreview,
+  onImportJson,
+}: Props) {
   const { state, dispatch } = useStore();
   const { project, past, future, showBleed, showSafe } = state;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -301,6 +310,9 @@ export function Toolbar({ canvas, guides, onNewProject, onOpenProjects, onImport
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <Button variant="outline" size="sm" onClick={onOpenPreview}>
+          <Box /> 3D-Vorschau
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm">

@@ -74,6 +74,11 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   über den Rand ziehen oder Papierkorb im Inspector zum Löschen, mm-genaue
   Eingabe im Inspector. Global in `localStorage` gespeichert, nicht im
   PNG-Export.
+- **3D-Vorschau**: Button in der Toolbar öffnet die Karte als 3D-Objekt
+  (CSS-Perspektive), mit der Maus frei drehbar. Checkbox „Holographische
+  Karte" legt einen Regenbogen-Foil-/Glitzer-/Glanz-Effekt darüber, der
+  sich mit der Drehung verändert. Nutzt den Endformat-Export (ohne
+  Hilfslinien).
 - **Export**:
   - PNG Endformat (54 × 85,6 mm, 300 DPI ≈ 638 × 1011 px)
   - PNG mit 3 mm Beschnitt

@@ -131,3 +131,124 @@
     8px -8px,
     -8px 0;
 }
+
+/* ---------- 3D card preview ---------- */
+.preview3d-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 6, 20, 0.82);
+  backdrop-filter: blur(6px);
+}
+.preview3d-scene {
+  perspective: 1500px;
+  perspective-origin: 50% 40%;
+}
+.preview3d-card {
+  position: relative;
+  height: min(72vh, 640px);
+  aspect-ratio: 638 / 1011;
+  border-radius: 5.4%;
+  transform-style: preserve-3d;
+  transition: transform 140ms ease-out;
+  cursor: grab;
+  box-shadow:
+    0 40px 80px -12px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+  touch-action: none;
+}
+.preview3d-card.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+.preview3d-card > img,
+.preview3d-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+.preview3d-placeholder {
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.preview3d-card .foil,
+.preview3d-card .glare,
+.preview3d-card .sparkle {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.preview3d-card .foil {
+  opacity: calc(var(--holo, 0) * 0.62);
+  background: repeating-linear-gradient(
+    var(--foil-angle, 115deg),
+    #ff2e88 0%,
+    #ffe600 14%,
+    #23ff9a 28%,
+    #21c6ff 42%,
+    #a855ff 56%,
+    #ff2e88 70%
+  );
+  background-size: 300% 300%;
+  background-position: var(--foil-pos, 50% 50%);
+  mix-blend-mode: color-dodge;
+  filter: brightness(0.5) contrast(1.35) saturate(1.05);
+}
+.preview3d-card .sparkle {
+  opacity: calc(var(--holo, 0) * 0.5);
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0.7px, transparent 1.4px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0.6px, transparent 1.3px);
+  background-size:
+    15px 15px,
+    9px 11px;
+  background-position: var(--foil-pos, 0 0);
+  mix-blend-mode: color-dodge;
+  filter: brightness(1.2) contrast(1.5);
+}
+.preview3d-card .glare {
+  opacity: var(--holo, 0);
+  background: radial-gradient(
+    circle at var(--px, 50%) var(--py, 50%),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.05) 34%,
+    transparent 62%
+  );
+  mix-blend-mode: soft-light;
+}
+
+.preview3d-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+.preview3d-hint {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
