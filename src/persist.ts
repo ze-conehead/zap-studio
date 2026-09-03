@@ -21,6 +21,11 @@ export async function loadTemplateLayers(consoleId: string): Promise<Project["la
   return p?.layers ?? [];
 }
 
+export async function loadGlobalTemplateLayers(): Promise<Project["layers"]> {
+  const p = (await get(KEY("tpl-global"))) as Project | undefined;
+  return p?.layers ?? [];
+}
+
 export async function deleteProject(id: string): Promise<void> {
   await del(KEY(id));
   if (localStorage.getItem(LAST) === id) localStorage.removeItem(LAST);

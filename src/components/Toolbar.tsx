@@ -116,7 +116,9 @@ export function Toolbar({ canvas, onNewProject, onOpenProjects, onImportJson }: 
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-sidebar px-3.5 py-2">
       <div className="flex items-center gap-2">
-        {project.isTemplate && <Badge>Vorlage</Badge>}
+        {project.isTemplate && (
+          <Badge>{project.isGlobalTemplate ? "Global" : "Vorlage"}</Badge>
+        )}
         <Input
           className="h-8 w-52 font-semibold"
           value={project.name}

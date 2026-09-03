@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Gamepad2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Gamepad2, Globe } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,15 +13,19 @@ import { CATALOG, gameKeyOf } from "../data/catalog";
 interface Props {
   activeGameKey?: string;
   activeConsoleId?: string;
+  activeGlobal: boolean;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
+  onOpenGlobal: () => void;
 }
 
 export function GameTree({
   activeGameKey,
   activeConsoleId,
+  activeGlobal,
   onPickGame,
   onOpenConsole,
+  onOpenGlobal,
 }: Props) {
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
@@ -33,6 +37,18 @@ export function GameTree({
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Konsolen &amp; Spiele
       </h2>
+
+      <button
+        className={cn(
+          "mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
+          activeGlobal && "bg-primary/15 ring-1 ring-primary",
+        )}
+        title="Globale Vorlage – erscheint auf allen Karten"
+        onClick={onOpenGlobal}
+      >
+        <Globe className="size-4 shrink-0 text-muted-foreground" />
+        <span className="flex-1 truncate text-left">Alle Konsolen</span>
+      </button>
 
       <ScrollArea className="min-h-0 flex-1">
         <ul className="px-2">

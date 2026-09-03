@@ -14,11 +14,18 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Spielen ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
-- **Konsolen-Vorlage**: den Konsolennamen im Baum anklicken öffnet eine
-  gemeinsame Ebenen-Vorlage. Deren Bilder/Logos/Texte werden automatisch
-  auf **allen** Spiel-Karten dieser Konsole angezeigt (schreibgeschützt,
-  über dem Karteninhalt) und landen im PNG-Export. Gespeichert als
-  Projekt `tpl-<konsole>`, wird nicht in der Projektliste geführt.
+- **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
+  - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
+    welche Konsole. Projekt `tpl-global`.
+  - **Konsolen-Vorlage** (Konsolenname anklicken) – Ebenen auf allen
+    Spiel-Karten dieser Konsole. Projekt `tpl-<konsole>`.
+  - **Spiel-Design** – die Karte selbst.
+
+  Render-Reihenfolge auf einer Karte (unten → oben): Kartenhintergrund →
+  Spiel-Ebenen → Konsolen-Vorlage → globale Vorlage. Vorlagen-Ebenen sind
+  auf der Spiel-Karte schreibgeschützt und landen im PNG-Export. Beim
+  Bearbeiten einer Konsolen-Vorlage wird die globale Vorlage als Kontext
+  eingeblendet. Vorlagen erscheinen nicht in der Projektliste.
 - **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
   Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
   Overlay-Blend). Wird in den PNG-Export übernommen.

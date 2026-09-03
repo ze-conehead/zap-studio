@@ -38,12 +38,22 @@ export function Inspector() {
 
   if (!selected) {
     if (state.project.isTemplate) {
+      const global = state.project.isGlobalTemplate;
       return (
-        <Panel title="Konsolen-Vorlage">
+        <Panel title={global ? "Globale Vorlage" : "Konsolen-Vorlage"}>
           <p className="text-xs text-muted-foreground">
-            Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-            Spiel-Karten von {state.project.consoleName}. Kein eigener
-            Kartenhintergrund – füge Bilder, Logos oder Texte hinzu.
+            {global ? (
+              <>
+                Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
+                Karten – über allen Konsolen und über den Konsolen-Vorlagen.
+              </>
+            ) : (
+              <>
+                Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
+                Spiel-Karten von {state.project.consoleName}.
+              </>
+            )}{" "}
+            Kein eigener Kartenhintergrund – füge Bilder, Logos oder Texte hinzu.
           </p>
         </Panel>
       );

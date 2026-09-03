@@ -6,9 +6,22 @@ import { Inspector } from "./components/Inspector";
 import { LayerList } from "./components/LayerList";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { Toolbar } from "./components/Toolbar";
-import { makeTextLayer, newConsoleTemplate, newProject, templateId } from "./factory";
+import {
+  GLOBAL_TEMPLATE_ID,
+  makeTextLayer,
+  newConsoleTemplate,
+  newGlobalTemplate,
+  newProject,
+  templateId,
+} from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
-import { lastProjectId, loadProject, loadTemplateLayers, saveProject } from "./persist";
+import {
+  lastProjectId,
+  loadGlobalTemplateLayers,
+  loadProject,
+  loadTemplateLayers,
+  saveProject,
+} from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
 import type { Layer, Project } from "./types";
@@ -18,17 +31,29 @@ export default function App() {
   const [overlay, setOverlay] = useState<Layer[]>([]);
   const [showProjects, setShowProjects] = useState(false);
 
-  // Load the console template layers to overlay on the current game sticker.
+  // Build the read-only overlay for the current view:
+  // - game sticker  → console template + global template (global on top)
+  // - console template edit → global template as context underlay
+  // - global template edit → nothing
   useEffect(() => {
     let alive = true;
-    const consoleId = project && !project.isTemplate ? project.gameKey?.split("/")[0] : undefined;
-    if (!consoleId) {
-      setOverlay([]);
-      return;
-    }
-    loadTemplateLayers(consoleId).then((ls) => {
-      if (alive) setOverlay(ls);
-    });
+    if (!project) return;
+    (async () => {
+      let layers: Layer[] = [];
+      if (project.isGlobalTemplate) {
+        layers = [];
+      } else if (project.isTemplate) {
+        layers = await loadGlobalTemplateLayers();
+      } else {
+        const consoleId = project.gameKey?.split("/")[0];
+        const [consoleLayers, globalLayers] = await Promise.all([
+          consoleId ? loadTemplateLayers(consoleId) : Promise.resolve([] as Layer[]),
+          loadGlobalTemplateLayers(),
+        ]);
+        layers = [...consoleLayers, ...globalLayers];
+      }
+      if (alive) setOverlay(layers);
+    })();
     return () => {
       alive = false;
     };
@@ -106,6 +131,12 @@ export default function App() {
     setProject(existing ?? newConsoleTemplate(consoleId, consoleName));
   };
 
+  const openGlobalTemplate = async () => {
+    if (project?.id === GLOBAL_TEMPLATE_ID) return;
+    const existing = await loadProject(GLOBAL_TEMPLATE_ID);
+    setProject(existing ?? newGlobalTemplate());
+  };
+
   if (!project) {
     return (
       <div className="grid h-full place-items-center text-sm text-muted-foreground">
@@ -119,9 +150,11 @@ export default function App() {
       <Shell
         overlay={overlay}
         activeGameKey={project.gameKey}
-        activeConsoleId={project.isTemplate ? project.consoleId : undefined}
+        activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
+        activeGlobal={!!project.isGlobalTemplate}
         onPickGame={pickGame}
         onOpenConsole={openConsoleTemplate}
+        onOpenGlobal={openGlobalTemplate}
         onNewProject={() => swap(newProject())}
         onOpenProjects={() => setShowProjects(true)}
         onImportJson={importJson}
@@ -140,8 +173,10 @@ function Shell({
   overlay,
   activeGameKey,
   activeConsoleId,
+  activeGlobal,
   onPickGame,
   onOpenConsole,
+  onOpenGlobal,
   onNewProject,
   onOpenProjects,
   onImportJson,
@@ -149,8 +184,10 @@ function Shell({
   overlay: Layer[];
   activeGameKey?: string;
   activeConsoleId?: string;
+  activeGlobal: boolean;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
+  onOpenGlobal: () => void;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
@@ -168,8 +205,10 @@ function Shell({
         <GameTree
           activeGameKey={activeGameKey}
           activeConsoleId={activeConsoleId}
+          activeGlobal={activeGlobal}
           onPickGame={onPickGame}
           onOpenConsole={onOpenConsole}
+          onOpenGlobal={onOpenGlobal}
         />
         <EditorCanvas handleRef={canvas} overlay={overlay} />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
