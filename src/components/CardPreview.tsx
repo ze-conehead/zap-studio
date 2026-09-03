@@ -84,13 +84,22 @@ export function CardPreview({
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         >
-          {img && <img src={img} alt="Kartenvorschau" draggable={false} />}
-          {!img && (
-            <div className="preview3d-placeholder">{err ?? "wird gerendert …"}</div>
-          )}
-          <div className="foil" />
-          <div className="sparkle" />
-          <div className="glare" />
+          <div className="face front">
+            {img && <img src={img} alt="Kartenvorschau" draggable={false} />}
+            {!img && (
+              <div className="preview3d-placeholder">
+                {err ?? "wird gerendert …"}
+              </div>
+            )}
+            <div className="foil" />
+            <div className="sparkle" />
+            <div className="glare" />
+          </div>
+          <div className="face back" />
+          <div className="edge edge-l" />
+          <div className="edge edge-r" />
+          <div className="edge edge-t" />
+          <div className="edge edge-b" />
         </div>
       </div>
 

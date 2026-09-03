@@ -147,29 +147,84 @@
   perspective-origin: 50% 40%;
 }
 .preview3d-card {
+  --thick: 15px;
+  --radius: 20px;
   position: relative;
   height: min(72vh, 640px);
   aspect-ratio: 638 / 1011;
-  border-radius: 5.4%;
   transform-style: preserve-3d;
+  transform-origin: 50% 50% calc(var(--thick) / -2);
   transition: transform 140ms ease-out;
   cursor: grab;
-  box-shadow:
-    0 40px 80px -12px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
   touch-action: none;
 }
 .preview3d-card.dragging {
   transition: none;
   cursor: grabbing;
 }
-.preview3d-card > img,
+
+.preview3d-card .face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+.preview3d-card .face.front {
+  box-shadow:
+    0 40px 80px -12px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.preview3d-card .face.back {
+  transform: translateZ(calc(-1 * var(--thick))) rotateY(180deg);
+  background: linear-gradient(155deg, #223049, #0a1020 60%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.preview3d-card .edge {
+  position: absolute;
+  background: linear-gradient(180deg, #eef2f8, #a7b1c1 55%, #7d8798);
+}
+.preview3d-card .edge-l,
+.preview3d-card .edge-r {
+  top: var(--radius);
+  height: calc(100% - 2 * var(--radius));
+  width: var(--thick);
+}
+.preview3d-card .edge-l {
+  left: 0;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+.preview3d-card .edge-r {
+  right: 0;
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+.preview3d-card .edge-t,
+.preview3d-card .edge-b {
+  left: var(--radius);
+  width: calc(100% - 2 * var(--radius));
+  height: var(--thick);
+  background: linear-gradient(90deg, #eef2f8, #a7b1c1 55%, #7d8798);
+}
+.preview3d-card .edge-t {
+  top: 0;
+  transform-origin: center top;
+  transform: rotateX(-90deg);
+}
+.preview3d-card .edge-b {
+  bottom: 0;
+  transform-origin: center bottom;
+  transform: rotateX(90deg);
+}
+
+.preview3d-card .front img,
 .preview3d-placeholder {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: inherit;
   object-fit: cover;
   display: block;
   user-select: none;
@@ -187,7 +242,6 @@
 .preview3d-card .sparkle {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
   pointer-events: none;
   transition: opacity 220ms ease;
 }
