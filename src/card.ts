@@ -3,7 +3,8 @@
 export const DPI = 300;
 export const PX_PER_MM = DPI / 25.4;
 
-export const TRIM_MM = { w: 85.6, h: 54.0 };
+// Portrait orientation (ID-1 rotated 90°).
+export const TRIM_MM = { w: 54.0, h: 85.6 };
 export const BLEED_MM = 3;
 export const MARKS_MARGIN_MM = 5; // white margin around bleed that holds the crop marks
 

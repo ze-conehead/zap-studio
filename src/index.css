@@ -131,8 +131,8 @@ button.danger, .icon-btn.danger:hover { color: var(--danger); }
   overflow: auto;
 }
 .canvas-shadow {
+  position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border-radius: 2px;
   overflow: hidden;
 }
 

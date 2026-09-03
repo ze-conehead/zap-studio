@@ -1,7 +1,8 @@
 # Kreditkarten-Sticker Studio
 
 Browser-App zum Designen von Stickern in Kreditkartengröße (ISO ID-1,
-85,6 × 54 mm) für Konsolen. Läuft komplett lokal – keine Server, kein Login.
+hochkant 54 × 85,6 mm) für Konsolen. Läuft komplett lokal – keine Server,
+kein Login.
 
 ## Features
 
@@ -16,8 +17,10 @@ Browser-App zum Designen von Stickern in Kreditkartengröße (ISO ID-1,
   Montserrat, Press Start 2P, Rubik Mono One). Farbe, Kontur, Ausrichtung,
   Zeilenhöhe, Laufweite.
 - **Hilfslinien**: Beschnittkante (3 mm), Endformat, Sicherheitszone (3 mm).
+  Standardmäßig **aus** – die Vorschau zeigt die reine Karte, auf das
+  Endformat mit abgerundeten Ecken zugeschnitten.
 - **Export**:
-  - PNG Endformat (85,6 × 54 mm, 300 DPI ≈ 1011 × 638 px)
+  - PNG Endformat (54 × 85,6 mm, 300 DPI ≈ 638 × 1011 px)
   - PNG mit 3 mm Beschnitt
   - PNG mit Beschnitt + Schnittmarken
   - Projekt als `.json` (Bilder eingebettet) speichern / laden

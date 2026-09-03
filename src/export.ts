@@ -12,7 +12,7 @@ import { ensureFontsLoaded } from "./fonts";
 export type ExportMode = "trim" | "bleed" | "marks";
 
 export const EXPORT_LABELS: Record<ExportMode, string> = {
-  trim: "PNG – Endformat (85,6 × 54 mm)",
+  trim: "PNG – Endformat (54 × 85,6 mm)",
   bleed: "PNG – mit 3 mm Beschnitt",
   marks: "PNG – Beschnitt + Schnittmarken",
 };

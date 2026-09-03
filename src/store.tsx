@@ -188,8 +188,8 @@ export function StoreProvider({
     selectedId: null,
     past: [],
     future: [],
-    showSafe: true,
-    showBleed: true,
+    showSafe: false,
+    showBleed: false,
     dirty: false,
   });
 

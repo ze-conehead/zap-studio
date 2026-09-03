@@ -60,9 +60,23 @@ export function EditorCanvas({ handleRef }: { handleRef: React.MutableRefObject<
     }
   };
 
+  // In the clean preview we crop the on-screen view to the trim box (with
+  // rounded card corners). The Konva stage itself stays full-bleed size so
+  // exports are unaffected.
+  const cropped = !showBleed;
+  const viewW = (cropped ? TRIM_RECT.w : CANVAS.w) * scale;
+  const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
+
   return (
     <div className="canvas-wrap" ref={wrapRef}>
-      <div className="canvas-shadow" style={{ width: stageW, height: stageH }}>
+      <div
+        className="canvas-shadow"
+        style={{
+          width: viewW,
+          height: viewH,
+          borderRadius: cropped ? CORNER_RADIUS_PX * scale : 3,
+        }}
+      >
         <Stage
           ref={stageRef}
           width={stageW}
@@ -71,6 +85,11 @@ export function EditorCanvas({ handleRef }: { handleRef: React.MutableRefObject<
           scaleY={scale}
           onMouseDown={deselect}
           onTouchStart={deselect}
+          style={{
+            position: "absolute",
+            left: cropped ? -TRIM_RECT.x * scale : 0,
+            top: cropped ? -TRIM_RECT.y * scale : 0,
+          }}
         >
           <Layer>
             <Rect
@@ -273,7 +292,7 @@ function Guides({ showBleed, showSafe }: { showBleed: boolean; showSafe: boolean
           dash={[5, 5]}
         />
       )}
-      <RoundedCardOutline />
+      {showBleed && <RoundedCardOutline />}
     </>
   );
 }
