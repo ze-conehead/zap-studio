@@ -98,6 +98,45 @@ export function findMeta(games: GameMeta[], title: string): GameMeta | undefined
   return games.find((g) => g.name.trim().toLowerCase() === t);
 }
 
+// Create-or-update the entry for `title`. Used by the editable Metadaten
+// panel so a game can get its own gamelist entry without an XML upload.
+export function upsertGameMeta(
+  consoleId: string,
+  title: string,
+  patch: Partial<Omit<GameMeta, "name">>,
+): void {
+  const games = loadGamelist(consoleId);
+  const t = title.trim().toLowerCase();
+  const idx = games.findIndex((g) => g.name.trim().toLowerCase() === t);
+  if (idx >= 0) {
+    games[idx] = { ...games[idx], ...patch };
+  } else {
+    games.push({ name: title, ...patch });
+  }
+  saveGamelist(consoleId, games);
+}
+
+export function removeGameMeta(consoleId: string, title: string): void {
+  const games = loadGamelist(consoleId);
+  const t = title.trim().toLowerCase();
+  saveGamelist(
+    consoleId,
+    games.filter((g) => g.name.trim().toLowerCase() !== t),
+  );
+}
+
+// "20170428T000000" -> "2017-04-28" (for <input type="date">)
+export function toDateInputValue(raw: string | undefined): string {
+  const m = /^(\d{4})(\d{2})(\d{2})/.exec(raw ?? "");
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+}
+
+// "2017-04-28" -> "20170428T000000"
+export function fromDateInputValue(value: string): string | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m ? `${m[1]}${m[2]}${m[3]}T000000` : undefined;
+}
+
 // "20170428T000000" -> "28.04.2017"
 export function formatReleaseDate(raw: string | undefined): string | undefined {
   const m = /^(\d{4})(\d{2})(\d{2})/.exec(raw ?? "");

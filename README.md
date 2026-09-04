@@ -95,11 +95,17 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   `<releasedate>`, `<developer>`, `<publisher>`, `<genre>`, `<players>`,
   `<rating>`) – im Konsolen-Vorlage-Panel unter „Eigenschaften"
   (Konsolenname im Baum anklicken). Die Sidebar rechts hat dafür einen
-  eigenen **Tab „Metadaten"**: bei einer offenen Spiel-Karte wird der
-  Eintrag per Titel aus der geladenen `gamelist.xml` gesucht und mit
-  Cover, Beschreibung, Sterne-Wertung und Kerndaten angezeigt. Beispiel-
-  Dateien für alle 5 Konsolen liegen unter `public/gamelists/` und lassen
-  sich im Panel direkt per „Beispiel laden" einspielen. Rein lokal in
+  eigenen **Tab „Metadaten"**: bei einer offenen Spiel-Karte zeigt er den
+  per Titel aus der geladenen `gamelist.xml` gefundenen Eintrag als
+  **editierbares Formular** – Sterne-Wertung anklicken (linke/rechte
+  Hälfte eines Sterns für halbe Schritte, 0,5er-Genauigkeit), Bild-URL/-Pfad,
+  Beschreibung, Release-Datum, Entwickler, Publisher, Genre und Spieler-
+  zahl direkt bearbeiten, jede Änderung wird sofort in die `gamelist.xml`
+  des Spiels zurückgeschrieben. Gibt es noch keinen Eintrag, startet das
+  Formular leer und legt beim ersten Ausfüllen automatisch einen neuen
+  Eintrag an; ein Papierkorb-Button löscht ihn wieder. Beispiel-Dateien
+  für alle 5 Konsolen liegen unter `public/gamelists/` und lassen sich im
+  Panel direkt per „Beispiel laden" einspielen. Rein lokal in
   `localStorage`, nicht Teil des PNG-Exports.
   - **Metadaten-Ebenen** (im „+ Form"-Menü, Abschnitt „Aus gamelist.xml"):
     besondere, konfigurierbare Ebenen, die auf Konsolen-/globaler
