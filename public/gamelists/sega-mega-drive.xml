@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Sega Mega Drive. -->
+<gameList>
+	<game>
+		<path>./Sonic the Hedgehog 2.md</path>
+		<name>Sonic the Hedgehog 2</name>
+		<desc>Schnelles Jump'n'Run mit Sonic und dem neu hinzugekommenen Begleiter Tails durch bunte Loop-Level.</desc>
+		<image>./media/images/Sonic the Hedgehog 2.png</image>
+		<releasedate>19921124T000000</releasedate>
+		<developer>Sega Technical Institute</developer>
+		<publisher>Sega</publisher>
+		<genre>Platformer</genre>
+		<players>1-2</players>
+		<rating>0.93</rating>
+	</game>
+	<game>
+		<path>./Sonic the Hedgehog.md</path>
+		<name>Sonic the Hedgehog</name>
+		<desc>Erster Auftritt des blauen Igels mit hohem Tempo, Ringen zum Sammeln und ikonischen Zonen-Themen.</desc>
+		<image>./media/images/Sonic the Hedgehog.png</image>
+		<releasedate>19910623T000000</releasedate>
+		<developer>Sonic Team</developer>
+		<publisher>Sega</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.88</rating>
+	</game>
+	<game>
+		<path>./Disneys Aladdin.md</path>
+		<name>Disney's Aladdin</name>
+		<desc>Jump'n'Run zum Disney-Film mit handgezeichneter Animation und Schwertkämpfen als Aladdin.</desc>
+		<image>./media/images/Disneys Aladdin.png</image>
+		<releasedate>19931111T000000</releasedate>
+		<developer>Virgin Games</developer>
+		<publisher>Sega</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.87</rating>
+	</game>
+	<game>
+		<path>./Streets of Rage 2.md</path>
+		<name>Streets of Rage 2</name>
+		<desc>Beat-'em-up durch eine von Verbrechen geplagte Stadt mit mehreren spielbaren Charakteren und Koop-Modus.</desc>
+		<image>./media/images/Streets of Rage 2.png</image>
+		<releasedate>19921221T000000</releasedate>
+		<developer>Sega</developer>
+		<publisher>Sega</publisher>
+		<genre>Beat 'em up</genre>
+		<players>1-2</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./Mortal Kombat II.md</path>
+		<name>Mortal Kombat II</name>
+		<desc>Blutiges 2D-Kampfspiel mit Fatalities und einem größeren Kämpferaufgebot als der Vorgänger.</desc>
+		<image>./media/images/Mortal Kombat II.png</image>
+		<releasedate>19930901T000000</releasedate>
+		<developer>Probe Entertainment</developer>
+		<publisher>Acclaim Entertainment</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.84</rating>
+	</game>
+	<game>
+		<path>./Gunstar Heroes.md</path>
+		<name>Gunstar Heroes</name>
+		<desc>Actionreiches Run-and-Gun mit kombinierbaren Waffensystemen und großen, abwechslungsreichen Bossgegnern.</desc>
+		<image>./media/images/Gunstar Heroes.png</image>
+		<releasedate>19930909T000000</releasedate>
+		<developer>Treasure</developer>
+		<publisher>Sega</publisher>
+		<genre>Run and Gun</genre>
+		<players>1-2</players>
+		<rating>0.89</rating>
+	</game>
+	<game>
+		<path>./Golden Axe.md</path>
+		<name>Golden Axe</name>
+		<desc>Fantasy-Beat-'em-up mit Nahkampf, Magie und reitbaren Kreaturen durch ein Reich voller Krieger.</desc>
+		<image>./media/images/Golden Axe.png</image>
+		<releasedate>19891209T000000</releasedate>
+		<developer>Sega</developer>
+		<publisher>Sega</publisher>
+		<genre>Beat 'em up</genre>
+		<players>1-2</players>
+		<rating>0.79</rating>
+	</game>
+	<game>
+		<path>./Phantasy Star IV.md</path>
+		<name>Phantasy Star IV</name>
+		<desc>Rundenbasiertes Science-Fantasy-Rollenspiel mit Comic-artigen Zwischensequenzen und Kombinationsangriffen.</desc>
+		<image>./media/images/Phantasy Star IV.png</image>
+		<releasedate>19941216T000000</releasedate>
+		<developer>Sega</developer>
+		<publisher>Sega</publisher>
+		<genre>RPG</genre>
+		<players>1</players>
+		<rating>0.88</rating>
+	</game>
+	<game>
+		<path>./Sonic 3 and Knuckles.md</path>
+		<name>Sonic 3 &amp; Knuckles</name>
+		<desc>Zusammengesetzte Fortsetzung mit größeren Leveln, Charakterfähigkeiten und dem spielbaren Knuckles.</desc>
+		<image>./media/images/Sonic 3 and Knuckles.png</image>
+		<releasedate>19941018T000000</releasedate>
+		<developer>Sonic Team</developer>
+		<publisher>Sega</publisher>
+		<genre>Platformer</genre>
+		<players>1-2</players>
+		<rating>0.92</rating>
+	</game>
+	<game>
+		<path>./Ecco the Dolphin.md</path>
+		<name>Ecco the Dolphin</name>
+		<desc>Ungewöhnliches Unterwasser-Adventure, in dem ein Delfin Rätsel löst und eine außerirdische Bedrohung erforscht.</desc>
+		<image>./media/images/Ecco the Dolphin.png</image>
+		<releasedate>19921105T000000</releasedate>
+		<developer>Novotrade</developer>
+		<publisher>Sega</publisher>
+		<genre>Adventure</genre>
+		<players>1</players>
+		<rating>0.81</rating>
+	</game>
+</gameList>

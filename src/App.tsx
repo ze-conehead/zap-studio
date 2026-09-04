@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CANVAS, TRIM_RECT } from "./card";
 import { CardPreview } from "./components/CardPreview";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
 import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
 import { LayerList } from "./components/LayerList";
+import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { Toolbar } from "./components/Toolbar";
 import {
@@ -276,7 +278,18 @@ function Shell({
         />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <LayerList />
-          <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
+          <Tabs defaultValue="props">
+            <TabsList className="mx-3 mt-3">
+              <TabsTrigger value="props">Eigenschaften</TabsTrigger>
+              <TabsTrigger value="meta">Metadaten</TabsTrigger>
+            </TabsList>
+            <TabsContent value="props" className="mt-0">
+              <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
+            </TabsContent>
+            <TabsContent value="meta" className="mt-0">
+              <MetadataPanel />
+            </TabsContent>
+          </Tabs>
         </aside>
       </div>
 

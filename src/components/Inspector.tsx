@@ -9,8 +9,9 @@ import {
   MoveHorizontal,
   MoveVertical,
   Trash2,
+  Upload,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ import { resolveBackground } from "../background";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
 import { isImage, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
+import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
 import type {
@@ -75,6 +77,12 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
               )}
             </p>
             <TemplateBackgroundControls />
+            {!global && state.project.consoleId && (
+              <GamelistControls
+                consoleId={state.project.consoleId}
+                consoleName={state.project.consoleName ?? state.project.name}
+              />
+            )}
           </Panel>
           <GuidesPanel guides={guides} />
         </>
@@ -412,6 +420,102 @@ function TemplateBackgroundControls() {
         Karten können in ihren Eigenschaften wählen, ob sie diesen Hintergrund
         übernehmen.
       </p>
+    </div>
+  );
+}
+
+// Console template: upload a gamelist.xml (EmulationStation format) whose
+// entries are matched by title and shown in the "Metadaten" tab.
+function GamelistControls({
+  consoleId,
+  consoleName,
+}: {
+  consoleId: string;
+  consoleName: string;
+}) {
+  const [count, setCount] = useState(() => loadGamelist(consoleId).length);
+  const [busy, setBusy] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const applyXml = (xml: string) => {
+    try {
+      const parsed = parseGamelistXml(xml);
+      saveGamelist(consoleId, parsed);
+      setCount(parsed.length);
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  const onFile = async (file: File) => {
+    try {
+      setBusy("gamelist.xml wird gelesen …");
+      applyXml(await file.text());
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const loadExample = async () => {
+    try {
+      setBusy("Beispiel wird geladen …");
+      const res = await fetch(`/gamelists/${consoleId}.xml`);
+      if (!res.ok) throw new Error("Kein Beispiel für diese Konsole vorhanden.");
+      applyXml(await res.text());
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 border-t pt-3">
+      <Label>gamelist.xml</Label>
+      <p className="text-xs text-muted-foreground">
+        {count > 0
+          ? `${count} Spiel(e) geladen. Erscheinen im Tab „Metadaten" bei passenden Spiel-Karten.`
+          : `Noch keine Metadaten für ${consoleName}.`}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload /> Hochladen …
+        </Button>
+        {count > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive"
+            title="Entfernen"
+            onClick={() => {
+              clearGamelist(consoleId);
+              setCount(0);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </div>
+      <Button variant="ghost" size="sm" onClick={loadExample}>
+        Beispiel für {consoleName} laden
+      </Button>
+      {busy && <p className="text-xs text-muted-foreground">{busy}</p>}
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".xml,text/xml,application/xml"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }

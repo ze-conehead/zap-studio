@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für PlayStation 5. -->
+<gameList>
+	<game>
+		<path>./Marvels Spider-Man 2.zip</path>
+		<name>Marvel's Spider-Man 2</name>
+		<desc>Open-World-Action mit zwei spielbaren Spider-Man-Charakteren, Web-Swinging durch New York und neuen Fähigkeiten.</desc>
+		<image>./media/images/Marvels Spider-Man 2.png</image>
+		<releasedate>20231020T000000</releasedate>
+		<developer>Insomniac Games</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.94</rating>
+	</game>
+	<game>
+		<path>./God of War Ragnarok.zip</path>
+		<name>God of War Ragnarök</name>
+		<desc>Nordisch geprägtes Action-Adventure um Kratos und Atreus auf dem Weg zum Ragnarök, mit Nahkampf und Rätseln.</desc>
+		<image>./media/images/God of War Ragnarok.png</image>
+		<releasedate>20221109T000000</releasedate>
+		<developer>Santa Monica Studio</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.96</rating>
+	</game>
+	<game>
+		<path>./Gran Turismo 7.zip</path>
+		<name>Gran Turismo 7</name>
+		<desc>Rennsimulation mit großem Fahrzeugkatalog, Streckeneditor, Karriere-Modus und Online-Rennen.</desc>
+		<image>./media/images/Gran Turismo 7.png</image>
+		<releasedate>20220304T000000</releasedate>
+		<developer>Polyphony Digital</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Racing</genre>
+		<players>1-2</players>
+		<rating>0.87</rating>
+	</game>
+	<game>
+		<path>./Ratchet and Clank Rift Apart.zip</path>
+		<name>Ratchet &amp; Clank: Rift Apart</name>
+		<desc>Jump'n'Run mit Dimensionssprüngen, verspielten Waffen und rasantem Wechsel zwischen parallelen Welten.</desc>
+		<image>./media/images/Ratchet and Clank Rift Apart.png</image>
+		<releasedate>20210611T000000</releasedate>
+		<developer>Insomniac Games</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./Demons Souls.zip</path>
+		<name>Demon's Souls</name>
+		<desc>Aufwendige Neuauflage des düsteren Action-Rollenspiels mit hohem Schwierigkeitsgrad und atmosphärischen Welten.</desc>
+		<image>./media/images/Demons Souls.png</image>
+		<releasedate>20201112T000000</releasedate>
+		<developer>Bluepoint Games</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Action-RPG</genre>
+		<players>1</players>
+		<rating>0.88</rating>
+	</game>
+	<game>
+		<path>./Returnal.zip</path>
+		<name>Returnal</name>
+		<desc>Roguelike-Third-Person-Shooter auf einem fremden Planeten mit prozedural erzeugten Ebenen und Zeitschleifen-Handlung.</desc>
+		<image>./media/images/Returnal.png</image>
+		<releasedate>20210430T000000</releasedate>
+		<developer>Housemarque</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Shooter</genre>
+		<players>1</players>
+		<rating>0.86</rating>
+	</game>
+	<game>
+		<path>./Horizon Forbidden West.zip</path>
+		<name>Horizon Forbidden West</name>
+		<desc>Open-World-Action-RPG in einer postapokalyptischen Welt voller Robotertiere, mit Bogenkämpfen und Crafting.</desc>
+		<image>./media/images/Horizon Forbidden West.png</image>
+		<releasedate>20220218T000000</releasedate>
+		<developer>Guerrilla Games</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Action-RPG</genre>
+		<players>1</players>
+		<rating>0.89</rating>
+	</game>
+	<game>
+		<path>./Final Fantasy XVI.zip</path>
+		<name>Final Fantasy XVI</name>
+		<desc>Actionlastiges Rollenspiel mit epischer Geschichte, Beschwörungskämpfen und cineastischer Inszenierung.</desc>
+		<image>./media/images/Final Fantasy XVI.png</image>
+		<releasedate>20230622T000000</releasedate>
+		<developer>Square Enix</developer>
+		<publisher>Square Enix</publisher>
+		<genre>Action-RPG</genre>
+		<players>1</players>
+		<rating>0.87</rating>
+	</game>
+	<game>
+		<path>./Astros Playroom.zip</path>
+		<name>Astro's Playroom</name>
+		<desc>Vorinstalliertes Jump'n'Run, das spielerisch die Funktionen des DualSense-Controllers und PlayStation-Historie zeigt.</desc>
+		<image>./media/images/Astros Playroom.png</image>
+		<releasedate>20201112T000000</releasedate>
+		<developer>Team Asobi</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.91</rating>
+	</game>
+	<game>
+		<path>./Helldivers 2.zip</path>
+		<name>Helldivers 2</name>
+		<desc>Kooperativer Third-Person-Shooter, bei dem Trupps von bis zu vier Spielern gemeinsam gegen Alien-Invasoren kämpfen.</desc>
+		<image>./media/images/Helldivers 2.png</image>
+		<releasedate>20240208T000000</releasedate>
+		<developer>Arrowhead Game Studios</developer>
+		<publisher>Sony Interactive Entertainment</publisher>
+		<genre>Shooter</genre>
+		<players>1-4</players>
+		<rating>0.9</rating>
+	</game>
+</gameList>

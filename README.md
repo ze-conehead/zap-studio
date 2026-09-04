@@ -90,6 +90,17 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     IDs werden überschrieben) und lädt die Seite neu.
 - **Autosave** in IndexedDB, mehrere Designs über den „Projekte"-Dialog.
 - **Shortcuts**: ⌘Z / ⌘⇧Z (Undo/Redo), Entf (Ebene löschen), Esc (Auswahl aufheben).
+- **gamelist.xml / Metadaten**: pro Konsole eine eigene `gamelist.xml`
+  hochladbar (EmulationStation-Format: `<name>`, `<desc>`, `<image>`,
+  `<releasedate>`, `<developer>`, `<publisher>`, `<genre>`, `<players>`,
+  `<rating>`) – im Konsolen-Vorlage-Panel unter „Eigenschaften"
+  (Konsolenname im Baum anklicken). Die Sidebar rechts hat dafür einen
+  eigenen **Tab „Metadaten"**: bei einer offenen Spiel-Karte wird der
+  Eintrag per Titel aus der geladenen `gamelist.xml` gesucht und mit
+  Cover, Beschreibung, Sterne-Wertung und Kerndaten angezeigt. Beispiel-
+  Dateien für alle 5 Konsolen liegen unter `public/gamelists/` und lassen
+  sich im Panel direkt per „Beispiel laden" einspielen. Rein lokal in
+  `localStorage`, nicht Teil des PNG-Exports.
 
 ## Entwicklung
 
@@ -121,6 +132,9 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/export.ts` | PNG-Rendering mit Beschnitt & Schnittmarken |
 | `src/persist.ts` | IndexedDB-Speicherung (`idb-keyval`) |
 | `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
+| `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen |
+| `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" |
+| `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
 
 ## Rechtliches
 

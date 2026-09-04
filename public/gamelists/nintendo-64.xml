@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Nintendo 64. -->
+<gameList>
+	<game>
+		<path>./Super Mario 64.z64</path>
+		<name>Super Mario 64</name>
+		<desc>Wegweisendes 3D-Jump'n'Run, in dem Mario Sterne in offen gestalteten Themenwelten sammelt.</desc>
+		<image>./media/images/Super Mario 64.png</image>
+		<releasedate>19960623T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.95</rating>
+	</game>
+	<game>
+		<path>./Mario Kart 64.z64</path>
+		<name>Mario Kart 64</name>
+		<desc>Kart-Rennspiel mit Items, Sprungrampen und Split-Screen-Mehrspieler für bis zu vier Personen.</desc>
+		<image>./media/images/Mario Kart 64.png</image>
+		<releasedate>19970210T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Racing</genre>
+		<players>1-4</players>
+		<rating>0.89</rating>
+	</game>
+	<game>
+		<path>./GoldenEye 007.z64</path>
+		<name>GoldenEye 007</name>
+		<desc>Ego-Shooter zum gleichnamigen Film mit Schleichmissionen und einflussreichem Split-Screen-Deathmatch.</desc>
+		<image>./media/images/GoldenEye 007.png</image>
+		<releasedate>19970825T000000</releasedate>
+		<developer>Rare</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Shooter</genre>
+		<players>1-4</players>
+		<rating>0.91</rating>
+	</game>
+	<game>
+		<path>./Zelda Ocarina of Time.z64</path>
+		<name>The Legend of Zelda: Ocarina of Time</name>
+		<desc>Meilenstein der 3D-Action-Adventures mit Zeitreisen zwischen Kindheit und Erwachsensein in Hyrule.</desc>
+		<image>./media/images/Zelda Ocarina of Time.png</image>
+		<releasedate>19981121T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.97</rating>
+	</game>
+	<game>
+		<path>./Super Smash Bros (1999).z64</path>
+		<name>Super Smash Bros.</name>
+		<desc>Erster Teil der Kampfspielreihe mit Nintendo-Figuren, prozentualem Schadenssystem und Ring-out-Regeln.</desc>
+		<image>./media/images/Super Smash Bros.png</image>
+		<releasedate>19990426T000000</releasedate>
+		<developer>HAL Laboratory</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Fighting</genre>
+		<players>1-4</players>
+		<rating>0.86</rating>
+	</game>
+	<game>
+		<path>./Zelda Majoras Mask.z64</path>
+		<name>The Legend of Zelda: Majora's Mask</name>
+		<desc>Düstere Fortsetzung mit dreitägigem Zeitschleifen-System und wandelbaren Masken für Link.</desc>
+		<image>./media/images/Zelda Majoras Mask.png</image>
+		<releasedate>20000427T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.93</rating>
+	</game>
+	<game>
+		<path>./Banjo-Kazooie.z64</path>
+		<name>Banjo-Kazooie</name>
+		<desc>Sammel-Jump'n'Run mit dem Bären Banjo und dem Vogel Kazooie in weitläufigen, rätselreichen Levelwelten.</desc>
+		<image>./media/images/Banjo-Kazooie.png</image>
+		<releasedate>19980629T000000</releasedate>
+		<developer>Rare</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./Diddy Kong Racing.z64</path>
+		<name>Diddy Kong Racing</name>
+		<desc>Rennspiel mit Autos, Booten und Flugzeugen sowie einem Abenteuermodus mit kleiner Oberwelt.</desc>
+		<image>./media/images/Diddy Kong Racing.png</image>
+		<releasedate>19971124T000000</releasedate>
+		<developer>Rare</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Racing</genre>
+		<players>1-4</players>
+		<rating>0.85</rating>
+	</game>
+	<game>
+		<path>./Star Fox 64.z64</path>
+		<name>Star Fox 64</name>
+		<desc>Rail-Shooter im Weltraum mit dem Team um Fox McCloud, wählbaren Routen und Rumble-Pak-Unterstützung.</desc>
+		<image>./media/images/Star Fox 64.png</image>
+		<releasedate>19970630T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Rail-Shooter</genre>
+		<players>1-4</players>
+		<rating>0.88</rating>
+	</game>
+	<game>
+		<path>./Perfect Dark.z64</path>
+		<name>Perfect Dark</name>
+		<desc>Science-Fiction-Ego-Shooter mit vielseitigen Waffen, Spionage-Missionen und umfangreichem Mehrspielermodus.</desc>
+		<image>./media/images/Perfect Dark.png</image>
+		<releasedate>20000522T000000</releasedate>
+		<developer>Rare</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Shooter</genre>
+		<players>1-4</players>
+		<rating>0.92</rating>
+	</game>
+</gameList>
