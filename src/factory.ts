@@ -155,20 +155,36 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   };
 }
 
+// Which pieces a newly-created metadata badge starts with — either all
+// three combined, or one standalone element placeable on its own.
+export type MetaBadgeKind = "combo" | "rating" | "year" | "players";
+
+const META_BADGE_PRESET: Record<
+  MetaBadgeKind,
+  { name: string; widthFactor: number; showRating: boolean; showYear: boolean; showPlayers: boolean }
+> = {
+  combo: { name: "Bewertung & Infos", widthFactor: 0.72, showRating: true, showYear: true, showPlayers: true },
+  rating: { name: "Bewertung", widthFactor: 0.26, showRating: true, showYear: false, showPlayers: false },
+  year: { name: "Erscheinungsjahr", widthFactor: 0.26, showRating: false, showYear: true, showPlayers: false },
+  players: { name: "Spieleranzahl", widthFactor: 0.28, showRating: false, showYear: false, showPlayers: true },
+};
+
 // A console-level badge showing rating/year/players read from gamelist.xml
-// for whichever game the card ends up belonging to.
-export function makeMetaBadgeLayer(): MetaBadgeLayer {
+// for whichever game the card ends up belonging to. `kind` only seeds which
+// piece(s) start visible — the Inspector can toggle any combination after.
+export function makeMetaBadgeLayer(kind: MetaBadgeKind = "combo"): MetaBadgeLayer {
+  const preset = META_BADGE_PRESET[kind];
   return {
-    ...base("Bewertung & Infos"),
+    ...base(preset.name),
     type: "metabadge",
-    width: TRIM_RECT.w * 0.72,
+    width: TRIM_RECT.w * preset.widthFactor,
     height: 46,
     fontSize: 20,
     color: "#f8fafc",
     starColor: "#fbbf24",
-    showRating: true,
-    showYear: true,
-    showPlayers: true,
+    showRating: preset.showRating,
+    showYear: preset.showYear,
+    showPlayers: preset.showPlayers,
     playersIcon: "auto",
     background: true,
     backgroundColor: "#000000",

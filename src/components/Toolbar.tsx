@@ -1,6 +1,7 @@
 import {
   Award,
   Box,
+  CalendarDays,
   ChevronDown,
   Circle,
   Download,
@@ -14,8 +15,10 @@ import {
   Ruler,
   Shapes,
   Square,
+  Star,
   Type,
   Undo2,
+  Users,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +46,13 @@ import {
   exportPng,
   type ExportMode,
 } from "../export";
-import { makeImageLayer, makeMetaBadgeLayer, makeShapeLayer, makeTextLayer } from "../factory";
+import {
+  makeImageLayer,
+  makeMetaBadgeLayer,
+  makeShapeLayer,
+  makeTextLayer,
+  type MetaBadgeKind,
+} from "../factory";
 import type { ShapeKind } from "../types";
 import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
@@ -265,13 +274,27 @@ export function Toolbar({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() =>
-                dispatch({ type: "ADD_LAYER", layer: makeMetaBadgeLayer() })
-              }
-            >
-              <Award /> Bewertung &amp; Infos
-            </DropdownMenuItem>
+            <DropdownMenuLabel>Aus gamelist.xml</DropdownMenuLabel>
+            {(
+              [
+                ["rating", "Bewertung", Star],
+                ["year", "Erscheinungsjahr", CalendarDays],
+                ["players", "Spieleranzahl", Users],
+                ["combo", "Alle kombiniert", Award],
+              ] as const
+            ).map(([kind, label, Icon]) => (
+              <DropdownMenuItem
+                key={kind}
+                onClick={() =>
+                  dispatch({
+                    type: "ADD_LAYER",
+                    layer: makeMetaBadgeLayer(kind as MetaBadgeKind),
+                  })
+                }
+              >
+                <Icon /> {label}
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
 

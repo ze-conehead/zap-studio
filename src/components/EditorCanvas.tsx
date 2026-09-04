@@ -522,6 +522,9 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
   const colW = w / n;
   const iconSize = Math.min(h * 0.62, layer.fontSize * 1.6);
   const pad = Math.max(3, layer.fontSize * 0.15);
+  // A single standalone element (added on its own, not part of a combined
+  // badge) reads better as one centred icon+text chip than left-aligned.
+  const solo = n === 1;
 
   const ratingText = ratingOutOfFive(meta?.rating);
   const yearText = releaseYear(meta?.releasedate);
@@ -561,11 +564,15 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
           );
         }
 
-        const iconCx = colX + iconSize / 2 + pad;
-        const textX = colX + iconSize + pad * 2;
-        const textW = Math.max(4, colW - iconSize - pad * 3);
         const label =
           kind === "rating" ? (ratingText ?? "–") : (playersRaw || "–");
+        const textW = solo
+          ? layer.fontSize * (kind === "rating" ? 2 : 2.6)
+          : Math.max(4, colW - iconSize - pad * 3);
+        const pairW = iconSize + pad + textW;
+        const pairX = solo ? -pairW / 2 : colX;
+        const iconCx = pairX + iconSize / 2 + (solo ? 0 : pad);
+        const textX = pairX + iconSize + (solo ? pad : pad * 2);
 
         return (
           <Group key={kind}>

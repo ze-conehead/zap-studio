@@ -101,20 +101,22 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Dateien für alle 5 Konsolen liegen unter `public/gamelists/` und lassen
   sich im Panel direkt per „Beispiel laden" einspielen. Rein lokal in
   `localStorage`, nicht Teil des PNG-Exports.
-  - **„Bewertung & Infos"-Ebene** (im „+ Form"-Menü): eine besondere,
-    konfigurierbare Ebene, die auf Konsolen-/globaler Vorlagenebene
-    platziert wird und live Bewertung (★, aus 5), Release-Jahr und
-    Spieleranzahl des jeweils geöffneten Spiels aus dessen `gamelist.xml`
-    zeigt – pro Karte automatisch die richtigen Werte, ohne pro Spiel neu
-    gepflegt werden zu müssen. Bewertung/Jahr/Spieleranzahl einzeln ein-
-    und ausblendbar; das **Spieler-Icon ist konfigurierbar** (automatisch
-    Einzel-/Mehrspieler anhand der Spielerzahl, oder fest Einzelspieler /
-    Mehrspieler / Controller), dazu Text-/Sternfarbe und ein optionaler
-    Hintergrund-Chip. Beim Bearbeiten einer Konsolen-Vorlage zeigt die
-    Ebene zur Vorschau die Daten des ersten geladenen gamelist-Eintrags;
-    ohne passende Daten erscheinen „–"-Platzhalter statt erfundener Werte.
-    Rendert komplett aus Konva-Primitiven (kein Bild-Icon), landet also
-    unverändert im PNG-Export.
+  - **Metadaten-Ebenen** (im „+ Form"-Menü, Abschnitt „Aus gamelist.xml"):
+    besondere, konfigurierbare Ebenen, die auf Konsolen-/globaler
+    Vorlagenebene platziert werden und live aus der `gamelist.xml` des
+    jeweils geöffneten Spiels lesen – pro Karte automatisch die richtigen
+    Werte, ohne pro Spiel neu gepflegt werden zu müssen. Einzeln
+    hinzufügbar für **Bewertung** (★, aus 5), **Erscheinungsjahr** oder
+    **Spieleranzahl** (jede frei positionier- und skalierbar), oder als
+    „Alle kombiniert" in einer Ebene. Das **Spieler-Icon ist
+    konfigurierbar** (automatisch Einzel-/Mehrspieler anhand der
+    Spielerzahl, oder fest Einzelspieler / Mehrspieler / Controller), dazu
+    Text-/Sternfarbe und ein optionaler Hintergrund-Chip. Beim Bearbeiten
+    einer Konsolen-Vorlage zeigen die Ebenen zur Vorschau die Daten des
+    ersten geladenen gamelist-Eintrags; ohne passende Daten erscheinen
+    „–"-Platzhalter statt erfundener Werte. Rendert komplett aus
+    Konva-Primitiven (kein Bild-Icon), landet also unverändert im
+    PNG-Export.
 
 ## Entwicklung
 
