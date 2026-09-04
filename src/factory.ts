@@ -1,7 +1,15 @@
 import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
-import type { ImageLayer, Layer, Project, ShapeKind, ShapeLayer, TextLayer } from "./types";
+import type {
+  ImageLayer,
+  Layer,
+  MetaBadgeLayer,
+  Project,
+  ShapeKind,
+  ShapeLayer,
+  TextLayer,
+} from "./types";
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -147,6 +155,28 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   };
 }
 
+// A console-level badge showing rating/year/players read from gamelist.xml
+// for whichever game the card ends up belonging to.
+export function makeMetaBadgeLayer(): MetaBadgeLayer {
+  return {
+    ...base("Bewertung & Infos"),
+    type: "metabadge",
+    width: TRIM_RECT.w * 0.72,
+    height: 46,
+    fontSize: 20,
+    color: "#f8fafc",
+    starColor: "#fbbf24",
+    showRating: true,
+    showYear: true,
+    showPlayers: true,
+    playersIcon: "auto",
+    background: true,
+    backgroundColor: "#000000",
+    backgroundOpacity: 0.45,
+    cornerRadius: 12,
+  };
+}
+
 export function isImage(l: Layer): l is ImageLayer {
   return l.type === "image";
 }
@@ -155,4 +185,7 @@ export function isText(l: Layer): l is TextLayer {
 }
 export function isShape(l: Layer): l is ShapeLayer {
   return l.type === "shape";
+}
+export function isMetaBadge(l: Layer): l is MetaBadgeLayer {
+  return l.type === "metabadge";
 }

@@ -1,6 +1,7 @@
 import Konva from "konva";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
+  Circle,
   Ellipse,
   Group,
   Image as KImage,
@@ -8,6 +9,7 @@ import {
   Line,
   Rect,
   Stage,
+  Star,
   Text,
   Transformer,
 } from "react-konva";
@@ -20,6 +22,14 @@ import {
   resolveBackground,
 } from "../background";
 import { CANVAS, CORNER_RADIUS_PX, SAFE_RECT, TRIM_RECT } from "../card";
+import type { GameMeta } from "../gamelist";
+import {
+  getGamelistVersion,
+  ratingOutOfFive,
+  releaseYear,
+  resolveBadgeMeta,
+  subscribeGamelists,
+} from "../gamelist";
 import { useImage } from "../hooks/useImage";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
@@ -27,6 +37,8 @@ import type {
   CardBackground,
   ImageLayer as TImageLayer,
   Layer as TLayer,
+  MetaBadgeLayer as TMetaBadgeLayer,
+  PlayersIconStyle,
   Project,
   ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
@@ -69,6 +81,10 @@ export function EditorCanvas({
   const { state, dispatch } = useStore();
   const { project, selectedId, showBleed, showSafe } = state;
   const bg = effectiveBackground(project, consoleBg, globalBg);
+  // Re-render whenever a gamelist.xml is uploaded/removed, even without
+  // navigating away, so MetaBadge layers stay live.
+  useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
+  const badgeMeta = resolveBadgeMeta(project);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -167,6 +183,7 @@ export function EditorCanvas({
                   asMask={asMask}
                   selected={layer.id === selectedId}
                   groupChildren={groupChildren}
+                  meta={badgeMeta}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);
@@ -201,7 +218,9 @@ export function EditorCanvas({
           {overlay.length > 0 && (
             <Layer listening={false}>
               {overlay.map((layer) =>
-                layer.visible ? <ReadOnlyLayer key={layer.id} layer={layer} /> : null,
+                layer.visible ? (
+                  <ReadOnlyLayer key={layer.id} layer={layer} meta={badgeMeta} />
+                ) : null,
               )}
             </Layer>
           )}
@@ -264,6 +283,7 @@ function LayerNode({
   asMask = false,
   selected = false,
   groupChildren,
+  meta,
   register,
   onSelect,
   onChange,
@@ -273,6 +293,7 @@ function LayerNode({
   asMask?: boolean;
   selected?: boolean;
   groupChildren?: TLayer[];
+  meta?: GameMeta;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
@@ -391,17 +412,26 @@ function LayerNode({
 
   return (
     <Group {...common}>
-      <LayerInner layer={layer} asMask={asMask} />
+      <LayerInner layer={layer} asMask={asMask} meta={meta} />
     </Group>
   );
 }
 
-function LayerInner({ layer, asMask = false }: { layer: TLayer; asMask?: boolean }) {
+function LayerInner({
+  layer,
+  asMask = false,
+  meta,
+}: {
+  layer: TLayer;
+  asMask?: boolean;
+  meta?: GameMeta;
+}) {
   // As a mask, the node paints only its alpha into its Konva layer and keeps
   // (destination-in) the clipped layers drawn before it.
   const gco = asMask ? ("destination-in" as const) : undefined;
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
+  if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
   return <TextInner layer={layer} gco={gco} />;
 }
 
@@ -474,6 +504,172 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   );
 }
 
+// Console-level badge: rating, release year and a players icon, all read
+// live from the gamelist.xml entry matched to the current card (`meta`).
+function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMeta }) {
+  const w = layer.width;
+  const h = layer.height;
+
+  const segments = (
+    [
+      layer.showRating && "rating",
+      layer.showYear && "year",
+      layer.showPlayers && "players",
+    ] as const
+  ).filter((s): s is "rating" | "year" | "players" => !!s);
+
+  const n = Math.max(1, segments.length);
+  const colW = w / n;
+  const iconSize = Math.min(h * 0.62, layer.fontSize * 1.6);
+  const pad = Math.max(3, layer.fontSize * 0.15);
+
+  const ratingText = ratingOutOfFive(meta?.rating);
+  const yearText = releaseYear(meta?.releasedate);
+  const playersRaw = meta?.players?.trim();
+
+  return (
+    <>
+      {layer.background && (
+        <Rect
+          x={-w / 2}
+          y={-h / 2}
+          width={w}
+          height={h}
+          cornerRadius={layer.cornerRadius}
+          fill={layer.backgroundColor}
+          opacity={layer.backgroundOpacity}
+        />
+      )}
+      {segments.map((kind, i) => {
+        const colX = -w / 2 + colW * i;
+        if (kind === "year") {
+          return (
+            <Text
+              key={kind}
+              x={colX}
+              y={-h / 2}
+              width={colW}
+              height={h}
+              align="center"
+              verticalAlign="middle"
+              text={yearText ?? "–"}
+              fontFamily="system-ui, sans-serif"
+              fontStyle="bold"
+              fontSize={layer.fontSize}
+              fill={layer.color}
+            />
+          );
+        }
+
+        const iconCx = colX + iconSize / 2 + pad;
+        const textX = colX + iconSize + pad * 2;
+        const textW = Math.max(4, colW - iconSize - pad * 3);
+        const label =
+          kind === "rating" ? (ratingText ?? "–") : (playersRaw || "–");
+
+        return (
+          <Group key={kind}>
+            {kind === "rating" ? (
+              <Star
+                x={iconCx}
+                y={0}
+                numPoints={5}
+                innerRadius={iconSize * 0.24}
+                outerRadius={iconSize * 0.5}
+                fill={layer.starColor}
+              />
+            ) : (
+              <PlayersGlyph
+                cx={iconCx}
+                size={iconSize}
+                color={layer.color}
+                style={layer.playersIcon}
+                solo={playersRaw === "1"}
+              />
+            )}
+            <Text
+              x={textX}
+              y={-h / 2}
+              width={textW}
+              height={h}
+              align="left"
+              verticalAlign="middle"
+              text={label}
+              fontFamily="system-ui, sans-serif"
+              fontStyle="bold"
+              fontSize={layer.fontSize}
+              fill={layer.color}
+            />
+          </Group>
+        );
+      })}
+    </>
+  );
+}
+
+// Built from plain Konva primitives (no external icon assets) so it stays
+// crisp at any scale and renders identically in the PNG export.
+function PlayersGlyph({
+  cx,
+  size,
+  color,
+  style,
+  solo,
+}: {
+  cx: number;
+  size: number;
+  color: string;
+  style: PlayersIconStyle;
+  solo: boolean;
+}) {
+  const kind = style === "auto" ? (solo ? "single" : "group") : style;
+
+  if (kind === "controller") {
+    const w = size;
+    const h = size * 0.56;
+    const s = size * 0.09;
+    return (
+      <Group x={cx} y={0}>
+        <Rect
+          x={-w / 2}
+          y={-h / 2}
+          width={w}
+          height={h}
+          cornerRadius={h / 2}
+          stroke={color}
+          strokeWidth={s}
+        />
+        <Rect x={-w * 0.32} y={-s * 0.5} width={s * 2.2} height={s} fill={color} />
+        <Rect x={-w * 0.32 + s * 1.1 - s * 0.5} y={-s * 1.6} width={s} height={s * 2.2} fill={color} />
+        <Circle x={w * 0.22} y={-h * 0.12} radius={s * 0.9} fill={color} />
+        <Circle x={w * 0.32} y={h * 0.1} radius={s * 0.9} fill={color} />
+      </Group>
+    );
+  }
+
+  const person = (dx: number, scale: number, opacity: number, key: string) => (
+    <Group key={key} x={cx + dx} y={0} opacity={opacity}>
+      <Circle y={-size * 0.24 * scale} radius={size * 0.2 * scale} fill={color} />
+      <Rect
+        x={-size * 0.28 * scale}
+        y={size * 0.03 * scale}
+        width={size * 0.56 * scale}
+        height={size * 0.3 * scale}
+        cornerRadius={[size * 0.28 * scale, size * 0.28 * scale, 0, 0]}
+        fill={color}
+      />
+    </Group>
+  );
+
+  if (kind === "single") return person(0, 1, 1, "solo");
+  return (
+    <>
+      {person(-size * 0.2, 0.82, 0.55, "back")}
+      {person(size * 0.07, 1, 1, "front")}
+    </>
+  );
+}
+
 function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
   const full = { x: 0, y: 0, width: CANVAS.w, height: CANVAS.h };
 
@@ -507,7 +703,7 @@ function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
 }
 
 // Console-template layer shown on a game card: visible, never interactive.
-function ReadOnlyLayer({ layer }: { layer: TLayer }) {
+function ReadOnlyLayer({ layer, meta }: { layer: TLayer; meta?: GameMeta }) {
   const common = {
     x: layer.x,
     y: layer.y,
@@ -519,7 +715,7 @@ function ReadOnlyLayer({ layer }: { layer: TLayer }) {
   };
   return (
     <Group {...common}>
-      <LayerInner layer={layer} />
+      <LayerInner layer={layer} meta={meta} />
     </Group>
   );
 }

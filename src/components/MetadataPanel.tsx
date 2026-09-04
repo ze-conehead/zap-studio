@@ -1,11 +1,20 @@
 import { Star } from "lucide-react";
+import { useSyncExternalStore } from "react";
 import { findGame } from "../data/catalog";
-import { findMeta, formatReleaseDate, loadGamelist } from "../gamelist";
+import {
+  findMeta,
+  formatReleaseDate,
+  getGamelistVersion,
+  loadGamelist,
+  subscribeGamelists,
+} from "../gamelist";
 import { useStore } from "../store";
 
 export function MetadataPanel() {
   const { state } = useStore();
   const project = state.project;
+  // Live-update if a gamelist.xml is uploaded/removed while this is open.
+  useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
 
   if (project.isGlobalTemplate) {
     return (

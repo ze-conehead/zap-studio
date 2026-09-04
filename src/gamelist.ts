@@ -1,6 +1,9 @@
 // EmulationStation-style gamelist.xml — one per console, stored locally.
 // <gameList><game><name/><desc/><image/><releasedate/><developer/>...</game></gameList>
 
+import { findGame } from "./data/catalog";
+import type { Project } from "./types";
+
 export interface GameMeta {
   name: string;
   path?: string;
@@ -15,6 +18,27 @@ export interface GameMeta {
 }
 
 const KEY = (consoleId: string) => `stickerstudio:gamelist:${consoleId}`;
+
+// gamelist.xml lives outside React state (plain localStorage), but layers
+// like MetaBadge need to redraw the instant a list is uploaded/removed —
+// even without navigating away. A minimal external-store pub/sub lets
+// components opt into that via useSyncExternalStore.
+let version = 0;
+const listeners = new Set<() => void>();
+
+function notifyGamelistsChanged() {
+  version++;
+  for (const l of listeners) l();
+}
+
+export function subscribeGamelists(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function getGamelistVersion(): number {
+  return version;
+}
 
 export function loadGamelist(consoleId: string): GameMeta[] {
   try {
@@ -31,10 +55,12 @@ export function saveGamelist(consoleId: string, games: GameMeta[]): void {
   } catch {
     /* storage full / unavailable */
   }
+  notifyGamelistsChanged();
 }
 
 export function clearGamelist(consoleId: string): void {
   localStorage.removeItem(KEY(consoleId));
+  notifyGamelistsChanged();
 }
 
 function text(el: Element, tag: string): string | undefined {
@@ -76,4 +102,36 @@ export function findMeta(games: GameMeta[], title: string): GameMeta | undefined
 export function formatReleaseDate(raw: string | undefined): string | undefined {
   const m = /^(\d{4})(\d{2})(\d{2})/.exec(raw ?? "");
   return m ? `${m[3]}.${m[2]}.${m[1]}` : raw;
+}
+
+// "20170428T000000" -> "2017"
+export function releaseYear(raw: string | undefined): string | undefined {
+  const m = /^(\d{4})/.exec(raw ?? "");
+  return m ? m[1] : undefined;
+}
+
+// "0.92" -> "4.6" (gamelist ratings are 0..1, shown here out of 5 stars)
+export function ratingOutOfFive(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+  const v = Number(raw);
+  if (Number.isNaN(v)) return undefined;
+  return (Math.max(0, Math.min(1, v)) * 5).toFixed(1);
+}
+
+// The metadata a "MetaBadge" layer shows for the current view:
+// - an open game card → its real gamelist.xml entry (if matched)
+// - a console template being edited → the first entry of its gamelist, as
+//   a live preview so the badge isn't blank while you design it
+// - anything else (global template, unlinked project, no data) → undefined
+export function resolveBadgeMeta(project: Project): GameMeta | undefined {
+  const found = findGame(project.gameKey);
+  if (found) {
+    const games = loadGamelist(found.console.id);
+    return findMeta(games, found.game.title);
+  }
+  if (project.isTemplate && project.consoleId) {
+    const games = loadGamelist(project.consoleId);
+    if (games.length > 0) return games[0];
+  }
+  return undefined;
 }

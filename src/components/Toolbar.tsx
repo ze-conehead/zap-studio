@@ -1,4 +1,5 @@
 import {
+  Award,
   Box,
   ChevronDown,
   Circle,
@@ -42,7 +43,7 @@ import {
   exportPng,
   type ExportMode,
 } from "../export";
-import { makeImageLayer, makeShapeLayer, makeTextLayer } from "../factory";
+import { makeImageLayer, makeMetaBadgeLayer, makeShapeLayer, makeTextLayer } from "../factory";
 import type { ShapeKind } from "../types";
 import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
@@ -263,6 +264,14 @@ export function Toolbar({
                 <Icon /> {label}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() =>
+                dispatch({ type: "ADD_LAYER", layer: makeMetaBadgeLayer() })
+              }
+            >
+              <Award /> Bewertung &amp; Infos
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

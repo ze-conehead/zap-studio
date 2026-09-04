@@ -1,4 +1,5 @@
 import {
+  Award,
   Copy,
   CornerDownRight,
   Crop,
@@ -15,7 +16,7 @@ import {
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isImage, isShape } from "../factory";
+import { isImage, isMetaBadge, isShape } from "../factory";
 import { useStore } from "../store";
 
 export function LayerList() {
@@ -57,7 +58,13 @@ export function LayerList() {
       <ul className="flex flex-col gap-1">
         {layers.map((l) => {
           const active = l.id === state.selectedId;
-          const Icon = isImage(l) ? ImageIcon : isShape(l) ? Shapes : Type;
+          const Icon = isImage(l)
+            ? ImageIcon
+            : isShape(l)
+              ? Shapes
+              : isMetaBadge(l)
+                ? Award
+                : Type;
           return (
             <li
               key={l.id}

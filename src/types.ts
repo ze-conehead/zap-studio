@@ -1,6 +1,9 @@
-export type LayerType = "image" | "text" | "shape";
+export type LayerType = "image" | "text" | "shape" | "metabadge";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
+
+// How the player-count icon is chosen on a metadata badge.
+export type PlayersIconStyle = "auto" | "single" | "group" | "controller";
 
 export interface CardBackground {
   kind: "solid" | "gradient";
@@ -68,7 +71,27 @@ export interface ShapeLayer extends BaseLayer {
   strokeWidth: number;
 }
 
-export type Layer = ImageLayer | TextLayer | ShapeLayer;
+// Console-level "smart" badge: shows the rating, release year and player
+// count read from the gamelist.xml entry of whichever game the card is
+// for. Usually placed once in a console (or the global) template.
+export interface MetaBadgeLayer extends BaseLayer {
+  type: "metabadge";
+  width: number;
+  height: number;
+  fontSize: number;
+  color: string; // text + players-icon colour
+  starColor: string; // rating star colour
+  showRating: boolean;
+  showYear: boolean;
+  showPlayers: boolean;
+  playersIcon: PlayersIconStyle;
+  background: boolean;
+  backgroundColor: string;
+  backgroundOpacity: number; // 0..1
+  cornerRadius: number; // background chip
+}
+
+export type Layer = ImageLayer | TextLayer | ShapeLayer | MetaBadgeLayer;
 
 export interface Project {
   id: string;

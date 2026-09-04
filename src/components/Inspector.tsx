@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import { resolveBackground } from "../background";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
-import { isImage, isShape, isText } from "../factory";
+import { isImage, isMetaBadge, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
@@ -39,6 +39,8 @@ import type {
   CardBackground,
   ImageLayer,
   Layer,
+  MetaBadgeLayer,
+  PlayersIconStyle,
   ShapeLayer,
   TextLayer,
 } from "../types";
@@ -159,6 +161,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
       {isShape(selected) && <ShapeProps layer={selected} patch={patch} />}
+      {isMetaBadge(selected) && <MetaBadgeProps layer={selected} patch={patch} />}
     </Panel>
   );
 }
@@ -664,6 +667,121 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
           onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
         />
       </div>
+    </>
+  );
+}
+
+function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch }) {
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">
+        Zeigt Bewertung, Release-Jahr und Spieleranzahl des jeweils geöffneten
+        Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der
+        globalen Vorlage platzieren.
+      </p>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          label="Breite px"
+          value={round(layer.width)}
+          onChange={(v) => patch({ width: Math.max(20, v) })}
+        />
+        <NumberField
+          label="Höhe px"
+          value={round(layer.height)}
+          onChange={(v) => patch({ height: Math.max(12, v) })}
+        />
+        <NumberField
+          label="Textgröße"
+          value={round(layer.fontSize)}
+          onChange={(v) => patch({ fontSize: Math.max(6, v) })}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Inhalte</Label>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={layer.showRating}
+            onCheckedChange={(v) => patch({ showRating: !!v })}
+          />
+          Bewertung
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={layer.showYear}
+            onCheckedChange={(v) => patch({ showYear: !!v })}
+          />
+          Release-Jahr
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={layer.showPlayers}
+            onCheckedChange={(v) => patch({ showPlayers: !!v })}
+          />
+          Spieleranzahl
+        </label>
+      </div>
+
+      {layer.showPlayers && (
+        <Field label="Spieler-Icon">
+          <Select
+            value={layer.playersIcon}
+            onValueChange={(v) => patch({ playersIcon: v as PlayersIconStyle })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Automatisch (1 = Einzelspieler)</SelectItem>
+              <SelectItem value="single">Immer Einzelspieler</SelectItem>
+              <SelectItem value="group">Immer Mehrspieler</SelectItem>
+              <SelectItem value="controller">Controller</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <ColorField label="Textfarbe" value={layer.color} onChange={(v) => patch({ color: v })} />
+        <ColorField
+          label="Sternfarbe"
+          value={layer.starColor}
+          onChange={(v) => patch({ starColor: v })}
+        />
+      </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={layer.background}
+          onCheckedChange={(v) => patch({ background: !!v })}
+        />
+        Hintergrund-Chip
+      </label>
+      {layer.background && (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <ColorField
+              label="Hintergrundfarbe"
+              value={layer.backgroundColor}
+              onChange={(v) => patch({ backgroundColor: v })}
+            />
+            <NumberField
+              label="Ecken-Radius"
+              value={round(layer.cornerRadius)}
+              onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
+            />
+          </div>
+          <SliderField
+            label={`Deckkraft ${Math.round(layer.backgroundOpacity * 100)}%`}
+            min={0}
+            max={1}
+            step={0.01}
+            value={layer.backgroundOpacity}
+            onChange={(v, done) => patch({ backgroundOpacity: v }, done)}
+          />
+        </>
+      )}
     </>
   );
 }

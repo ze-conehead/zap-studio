@@ -101,6 +101,20 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Dateien für alle 5 Konsolen liegen unter `public/gamelists/` und lassen
   sich im Panel direkt per „Beispiel laden" einspielen. Rein lokal in
   `localStorage`, nicht Teil des PNG-Exports.
+  - **„Bewertung & Infos"-Ebene** (im „+ Form"-Menü): eine besondere,
+    konfigurierbare Ebene, die auf Konsolen-/globaler Vorlagenebene
+    platziert wird und live Bewertung (★, aus 5), Release-Jahr und
+    Spieleranzahl des jeweils geöffneten Spiels aus dessen `gamelist.xml`
+    zeigt – pro Karte automatisch die richtigen Werte, ohne pro Spiel neu
+    gepflegt werden zu müssen. Bewertung/Jahr/Spieleranzahl einzeln ein-
+    und ausblendbar; das **Spieler-Icon ist konfigurierbar** (automatisch
+    Einzel-/Mehrspieler anhand der Spielerzahl, oder fest Einzelspieler /
+    Mehrspieler / Controller), dazu Text-/Sternfarbe und ein optionaler
+    Hintergrund-Chip. Beim Bearbeiten einer Konsolen-Vorlage zeigt die
+    Ebene zur Vorschau die Daten des ersten geladenen gamelist-Eintrags;
+    ohne passende Daten erscheinen „–"-Platzhalter statt erfundener Werte.
+    Rendert komplett aus Konva-Primitiven (kein Bild-Icon), landet also
+    unverändert im PNG-Export.
 
 ## Entwicklung
 
@@ -132,7 +146,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/export.ts` | PNG-Rendering mit Beschnitt & Schnittmarken |
 | `src/persist.ts` | IndexedDB-Speicherung (`idb-keyval`) |
 | `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
-| `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen |
+| `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
 | `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
 
