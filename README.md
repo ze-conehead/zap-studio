@@ -60,6 +60,18 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   (PNG/JPG/SVG/WebP …). URL-Bilder werden heruntergeladen und ins Projekt
   eingebettet – der Host muss Cross-Origin-Zugriff erlauben, sonst kommt ein
   Hinweis. Große Bilder werden auf max. 2400 px heruntergerechnet.
+- **Cover suchen**: bei einer offenen Spiel-Karte sucht der Button „Cover
+  suchen" (Toolbar) anhand von Konsole + Spieltitel automatisch nach
+  Box-Art – kostenlos, ohne Anmeldung, über die community-gepflegte
+  [libretro-thumbnails](https://github.com/libretro-thumbnails)-Sammlung auf
+  GitHub. Ein Dialog zeigt alle passenden Treffer (verschiedene
+  Regionen/Editionen) als Vorschau; anklicken lädt das hochauflösende
+  Original herunter und fügt es als neue Bild-Ebene ein (derselbe Pfad wie
+  „Von URL einfügen"). Abgedeckt sind Retro-/Emulations-Konsolen (u. a.
+  NES/SNES/N64, Mega Drive/Genesis, PlayStation 1–4, GameCube/Wii/Wii U,
+  Xbox/360 …) – für aktuelle Konsolen ohne Emulation (z. B. Switch, PS5,
+  Xbox Series) gibt es dort keine Datenbank; der Dialog weist dann auf das
+  manuelle Einfügen per URL hin. Siehe [src/covers.ts](src/covers.ts).
 - **Logo-Presets**: 6 neutrale, generische Platzhaltermarken (`src/assets/logos.ts`).
   Eigene Artwork-Dateien einfach als Bild hochladen.
 - **Schriften**: System-Fonts + Google Fonts (Oswald, Bebas Neue,
@@ -155,7 +167,9 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/persist.ts` | IndexedDB-Speicherung (`idb-keyval`) |
 | `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
 | `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
-| `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" |
+| `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
+| `src/covers.ts` | Cover-Suche über libretro-thumbnails (GitHub, kein API-Key) |
+| `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
 
 ## Rechtliches

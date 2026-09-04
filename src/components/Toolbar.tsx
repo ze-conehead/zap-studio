@@ -8,6 +8,7 @@ import {
   FilePlus2,
   FolderOpen,
   ImagePlus,
+  Images,
   MoveHorizontal,
   MoveVertical,
   Pill,
@@ -39,6 +40,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
 import { exportBackup, importBackup } from "../backup";
+import { findGame } from "../data/catalog";
 import {
   EXPORT_LABELS,
   downloadBlob,
@@ -58,6 +60,7 @@ import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } f
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { GuideApi } from "../App";
+import { CoverSearchDialog } from "./CoverSearchDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 
 interface Props {
@@ -85,6 +88,9 @@ export function Toolbar({
   const [imgOpen, setImgOpen] = useState(false);
   const [imgUrl, setImgUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [coverSearchOpen, setCoverSearchOpen] = useState(false);
+
+  const foundGame = findGame(project.gameKey);
 
   const saveBackup = async () => {
     try {
@@ -142,6 +148,22 @@ export function Toolbar({
       dispatch({ type: "ADD_LAYER", layer: makeImageLayer({ ...img, name: nameFromUrl(url) }) });
       setImgUrl("");
       setImgOpen(false);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const addCoverFromUrl = async (url: string) => {
+    setCoverSearchOpen(false);
+    try {
+      setBusy("Cover wird geladen …");
+      const img = await urlToLayerSource(url);
+      dispatch({
+        type: "ADD_LAYER",
+        layer: makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
+      });
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -246,6 +268,12 @@ export function Toolbar({
             </div>
           </PopoverContent>
         </Popover>
+
+        {foundGame && (
+          <Button variant="outline" size="sm" onClick={() => setCoverSearchOpen(true)}>
+            <Images /> Cover suchen
+          </Button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -461,6 +489,16 @@ export function Toolbar({
           e.target.value = "";
         }}
       />
+
+      {foundGame && (
+        <CoverSearchDialog
+          open={coverSearchOpen}
+          onOpenChange={setCoverSearchOpen}
+          consoleName={foundGame.console.name}
+          gameTitle={foundGame.game.title}
+          onPick={(url) => void addCoverFromUrl(url)}
+        />
+      )}
     </header>
   );
 }
