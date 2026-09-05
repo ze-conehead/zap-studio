@@ -391,25 +391,32 @@ export function Toolbar({
           />
           Sicherheitszone
         </label>
-        <label className="flex items-center gap-1.5">
-          <Checkbox checked={guides.state.on} onCheckedChange={() => guides.toggle()} />
-          Hilfslinien
-        </label>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" title="Hilfslinie hinzufügen">
-              <Ruler />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => guides.add("x")}>
-              <MoveVertical /> Vertikale Hilfslinie
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => guides.add("y")}>
-              <MoveHorizontal /> Horizontale Hilfslinie
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {project.isGlobalTemplate && (
+          <>
+            <label className="flex items-center gap-1.5">
+              <Checkbox
+                checked={guides.state.on}
+                onCheckedChange={() => guides.toggle()}
+              />
+              Hilfslinien
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" title="Hilfslinie hinzufügen">
+                  <Ruler />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => guides.add("x")}>
+                  <MoveVertical /> Vertikale Hilfslinie
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => guides.add("y")}>
+                  <MoveHorizontal /> Horizontale Hilfslinie
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        )}
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">

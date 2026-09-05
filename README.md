@@ -35,7 +35,9 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     live mit.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
-    welche Konsole. Projekt `tpl-global`.
+    welche Konsole. Projekt `tpl-global`. Hat keinen „Metadaten"-Tab, ihr
+    eigener Hintergrund ist immer an, und **Hilfslinien werden nur hier
+    angelegt/bearbeitet** (siehe unten).
   - **Konsolen-Vorlage** (Konsolenname anklicken) – Ebenen auf allen
     Spiel-Karten dieser Konsole. Projekt `tpl-<konsole>`.
   - **Spiel-Design** – die Karte selbst.
@@ -48,9 +50,9 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 - **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
   Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
   Overlay-Blend). Wird in den PNG-Export übernommen.
-  - Auch die **globale Vorlage** und jede **Konsolen-Vorlage** können einen
-    eigenen Hintergrund festlegen (Checkbox „Eigenen Hintergrund für diese
-    Vorlage").
+  - Jede **Konsolen-Vorlage** kann einen eigenen Hintergrund festlegen
+    (Checkbox „Eigenen Hintergrund für diese Vorlage"); die **globale
+    Vorlage** hat immer einen (kein Opt-in).
   - Jede Karte wählt unter **Hintergrund-Quelle**: eigener Hintergrund,
     „Von der Konsolen-Vorlage" oder „Von der globalen Vorlage". Nicht
     gesetzte Quellen sind deaktiviert.
@@ -106,12 +108,14 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 - **Hilfslinien**: Beschnittkante (3 mm), Endformat, Sicherheitszone (3 mm).
   Standardmäßig **aus** – die Vorschau zeigt die reine Karte, auf das
   Endformat mit abgerundeten Ecken zugeschnitten.
-- **Eigene Hilfslinien**: vertikale/horizontale Linien (Toolbar-Lineal-Menü
-  oder Inspector), die auf **allen** Karten erscheinen. Mit einem Klick
-  („Hilfslinien"-Checkbox) an/aus. Auf der Karte ziehen zum Positionieren,
+- **Eigene Hilfslinien**: vertikale/horizontale Linien, die auf **allen**
+  Karten erscheinen. Angelegt und bearbeitet werden sie **nur bei „Alle
+  Konsolen"** (Toolbar-Lineal-Menü + „Hilfslinien"-Panel im Inspector,
+  „Hilfslinien"-Checkbox an/aus). Auf der Karte ziehen zum Positionieren,
   über den Rand ziehen oder Papierkorb im Inspector zum Löschen, mm-genaue
-  Eingabe im Inspector. Global in `localStorage` gespeichert, nicht im
-  PNG-Export.
+  Eingabe im Inspector. Auf Spiel-Karten und Konsolen-Vorlagen werden sie
+  nur angezeigt (nicht verschiebbar). Global in `localStorage` gespeichert,
+  nicht im PNG-Export.
 - **3D-Vorschau**: Button in der Toolbar öffnet die Karte als 3D-Objekt
   (CSS-Perspektive), mit der Maus frei drehbar. Checkbox „Holographische
   Karte" legt einen Regenbogen-Foil-/Glitzer-/Glanz-Effekt darüber, der

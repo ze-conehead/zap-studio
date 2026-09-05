@@ -35,14 +35,15 @@ export const GLOBAL_TEMPLATE_ID = "tpl-global";
 const TEMPLATE_BG = { ...DEFAULT_BACKGROUND, enabled: false };
 
 // The global template sits above every console: its layers are overlaid on
-// every game sticker, no matter the console. Background is opt-in.
+// every game sticker, no matter the console. Its own background is always
+// active (it's the base layer for every card).
 export function newGlobalTemplate(): Project {
   const now = Date.now();
   return {
     id: GLOBAL_TEMPLATE_ID,
     name: "Globale Vorlage",
-    backgroundColor: "transparent",
-    background: { ...TEMPLATE_BG },
+    backgroundColor: DEFAULT_BACKGROUND.color,
+    background: { ...DEFAULT_BACKGROUND, enabled: true },
     layers: [],
     createdAt: now,
     updatedAt: now,

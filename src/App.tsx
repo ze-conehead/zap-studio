@@ -101,6 +101,15 @@ export default function App() {
   // Boot: restore last project or start a fresh one.
   useEffect(() => {
     (async () => {
+      // "Alle Konsolen" always has its own (enabled) background, and cards
+      // may reference it — make sure it exists and is on from the start.
+      const g = await loadProject(GLOBAL_TEMPLATE_ID);
+      if (!g) {
+        await saveProject(newGlobalTemplate());
+      } else if (g.background && !g.background.enabled) {
+        await saveProject({ ...g, background: { ...g.background, enabled: true } });
+      }
+
       const id = lastProjectId();
       const existing = id ? await loadProject(id) : undefined;
       if (existing) {
@@ -175,6 +184,10 @@ export default function App() {
   const openGlobalTemplate = async () => {
     if (project?.id === GLOBAL_TEMPLATE_ID) return;
     const existing = await loadProject(GLOBAL_TEMPLATE_ID);
+    if (existing?.background && !existing.background.enabled) {
+      // "Alle Konsolen" always has its own background on.
+      existing.background = { ...existing.background, enabled: true };
+    }
     setProject(existing ?? newGlobalTemplate());
   };
 
@@ -283,14 +296,16 @@ function Shell({
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3">
               <TabsTrigger value="props">Eigenschaften</TabsTrigger>
-              <TabsTrigger value="meta">Metadaten</TabsTrigger>
+              {!activeGlobal && <TabsTrigger value="meta">Metadaten</TabsTrigger>}
             </TabsList>
             <TabsContent value="props" className="mt-0">
               <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
             </TabsContent>
-            <TabsContent value="meta" className="mt-0">
-              <MetadataPanel />
-            </TabsContent>
+            {!activeGlobal && (
+              <TabsContent value="meta" className="mt-0">
+                <MetadataPanel />
+              </TabsContent>
+            )}
           </Tabs>
         </aside>
       </div>

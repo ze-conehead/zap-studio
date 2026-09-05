@@ -11,7 +11,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -99,20 +99,17 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
               />
             )}
           </Panel>
-          <GuidesPanel guides={guides} />
+          {global && <GuidesPanel guides={guides} />}
         </>
       );
     }
     return (
-      <>
-        <Panel title="Kartenhintergrund">
-          <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
-          <p className="text-xs text-muted-foreground">
-            Wähle eine Ebene aus, um sie zu bearbeiten.
-          </p>
-        </Panel>
-        <GuidesPanel guides={guides} />
-      </>
+      <Panel title="Kartenhintergrund">
+        <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
+        <p className="text-xs text-muted-foreground">
+          Wähle eine Ebene aus, um sie zu bearbeiten.
+        </p>
+      </Panel>
     );
   }
 
@@ -319,8 +316,9 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
 
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Erscheinen auf allen Karten. Auf der Karte ziehen zum Positionieren,
-          über den Rand hinaus ziehen zum Löschen.
+          Nur hier („Alle Konsolen") bearbeitbar, erscheinen aber auf allen
+          Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus
+          ziehen zum Löschen.
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
@@ -411,22 +409,36 @@ function BackgroundSourceControl({
   );
 }
 
-// Template (global or console): opt-in background, same editor as the card.
+// Template background editor. The console template's background is opt-in;
+// the global template ("Alle Konsolen") always has its own background on.
 function TemplateBackgroundControls() {
   const { state, dispatch } = useStore();
+  const global = !!state.project.isGlobalTemplate;
   const bg = resolveBackground(state.project);
+
+  // Older global templates may have been saved with the background off.
+  useEffect(() => {
+    if (global && !bg.enabled) {
+      dispatch({ type: "SET_BACKGROUND", patch: { enabled: true } });
+    }
+  }, [global, bg.enabled, dispatch]);
+
   return (
     <div className="flex flex-col gap-2 border-t pt-3">
-      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Checkbox
-          checked={!!bg.enabled}
-          onCheckedChange={(v) =>
-            dispatch({ type: "SET_BACKGROUND", patch: { enabled: !!v } })
-          }
-        />
-        Eigenen Hintergrund für diese Vorlage
-      </label>
-      {bg.enabled && (
+      {global ? (
+        <p className="text-xs font-medium text-muted-foreground">Hintergrund</p>
+      ) : (
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <Checkbox
+            checked={!!bg.enabled}
+            onCheckedChange={(v) =>
+              dispatch({ type: "SET_BACKGROUND", patch: { enabled: !!v } })
+            }
+          />
+          Eigenen Hintergrund für diese Vorlage
+        </label>
+      )}
+      {(global || bg.enabled) && (
         <FillEditor
           value={bg}
           onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}

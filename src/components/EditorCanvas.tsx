@@ -230,11 +230,12 @@ export function EditorCanvas({
           </Layer>
 
           {guides.state.on && guides.state.items.length > 0 && (
-            <Layer name="guides">
+            <Layer name="guides" listening={!!project.isGlobalTemplate}>
               {guides.state.items.map((g) => (
                 <GuideLine
                   key={g.id}
                   guide={g}
+                  readOnly={!project.isGlobalTemplate}
                   onMove={(pos) => guides.update(g.id, pos)}
                   onRemove={() => guides.remove(g.id)}
                 />
@@ -843,10 +844,12 @@ function GuideLine({
   guide,
   onMove,
   onRemove,
+  readOnly = false,
 }: {
   guide: Guide;
   onMove: (pos: number) => void;
   onRemove: () => void;
+  readOnly?: boolean;
 }) {
   const vertical = guide.axis === "x";
   const ref = useRef<Konva.Line>(null);
@@ -869,6 +872,20 @@ function GuideLine({
     const s = e.target.getStage();
     if (s) s.container().style.cursor = c;
   };
+
+  if (readOnly) {
+    return (
+      <Line
+        x={vertical ? guide.pos : 0}
+        y={vertical ? 0 : guide.pos}
+        points={vertical ? [0, 0, 0, CANVAS.h] : [0, 0, CANVAS.w, 0]}
+        stroke="#22d3ee"
+        strokeWidth={1}
+        dash={[5, 4]}
+        listening={false}
+      />
+    );
+  }
 
   return (
     <Line
