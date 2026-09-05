@@ -229,8 +229,8 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   `localStorage` (`stickerstudio:format`), ein Wechsel lädt die Seite neu.
   Jedes Format hat eigene Designs, eigene Vorlagen („Alle Konsolen" /
   Konsolen-Vorlagen, id-Suffix `--<format>`) und einen eigenen Spiel-Index.
-  **Mehrpanel-Formate** (DVD-Wrap = Rücken + Buchrücken + Front, J-Card =
-  Front + Rücken + Rückseite) sind ein durchgehendes Artboard mit
+  **Mehrpanel-Formate** (DVD-Wrap = Lasche + Rücken + Buchrücken + Front + Lasche,
+  J-Card = Front + Buchrücken + Rückseite + Einsteck-Lasche) sind ein durchgehendes Artboard mit
   Faltlinien (`panels` in `formats.ts`); die Falze erscheinen als
   Hilfslinien im Editor, als Falt-Marken im „Schnittmarken"-Export und in
   einer flachen 3D-Vorschau.

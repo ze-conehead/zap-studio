@@ -83,6 +83,7 @@ export const de: Record<string, string> = {
   "DVD case wrap": "DVD-Hüllen-Wrap",
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
   Spine: "Rücken",
+  Flap: "Lasche",
   "Fold lines dashed": "Faltlinien gestrichelt",
 
   // ── Factory defaults (layer / project names) ─────────────────────────────

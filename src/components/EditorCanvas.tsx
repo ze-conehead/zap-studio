@@ -907,22 +907,51 @@ function PanelGuides() {
           dash={[12, 7]}
         />
       ))}
-      {PANELS.map((p) => (
-        <Text
-          key={`${p.name}-${p.x}`}
-          x={p.x}
-          y={TRIM_RECT.y + 8}
-          width={p.w}
-          align="center"
-          text={t(p.name).toUpperCase()}
-          fontFamily="system-ui, sans-serif"
-          fontStyle="bold"
-          fontSize={14}
-          fill="#f59e0b"
-          opacity={0.85}
-          listening={false}
-        />
-      ))}
+      {PANELS.map((p) => {
+        const label = t(p.name).toUpperCase();
+        // Narrow panels (spine, tuck flap) get a rotated, centred label so
+        // the text still fits.
+        if (p.w < 300) {
+          const boxW = TRIM_RECT.h - 24;
+          return (
+            <Text
+              key={`${p.name}-${p.x}`}
+              x={p.x + p.w / 2}
+              y={TRIM_RECT.y + TRIM_RECT.h / 2}
+              width={boxW}
+              height={p.w}
+              offsetX={boxW / 2}
+              offsetY={p.w / 2}
+              rotation={-90}
+              align="center"
+              verticalAlign="middle"
+              text={label}
+              fontFamily="system-ui, sans-serif"
+              fontStyle="bold"
+              fontSize={12}
+              fill="#f59e0b"
+              opacity={0.85}
+              listening={false}
+            />
+          );
+        }
+        return (
+          <Text
+            key={`${p.name}-${p.x}`}
+            x={p.x}
+            y={TRIM_RECT.y + 8}
+            width={p.w}
+            align="center"
+            text={label}
+            fontFamily="system-ui, sans-serif"
+            fontStyle="bold"
+            fontSize={14}
+            fill="#f59e0b"
+            opacity={0.85}
+            listening={false}
+          />
+        );
+      })}
     </>
   );
 }

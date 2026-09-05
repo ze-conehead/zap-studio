@@ -65,22 +65,26 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   "dvd-insert": {
     id: "dvd-insert",
     name: "DVD case wrap",
-    trimMM: { w: 275, h: 183 }, // back 130.5 + spine 14 + front 130.5
+    // flap 7 + back 130.5 + spine 14 + front 130.5 + flap 7
+    trimMM: { w: 289, h: 183 },
     bleedMM: 3,
     cornerRadiusMM: 0,
     safeMM: 4,
     thickRatio: 0.0008,
     hasBack: false,
     panels: [
+      { name: "Flap", wMM: 7 },
       { name: "Back", wMM: 130.5 },
       { name: "Spine", wMM: 14 },
       { name: "Front", wMM: 130.5 },
+      { name: "Flap", wMM: 7 },
     ],
   },
   "cassette-jcard": {
     id: "cassette-jcard",
     name: "Cassette case (J-card)",
-    trimMM: { w: 140, h: 101.6 }, // front 64 + spine 12 + back 64
+    // front 64 + spine 12 + back 64 + tuck flap 14
+    trimMM: { w: 154, h: 101.6 },
     bleedMM: 3,
     cornerRadiusMM: 0,
     safeMM: 3,
@@ -90,6 +94,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Front", wMM: 64 },
       { name: "Spine", wMM: 12 },
       { name: "Back", wMM: 64 },
+      { name: "Flap", wMM: 14 },
     ],
   },
 };
