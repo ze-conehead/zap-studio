@@ -84,6 +84,13 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Xbox/360 …) – für aktuelle Konsolen ohne Emulation (z. B. Switch, PS5,
   Xbox Series) gibt es dort keine Datenbank; der Dialog weist dann auf das
   manuelle Einfügen per URL hin. Siehe [src/covers.ts](src/covers.ts).
+- **Quick Import** (Toolbar): Sammel-Import für Bilder. Öffnet eine Tabelle
+  mit allen Spielen, deren Design noch keine Bild-Ebene hat (Spalten
+  Konsole / Spiel / URL). Je eine Bild-URL eintragen, „Fertig" – jede URL
+  wird geladen, eingebettet und als Bild-Ebene ins jeweilige Design gelegt
+  (fehlt das Design noch, wird es angelegt). Fehlgeschlagene URLs (CORS,
+  404, kein Bild) bleiben mit Fehlermeldung stehen und lassen sich erneut
+  versuchen. Siehe [src/quickImport.ts](src/quickImport.ts).
 - **Logo-Presets**: 6 neutrale, generische Platzhaltermarken (`src/assets/logos.ts`).
   Eigene Artwork-Dateien einfach als Bild hochladen.
 - **Schriften**: System-Fonts + Google Fonts (Oswald, Bebas Neue,
@@ -183,6 +190,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
 | `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
 | `src/covers.ts` | Cover-Suche über libretro-thumbnails (GitHub, kein API-Key) |
+| `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
 | `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
 

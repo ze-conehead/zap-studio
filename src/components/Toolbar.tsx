@@ -9,6 +9,7 @@ import {
   FolderOpen,
   ImagePlus,
   Images,
+  Import,
   MoveHorizontal,
   MoveVertical,
   Pill,
@@ -62,6 +63,7 @@ import { useStore } from "../store";
 import type { GuideApi } from "../App";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import type { CanvasHandle } from "./EditorCanvas";
+import { QuickImportDialog } from "./QuickImportDialog";
 
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
@@ -89,6 +91,7 @@ export function Toolbar({
   const [imgUrl, setImgUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [coverSearchOpen, setCoverSearchOpen] = useState(false);
+  const [quickImportOpen, setQuickImportOpen] = useState(false);
 
   const foundGame = findGame(project.gameKey);
 
@@ -442,6 +445,14 @@ export function Toolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setQuickImportOpen(true)}
+          title="Bild-URLs für alle Spiele ohne Bild in einer Tabelle eintragen"
+        >
+          <Import /> Quick Import
+        </Button>
         <Button variant="outline" size="sm" onClick={onOpenProjects}>
           <FolderOpen /> Projekte
         </Button>
@@ -499,6 +510,13 @@ export function Toolbar({
           onPick={(url) => void addCoverFromUrl(url)}
         />
       )}
+
+      <QuickImportDialog
+        open={quickImportOpen}
+        onOpenChange={setQuickImportOpen}
+        currentGameKey={project.gameKey}
+        onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
+      />
     </header>
   );
 }
