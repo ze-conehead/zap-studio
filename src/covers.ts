@@ -321,18 +321,39 @@ interface TreeEntry {
 
 const treeCache = new Map<string, Promise<TreeEntry[]>>();
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// GitHub's recursive-tree endpoint 500s intermittently on big repos, so
+// retry a few times before giving up — and never keep a rejected promise in
+// the cache (that would make a manual retry fail forever).
+async function fetchTree(repo: string): Promise<TreeEntry[]> {
+  const url = `https://api.github.com/repos/libretro-thumbnails/${repo}/git/trees/master?recursive=1`;
+  let lastErr = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await sleep(500 * attempt);
+    let res: Response;
+    try {
+      res = await fetch(url);
+    } catch {
+      lastErr = "GitHub nicht erreichbar.";
+      continue;
+    }
+    if (res.ok) {
+      const d = (await res.json()) as { tree?: TreeEntry[] };
+      return (d.tree ?? []).filter((e) => e.type === "blob");
+    }
+    lastErr = `GitHub-Anfrage fehlgeschlagen (HTTP ${res.status}).`;
+    if (res.status < 500 && res.status !== 429) break; // 4xx won't fix itself
+  }
+  throw new Error(lastErr);
+}
+
 async function loadTree(repo: string): Promise<TreeEntry[]> {
   let pending = treeCache.get(repo);
   if (!pending) {
-    pending = fetch(
-      `https://api.github.com/repos/libretro-thumbnails/${repo}/git/trees/master?recursive=1`,
-    )
-      .then((r) => {
-        if (!r.ok) throw new Error(`GitHub-Anfrage fehlgeschlagen (HTTP ${r.status}).`);
-        return r.json() as Promise<{ tree?: TreeEntry[] }>;
-      })
-      .then((d) => (d.tree ?? []).filter((e) => e.type === "blob"));
+    pending = fetchTree(repo);
     treeCache.set(repo, pending);
+    pending.catch(() => treeCache.delete(repo));
   }
   return pending;
 }

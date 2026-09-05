@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   effectiveSource,
@@ -212,7 +212,16 @@ export function CoverSearchDialog({
         )}
 
         {state.status === "error" && (
-          <p className="py-6 text-sm text-destructive">{state.message}</p>
+          <div className="flex flex-col items-start gap-3 py-6">
+            <p className="text-sm text-destructive">{state.message}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReloadKey((n) => n + 1)}
+            >
+              <RotateCcw /> Erneut versuchen
+            </Button>
+          </div>
         )}
 
         {state.status === "done" && !supported && (
