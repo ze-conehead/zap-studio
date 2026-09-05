@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Sony PlayStation. -->
+<gameList>
+	<game>
+		<path>./Gran Turismo.chd</path>
+		<name>Gran Turismo</name>
+		<desc>Realistische Rennsimulation mit hunderten lizenzierten Fahrzeugen, Führerschein-Prüfungen und langem Karrieremodus.</desc>
+		<image>./media/images/Gran Turismo.png</image>
+		<releasedate>19971223T000000</releasedate>
+		<developer>Polyphony Digital</developer>
+		<publisher>Sony Computer Entertainment</publisher>
+		<genre>Racing</genre>
+		<players>1-2</players>
+		<rating>0.94</rating>
+	</game>
+	<game>
+		<path>./Final Fantasy VII.chd</path>
+		<name>Final Fantasy VII</name>
+		<desc>Rundenbasiertes Rollenspiel um Cloud und die Öko-Gruppe Avalanche im Kampf gegen den Konzern Shinra.</desc>
+		<image>./media/images/Final Fantasy VII.png</image>
+		<releasedate>19970131T000000</releasedate>
+		<developer>Square</developer>
+		<publisher>Square</publisher>
+		<genre>RPG</genre>
+		<players>1</players>
+		<rating>0.95</rating>
+	</game>
+	<game>
+		<path>./Metal Gear Solid.chd</path>
+		<name>Metal Gear Solid</name>
+		<desc>Kinoreifer Schleich-Actiontitel, in dem Solid Snake einen Terroranschlag mit einem laufenden Kampfroboter verhindern soll.</desc>
+		<image>./media/images/Metal Gear Solid.png</image>
+		<releasedate>19980903T000000</releasedate>
+		<developer>Konami Computer Entertainment Japan</developer>
+		<publisher>Konami</publisher>
+		<genre>Stealth-Action</genre>
+		<players>1</players>
+		<rating>0.94</rating>
+	</game>
+	<game>
+		<path>./Crash Bandicoot 2.chd</path>
+		<name>Crash Bandicoot 2: Cortex Strikes Back</name>
+		<desc>Lineares 3D-Jump'n'Run, in dem Crash für den scheinbar geläuterten Dr. Cortex Kristalle sammelt.</desc>
+		<image>./media/images/Crash Bandicoot 2.png</image>
+		<releasedate>19971031T000000</releasedate>
+		<developer>Naughty Dog</developer>
+		<publisher>Sony Computer Entertainment</publisher>
+		<genre>Platformer</genre>
+		<players>1</players>
+		<rating>0.88</rating>
+	</game>
+	<game>
+		<path>./Tekken 3.chd</path>
+		<name>Tekken 3</name>
+		<desc>Schnelles 3D-Prügelspiel mit großem Charakteraufgebot, Ausweichschritten und Bonusmodi wie Tekken Force.</desc>
+		<image>./media/images/Tekken 3.png</image>
+		<releasedate>19980326T000000</releasedate>
+		<developer>Namco</developer>
+		<publisher>Namco</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.92</rating>
+	</game>
+</gameList>

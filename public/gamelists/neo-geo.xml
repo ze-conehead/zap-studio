@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Neo Geo. -->
+<gameList>
+	<game>
+		<path>./mslug3.zip</path>
+		<name>Metal Slug 3</name>
+		<desc>Handgezeichneter Run-and-Gun-Shooter mit verzweigten Levelwegen, Fahrzeugen und schrulligen Bossgegnern.</desc>
+		<image>./media/images/Metal Slug 3.png</image>
+		<releasedate>20000323T000000</releasedate>
+		<developer>SNK</developer>
+		<publisher>SNK</publisher>
+		<genre>Run and Gun</genre>
+		<players>1-2</players>
+		<rating>0.92</rating>
+	</game>
+	<game>
+		<path>./kof98.zip</path>
+		<name>The King of Fighters '98</name>
+		<desc>Als "Dream Match" ohne Story gefeierter Serienteil mit riesigem Roster und ausbalanciertem 3-gegen-3-Kampf.</desc>
+		<image>./media/images/The King of Fighters 98.png</image>
+		<releasedate>19980723T000000</releasedate>
+		<developer>SNK</developer>
+		<publisher>SNK</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.93</rating>
+	</game>
+	<game>
+		<path>./garou.zip</path>
+		<name>Garou: Mark of the Wolves</name>
+		<desc>Letzter Fatal-Fury-Ableger auf Neo Geo mit neuem Cast, T.O.P.-System und dem Just-Defense-Konter.</desc>
+		<image>./media/images/Garou Mark of the Wolves.png</image>
+		<releasedate>19991126T000000</releasedate>
+		<developer>SNK</developer>
+		<publisher>SNK</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.92</rating>
+	</game>
+	<game>
+		<path>./samsho2.zip</path>
+		<name>Samurai Shodown II</name>
+		<desc>Waffenbasiertes Prügelspiel im Japan der Edo-Zeit mit betontem Abstandsspiel, Paraden und Wutleiste.</desc>
+		<image>./media/images/Samurai Shodown II.png</image>
+		<releasedate>19941028T000000</releasedate>
+		<developer>SNK</developer>
+		<publisher>SNK</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./lastblad2.zip</path>
+		<name>The Last Blade 2</name>
+		<desc>Stilvolles Schwertkampfspiel gegen Ende der Bakumatsu-Ära mit wählbarem Geschwindigkeits- und Power-Modus.</desc>
+		<image>./media/images/The Last Blade 2.png</image>
+		<releasedate>19981125T000000</releasedate>
+		<developer>SNK</developer>
+		<publisher>SNK</publisher>
+		<genre>Fighting</genre>
+		<players>1-2</players>
+		<rating>0.89</rating>
+	</game>
+</gameList>

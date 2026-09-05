@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Super Nintendo. -->
+<gameList>
+	<game>
+		<path>./Super Mario World.sfc</path>
+		<name>Super Mario World</name>
+		<desc>Launch-Jump'n'Run des SNES mit Yoshi, geheimen Ausgängen und einer verzweigten Weltkarte über Dinosaur Land.</desc>
+		<image>./media/images/Super Mario World.png</image>
+		<releasedate>19901121T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Platformer</genre>
+		<players>1-2</players>
+		<rating>0.96</rating>
+	</game>
+	<game>
+		<path>./Zelda A Link to the Past.sfc</path>
+		<name>The Legend of Zelda: A Link to the Past</name>
+		<desc>Top-Down-Action-Adventure mit dem Wechsel zwischen Licht- und Schattenwelt, prägend für die gesamte Reihe.</desc>
+		<image>./media/images/Zelda A Link to the Past.png</image>
+		<releasedate>19911121T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.96</rating>
+	</game>
+	<game>
+		<path>./Super Mario Kart.sfc</path>
+		<name>Super Mario Kart</name>
+		<desc>Der Serienauftakt der Kart-Rennspiele mit Mode-7-Strecken, Item-Boxen und geteiltem Bildschirm.</desc>
+		<image>./media/images/Super Mario Kart.png</image>
+		<releasedate>19920827T000000</releasedate>
+		<developer>Nintendo EAD</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Racing</genre>
+		<players>1-2</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./Donkey Kong Country.sfc</path>
+		<name>Donkey Kong Country</name>
+		<desc>Jump'n'Run mit vorgerenderter 3D-Grafik, in dem Donkey und Diddy Kong ihren gestohlenen Bananenhort zurückholen.</desc>
+		<image>./media/images/Donkey Kong Country.png</image>
+		<releasedate>19941121T000000</releasedate>
+		<developer>Rare</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Platformer</genre>
+		<players>1-2</players>
+		<rating>0.9</rating>
+	</game>
+	<game>
+		<path>./Super Metroid.sfc</path>
+		<name>Super Metroid</name>
+		<desc>Atmosphärisches Action-Adventure auf dem Planeten Zebes mit offener, nach und nach zugänglicher Karte.</desc>
+		<image>./media/images/Super Metroid.png</image>
+		<releasedate>19940319T000000</releasedate>
+		<developer>Nintendo R&amp;D1</developer>
+		<publisher>Nintendo</publisher>
+		<genre>Action-Adventure</genre>
+		<players>1</players>
+		<rating>0.96</rating>
+	</game>
+</gameList>

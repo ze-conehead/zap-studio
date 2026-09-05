@@ -1,8 +1,8 @@
-// Catalogue for the console/game tree. Five representative consoles, each
-// seeded with a widely-cited "top 10", plus a locally-persisted overlay so
-// the user can add or remove games (right-click in the tree). The overlay
-// lives in localStorage and is diff-shaped (added games / removed seed ids)
-// so the seed list can still evolve.
+// Catalogue for the console/game tree. Five classic consoles, each seeded
+// with a widely-cited "top 5", plus a locally-persisted overlay so the user
+// can add or remove games (right-click in the tree). The overlay lives in
+// localStorage and is diff-shaped (added games / removed seed ids) so the
+// seed list can still evolve.
 // Game and console names are trademarks of their owners.
 
 export interface CatalogGame {
@@ -35,41 +35,12 @@ function make(name: string, titles: string[]): CatalogConsole {
 }
 
 const SEED_CATALOG: CatalogConsole[] = [
-  make("Nintendo Switch", [
-    "Mario Kart 8 Deluxe",
-    "Animal Crossing: New Horizons",
-    "Super Smash Bros. Ultimate",
-    "The Legend of Zelda: Breath of the Wild",
-    "Super Mario Odyssey",
-    "Pokémon Schwert / Schild",
-    "The Legend of Zelda: Tears of the Kingdom",
-    "Pokémon Karmesin / Purpur",
-    "Super Mario Party",
-    "New Super Mario Bros. U Deluxe",
-  ]),
-  make("PlayStation 5", [
-    "Marvel's Spider-Man 2",
-    "God of War Ragnarök",
-    "Gran Turismo 7",
-    "Ratchet & Clank: Rift Apart",
-    "Demon's Souls",
-    "Returnal",
-    "Horizon Forbidden West",
-    "Final Fantasy XVI",
-    "Astro's Playroom",
-    "Helldivers 2",
-  ]),
-  make("Xbox Series X|S", [
-    "Halo Infinite",
-    "Forza Horizon 5",
-    "Starfield",
-    "Microsoft Flight Simulator",
-    "Sea of Thieves",
-    "Forza Motorsport",
-    "Senua's Saga: Hellblade II",
-    "Grounded",
-    "Pentiment",
-    "Hi-Fi Rush",
+  make("PlayStation", [
+    "Gran Turismo",
+    "Final Fantasy VII",
+    "Metal Gear Solid",
+    "Crash Bandicoot 2: Cortex Strikes Back",
+    "Tekken 3",
   ]),
   make("Nintendo 64", [
     "Super Mario 64",
@@ -77,23 +48,27 @@ const SEED_CATALOG: CatalogConsole[] = [
     "GoldenEye 007",
     "The Legend of Zelda: Ocarina of Time",
     "Super Smash Bros.",
-    "The Legend of Zelda: Majora's Mask",
-    "Banjo-Kazooie",
-    "Diddy Kong Racing",
-    "Star Fox 64",
-    "Perfect Dark",
   ]),
-  make("Sega Mega Drive", [
-    "Sonic the Hedgehog 2",
-    "Sonic the Hedgehog",
-    "Disney's Aladdin",
-    "Streets of Rage 2",
-    "Mortal Kombat II",
-    "Gunstar Heroes",
-    "Golden Axe",
-    "Phantasy Star IV",
-    "Sonic 3 & Knuckles",
-    "Ecco the Dolphin",
+  make("Super Nintendo", [
+    "Super Mario World",
+    "The Legend of Zelda: A Link to the Past",
+    "Super Mario Kart",
+    "Donkey Kong Country",
+    "Super Metroid",
+  ]),
+  make("Nintendo Entertainment System", [
+    "Super Mario Bros.",
+    "Super Mario Bros. 3",
+    "The Legend of Zelda",
+    "Metroid",
+    "Mega Man 2",
+  ]),
+  make("Neo Geo", [
+    "Metal Slug 3",
+    "The King of Fighters '98",
+    "Garou: Mark of the Wolves",
+    "Samurai Shodown II",
+    "The Last Blade 2",
   ]),
 ];
 

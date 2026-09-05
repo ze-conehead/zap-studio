@@ -10,8 +10,9 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 
 ## Features
 
-- **Konsolen-/Spiele-Baum** (links): 5 Beispielkonsolen mit je den Top 10
-  Spielen ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
+- **Konsolen-/Spiele-Baum** (links): 5 Klassik-Konsolen (PlayStation,
+  Nintendo 64, Super Nintendo, NES, Neo Geo) mit je den Top 5 Spielen
+  ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
   - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" (Titel
