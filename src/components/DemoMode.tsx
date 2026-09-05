@@ -383,7 +383,7 @@ function CardViewer({
           <RotateCcw /> {t("Reset")}
         </Button>
         <Button variant="outline" size="sm" onClick={onClose}>
-          <X /> {t("Back")}
+          <X /> {t("Close viewer")}
         </Button>
       </div>
 

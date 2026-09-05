@@ -3,6 +3,7 @@ import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
 import type {
+  BackFace,
   ImageLayer,
   Layer,
   MetaBadgeLayer,
@@ -27,6 +28,15 @@ export function newProject(name = t("New sticker design")): Project {
     layers: [],
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+// A fresh, empty back face (its own layer stack + background).
+export function makeBackFace(): BackFace {
+  return {
+    layers: [],
+    backgroundColor: DEFAULT_BACKGROUND.color,
+    background: { ...DEFAULT_BACKGROUND },
   };
 }
 

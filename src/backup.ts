@@ -76,21 +76,26 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   const assetMime: Record<string, string> = {};
   const seen = new Map<string, string>(); // data URL -> "asset:<file>"
 
+  const externalizeLayer = <T extends Project["layers"][number]>(l: T): T => {
+    if (l.type !== "image" || !l.src.startsWith("data:")) return l;
+    let ref = seen.get(l.src);
+    if (!ref) {
+      const parsed = parseDataUrl(l.src);
+      if (!parsed) return l;
+      const fname = `${hash(l.src)}.${parsed.ext}`;
+      files[`assets/${fname}`] = parsed.bytes;
+      assetMime[fname] = parsed.mime;
+      ref = `asset:${fname}`;
+      seen.set(l.src, ref);
+    }
+    return { ...l, src: ref };
+  };
+
   const externalize = (p: Project): Project => ({
     ...p,
-    layers: p.layers.map((l) => {
-      if (l.type !== "image" || !l.src.startsWith("data:")) return l;
-      let ref = seen.get(l.src);
-      if (!ref) {
-        const parsed = parseDataUrl(l.src);
-        if (!parsed) return l;
-        const fname = `${hash(l.src)}.${parsed.ext}`;
-        files[`assets/${fname}`] = parsed.bytes;
-        assetMime[fname] = parsed.mime;
-        ref = `asset:${fname}`;
-        seen.set(l.src, ref);
-      }
-      return { ...l, src: ref };
+    layers: p.layers.map(externalizeLayer),
+    ...(p.back && {
+      back: { ...p.back, layers: p.back.layers.map(externalizeLayer) },
     }),
   });
 
@@ -152,13 +157,15 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
     assetUrl.set(`asset:${fname}`, bytesToDataUrl(entries[path], mime));
   }
 
+  const resolveLayer = <T extends Project["layers"][number]>(l: T): T =>
+    l.type === "image" && l.src.startsWith("asset:")
+      ? { ...l, src: assetUrl.get(l.src) ?? l.src }
+      : l;
+
   const resolve = (p: Project): Project => ({
     ...p,
-    layers: p.layers.map((l) =>
-      l.type === "image" && l.src.startsWith("asset:")
-        ? { ...l, src: assetUrl.get(l.src) ?? l.src }
-        : l,
-    ),
+    layers: p.layers.map(resolveLayer),
+    ...(p.back && { back: { ...p.back, layers: p.back.layers.map(resolveLayer) } }),
   });
 
   let np = 0;

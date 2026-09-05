@@ -26,7 +26,11 @@ import { CoverButton } from "./CoverButton";
 export function LayerList({ mainMask }: { mainMask?: Layer }) {
   const t = useT();
   const { state, dispatch } = useStore();
-  const layers = [...state.project.layers].reverse(); // top of stack first
+  const faceLayers =
+    state.side === "back"
+      ? state.project.back?.layers ?? []
+      : state.project.layers;
+  const layers = [...faceLayers].reverse(); // top of stack first
 
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);

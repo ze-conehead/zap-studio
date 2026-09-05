@@ -50,15 +50,21 @@ import type { Layer, ShapeKind } from "../types";
 export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
   const { state, dispatch } = useStore();
   const t = useT();
-  const { project } = state;
+  const { project, side } = state;
+  const onBack = side === "back";
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
 
-  // Fresh image on a game card: the first image is the card's main image,
-  // and a main image is sized to fully cover the global alpha mask.
+  // Fresh image on a game card front: the first image is the card's main
+  // image and gets sized to cover the global alpha mask. The back has no
+  // "main image" role and no mask.
   const addImageLayer = (img: Parameters<typeof makeImageLayer>[0]) => {
+    if (onBack) {
+      dispatch({ type: "ADD_LAYER", layer: makeImageLayer(img) });
+      return;
+    }
     const firstImage = !project.layers.some((l) => l.type === "image");
     let layer = makeImageLayer(img);
     if (firstImage && !project.isTemplate) layer = { ...layer, main: true };
@@ -155,23 +161,27 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
             </DropdownMenuItem>
           ))}
 
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
-          {badges.map(([kind, label, Icon]) => (
-            <DropdownMenuItem
-              key={kind}
-              onClick={() =>
-                dispatch({
-                  type: "ADD_LAYER",
-                  layer: makeMetaBadgeLayer(kind as MetaBadgeKind),
-                })
-              }
-            >
-              <Icon /> {t(label)}
-            </DropdownMenuItem>
-          ))}
+          {!onBack && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
+              {badges.map(([kind, label, Icon]) => (
+                <DropdownMenuItem
+                  key={kind}
+                  onClick={() =>
+                    dispatch({
+                      type: "ADD_LAYER",
+                      layer: makeMetaBadgeLayer(kind as MetaBadgeKind),
+                    })
+                  }
+                >
+                  <Icon /> {t(label)}
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
 
-          {project.isGlobalTemplate && (
+          {!onBack && project.isGlobalTemplate && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem

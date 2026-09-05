@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useT } from "../i18n";
 import { exportPng } from "../export";
+import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
 
 const START = { x: -10, y: -20 };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const raf2 = () =>
+  new Promise<void>((r) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => r())),
+  );
 
 export function CardPreview({
   canvas,
@@ -17,7 +22,10 @@ export function CardPreview({
   onClose: () => void;
 }) {
   const t = useT();
+  const { state, dispatch } = useStore();
+  const hasBack = !!state.project.back;
   const [img, setImg] = useState<string | null>(null);
+  const [backImg, setBackImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
   const [rot, setRot] = useState(START);
@@ -31,9 +39,42 @@ export function CardPreview({
       setErr(t("No card to show."));
       return;
     }
-    exportPng({ stage, stageWidth: w, mode: "trim" })
-      .then(setImg)
-      .catch((e) => setErr((e as Error).message));
+    const capture = () => exportPng({ stage, stageWidth: w, mode: "trim" });
+
+    // Nothing to toggle: capture the visible front straight away.
+    if (!hasBack && state.side === "front") {
+      capture().then(setImg).catch((e) => setErr((e as Error).message));
+      return;
+    }
+
+    // Flip the editor to each face just long enough to grab a frame, then
+    // put the view back exactly as the user left it.
+    const originalSide = state.side;
+    const originalSelected = state.selectedId;
+    let cancelled = false;
+    (async () => {
+      try {
+        dispatch({ type: "SET_SIDE", side: "front" });
+        await raf2();
+        if (cancelled) return;
+        setImg(await capture());
+        if (hasBack) {
+          dispatch({ type: "SET_SIDE", side: "back" });
+          await raf2();
+          if (cancelled) return;
+          setBackImg(await capture());
+        }
+      } catch (e) {
+        if (!cancelled) setErr((e as Error).message);
+      } finally {
+        dispatch({ type: "SET_SIDE", side: originalSide });
+        if (originalSelected) dispatch({ type: "SELECT", id: originalSelected });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvas]);
 
   useEffect(() => {
@@ -54,7 +95,8 @@ export function CardPreview({
     if (!d) return;
     setRot({
       x: clamp(d.rx - (e.clientY - d.y) * 0.32, -72, 72),
-      y: clamp(d.ry + (e.clientX - d.x) * 0.32, -85, 85),
+      // Allow a full turn so the back of the card can be inspected.
+      y: clamp(d.ry + (e.clientX - d.x) * 0.32, -200, 200),
     });
   };
   const endDrag = () => {
@@ -97,7 +139,11 @@ export function CardPreview({
             <div className="sparkle" />
             <div className="glare" />
           </div>
-          <div className="face back" />
+          <div className="face back">
+            {backImg && (
+              <img src={backImg} alt={t("Card preview")} draggable={false} />
+            )}
+          </div>
           <div className="edge edge-l" />
           <div className="edge edge-r" />
           <div className="edge edge-t" />

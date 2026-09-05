@@ -19,7 +19,7 @@ export function CoverButton({ mainMask }: { mainMask?: Layer }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  if (!foundGame) return null;
+  if (!foundGame || state.side === "back") return null;
 
   const addCoverFromUrl = async (url: string) => {
     setOpen(false);

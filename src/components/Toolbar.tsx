@@ -9,6 +9,7 @@ import {
   ListPlus,
   MoveHorizontal,
   MoveVertical,
+  Plus,
   Redo2,
   Ruler,
   Sparkles,
@@ -18,6 +19,7 @@ import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +70,7 @@ export function Toolbar({
   const { state, dispatch } = useStore();
   const t = useT();
   const [lang, setLang] = useLang();
-  const { project, past, future, showBleed, showSafe } = state;
+  const { project, side, past, future, showBleed, showSafe } = state;
   const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -123,7 +125,8 @@ export function Toolbar({
       setBusy(t("Generating PNG …"));
       const url = await exportPng({ stage, stageWidth: w, mode });
       const safe = project.name.replace(/[^\w\-]+/g, "_").slice(0, 40) || "sticker";
-      downloadDataUrl(url, `${safe}_${mode}.png`);
+      const face = project.back ? (side === "back" ? "_back" : "_front") : "";
+      downloadDataUrl(url, `${safe}${face}_${mode}.png`);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -151,6 +154,33 @@ export function Toolbar({
         >
           {state.dirty ? "●" : "○"}
         </span>
+        {project.back ? (
+          <div className="flex overflow-hidden rounded-md border text-xs font-medium">
+            {(["front", "back"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => dispatch({ type: "SET_SIDE", side: s })}
+                className={cn(
+                  "px-2.5 py-1",
+                  side === s
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                {s === "front" ? t("Front") : t("Back")}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7"
+            onClick={() => dispatch({ type: "ADD_BACK" })}
+          >
+            <Plus /> {t("Add back side")}
+          </Button>
+        )}
       </div>
 
       {project.isGlobalTemplate && (

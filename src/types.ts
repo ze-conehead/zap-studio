@@ -98,13 +98,25 @@ export interface MetaBadgeLayer extends BaseLayer {
 
 export type Layer = ImageLayer | TextLayer | ShapeLayer | MetaBadgeLayer;
 
+// Which face of the card is being edited / shown.
+export type CardSide = "front" | "back";
+
+// The optional back of the card: its own layer stack + background. No
+// template overlay and no main alpha mask (front-only in this phase).
+export interface BackFace {
+  layers: Layer[];
+  background?: CardBackground;
+  backgroundColor?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   backgroundColor: string; // legacy / primary colour mirror
   background?: CardBackground;
   backgroundSource?: BackgroundSource; // game cards only; default DEFAULT_BACKGROUND_SOURCE
-  layers: Layer[]; // index 0 = bottom of the stack
+  layers: Layer[]; // index 0 = bottom of the stack (front face)
+  back?: BackFace; // present once the user adds a back side
   createdAt: number;
   updatedAt: number;
   gameKey?: string; // catalogue link: "console-id/game-id"

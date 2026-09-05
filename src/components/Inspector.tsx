@@ -76,6 +76,9 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
     selected && dispatch({ type: "PATCH_LAYER", id: selected.id, patch: p, history });
 
   if (!selected) {
+    if (state.side === "back") {
+      return <BackFacePanel />;
+    }
     if (state.project.isTemplate) {
       const global = state.project.isGlobalTemplate;
       return (
@@ -187,7 +190,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
 function MainRoleControls({ patch }: { patch: Patch }) {
   const t = useT();
   const { state, selected } = useStore();
-  if (!selected) return null;
+  if (!selected || state.side === "back") return null;
   const { isTemplate, isGlobalTemplate } = state.project;
 
   if (isGlobalTemplate) {
@@ -346,6 +349,38 @@ function BackgroundControls() {
       value={resolveBackground(state.project)}
       onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
     />
+  );
+}
+
+// Shown while editing the back side with nothing selected: its background
+// plus the "remove back" action.
+function BackFacePanel() {
+  const t = useT();
+  const { state, dispatch } = useStore();
+  const back = state.project.back;
+  return (
+    <Panel title={t("Back background")}>
+      <FillEditor
+        value={resolveBackground({
+          background: back?.background,
+          backgroundColor: back?.backgroundColor ?? "",
+        })}
+        onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
+      />
+      <p className="text-xs text-muted-foreground">{t("Select a layer to edit it.")}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="text-destructive hover:text-destructive"
+        onClick={() => {
+          if (window.confirm(t("Remove the back side? Its layers are deleted."))) {
+            dispatch({ type: "REMOVE_BACK" });
+          }
+        }}
+      >
+        <Trash2 /> {t("Remove back side")}
+      </Button>
+    </Panel>
   );
 }
 

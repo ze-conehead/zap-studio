@@ -9,12 +9,19 @@ import {
 } from "react";
 import { t } from "./i18n";
 import { resolveBackground } from "./background";
-import { newProject } from "./factory";
+import { makeBackFace, newProject } from "./factory";
 import { saveProject } from "./persist";
-import type { BackgroundSource, CardBackground, Layer, Project } from "./types";
+import type {
+  BackgroundSource,
+  CardBackground,
+  CardSide,
+  Layer,
+  Project,
+} from "./types";
 
 interface State {
   project: Project;
+  side: CardSide; // which face is being edited (view state, not in history)
   selectedId: string | null;
   past: Project[];
   future: Project[];
@@ -26,6 +33,9 @@ interface State {
 type Action =
   | { type: "LOAD"; project: Project }
   | { type: "RENAME"; name: string }
+  | { type: "SET_SIDE"; side: CardSide }
+  | { type: "ADD_BACK" }
+  | { type: "REMOVE_BACK" }
   | { type: "SET_BACKGROUND"; patch: Partial<CardBackground>; history?: boolean }
   | { type: "SET_BG_SOURCE"; source: BackgroundSource }
   | { type: "ADD_LAYER"; layer: Layer }
@@ -46,10 +56,6 @@ type Action =
 
 const HISTORY_LIMIT = 60;
 
-function touch(p: Project, layers: Layer[]): Project {
-  return { ...p, layers, updatedAt: Date.now() };
-}
-
 function commit(state: State, project: Project): State {
   return {
     ...state,
@@ -61,15 +67,27 @@ function commit(state: State, project: Project): State {
 }
 
 function reducer(state: State, action: Action): State {
-  const { project } = state;
-  const layers = project.layers;
+  const { project, side } = state;
+  // The layer stack of whichever face is active.
+  const layers = side === "back" ? project.back?.layers ?? [] : project.layers;
   const idx = (id: string) => layers.findIndex((l) => l.id === id);
+
+  // Write a new layer list back to the active face.
+  const write = (p: Project, next: Layer[]): Project =>
+    side === "back"
+      ? {
+          ...p,
+          back: { ...(p.back ?? makeBackFace()), layers: next },
+          updatedAt: Date.now(),
+        }
+      : { ...p, layers: next, updatedAt: Date.now() };
 
   switch (action.type) {
     case "LOAD":
       return {
         ...state,
         project: action.project,
+        side: "front",
         selectedId: null,
         past: [],
         future: [],
@@ -79,7 +97,47 @@ function reducer(state: State, action: Action): State {
     case "RENAME":
       return commit(state, { ...project, name: action.name, updatedAt: Date.now() });
 
+    case "SET_SIDE":
+      if (action.side === "back" && !project.back) return state;
+      return { ...state, side: action.side, selectedId: null };
+
+    case "ADD_BACK":
+      if (project.back) return { ...state, side: "back", selectedId: null };
+      return {
+        ...commit(state, { ...project, back: makeBackFace(), updatedAt: Date.now() }),
+        side: "back",
+        selectedId: null,
+      };
+
+    case "REMOVE_BACK": {
+      if (!project.back) return state;
+      const { back: _removed, ...rest } = project;
+      return {
+        ...commit(state, { ...rest, updatedAt: Date.now() }),
+        side: "front",
+        selectedId: null,
+      };
+    }
+
     case "SET_BACKGROUND": {
+      if (side === "back") {
+        const cur = project.back ?? makeBackFace();
+        const bg = {
+          ...resolveBackground({
+            background: cur.background,
+            backgroundColor: cur.backgroundColor ?? "",
+          }),
+          ...action.patch,
+        };
+        const next = {
+          ...project,
+          back: { ...cur, background: bg, backgroundColor: bg.color },
+          updatedAt: Date.now(),
+        };
+        return action.history === false
+          ? { ...state, project: next, dirty: true }
+          : commit(state, next);
+      }
       const bg = { ...resolveBackground(project), ...action.patch };
       const next = { ...project, background: bg, backgroundColor: bg.color, updatedAt: Date.now() };
       return action.history === false
@@ -103,7 +161,7 @@ function reducer(state: State, action: Action): State {
         ...(action.layer.mainMask ? { mainMask: false } : null),
       }));
       return {
-        ...commit(state, touch(project, [...cleared, action.layer])),
+        ...commit(state, write(project, [...cleared, action.layer])),
         selectedId: action.layer.id,
       };
     }
@@ -129,7 +187,7 @@ function reducer(state: State, action: Action): State {
           j === i ? l : ({ ...l, mainMask: false } as Layer),
         );
       }
-      const p = touch(project, next);
+      const p = write(project, next);
       return action.history === false
         ? { ...state, project: p, dirty: true }
         : commit(state, p);
@@ -140,7 +198,7 @@ function reducer(state: State, action: Action): State {
       const next = layers.map((l) =>
         map.has(l.id) ? ({ ...l, ...map.get(l.id) } as Layer) : l,
       );
-      const p = touch(project, next);
+      const p = write(project, next);
       return action.history === false
         ? { ...state, project: p, dirty: true }
         : commit(state, p);
@@ -149,7 +207,7 @@ function reducer(state: State, action: Action): State {
     case "DELETE_LAYER": {
       const next = layers.filter((l) => l.id !== action.id);
       return {
-        ...commit(state, touch(project, next)),
+        ...commit(state, write(project, next)),
         selectedId: state.selectedId === action.id ? null : state.selectedId,
       };
     }
@@ -166,7 +224,7 @@ function reducer(state: State, action: Action): State {
         y: orig.y + 24,
       } as Layer;
       const next = [...layers.slice(0, i + 1), copy, ...layers.slice(i + 1)];
-      return { ...commit(state, touch(project, next)), selectedId: copy.id };
+      return { ...commit(state, write(project, next)), selectedId: copy.id };
     }
 
     case "SET_LAYER_ORDER": {
@@ -176,7 +234,7 @@ function reducer(state: State, action: Action): State {
         .filter((l): l is Layer => !!l);
       if (next.length !== layers.length) return state;
       const same = next.every((l, i) => l === layers[i]);
-      return same ? state : commit(state, touch(project, next));
+      return same ? state : commit(state, write(project, next));
     }
 
     case "SELECT":
@@ -194,6 +252,7 @@ function reducer(state: State, action: Action): State {
         past,
         future: [state.project, ...state.future].slice(0, HISTORY_LIMIT),
         project: prev,
+        side: prev.back ? state.side : "front",
         dirty: true,
       };
     }
@@ -206,6 +265,7 @@ function reducer(state: State, action: Action): State {
         past: [...state.past, state.project].slice(-HISTORY_LIMIT),
         future: rest,
         project: next,
+        side: next.back ? state.side : "front",
         dirty: true,
       };
     }
@@ -232,6 +292,7 @@ export function StoreProvider({
 }) {
   const [state, dispatch] = useReducer(reducer, {
     project: initial,
+    side: "front",
     selectedId: null,
     past: [],
     future: [],
@@ -289,10 +350,13 @@ export function StoreProvider({
     return () => window.removeEventListener("keydown", onKey);
   }, [state.selectedId]);
 
-  const selected = useMemo(
-    () => state.project.layers.find((l) => l.id === state.selectedId) ?? null,
-    [state.project.layers, state.selectedId],
-  );
+  const selected = useMemo(() => {
+    const ls =
+      state.side === "back"
+        ? state.project.back?.layers ?? []
+        : state.project.layers;
+    return ls.find((l) => l.id === state.selectedId) ?? null;
+  }, [state.project, state.side, state.selectedId]);
 
   const value = useMemo(() => ({ state, dispatch, selected }), [state, selected]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

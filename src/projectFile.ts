@@ -30,6 +30,15 @@ export function parseProject(json: string): Project {
     background: src.background ?? base.background,
     backgroundSource: src.backgroundSource,
     layers: Array.isArray(src.layers) ? (src.layers as Layer[]).map(sanitizeLayer) : [],
+    back: src.back
+      ? {
+          layers: Array.isArray(src.back.layers)
+            ? (src.back.layers as Layer[]).map(sanitizeLayer)
+            : [],
+          background: src.back.background,
+          backgroundColor: src.back.backgroundColor,
+        }
+      : undefined,
     id: uid(),
     updatedAt: Date.now(),
   };

@@ -119,18 +119,29 @@ export function EditorCanvas({
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
-  const { project, selectedId, showBleed, showSafe } = state;
-  const bg = effectiveBackground(project, consoleBg, globalBg);
+  const { project, side, selectedId, showBleed, showSafe } = state;
+  const back = side === "back";
   // Re-render whenever a gamelist.xml is uploaded/removed, even without
   // navigating away, so MetaBadge layers stay live.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
   const badgeMeta = resolveBadgeMeta(project);
 
-  // On a game card, the global "main alpha mask" is spliced in right above
-  // the card's main image (the sole image, if none is flagged) so the
-  // existing mask pipeline clips it — the frame is defined once at "Alle
-  // Konsolen".
-  const renderLayers = withMainMask(project, project.layers, mainMask);
+  // The active face's own layer stack.
+  const layerList = back ? project.back?.layers ?? [] : project.layers;
+
+  // The back is a plain face: its own background, no template overlay, no
+  // main alpha mask. The front splices in the global "main alpha mask" right
+  // above the card's main image so the existing mask pipeline clips it.
+  const bg = back
+    ? resolveBackground({
+        background: project.back?.background,
+        backgroundColor: project.back?.backgroundColor ?? "",
+      })
+    : effectiveBackground(project, consoleBg, globalBg);
+  const renderLayers = back
+    ? layerList
+    : withMainMask(project, project.layers, mainMask);
+  const overlayLayers = back ? [] : overlay;
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -162,10 +173,11 @@ export function EditorCanvas({
     const tr = trRef.current;
     if (!tr) return;
     const node = selectedId ? nodeRefs.current.get(selectedId) : undefined;
-    const layer = project.layers.find((l) => l.id === selectedId);
+    const layer = layerList.find((l) => l.id === selectedId);
     tr.nodes(node && layer && !layer.locked ? [node] : []);
     tr.getLayer()?.batchDraw();
-  }, [selectedId, project.layers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, side, project]);
 
   const stageW = CANVAS.w * scale;
   const stageH = CANVAS.h * scale;
@@ -261,9 +273,9 @@ export function EditorCanvas({
             );
           })}
 
-          {overlay.length > 0 && (
+          {overlayLayers.length > 0 && (
             <Layer listening={false}>
-              {overlay.map((layer) =>
+              {overlayLayers.map((layer) =>
                 layer.visible ? (
                   <ReadOnlyLayer key={layer.id} layer={layer} meta={badgeMeta} />
                 ) : null,

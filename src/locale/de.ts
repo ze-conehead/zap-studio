@@ -50,6 +50,13 @@ export const de: Record<string, string> = {
     "Bild-URLs für alle Spiele ohne Bild in einer Tabelle eintragen",
   Projects: "Projekte",
   New: "Neu",
+  "Add back side": "Rückseite hinzufügen",
+  Front: "Vorderseite",
+  Back: "Rückseite",
+  "Back background": "Hintergrund Rückseite",
+  "Remove back side": "Rückseite entfernen",
+  "Remove the back side? Its layers are deleted.":
+    "Rückseite entfernen? Ihre Ebenen werden gelöscht.",
   "Packing backup …": "Backup wird gepackt …",
   "Loading backup …": "Backup wird geladen …",
   "Loading image …": "Bild wird geladen …",
@@ -308,7 +315,7 @@ export const de: Record<string, string> = {
   "Next card": "Nächste Karte",
   Holographic: "Holografisch",
   Reset: "Zurücksetzen",
-  Back: "Zurück",
+  "Close viewer": "Zurück",
   "Drag to rotate · ← → for the next card": "Ziehen zum Drehen · ← → für die nächste Karte",
 
   // ── CoverSearchDialog ────────────────────────────────────────────────────

@@ -224,7 +224,7 @@
   transform: rotateX(90deg);
 }
 
-.preview3d-card .front img,
+.preview3d-card .face img,
 .preview3d-placeholder {
   position: absolute;
   inset: 0;
