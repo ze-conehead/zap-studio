@@ -1,47 +1,91 @@
-// Cover art lookup. Two sources:
-//  - SteamGridDB (when an API key is configured): every platform, high-res
-//    box art. Its API and CDN both block browser CORS and the API needs a
-//    Bearer key, so requests go through the public CORS proxy proxy.cors.sh
-//    (free for localhost) and images through the wsrv.nl image proxy.
-//  - libretro-thumbnails (no key): static box-art scans on GitHub, retro /
-//    emulated systems only. Used as the fallback when there's no key.
+// Cover art lookup. Three sources, chosen in the search dialog:
+//  - SteamGridDB  – needs an API key; every platform, high-res box art.
+//  - IGDB         – needs a Twitch client id + secret; official cover +
+//                   artworks per game.
+//  - libretro-thumbnails – no key, retro / emulated systems only. Fallback
+//                   when the chosen source has no credentials.
+//
+// SteamGridDB's API and CDN block browser CORS, and IGDB's API needs an
+// OAuth token from Twitch (also CORS-blocked). With no backend, those API
+// calls run through the public CORS proxy proxy.cors.sh (free for
+// localhost). SteamGridDB images go through the wsrv.nl image proxy;
+// IGDB's image CDN already sends CORS headers.
 
 export interface CoverCandidate {
   title: string;
-  region: string; // libretro region tag, or SGDB "WxH · style"
+  region: string; // libretro region tag / SGDB "WxH · style" / IGDB kind
   url: string; // full-resolution, CORS-fetchable
   thumb?: string; // smaller preview, CORS-fetchable
 }
 
-// ── SteamGridDB ─────────────────────────────────────────────────────────────
+export type CoverSource = "sgdb" | "igdb" | "libretro";
 
-const SGDB_KEY_STORAGE = "stickerstudio:sgdbKey";
 const CORS_PROXY = "https://proxy.cors.sh/";
 const IMG_PROXY = "https://wsrv.nl/?url=";
-
-export function getSgdbKey(): string {
-  try {
-    return localStorage.getItem(SGDB_KEY_STORAGE)?.trim() || "";
-  } catch {
-    return "";
-  }
-}
-
-export function setSgdbKey(key: string): void {
-  try {
-    const k = key.trim();
-    if (k) localStorage.setItem(SGDB_KEY_STORAGE, k);
-    else localStorage.removeItem(SGDB_KEY_STORAGE);
-  } catch {
-    /* storage unavailable */
-  }
-}
-
-export function usingSGDB(): boolean {
-  return !!getSgdbKey();
-}
-
 const proxied = (url: string) => IMG_PROXY + encodeURIComponent(url);
+
+// ── stored settings ────────────────────────────────────────────────────────
+
+const SGDB_KEY = "stickerstudio:sgdbKey";
+const IGDB_ID = "stickerstudio:igdbClientId";
+const IGDB_SECRET = "stickerstudio:igdbClientSecret";
+const IGDB_TOKEN = "stickerstudio:igdbToken";
+const SOURCE_KEY = "stickerstudio:coverSource";
+
+const ls = {
+  get: (k: string) => {
+    try {
+      return localStorage.getItem(k)?.trim() || "";
+    } catch {
+      return "";
+    }
+  },
+  set: (k: string, v: string) => {
+    try {
+      if (v.trim()) localStorage.setItem(k, v.trim());
+      else localStorage.removeItem(k);
+    } catch {
+      /* unavailable */
+    }
+  },
+};
+
+export const getSgdbKey = () => ls.get(SGDB_KEY);
+export const setSgdbKey = (v: string) => ls.set(SGDB_KEY, v);
+
+export const getIgdbCreds = () => ({
+  clientId: ls.get(IGDB_ID),
+  clientSecret: ls.get(IGDB_SECRET),
+});
+export function setIgdbCreds(clientId: string, clientSecret: string) {
+  ls.set(IGDB_ID, clientId);
+  ls.set(IGDB_SECRET, clientSecret);
+  ls.set(IGDB_TOKEN, ""); // force a fresh token
+}
+
+export function isConfigured(s: CoverSource): boolean {
+  if (s === "sgdb") return !!getSgdbKey();
+  if (s === "igdb") {
+    const c = getIgdbCreds();
+    return !!c.clientId && !!c.clientSecret;
+  }
+  return true;
+}
+
+export function getCoverSource(): CoverSource {
+  const v = ls.get(SOURCE_KEY);
+  return v === "igdb" || v === "libretro" ? v : "sgdb";
+}
+export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
+
+// What actually gets queried: the chosen source if it has credentials,
+// otherwise the keyless libretro fallback.
+export function effectiveSource(): CoverSource {
+  const chosen = getCoverSource();
+  return isConfigured(chosen) ? chosen : "libretro";
+}
+
+// ── SteamGridDB ────────────────────────────────────────────────────────────
 
 interface SgdbGame {
   id: number;
@@ -85,12 +129,12 @@ async function searchCoversSGDB(gameTitle: string): Promise<CoverCandidate[]> {
   const q = normalizeTitle(gameTitle);
   const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
 
-  const q1 = `/grids/game/${game.id}?types=static&nsfw=false&humor=false`;
+  const base = `/grids/game/${game.id}?types=static&nsfw=false&humor=false`;
   let grids =
-    (await sgdbFetch<{ data?: SgdbGrid[] }>(`${q1}&dimensions=600x900,660x930,342x482`))
+    (await sgdbFetch<{ data?: SgdbGrid[] }>(`${base}&dimensions=600x900,660x930,342x482`))
       .data ?? [];
   if (!grids.length) {
-    grids = (await sgdbFetch<{ data?: SgdbGrid[] }>(q1)).data ?? [];
+    grids = (await sgdbFetch<{ data?: SgdbGrid[] }>(base)).data ?? [];
   }
 
   return grids.slice(0, 24).map((g) => ({
@@ -101,10 +145,111 @@ async function searchCoversSGDB(gameTitle: string): Promise<CoverCandidate[]> {
   }));
 }
 
-// ── libretro-thumbnails ─────────────────────────────────────────────────────
+// ── IGDB ───────────────────────────────────────────────────────────────────
+
+async function igdbToken(): Promise<string> {
+  try {
+    const cached = JSON.parse(ls.get(IGDB_TOKEN) || "null") as {
+      token: string;
+      expiresAt: number;
+    } | null;
+    if (cached && cached.expiresAt > Date.now() + 60_000) return cached.token;
+  } catch {
+    /* refetch */
+  }
+
+  const { clientId, clientSecret } = getIgdbCreds();
+  let res: Response;
+  try {
+    res = await fetch(
+      `${CORS_PROXY}https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(
+        clientId,
+      )}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
+      { method: "POST" },
+    );
+  } catch {
+    throw new Error("IGDB/Twitch nicht erreichbar – der CORS-Proxy antwortet nicht.");
+  }
+  if (!res.ok) {
+    throw new Error(
+      "IGDB-Zugangsdaten ungültig. Client-ID und Client-Secret unter dev.twitch.tv anlegen.",
+    );
+  }
+  const data = (await res.json()) as { access_token: string; expires_in: number };
+  ls.set(
+    IGDB_TOKEN,
+    JSON.stringify({
+      token: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000,
+    }),
+  );
+  return data.access_token;
+}
+
+interface IgdbGame {
+  name: string;
+  cover?: { image_id: string };
+  artworks?: { image_id: string }[];
+}
+
+async function igdbQuery(body: string): Promise<IgdbGame[]> {
+  const token = await igdbToken();
+  const { clientId } = getIgdbCreds();
+  let res: Response;
+  try {
+    res = await fetch(`${CORS_PROXY}https://api.igdb.com/v4/games`, {
+      method: "POST",
+      headers: { "Client-ID": clientId, Authorization: `Bearer ${token}` },
+      body,
+    });
+  } catch {
+    throw new Error("IGDB nicht erreichbar – der CORS-Proxy antwortet nicht.");
+  }
+  if (res.status === 401) {
+    ls.set(IGDB_TOKEN, "");
+    throw new Error("IGDB-Token abgelaufen – bitte erneut suchen.");
+  }
+  if (!res.ok) throw new Error(`IGDB-Fehler (HTTP ${res.status}).`);
+  return res.json() as Promise<IgdbGame[]>;
+}
+
+const igdbImg = (id: string, size: string) =>
+  `https://images.igdb.com/igdb/image/upload/t_${size}/${id}.jpg`;
+
+async function searchCoversIGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const escaped = gameTitle.replace(/"/g, '\\"');
+  const games = await igdbQuery(
+    `search "${escaped}"; fields name, cover.image_id, artworks.image_id; limit 8;`,
+  );
+  if (!games.length) return [];
+
+  const q = normalizeTitle(gameTitle);
+  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
+
+  const out: CoverCandidate[] = [];
+  if (game.cover?.image_id) {
+    out.push({
+      title: game.name,
+      region: "Cover",
+      url: igdbImg(game.cover.image_id, "1080p"),
+      thumb: igdbImg(game.cover.image_id, "cover_big"),
+    });
+  }
+  for (const a of game.artworks ?? []) {
+    if (!a.image_id) continue;
+    out.push({
+      title: game.name,
+      region: "Artwork",
+      url: igdbImg(a.image_id, "1080p"),
+      thumb: igdbImg(a.image_id, "screenshot_med"),
+    });
+  }
+  return out;
+}
+
+// ── libretro-thumbnails ────────────────────────────────────────────────────
 
 // Console name (normalized, lowercase) -> libretro-thumbnails repo slug.
-// https://github.com/libretro-thumbnails
 const REPO_BY_CONSOLE: Record<string, string> = {
   "nintendo 64": "Nintendo_-_Nintendo_64",
   n64: "Nintendo_-_Nintendo_64",
@@ -255,14 +400,14 @@ async function searchCoversLibretro(
 
 // ── Public entry point ─────────────────────────────────────────────────────
 
-// SteamGridDB when an API key is set (every console, high-res), otherwise
-// libretro-thumbnails (retro consoles, no key).
 export async function searchCovers(
   consoleName: string,
   gameTitle: string,
 ): Promise<CoverCandidate[]> {
   const title = gameTitle.trim();
   if (!title) return [];
-  if (usingSGDB()) return searchCoversSGDB(title);
+  const src = effectiveSource();
+  if (src === "sgdb") return searchCoversSGDB(title);
+  if (src === "igdb") return searchCoversIGDB(title);
   return searchCoversLibretro(consoleName, title);
 }

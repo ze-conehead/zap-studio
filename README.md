@@ -93,16 +93,23 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   suchen" (Toolbar) anhand von Konsole + Spieltitel nach Box-Art. Ein
   Dialog zeigt die Treffer als Vorschau; anklicken lädt das Bild herunter,
   bettet es ein und legt es als Hauptbild-Ebene an (derselbe Pfad wie „Von
-  URL einfügen").
-  - **SteamGridDB** (empfohlen): API-Key im Dialog hinterlegen (kostenlos
-    unter [steamgriddb.com](https://www.steamgriddb.com/profile/preferences/api),
-    in `localStorage`). Deckt **alle** Konsolen ab, hochauflösendes Box-Art.
-    Da die SteamGridDB-API und ihr CDN Browser-CORS blockieren, laufen die
-    Anfragen über den öffentlichen Proxy `proxy.cors.sh` (für localhost
-    kostenlos) bzw. die Bilder über den Bild-Proxy `wsrv.nl`.
-  - **Ohne Key**: Fallback auf [libretro-thumbnails](https://github.com/libretro-thumbnails)
-    (statische Scans auf GitHub, kein Key) – nur Retro-/Emulations-Konsolen
-    (NES/SNES/N64, Mega Drive/Genesis, PlayStation 1–4, GameCube/Wii …).
+  URL einfügen"). Die Quelle wird oben im Dialog umgeschaltet, Zugangsdaten
+  liegen in `localStorage`.
+  - **SteamGridDB**: API-Key (kostenlos unter
+    [steamgriddb.com](https://www.steamgriddb.com/profile/preferences/api)).
+    Alle Konsolen, hochauflösendes Box-Art, viele Varianten.
+  - **IGDB**: Twitch-Client-ID + -Secret (kostenlos unter
+    [dev.twitch.tv](https://dev.twitch.tv/console/apps)). Offizielles Cover
+    + Artworks pro Spiel.
+  - **Ohne Zugangsdaten**: Fallback auf
+    [libretro-thumbnails](https://github.com/libretro-thumbnails) (statische
+    Scans auf GitHub, kein Key) – nur Retro-/Emulations-Konsolen (NES/SNES/
+    N64, Mega Drive/Genesis, PlayStation 1–4, GameCube/Wii …).
+
+  SteamGridDBs API/CDN und IGDBs API blockieren Browser-CORS (IGDB braucht
+  zudem einen Twitch-OAuth-Token). Ohne Backend laufen diese Aufrufe über
+  den Proxy `proxy.cors.sh` (für localhost kostenlos); SteamGridDB-Bilder
+  über `wsrv.nl`, IGDB-Bilder direkt (deren CDN sendet CORS-Header).
   Siehe [src/covers.ts](src/covers.ts).
 - **Quick Import** (Toolbar): Sammel-Import für Bilder. Öffnet eine Tabelle
   mit allen Spielen, deren Design noch keine Bild-Ebene hat (Spalten
@@ -209,7 +216,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
 | `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
 | `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
-| `src/covers.ts` | Cover-Suche: SteamGridDB (API-Key, via CORS-Proxy) oder libretro-thumbnails |
+| `src/covers.ts` | Cover-Suche: SteamGridDB / IGDB (Keys, via CORS-Proxy) oder libretro-thumbnails |
 | `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
 | `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
