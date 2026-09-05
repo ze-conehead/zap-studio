@@ -290,6 +290,7 @@ function Shell({
       <Toolbar
         canvas={canvas}
         guides={guides}
+        mainMask={mainMask}
         onNewProject={onNewProject}
         onOpenProjects={onOpenProjects}
         onOpenPreview={() => setPreview(true)}

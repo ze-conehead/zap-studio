@@ -112,6 +112,30 @@ export function makeImageLayer(opts: {
   };
 }
 
+// Sizes a freshly-inserted main image so it fully covers the global main
+// alpha mask's box (fills width *and* height, aspect ratio kept, overflow
+// gets cropped by the mask). No-op unless the layer is the main image and a
+// mask exists. `mask` is the "Alle Konsolen" mainMask layer.
+export function fitImageToMask(
+  layer: ImageLayer,
+  mask: Layer | undefined,
+): ImageLayer {
+  if (!layer.main || !mask) return layer;
+  if (mask.type !== "shape" && mask.type !== "image") return layer;
+  const mw = Math.abs(mask.width * mask.scaleX);
+  const mh = Math.abs(mask.height * mask.scaleY);
+  if (!mw || !mh || !layer.width || !layer.height) return layer;
+  const s = Math.max(mw / layer.width, mh / layer.height);
+  return {
+    ...layer,
+    x: mask.x,
+    y: mask.y,
+    rotation: mask.rotation,
+    width: layer.width * s,
+    height: layer.height * s,
+  };
+}
+
 export function makeTextLayer(text = "Dein Text"): TextLayer {
   return {
     ...base(text.slice(0, 24) || "Text"),

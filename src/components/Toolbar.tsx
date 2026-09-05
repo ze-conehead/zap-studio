@@ -51,6 +51,7 @@ import {
   type ExportMode,
 } from "../export";
 import {
+  fitImageToMask,
   makeImageLayer,
   makeMainMaskLayer,
   makeMetaBadgeLayer,
@@ -58,13 +59,13 @@ import {
   makeTextLayer,
   type MetaBadgeKind,
 } from "../factory";
-import type { ShapeKind } from "../types";
+import type { Layer, ShapeKind } from "../types";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { GuideApi } from "../App";
-import { CoverSearchDialog } from "./CoverSearchDialog";
 import { BaseImportDialog } from "./BaseImportDialog";
+import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 import { QuickImportDialog } from "./QuickImportDialog";
@@ -72,6 +73,7 @@ import { QuickImportDialog } from "./QuickImportDialog";
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
   guides: GuideApi;
+  mainMask?: Layer;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onOpenPreview: () => void;
@@ -82,6 +84,7 @@ interface Props {
 export function Toolbar({
   canvas,
   guides,
+  mainMask,
   onNewProject,
   onOpenProjects,
   onOpenPreview,
@@ -135,14 +138,20 @@ export function Toolbar({
     }
   };
 
+  // Fresh image on a game card: the first image is the card's main image,
+  // and a main image is sized to fully cover the global alpha mask.
+  const addImageLayer = (img: Parameters<typeof makeImageLayer>[0]) => {
+    const firstImage = !project.layers.some((l) => l.type === "image");
+    let layer = makeImageLayer(img);
+    if (firstImage && !project.isTemplate) layer = { ...layer, main: true };
+    dispatch({ type: "ADD_LAYER", layer: fitImageToMask(layer, mainMask) });
+  };
+
   const addImageFromFile = async (file: File) => {
     try {
       setBusy("Bild wird geladen …");
       const img = await fileToLayerSource(file);
-      dispatch({
-        type: "ADD_LAYER",
-        layer: makeImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") }),
-      });
+      addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -156,7 +165,7 @@ export function Toolbar({
     try {
       setBusy("Bild wird geladen …");
       const img = await urlToLayerSource(url);
-      dispatch({ type: "ADD_LAYER", layer: makeImageLayer({ ...img, name: nameFromUrl(url) }) });
+      addImageLayer({ ...img, name: nameFromUrl(url) });
       setImgUrl("");
       setImgOpen(false);
     } catch (e) {
@@ -173,10 +182,13 @@ export function Toolbar({
       const img = await urlToLayerSource(url);
       dispatch({
         type: "ADD_LAYER",
-        layer: {
-          ...makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
-          main: true,
-        },
+        layer: fitImageToMask(
+          {
+            ...makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
+            main: true,
+          },
+          mainMask,
+        ),
       });
     } catch (e) {
       alert((e as Error).message);

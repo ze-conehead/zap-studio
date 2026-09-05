@@ -5,10 +5,11 @@
 
 import { TRIM_RECT } from "./card";
 import { getCatalog, gameKeyOf } from "./data/catalog";
-import { makeImageLayer, makeTextLayer, newProject } from "./factory";
+import { fitImageToMask, makeImageLayer, makeTextLayer, newProject } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
+import { loadMainMask } from "./templates";
 import type { ImageLayer } from "./types";
 
 export interface QuickImportRow {
@@ -86,10 +87,10 @@ export async function insertCover(
   url: string,
 ): Promise<void> {
   const img = await urlToLayerSource(url);
-  const layer: ImageLayer = {
-    ...makeImageLayer({ ...img, name: row.gameTitle }),
-    main: true,
-  };
+  const layer = fitImageToMask(
+    { ...makeImageLayer({ ...img, name: row.gameTitle }), main: true },
+    await loadMainMask(),
+  );
   const pid = getGameProject(row.gameKey);
   const existing = pid ? await loadProject(pid) : undefined;
   if (existing) {
@@ -115,15 +116,18 @@ export async function applyQuickImport(
   entries: (QuickImportRow & { url: string })[],
   { currentGameKey, addToCurrent, onProgress }: ApplyOptions,
 ): Promise<QuickImportResult[]> {
+  const mask = await loadMainMask();
   const results: QuickImportResult[] = [];
   for (const e of entries) {
     try {
       if (e.gameKey === currentGameKey) {
         const img = await urlToLayerSource(e.url);
-        addToCurrent({
-          ...makeImageLayer({ ...img, name: e.gameTitle }),
-          main: true,
-        });
+        addToCurrent(
+          fitImageToMask(
+            { ...makeImageLayer({ ...img, name: e.gameTitle }), main: true },
+            mask,
+          ),
+        );
       } else {
         await insertCover(e, e.url);
       }

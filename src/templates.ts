@@ -1,0 +1,9 @@
+import { GLOBAL_TEMPLATE_ID } from "./factory";
+import { loadProject } from "./persist";
+import type { Layer } from "./types";
+
+// The "Alle Konsolen" main alpha mask layer, if one is set.
+export async function loadMainMask(): Promise<Layer | undefined> {
+  const g = await loadProject(GLOBAL_TEMPLATE_ID);
+  return g?.layers.find((l) => l.mainMask && l.visible);
+}

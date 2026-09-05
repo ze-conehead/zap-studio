@@ -87,7 +87,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   („+ Form → Haupt-Alpha-Maske" oder Checkbox an einer Form/einem Bild).
   Deren Alpha-Kanal beschneidet auf **jeder** Karte automatisch das
   Hauptbild – der Rahmen wird also nur einmal gestaltet. Die Maskenform
-  selbst wird auf den Karten nicht gezeichnet.
+  selbst wird auf den Karten nicht gezeichnet. **Ein frisch eingefügtes
+  Hauptbild wird automatisch so skaliert, dass es die Maske voll ausfüllt**
+  (Höhe *und* Breite, Seitenverhältnis bleibt, Überstand wird beschnitten)
+  und auf die Maskenmitte gesetzt.
 - **Ebenen**: Bilder, Formen, beliebig viele Textebenen. Auswählen,
   verschieben, skalieren, drehen, sperren, ausblenden, duplizieren.
   Reihenfolge per **Drag & Drop** in der Ebenenliste (Greifpunkt links,
