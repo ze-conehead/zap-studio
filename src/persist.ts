@@ -1,4 +1,5 @@
 import { get, set, del, keys } from "idb-keyval";
+import { getFormatId } from "./formats";
 import type { Project, ProjectMeta } from "./types";
 
 // Projects (with embedded image data URLs) live in IndexedDB so large
@@ -30,9 +31,12 @@ export async function listProjects(): Promise<ProjectMeta[]> {
   const ks = (await keys()) as string[];
   const ids = ks.filter((k) => typeof k === "string" && k.startsWith("project:"));
   const metas: ProjectMeta[] = [];
+  const fmt = getFormatId();
   for (const k of ids) {
     const p = (await get(k)) as Project | undefined;
-    if (p && !p.isTemplate) metas.push({ id: p.id, name: p.name, updatedAt: p.updatedAt });
+    if (p && !p.isTemplate && (p.format ?? "card") === fmt) {
+      metas.push({ id: p.id, name: p.name, updatedAt: p.updatedAt });
+    }
   }
   return metas.sort((a, b) => b.updatedAt - a.updatedAt);
 }

@@ -12,6 +12,7 @@ import {
   Plus,
   Redo2,
   Ruler,
+  Shapes,
   Sparkles,
   Undo2,
 } from "lucide-react";
@@ -42,6 +43,7 @@ import {
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
+import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import type { GuideApi } from "../App";
 import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
@@ -154,7 +156,7 @@ export function Toolbar({
         >
           {state.dirty ? "●" : "○"}
         </span>
-        {project.back ? (
+        {getFormat().hasBack && project.back ? (
           <div className="flex overflow-hidden rounded-md border text-xs font-medium">
             {(["front", "back"] as const).map((s) => (
               <button
@@ -171,7 +173,7 @@ export function Toolbar({
               </button>
             ))}
           </div>
-        ) : (
+        ) : getFormat().hasBack ? (
           <Button
             variant="outline"
             size="sm"
@@ -180,7 +182,7 @@ export function Toolbar({
           >
             <Plus /> {t("Add back side")}
           </Button>
-        )}
+        ) : null}
       </div>
 
       {project.isGlobalTemplate && (
@@ -261,6 +263,25 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" title={t("Format")}>
+              <Shapes /> {t(getFormat().name)}
+              <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {FORMAT_IDS.map((id) => (
+              <DropdownMenuItem
+                key={id}
+                onClick={() => setFormat(id)}
+                disabled={id === getFormatId()}
+              >
+                {t(FORMATS[id].name)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" title={t("Language")}>

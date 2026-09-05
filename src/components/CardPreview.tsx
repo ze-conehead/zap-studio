@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useT } from "../i18n";
 import { exportPng } from "../export";
+import { previewCssVars } from "../formats";
 import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -106,6 +107,7 @@ export function CardPreview({
 
   // Holo look is derived from the current tilt, so it shifts as you move.
   const cardStyle: CSSProperties = {
+    ...previewCssVars(),
     transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
     ["--holo" as string]: holo ? 1 : 0,
     ["--px" as string]: `${clamp(50 + rot.y * 0.7, 10, 90)}%`,

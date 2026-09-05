@@ -1,7 +1,13 @@
 // Maps a catalogue gameKey ("console-id/game-id") to the project id that
 // holds its sticker, so picking a game in the tree reopens the same design.
 
-const KEY = "stickerstudio:gameIndex";
+import { getFormatId, isCard } from "./formats";
+
+// One index per format; the card keeps the original key so existing links
+// are untouched.
+const KEY = isCard()
+  ? "stickerstudio:gameIndex"
+  : `stickerstudio:gameIndex:${getFormatId()}`;
 
 type Index = Record<string, string>;
 

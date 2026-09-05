@@ -20,6 +20,7 @@ import {
 } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
+import { getFormatId } from "./formats";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
@@ -126,7 +127,8 @@ export default function App() {
 
       const id = lastProjectId();
       const existing = id ? await loadProject(id) : undefined;
-      if (existing) {
+      // Only restore the last design if it belongs to the active format.
+      if (existing && (existing.format ?? "card") === getFormatId()) {
         setProject(existing);
       } else {
         const p = newProject();

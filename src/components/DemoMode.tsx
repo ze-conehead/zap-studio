@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getCatalog } from "../data/catalog";
+import { getFormat, previewCssVars } from "../formats";
 import { drawPack, packImageSources, PACK_SIZE, type DemoCard } from "../demo";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
@@ -203,7 +204,9 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
               <span className="demo-pack-body">
                 <span className="demo-pack-shine" />
                 <span className="demo-pack-label">{label}</span>
-                <span className="demo-pack-count">{t("{n} cards", { n: cards.length })}</span>
+                <span className="demo-pack-count">
+                  {t(getFormat().name)} · {t("{n} cards", { n: cards.length })}
+                </span>
               </span>
             </button>
           )}
@@ -211,7 +214,10 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
           <div
             ref={gridRef}
             className="demo-grid"
-            style={{ visibility: phase === "open" ? "visible" : "hidden" }}
+            style={{
+              ...previewCssVars(),
+              visibility: phase === "open" ? "visible" : "hidden",
+            }}
           >
             {cards.map((c, i) => (
               <button
@@ -313,6 +319,7 @@ function CardViewer({
   };
 
   const cardStyle: CSSProperties = {
+    ...previewCssVars(),
     transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
     ["--holo" as string]: holo ? 1 : 0,
     ["--px" as string]: `${clamp(50 + rot.y * 0.7, 10, 90)}%`,

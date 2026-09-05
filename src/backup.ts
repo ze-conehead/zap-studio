@@ -109,11 +109,21 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   }
 
   const guides = localStorage.getItem(GUIDES_KEY);
-  const gameIndex = localStorage.getItem(GAME_INDEX_KEY);
   const catalogOverlay = localStorage.getItem(CATALOG_OVERLAY_KEY);
   if (guides) files["settings/guides.json"] = strToU8(guides);
-  if (gameIndex) files["settings/gameIndex.json"] = strToU8(gameIndex);
   if (catalogOverlay) files["settings/catalogOverlay.json"] = strToU8(catalogOverlay);
+
+  // One game index per format (GAME_INDEX_KEY plus "…:<format>" variants).
+  const gameIndexes: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(GAME_INDEX_KEY)) {
+      gameIndexes[k] = localStorage.getItem(k) ?? "";
+    }
+  }
+  if (Object.keys(gameIndexes).length) {
+    files["settings/gameIndexes.json"] = strToU8(JSON.stringify(gameIndexes));
+  }
 
   files["manifest.json"] = strToU8(
     JSON.stringify(
@@ -182,14 +192,28 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
   if (entries["settings/guides.json"]) {
     localStorage.setItem(GUIDES_KEY, strFromU8(entries["settings/guides.json"]));
   }
-  if (entries["settings/gameIndex.json"]) {
+  const mergeGameIndex = (lsKey: string, incomingJson: string) => {
     try {
-      const incoming = JSON.parse(strFromU8(entries["settings/gameIndex.json"]));
-      const existing = JSON.parse(localStorage.getItem(GAME_INDEX_KEY) || "{}");
-      localStorage.setItem(GAME_INDEX_KEY, JSON.stringify({ ...existing, ...incoming }));
+      const incoming = JSON.parse(incomingJson);
+      const existing = JSON.parse(localStorage.getItem(lsKey) || "{}");
+      localStorage.setItem(lsKey, JSON.stringify({ ...existing, ...incoming }));
     } catch {
       /* keep existing index */
     }
+  };
+  if (entries["settings/gameIndexes.json"]) {
+    try {
+      const byKey = JSON.parse(strFromU8(entries["settings/gameIndexes.json"])) as Record<
+        string,
+        string
+      >;
+      for (const [lsKey, json] of Object.entries(byKey)) mergeGameIndex(lsKey, json);
+    } catch {
+      /* skip */
+    }
+  } else if (entries["settings/gameIndex.json"]) {
+    // Older backups: a single card-format index.
+    mergeGameIndex(GAME_INDEX_KEY, strFromU8(entries["settings/gameIndex.json"]));
   }
   if (entries["settings/catalogOverlay.json"]) {
     localStorage.setItem(

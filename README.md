@@ -217,6 +217,19 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   mit der Übersetzungstabelle [src/locale/de.ts](src/locale/de.ts) (die
   englischen Strings im Code sind die Schlüssel).
 
+- **Vorder- & Rückseite**: „＋ Rückseite" legt eine zweite Fläche für die
+  Karte an; danach schaltet ein **Vorderseite | Rückseite**-Umschalter um.
+  Jede Seite hat eigene Ebenen und Hintergrund; die Rückseite erscheint auch
+  in der 3D-Vorschau und im Export (`_front` / `_back`).
+
+- **Format**: globaler Umschalter oben rechts (Formen-Icon) zwischen
+  **Kreditkarte**, **Kassetten-Label**, **Disketten-Label**,
+  **DVD-Hüllen-Einleger** und **Kassettenhülle (J-Card)**. Definiert in
+  [src/formats.ts](src/formats.ts) (Maße dort anpassbar); die Wahl liegt in
+  `localStorage` (`stickerstudio:format`), ein Wechsel lädt die Seite neu.
+  Jedes Format hat eigene Designs, eigene Vorlagen („Alle Konsolen" /
+  Konsolen-Vorlagen, id-Suffix `--<format>`) und einen eigenen Spiel-Index.
+
 ## Entwicklung
 
 ```bash
@@ -233,7 +246,8 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 
 | Datei | Zweck |
 | --- | --- |
-| `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
+| `src/formats.ts` | Sticker-Formate (Maße, Bleed, Radius) + aktive Auswahl |
+| `src/card.ts` | Maße des aktiven Formats, DPI, abgeleitete Pixelwerte |
 | `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
 | `src/masking.ts` | Ebenenstapel in Plain-/Masken-Segmente aufteilen |
 | `src/data/catalog.ts` | Seed-Konsolen + lokaler Overlay (Konsolen/Spiele hinzufügen/umbenennen/entfernen) |

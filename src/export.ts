@@ -9,19 +9,21 @@ import {
   TRIM_RECT,
 } from "./card";
 import { ensureFontsLoaded } from "./fonts";
+import { getFormat } from "./formats";
 
 export type ExportMode = "trim" | "bleed" | "marks";
 
 export const EXPORT_MODES: ExportMode[] = ["trim", "bleed", "marks"];
 
 export function exportLabel(mode: ExportMode): string {
-  return t(
-    {
-      trim: "PNG – final size (54 × 85.6 mm)",
-      bleed: "PNG – with 3 mm bleed",
-      marks: "PNG – bleed + crop marks",
-    }[mode],
-  );
+  const f = getFormat();
+  if (mode === "trim") {
+    return t("PNG – final size ({w} × {h} mm)", { w: f.trimMM.w, h: f.trimMM.h });
+  }
+  if (mode === "bleed") {
+    return t("PNG – with {n} mm bleed", { n: f.bleedMM });
+  }
+  return t("PNG – bleed + crop marks");
 }
 
 interface ExportOpts {

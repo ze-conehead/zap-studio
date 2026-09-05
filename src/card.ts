@@ -1,11 +1,17 @@
-// Physical card spec (ISO/IEC 7810 ID-1) and derived pixel dimensions.
+// Physical spec of the active sticker format and derived pixel dimensions.
+// The format is fixed for the session (see src/formats.ts), so these stay
+// plain module-level constants.
+
+import { getFormat } from "./formats";
+
+const FMT = getFormat();
 
 export const DPI = 300;
 export const PX_PER_MM = DPI / 25.4;
 
-// Portrait orientation (ID-1 rotated 90°).
-export const TRIM_MM = { w: 54.0, h: 85.6 };
-export const BLEED_MM = 3;
+// Trim size of the active format (portrait for the card).
+export const TRIM_MM = { ...FMT.trimMM };
+export const BLEED_MM = FMT.bleedMM;
 export const MARKS_MARGIN_MM = 5; // white margin around bleed that holds the crop marks
 
 const mm = (v: number) => Math.round(v * PX_PER_MM);
@@ -27,8 +33,8 @@ export const TRIM_RECT = {
   h: mm(TRIM_MM.h),
 };
 
-// Safe area: keep important content 3 mm inside the trim.
-export const SAFE_MM = 3;
+// Safe area: keep important content this far inside the trim.
+export const SAFE_MM = FMT.safeMM;
 export const SAFE_RECT = {
   x: TRIM_RECT.x + mm(SAFE_MM),
   y: TRIM_RECT.y + mm(SAFE_MM),
@@ -36,5 +42,5 @@ export const SAFE_RECT = {
   h: TRIM_RECT.h - mm(SAFE_MM) * 2,
 };
 
-export const CORNER_RADIUS_MM = 3.18; // ID-1 corner radius, for the preview mask only
+export const CORNER_RADIUS_MM = FMT.cornerRadiusMM; // for the preview mask only
 export const CORNER_RADIUS_PX = mm(CORNER_RADIUS_MM);

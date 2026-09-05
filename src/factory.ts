@@ -2,6 +2,7 @@ import { t } from "./i18n";
 import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
+import { getFormatId, isCard } from "./formats";
 import type {
   BackFace,
   ImageLayer,
@@ -23,6 +24,7 @@ export function newProject(name = t("New sticker design")): Project {
   return {
     id: uid(),
     name,
+    format: getFormatId(),
     backgroundColor: DEFAULT_BACKGROUND.color,
     background: { ...DEFAULT_BACKGROUND },
     layers: [],
@@ -40,8 +42,11 @@ export function makeBackFace(): BackFace {
   };
 }
 
-export const templateId = (consoleId: string) => `tpl-${consoleId}`;
-export const GLOBAL_TEMPLATE_ID = "tpl-global";
+// Templates are per format. The card keeps the original, unsuffixed ids so
+// existing data is untouched; other formats get a "--<format>" suffix.
+const TPL_SUFFIX = isCard() ? "" : `--${getFormatId()}`;
+export const templateId = (consoleId: string) => `tpl-${consoleId}${TPL_SUFFIX}`;
+export const GLOBAL_TEMPLATE_ID = `tpl-global${TPL_SUFFIX}`;
 
 const TEMPLATE_BG = { ...DEFAULT_BACKGROUND, enabled: false };
 
@@ -53,6 +58,7 @@ export function newGlobalTemplate(): Project {
   return {
     id: GLOBAL_TEMPLATE_ID,
     name: t("Global template"),
+    format: getFormatId(),
     backgroundColor: DEFAULT_BACKGROUND.color,
     background: { ...DEFAULT_BACKGROUND, enabled: true },
     layers: [],
@@ -70,6 +76,7 @@ export function newConsoleTemplate(consoleId: string, consoleName: string): Proj
   return {
     id: templateId(consoleId),
     name: t("{name} – template", { name: consoleName }),
+    format: getFormatId(),
     backgroundColor: "transparent",
     background: { ...TEMPLATE_BG },
     layers: [],

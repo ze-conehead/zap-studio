@@ -1,3 +1,5 @@
+import type { FormatId } from "./formats";
+
 export type LayerType = "image" | "text" | "shape" | "metabadge";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
@@ -112,6 +114,7 @@ export interface BackFace {
 export interface Project {
   id: string;
   name: string;
+  format?: FormatId; // sticker format; absent = "card"
   backgroundColor: string; // legacy / primary colour mirror
   background?: CardBackground;
   backgroundSource?: BackgroundSource; // game cards only; default DEFAULT_BACKGROUND_SOURCE

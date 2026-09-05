@@ -26,6 +26,7 @@ export function parseProject(json: string): Project {
   return {
     ...base,
     name: src.name || base.name,
+    format: src.format ?? base.format,
     backgroundColor: src.backgroundColor || base.backgroundColor,
     background: src.background ?? base.background,
     backgroundSource: src.backgroundSource,

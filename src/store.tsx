@@ -10,6 +10,7 @@ import {
 import { t } from "./i18n";
 import { resolveBackground } from "./background";
 import { makeBackFace, newProject } from "./factory";
+import { getFormat } from "./formats";
 import { saveProject } from "./persist";
 import type {
   BackgroundSource,
@@ -102,6 +103,7 @@ function reducer(state: State, action: Action): State {
       return { ...state, side: action.side, selectedId: null };
 
     case "ADD_BACK":
+      if (!getFormat().hasBack) return state;
       if (project.back) return { ...state, side: "back", selectedId: null };
       return {
         ...commit(state, { ...project, back: makeBackFace(), updatedAt: Date.now() }),

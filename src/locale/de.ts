@@ -71,9 +71,17 @@ export const de: Record<string, string> = {
   German: "Deutsch",
 
   // ── Export labels ────────────────────────────────────────────────────────
-  "PNG – final size (54 × 85.6 mm)": "PNG – Endformat (54 × 85,6 mm)",
-  "PNG – with 3 mm bleed": "PNG – mit 3 mm Beschnitt",
+  "PNG – final size ({w} × {h} mm)": "PNG – Endformat ({w} × {h} mm)",
+  "PNG – with {n} mm bleed": "PNG – mit {n} mm Beschnitt",
   "PNG – bleed + crop marks": "PNG – Beschnitt + Schnittmarken",
+
+  // ── Formats ──────────────────────────────────────────────────────────────
+  Format: "Format",
+  "Credit card": "Kreditkarte",
+  "Cassette label": "Kassetten-Label",
+  "Floppy disk label": "Disketten-Label",
+  "DVD case insert": "DVD-Hüllen-Einleger",
+  "Cassette case (J-card)": "Kassettenhülle (J-Card)",
 
   // ── Factory defaults (layer / project names) ─────────────────────────────
   "New sticker design": "Neues Sticker-Design",
