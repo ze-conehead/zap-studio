@@ -19,6 +19,8 @@ import {
   gameKeyOf,
   getCatalog,
   getCatalogVersion,
+  isCustomConsole,
+  removeConsole,
   removeGame,
   renameConsole,
   renameGame,
@@ -163,6 +165,16 @@ export function GameTree({
     renameConsole(consoleId, next);
   };
 
+  const handleRemoveConsole = (consoleId: string, consoleName: string) => {
+    if (
+      window.confirm(
+        `Konsole „${consoleName}" mit allen Spielen aus dem Baum entfernen? Angelegte Sticker-Designs bleiben unter „Projekte".`,
+      )
+    ) {
+      removeConsole(consoleId);
+    }
+  };
+
   return (
     <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -240,6 +252,15 @@ export function GameTree({
                             label: "Umbenennen",
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
+                          ...(isCustomConsole(c.id)
+                            ? [
+                                {
+                                  label: "Entfernen",
+                                  destructive: true,
+                                  onSelect: () => handleRemoveConsole(c.id, c.name),
+                                },
+                              ]
+                            : []),
                         ],
                       });
                     }}

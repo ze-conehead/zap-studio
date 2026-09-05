@@ -11,6 +11,7 @@ import {
   ImagePlus,
   Images,
   Import,
+  ListPlus,
   MoveHorizontal,
   MoveVertical,
   Pill,
@@ -63,6 +64,7 @@ import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { GuideApi } from "../App";
 import { CoverSearchDialog } from "./CoverSearchDialog";
+import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 import { QuickImportDialog } from "./QuickImportDialog";
@@ -96,6 +98,7 @@ export function Toolbar({
   const [busy, setBusy] = useState<string | null>(null);
   const [coverSearchOpen, setCoverSearchOpen] = useState(false);
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
+  const [baseImportOpen, setBaseImportOpen] = useState(false);
   const [quickImportOpen, setQuickImportOpen] = useState(false);
 
   const foundGame = findGame(project.gameKey);
@@ -453,6 +456,14 @@ export function Toolbar({
         <Button
           variant="outline"
           size="sm"
+          onClick={() => setBaseImportOpen(true)}
+          title="Konsolen & Spiele aus der Basis-Liste (base_game_list.csv) übernehmen"
+        >
+          <ListPlus /> Basis-Set
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setQuickImportOpen(true)}
           title="Bild-URLs für alle Spiele ohne Bild in einer Tabelle eintragen"
         >
@@ -519,6 +530,8 @@ export function Toolbar({
       {project.isGlobalTemplate && (
         <CoverSweepDialog open={coverSweepOpen} onOpenChange={setCoverSweepOpen} />
       )}
+
+      <BaseImportDialog open={baseImportOpen} onOpenChange={setBaseImportOpen} />
 
       <QuickImportDialog
         open={quickImportOpen}

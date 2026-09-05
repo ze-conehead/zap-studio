@@ -116,6 +116,26 @@ export function upsertGameMeta(
   saveGamelist(consoleId, games);
 }
 
+// Batch upsert (base-game-list import): one load + one save per console.
+export function upsertGameMetaMany(
+  consoleId: string,
+  entries: (Partial<Omit<GameMeta, "name">> & { name: string })[],
+): void {
+  const games = loadGamelist(consoleId);
+  const byName = new Map(games.map((g, i) => [g.name.trim().toLowerCase(), i]));
+  for (const e of entries) {
+    const { name, ...patch } = e;
+    const k = name.trim().toLowerCase();
+    const idx = byName.get(k);
+    if (idx !== undefined) games[idx] = { ...games[idx], ...patch };
+    else {
+      byName.set(k, games.length);
+      games.push({ name, ...patch });
+    }
+  }
+  saveGamelist(consoleId, games);
+}
+
 export function removeGameMeta(consoleId: string, title: string): void {
   const games = loadGamelist(consoleId);
   const t = title.trim().toLowerCase();

@@ -1,0 +1,515 @@
+﻿console,game,year,publisher,players,genre,rating
+Amiga,Monkey Island 2: LeChuck's Revenge,1991,Lucasfilm Games,1,Adventure,9.8
+Amiga,The Secret of Monkey Island,1990,Lucasfilm Games,1,Adventure,9.7
+Amiga,Turrican II: The Final Fight,1991,Factor 5,1,Action-Platformer,9.6
+Amiga,Sensible World of Soccer,1994,Renegade,1-2,Sports,9.6
+Amiga,Another World,1991,Delphine Software,1,Cinematic Platformer,9.5
+Amiga,X-COM: UFO Defense,1994,MicroProse,1,Strategy,9.5
+Amiga,Speedball 2: Brutal Deluxe,1990,Image Works,1-2,Sports,9.4
+Amiga,Lemmings,1991,Psygnosis,1-2,Puzzle,9.4
+Amiga,Dungeon Master,1987,Mirrorsoft,1,Dungeon Crawler,9.3
+Amiga,Turrican,1990,Rainbow Arts,1,Action-Platformer,9.3
+Amiga,Cannon Fodder,1993,Virgin Interactive,1-2,Strategy,9.3
+Amiga,Worms,1995,Ocean Software,1-4,Strategy,9.2
+Amiga,The Chaos Engine,1993,Renegade,1-2,Action,9.1
+Amiga,Lotus Turbo Challenge 2,1991,Gremlin Graphics,1-2,Racing,9.0
+Amiga,North & South,1991,Infogrames,1-2,Strategy,8.9
+Amiga,Alien Breed 2: The Horror Continues,1993,Team17,1-2,Run-and-Gun,8.9
+Amiga,R-Type,1988,Electric Dreams,1,Shoot 'em up,8.8
+Amiga,Shadow of the Beast,1989,Psygnosis,1,Action-Platformer,8.8
+Amiga,Walker,1993,Psygnosis,1,Shoot 'em up,8.8
+Amiga,Zool,1992,Gremlin Graphics,1,Platformer,8.6
+Arcade,Street Fighter II Turbo: Hyper Fighting,1992,Capcom,1-2,Fighting,9.9
+Arcade,Metal Slug 3,2000,SNK,1-2,Run-and-Gun,9.9
+Arcade,Street Fighter II: The World Warrior,1991,Capcom,1-2,Fighting,9.8
+Arcade,Dungeons & Dragons: Shadow over Mystara,1996,Capcom,1-4,Beat 'em up / RPG,9.8
+Arcade,The King of Fighters '98,1998,SNK,1-2,Fighting,9.8
+Arcade,Metal Slug X,1999,SNK,1-2,Run-and-Gun,9.8
+Arcade,Ikaruga,2001,Treasure,1-2,Shoot 'em up,9.8
+Arcade,Pac-Man,1980,Namco,1-2,Maze,9.7
+Arcade,DoDonPachi,1997,Cave,1-2,Shoot 'em up,9.7
+Arcade,Radiant Silvergun,1998,Treasure,1-2,Shoot 'em up,9.7
+Arcade,Garou: Mark of the Wolves,1999,SNK,1-2,Fighting,9.7
+Arcade,Alien vs. Predator,1994,Capcom,1-3,Beat 'em up,9.6
+Arcade,Ms. Pac-Man,1982,Midway,1-2,Maze,9.5
+Arcade,Contra,1987,Konami,1-2,Run-and-Gun,9.5
+Arcade,Gradius II,1988,Konami,1-2,Shoot 'em up,9.5
+Arcade,Final Fight,1989,Capcom,1-2,Beat 'em up,9.5
+Arcade,Teenage Mutant Ninja Turtles,1989,Konami,1-4,Beat 'em up,9.5
+Arcade,Mushihimesama,2004,Cave,1-2,Shoot 'em up,9.5
+Arcade,Galaga,1981,Namco,1-2,Shoot 'em up,9.4
+Arcade,Donkey Kong,1981,Nintendo,1-2,Platformer,9.4
+Arcade,The Simpsons,1991,Konami,1-4,Beat 'em up,9.4
+Arcade,X-Men,1992,Konami,1-6,Beat 'em up,9.4
+Arcade,Mortal Kombat II,1993,Midway,1-2,Fighting,9.4
+Arcade,Cadillacs and Dinosaurs,1993,Capcom,1-3,Beat 'em up,9.4
+Arcade,Dungeons & Dragons: Tower of Doom,1993,Capcom,1-4,Beat 'em up / RPG,9.4
+Arcade,Daytona USA,1994,Sega,1-8,Racing,9.4
+Arcade,Espgaluda,2003,Cave,1-2,Shoot 'em up,9.4
+Arcade,Gradius,1985,Konami,1-2,Shoot 'em up,9.3
+Arcade,Out Run,1986,Sega,1-2,Racing,9.3
+Arcade,R-Type,1987,Irem,1-2,Shoot 'em up,9.3
+Arcade,Virtua Fighter 2,1994,Sega,1-2,Fighting,9.3
+Arcade,Robotron: 2084,1982,Williams,1-2,Arcade,9.2
+Arcade,The Punisher,1993,Capcom,1-2,Beat 'em up,9.2
+Arcade,Sega Rally Championship,1994,Sega,1-2,Racing,9.2
+Arcade,Time Crisis,1995,Namco,1-2,Light-gun Shooter,9.2
+Arcade,Star Wars,1983,Atari,1-2,Rail Shooter,9.1
+Arcade,Raiden,1990,Seibu Kaihatsu,1-2,Shoot 'em up,9.1
+Arcade,Asteroids,1979,Atari,1-2,Shoot 'em up,9.0
+Arcade,Frogger,1981,Konami,1-2,Arcade,9.0
+Arcade,Defender,1981,Williams,1-2,Shoot 'em up,9.0
+Arcade,Dig Dug,1982,Namco,1-2,Arcade,9.0
+Arcade,Shinobi,1987,Sega,1-2,Action,9.0
+Arcade,Golden Axe,1989,Sega,1-2,Beat 'em up,9.0
+Arcade,Virtua Cop 2,1995,Sega,1-2,Light-gun Shooter,9.0
+Arcade,Crazy Taxi,1999,Sega,1,Racing,9.0
+Arcade,F-Zero AX,2004,Nintendo,1-4,Racing,9.0
+Arcade,Joust,1982,Williams,1-2,Arcade,8.9
+Arcade,Streets of Rage 2,1992,Sega,1-2,Beat 'em up,8.9
+Arcade,Galaxian,1979,Namco,1-2,Shoot 'em up,8.8
+Arcade,1942,1984,Capcom,1-2,Shoot 'em up,8.8
+Atari 2600,Adventure,1979,Atari,1,Action-Adventure,9.0
+Atari 2600,Yars' Revenge,1981,Atari,1,Shoot 'em up,8.8
+Atari 2600,Pitfall!,1982,Activision,1,Platformer,8.8
+Atari 2600,H.E.R.O.,1984,Activision,1,Action,8.8
+Atari 2600,Hero,1984,Activision,1,Action,8.8
+Atari 2600,River Raid,1982,Activision,1,Shoot 'em up,8.7
+Atari 2600,Kaboom!,1981,Activision,1,Action,8.6
+Atari 2600,Asteroids,1981,Atari,1-2,Arcade,8.6
+Atari 2600,Centipede,1982,Atari,1-2,Arcade,8.5
+Atari 2600,Enduro,1983,Activision,1,Racing,8.5
+Atari 2600,Missile Command,1981,Atari,1-2,Arcade,8.4
+Atari 2600,Defender,1982,Atari,1-2,Shoot 'em up,8.4
+Atari 2600,Solaris,1986,Atari,1,Shoot 'em up,8.4
+Atari 2600,Frogger,1982,Parker Brothers,1,Arcade,8.3
+Atari 2600,Q*bert,1983,Parker Brothers,1,Arcade,8.2
+Atari 2600,Seaquest,1983,Activision,1,Action,8.1
+Atari 2600,River Raid II,1988,Activision,1,Shoot 'em up,8.1
+Atari 2600,Beamrider,1983,Activision,1,Shoot 'em up,8.0
+Atari 2600,Robot Tank,1983,Activision,1,Action,8.0
+Atari 2600,Thrust,1987,HES,1,Action,7.9
+Atari 5200,Star Raiders,1982,Atari,1,Action,8.7
+Atari 5200,Ms. Pac-Man,1983,Atari,1-2,Arcade,8.4
+Atari 5200,Robotron: 2084,1983,Atari,1-2,Arcade,8.4
+Atari 5200,Defender,1982,Atari,1-2,Shoot 'em up,8.2
+Atari 5200,Q*bert,1983,Parker Brothers,1,Arcade,8.2
+Atari 5200,River Raid,1983,Activision,1,Shoot 'em up,8.2
+Atari 5200,Centipede,1982,Atari,1-2,Arcade,8.1
+Atari 5200,Joust,1983,Atari,1-2,Arcade,8.1
+Atari 5200,Pitfall II: Lost Caverns,1984,Activision,1,Platformer,8.1
+Atari 5200,Missile Command,1982,Atari,1-2,Arcade,8.0
+Atari 5200,Dig Dug,1983,Atari,1-2,Arcade,8.0
+Atari 5200,Space Invaders,1982,Atari,1-2,Shoot 'em up,7.9
+Atari 5200,Berzerk,1982,Atari,1-2,Arcade,7.9
+Atari 5200,Galaxian,1982,Atari,1-2,Shoot 'em up,7.8
+Atari 5200,Super Breakout,1982,Atari,1-2,Arcade,7.8
+Atari 5200,Pole Position,1983,Atari,1,Racing,7.8
+Atari 5200,Mario Bros.,1983,Atari,1-2,Arcade,7.8
+Atari 5200,Gremlins,1984,Atari,1-2,Action,7.8
+Atari 5200,Moon Patrol,1983,Atari,1,Arcade,7.7
+Atari 5200,Pac-Man,1982,Atari,1-2,Arcade,7.5
+Atari 7800,Food Fight,1982,Atari,1,Action,8.5
+Atari 7800,Robotron: 2084,1987,Atari,1-2,Arcade,8.5
+Atari 7800,Ms. Pac-Man,1984,Atari,1-2,Arcade,8.4
+Atari 7800,Asteroids,1986,Atari,1-2,Arcade,8.4
+Atari 7800,Galaga,1987,Atari,1-2,Shoot 'em up,8.3
+Atari 7800,Joust,1987,Atari,1-2,Arcade,8.2
+Atari 7800,Ballblazer,1984,Atari,1-2,Sports,8.1
+Atari 7800,Centipede,1987,Atari,1-2,Arcade,8.0
+Atari 7800,Xevious,1988,Atari,1,Shoot 'em up,8.0
+Atari 7800,Tower Toppler,1988,Atari,1,Platformer,8.0
+Atari 7800,Impossible Mission,1988,Atari,1,Action,8.0
+Atari 7800,Kung-Fu Master,1989,Atari,1,Beat 'em up,8.0
+Atari 7800,Desert Falcon,1987,Atari,1,Shoot 'em up,7.9
+Atari 7800,Commando,1989,Atari,1,Run-and-Gun,7.9
+Atari 7800,Mario Bros.,1988,Atari,1-2,Arcade,7.8
+Atari 7800,Pole Position II,1988,Atari,1,Racing,7.8
+Atari 7800,Midnight Mutants,1990,Atari,1,Action-Adventure,7.8
+Atari 7800,Rampage,1989,Atari,1-2,Action,7.7
+Atari 7800,Scrapyard Dog,1990,Atari,1,Platformer,7.6
+Bally Astrocade,Wizard of Wor,1980,Midway,1-2,Arcade,8.5
+Bally Astrocade,Gorf,1981,Midway,1-2,Shoot 'em up,8.0
+Bally Astrocade,Space Fortress,1978,Bally,1-2,Shoot 'em up,7.8
+Bally Astrocade,Gunfight,1977,Bally,1-2,Action,7.7
+Bally Astrocade,Galactic Invasion,1979,Bally,1-2,Shoot 'em up,7.7
+Bally Astrocade,Solar Conqueror,1978,Bally,1-2,Shoot 'em up,7.5
+Bally Astrocade,Astro Battle,1978,Bally,1-2,Shoot 'em up,7.4
+Bally Astrocade,Artillery Duel,1982,Bally,1-2,Strategy,7.4
+Bally Astrocade,Amazing Maze,1977,Bally,1-2,Maze,7.3
+Bally Astrocade,Bally Pin,1982,Bally,1-2,Pinball,7.2
+ColecoVision,Donkey Kong,1982,Coleco,1-2,Platformer,8.5
+ColecoVision,Donkey Kong Jr.,1982,Coleco,1-2,Platformer,8.1
+ColecoVision,Lady Bug,1982,Universal,1-2,Arcade,8.1
+ColecoVision,Zaxxon,1982,Coleco,1-2,Shoot 'em up,8.0
+ColecoVision,River Raid,1984,Activision,1,Shoot 'em up,8.0
+ColecoVision,Pitfall II,1984,Activision,1,Platformer,8.0
+ColecoVision,Venture,1982,Exidy,1-2,Arcade,7.9
+ColecoVision,Smurf: Rescue in Gargamel's Castle,1982,Coleco,1,Platformer,7.9
+ColecoVision,Frogger,1982,Parker Brothers,1-2,Arcade,7.9
+ColecoVision,Q*bert,1983,Parker Brothers,1-2,Arcade,7.9
+ColecoVision,Cosmic Avenger,1982,Universal,1-2,Shoot 'em up,7.8
+ColecoVision,Congo Bongo,1983,Sega,1-2,Arcade,7.8
+ColecoVision,Burger Time,1983,Mattel,1-2,Arcade,7.8
+ColecoVision,Pepper II,1982,Exidy,1-2,Arcade,7.7
+ColecoVision,Frenzy,1982,Coleco,1-2,Arcade,7.7
+ColecoVision,Galaxian,1982,Atari,1-2,Shoot 'em up,7.7
+ColecoVision,Miner 2049er,1983,Big Five Software,1,Platformer,7.7
+ColecoVision,Mouse Trap,1982,Coleco,1-2,Arcade,7.6
+ColecoVision,Gorf,1983,CBS Electronics,1-2,Shoot 'em up,7.6
+ColecoVision,Spy Hunter,1984,Coleco,1-2,Action,7.6
+Fairchild Channel F,Video Whizball,1976,Fairchild,1-2,Sports,7.4
+Fairchild Channel F,Bowling,1976,Fairchild,1-2,Sports,7.2
+Fairchild Channel F,Tennis,1976,Fairchild,1-2,Sports,7.1
+Fairchild Channel F,Alien Invasion,1976,Fairchild,1-2,Shoot 'em up,7.0
+Fairchild Channel F,Space War,1976,Fairchild,1-2,Shoot 'em up,7.0
+Fairchild Channel F,Drag Strip,1976,Fairchild,1-2,Racing,6.9
+Fairchild Channel F,Pinball Challenge,1977,Fairchild,1-2,Pinball,6.9
+Fairchild Channel F,Math Quiz,1976,Fairchild,1-2,Educational,6.8
+Fairchild Channel F,Blackjack,1976,Fairchild,1-2,Card,6.8
+Fairchild Channel F,Doodle,1976,Fairchild,1,Creative,6.5
+Game Boy / Game Boy Color,Pokémon Gold/Silver,1999,Nintendo,1,RPG,9.8
+Game Boy / Game Boy Color,Tetris,1989,Nintendo,1-2,Puzzle,9.7
+Game Boy / Game Boy Color,The Legend of Zelda: Link's Awakening DX,1998,Nintendo,1,Action-Adventure,9.7
+Game Boy / Game Boy Color,Pokémon Crystal,2000,Nintendo,1,RPG,9.5
+Game Boy / Game Boy Color,The Legend of Zelda: Oracle of Ages,2001,Nintendo,1,Action-Adventure,9.3
+Game Boy / Game Boy Color,The Legend of Zelda: Oracle of Seasons,2001,Nintendo,1,Action-Adventure,9.3
+Game Boy / Game Boy Color,Super Mario Land 2: 6 Golden Coins,1992,Nintendo,1,Platformer,9.2
+Game Boy / Game Boy Color,Wario Land II,1998,Nintendo,1,Platformer,9.1
+Game Boy / Game Boy Color,Shantae,2002,Capcom,1,Platformer,9.1
+Game Boy / Game Boy Color,Castlevania II: Belmont's Revenge,1991,Konami,1,Action-Platformer,9.0
+Game Boy / Game Boy Color,Wario Land 3,2000,Nintendo,1,Platformer,9.0
+Game Boy / Game Boy Color,Metal Gear: Ghost Babel,2000,Konami,1,Stealth,9.0
+Game Boy / Game Boy Color,Gargoyle's Quest,1990,Capcom,1,Action RPG,8.9
+Game Boy / Game Boy Color,Metroid II: Return of Samus,1991,Nintendo,1,Action-Adventure,8.9
+Game Boy / Game Boy Color,Kirby's Dream Land 2,1995,Nintendo,1,Platformer,8.9
+Game Boy / Game Boy Color,Donkey Kong Land,1995,Nintendo,1,Platformer,8.8
+Game Boy / Game Boy Color,Dragon Warrior Monsters,1998,Enix,1,RPG,8.8
+Game Boy / Game Boy Color,Mario Tennis,2000,Nintendo,1-2,Sports,8.8
+Game Boy / Game Boy Color,Bionic Commando,1992,Capcom,1,Action-Platformer,8.6
+Game Boy / Game Boy Color,Harvest Moon GBC,1998,Natsume,1,Simulation,8.5
+Game Boy Advance,Castlevania: Aria of Sorrow,2003,Konami,1,Action RPG,9.7
+Game Boy Advance,Metroid: Zero Mission,2004,Nintendo,1,Action-Adventure,9.7
+Game Boy Advance,Advance Wars,2001,Nintendo,1-4,Strategy,9.5
+Game Boy Advance,Metroid Fusion,2002,Nintendo,1,Action-Adventure,9.5
+Game Boy Advance,The Legend of Zelda: The Minish Cap,2004,Nintendo,1,Action-Adventure,9.5
+Game Boy Advance,Pokémon Emerald,2004,Nintendo,1-2,RPG,9.4
+Game Boy Advance,Mario & Luigi: Superstar Saga,2003,Nintendo,1,RPG,9.3
+Game Boy Advance,Pokémon FireRed/LeafGreen,2004,Nintendo,1-2,RPG,9.3
+Game Boy Advance,Golden Sun: The Lost Age,2002,Nintendo,1,RPG,9.2
+Game Boy Advance,Fire Emblem,2003,Nintendo,1,Strategy RPG,9.2
+Game Boy Advance,Golden Sun,2001,Nintendo,1,RPG,9.1
+Game Boy Advance,Astro Boy: Omega Factor,2003,Sega,1,Beat 'em up,9.1
+Game Boy Advance,"WarioWare, Inc.: Mega Microgame$!",2003,Nintendo,1-4,Party,9.0
+Game Boy Advance,Final Fantasy Tactics Advance,2003,Square Enix,1,Strategy RPG,9.0
+Game Boy Advance,Kirby & the Amazing Mirror,2004,Nintendo,1-4,Platformer,9.0
+Game Boy Advance,Gunstar Super Heroes,2005,Sega,1-2,Run-and-Gun,9.0
+Game Boy Advance,Mario Kart: Super Circuit,2001,Nintendo,1-4,Racing,8.9
+Game Boy Advance,Sonic Advance 2,2002,Sega,1-4,Platformer,8.9
+Game Boy Advance,F-Zero: Maximum Velocity,2001,Nintendo,1,Racing,8.7
+Game Boy Advance,The Sword of Hope II,2001,Kemco,1,RPG,8.5
+Intellivision,Utopia,1982,Mattel,1-2,Strategy,8.7
+Intellivision,Advanced Dungeons & Dragons: Cloudy Mountain,1982,Mattel,1,Action-Adventure,8.5
+Intellivision,Astrosmash,1981,Mattel,1,Shoot 'em up,8.2
+Intellivision,BurgerTime,1982,Mattel,1-2,Arcade,8.2
+Intellivision,Sea Battle,1980,Mattel,1-6,Strategy,8.1
+Intellivision,Night Stalker,1982,Mattel,1,Action,8.1
+Intellivision,Tron Deadly Discs,1982,Mattel,1-2,Action,8.0
+Intellivision,Shark! Shark!,1982,Mattel,1-2,Action,8.0
+Intellivision,Demon Attack,1982,Imagic,1,Shoot 'em up,8.0
+Intellivision,Atlantis,1982,Imagic,1-2,Shoot 'em up,8.0
+Intellivision,Space Spartans,1981,Mattel,1,Strategy,7.8
+Intellivision,Lock 'N' Chase,1982,Mattel,1-2,Arcade,7.8
+Intellivision,Major League Baseball,1980,Mattel,1-2,Sports,7.7
+Intellivision,B-17 Bomber,1982,Mattel,1-2,Simulation,7.7
+Intellivision,World Championship Baseball,1982,Mattel,1-2,Sports,7.7
+Intellivision,Thin Ice,1983,Mattel,1-2,Action,7.7
+Intellivision,Beauty and the Beast,1982,Imagic,1-2,Platformer,7.6
+Intellivision,Frog Bog,1982,Mattel,1-2,Action,7.6
+Intellivision,Nightmare,1982,Mattel,1,Action,7.5
+Intellivision,TRON: Solar Sailer,1983,Mattel,1,Action,7.4
+Mega Drive / Genesis,Sonic 3 & Knuckles,1994,Sega,1-2,Platformer,9.8
+Mega Drive / Genesis,Streets of Rage 2,1992,Sega,1-2,Beat 'em up,9.7
+Mega Drive / Genesis,Sonic the Hedgehog 2,1992,Sega,1-2,Platformer,9.5
+Mega Drive / Genesis,Gunstar Heroes,1993,Sega,1-2,Run-and-Gun,9.5
+Mega Drive / Genesis,Phantasy Star IV,1993,Sega,1,RPG,9.5
+Mega Drive / Genesis,Contra: Hard Corps,1994,Konami,1-2,Run-and-Gun,9.4
+Mega Drive / Genesis,MUSHA,1990,Compile,1,Shoot 'em up,9.3
+Mega Drive / Genesis,Thunder Force IV,1992,Technosoft,1,Shoot 'em up,9.3
+Mega Drive / Genesis,Shining Force II,1993,Sega,1,Strategy RPG,9.3
+Mega Drive / Genesis,Rocket Knight Adventures,1993,Konami,1,Action-Platformer,9.2
+Mega Drive / Genesis,Alien Soldier,1995,Treasure,1,Run-and-Gun,9.2
+Mega Drive / Genesis,Castlevania: Bloodlines,1994,Konami,1,Action-Platformer,9.1
+Mega Drive / Genesis,Micro Machines 2: Turbo Tournament,1994,Codemasters,1-8,Racing,9.0
+Mega Drive / Genesis,Ristar,1995,Sega,1,Platformer,9.0
+Mega Drive / Genesis,ToeJam & Earl,1991,Sega,1-2,Action,8.9
+Mega Drive / Genesis,Streets of Rage,1991,Sega,1-2,Beat 'em up,8.9
+Mega Drive / Genesis,Earthworm Jim,1994,Shiny Entertainment,1,Platformer,8.9
+Mega Drive / Genesis,Comix Zone,1995,Sega,1,Beat 'em up,8.8
+Mega Drive / Genesis,Worms,1995,Team17,1-4,Strategy,8.8
+Mega Drive / Genesis,Virtua Racing,1994,Sega,1-2,Racing,8.7
+NES,Super Mario Bros. 3,1988,Nintendo,1-2,Platformer,9.8
+NES,Super Mario Bros.,1985,Nintendo,1-2,Platformer,9.5
+NES,The Legend of Zelda,1986,Nintendo,1,Action-Adventure,9.5
+NES,Mega Man 2,1988,Capcom,1,Action-Platformer,9.5
+NES,Castlevania III: Dracula's Curse,1989,Konami,1,Action-Platformer,9.4
+NES,Kirby's Adventure,1993,Nintendo,1,Platformer,9.4
+NES,Final Fantasy III,1994,Square,1,RPG,9.4
+NES,Metroid,1986,Nintendo,1,Action-Adventure,9.2
+NES,Contra,1987,Konami,1-2,Run-and-Gun,9.2
+NES,Punch-Out!!,1990,Nintendo,1,Sports/Fighting,9.2
+NES,Ninja Gaiden,1988,Tecmo,1,Action-Platformer,9.1
+NES,Castlevania,1987,Konami,1,Action-Platformer,9.0
+NES,Blaster Master,1988,Sunsoft,1,Action-Platformer,9.0
+NES,DuckTales,1989,Capcom,1,Platformer,9.0
+NES,Dragon Warrior IV,1990,Enix,1,RPG,9.0
+NES,Mega Man 3,1990,Capcom,1,Action-Platformer,9.0
+NES,Crystalis,1990,SNK,1,Action RPG,9.0
+NES,River City Ransom,1989,Technos Japan,1-2,Beat 'em up,8.9
+NES,Bionic Commando,1988,Capcom,1,Action-Platformer,8.8
+NES,Zelda II: The Adventure of Link,1987,Nintendo,1,Action RPG,8.6
+Neo Geo,Metal Slug 3,2000,SNK,1-2,Run-and-Gun,9.8
+Neo Geo,Garou: Mark of the Wolves,1999,SNK,1-2,Fighting,9.7
+Neo Geo,The King of Fighters '98,1998,SNK,1-2,Fighting,9.6
+Neo Geo,Metal Slug X,1999,SNK,1-2,Run-and-Gun,9.6
+Neo Geo,Samurai Shodown II,1994,SNK,1-2,Fighting,9.5
+Neo Geo,Last Blade 2,1998,SNK,1-2,Fighting,9.5
+Neo Geo,The King of Fighters 2002,2002,SNK Playmore,1-2,Fighting,9.4
+Neo Geo,Metal Slug,1996,Nazca,1-2,Run-and-Gun,9.3
+Neo Geo,Blazing Star,1998,Yumekobo,1-2,Shoot 'em up,9.3
+Neo Geo,Pulstar,1995,Aicom,1-2,Shoot 'em up,9.2
+Neo Geo,Windjammers,1994,Data East,1-2,Sports,9.1
+Neo Geo,Neo Turf Masters,1996,Nazca,1-2,Sports,9.1
+Neo Geo,Real Bout Fatal Fury Special,1997,SNK,1-2,Fighting,9.1
+Neo Geo,Shock Troopers,1997,SNK,1-2,Run-and-Gun,9.1
+Neo Geo,Twinkle Star Sprites,1996,ADK,1-2,Shoot 'em up,9.0
+Neo Geo,Baseball Stars 2,1992,SNK,1-2,Sports,8.9
+Neo Geo,Shock Troopers: 2nd Squad,1998,Saurus,1-2,Run-and-Gun,8.9
+Neo Geo,Top Hunter: Roddy & Cathy,1994,SNK,1-2,Action-Platformer,8.8
+Neo Geo,Magician Lord,1990,Alpha Denshi,1-2,Action-Platformer,8.7
+Neo Geo,Windjammers 2,2022,Dotemu,1-2,Sports,8.5
+Nintendo 64,The Legend of Zelda: Ocarina of Time,1998,Nintendo,1,Action-Adventure,10.0
+Nintendo 64,Super Mario 64,1996,Nintendo,1,Platformer,9.9
+Nintendo 64,The Legend of Zelda: Majora's Mask,2000,Nintendo,1,Action-Adventure,9.8
+Nintendo 64,GoldenEye 007,1997,Nintendo,1-4,First-Person Shooter,9.7
+Nintendo 64,Star Fox 64,1997,Nintendo,1-4,Rail Shooter,9.5
+Nintendo 64,Banjo-Kazooie,1998,Nintendo,1,Platformer,9.5
+Nintendo 64,Super Smash Bros.,1999,Nintendo,1-4,Fighting,9.5
+Nintendo 64,Perfect Dark,2000,Nintendo,1-4,First-Person Shooter,9.5
+Nintendo 64,Paper Mario,2000,Nintendo,1,RPG,9.5
+Nintendo 64,Mario Kart 64,1996,Nintendo,1-4,Racing,9.3
+Nintendo 64,F-Zero X,1998,Nintendo,1-4,Racing,9.3
+Nintendo 64,Sin and Punishment,2000,Nintendo,1-2,Rail Shooter,9.3
+Nintendo 64,Diddy Kong Racing,1997,Nintendo,1-4,Racing,9.1
+Nintendo 64,Conker's Bad Fur Day,2001,Rare,1,Platformer,9.1
+Nintendo 64,Wave Race 64,1996,Nintendo,1-4,Racing,9.0
+Nintendo 64,Rogue Squadron,1998,LucasArts,1,Action,9.0
+Nintendo 64,Banjo-Tooie,2000,Nintendo,1,Platformer,9.0
+Nintendo 64,Blast Corps,1997,Nintendo,1,Action,8.9
+Nintendo 64,Jet Force Gemini,1999,Nintendo,1-4,Action,8.9
+Nintendo 64,1080° Snowboarding,1998,Nintendo,1-2,Sports,8.8
+Odyssey² / Videopac,Quest for the Rings,1981,Philips,1-2,Adventure,8.3
+Odyssey² / Videopac,K.C. Munchkin!,1981,Philips,1,Maze,8.0
+Odyssey² / Videopac,Pick Axe Pete,1982,Philips,1,Action,7.7
+Odyssey² / Videopac,Turtles,1981,Philips,1-2,Action,7.6
+Odyssey² / Videopac,Alien Invaders - Plus!,1981,Philips,1-2,Shoot 'em up,7.6
+Odyssey² / Videopac,Cosmic Conflict,1978,Philips,1-2,Shoot 'em up,7.5
+Odyssey² / Videopac,Freedom Fighters,1982,Philips,1-2,Action,7.5
+Odyssey² / Videopac,War of Nerves,1981,Philips,1-2,Shoot 'em up,7.4
+Odyssey² / Videopac,UFO,1980,Philips,1-2,Shoot 'em up,7.3
+Odyssey² / Videopac,Blockout,1981,Philips,1-2,Puzzle,7.2
+Odyssey² / Videopac,The Mousing Cat,1982,Philips,1,Action,7.2
+Odyssey² / Videopac,Smithereens,1982,Philips,1-2,Action,7.2
+Odyssey² / Videopac,Monkeyshines,1982,Philips,1,Action,7.1
+Odyssey² / Videopac,Out of this World,1982,Philips,1,Action,7.1
+Odyssey² / Videopac,Sub Chase,1978,Philips,1-2,Action,7.0
+Odyssey² / Videopac,Speedway/Spin-Out/Crypto-Logic,1978,Philips,1-2,Sports,7.0
+Odyssey² / Videopac,Alien Invaders,1978,Philips,1-2,Shoot 'em up,7.0
+Odyssey² / Videopac,Gunfighter,1979,Philips,1-2,Action,6.9
+Odyssey² / Videopac,P.T. Barnum's Acrobats,1980,Philips,1-2,Action,6.8
+PC Engine / TurboGrafx-16,Castlevania: Rondo of Blood,1993,Konami,1,Action-Platformer,9.8
+PC Engine / TurboGrafx-16,Dracula X: Chi no Rondo,1993,Konami,1,Action-Platformer,9.8
+PC Engine / TurboGrafx-16,Ys Book I & II,1989,Hudson Soft,1,Action RPG,9.4
+PC Engine / TurboGrafx-16,Soldier Blade,1992,Hudson Soft,1,Shoot 'em up,9.4
+PC Engine / TurboGrafx-16,Blazing Lazers,1989,Hudson Soft,1,Shoot 'em up,9.2
+PC Engine / TurboGrafx-16,Gunhed,1989,Hudson Soft,1,Shoot 'em up,9.2
+PC Engine / TurboGrafx-16,Gate of Thunder,1992,Hudson Soft,1,Shoot 'em up,9.2
+PC Engine / TurboGrafx-16,Devil's Crush,1990,Naxat,1,Pinball,9.1
+PC Engine / TurboGrafx-16,Lords of Thunder,1993,Hudson Soft,1,Shoot 'em up,9.1
+PC Engine / TurboGrafx-16,Ninja Spirit,1988,Irem,1,Action-Platformer,9.0
+PC Engine / TurboGrafx-16,Military Madness,1989,Hudson Soft,1,Strategy,9.0
+PC Engine / TurboGrafx-16,Bonk's Revenge,1991,Hudson Soft,1,Platformer,9.0
+PC Engine / TurboGrafx-16,Star Parodier,1992,Hudson Soft,1-2,Shoot 'em up,9.0
+PC Engine / TurboGrafx-16,Neutopia II,1991,Hudson Soft,1,Action RPG,8.9
+PC Engine / TurboGrafx-16,Parasol Stars,1991,Hudson Soft,1-2,Platformer,8.9
+PC Engine / TurboGrafx-16,Bonk's Adventure,1989,Hudson Soft,1,Platformer,8.8
+PC Engine / TurboGrafx-16,Splatterhouse,1990,Namco,1,Beat 'em up,8.8
+PC Engine / TurboGrafx-16,Raiden,1991,Hudson Soft,1-2,Shoot 'em up,8.8
+PC Engine / TurboGrafx-16,Legendary Axe,1988,Victor,1,Action-Platformer,8.7
+PC Engine / TurboGrafx-16,Bonk III: Bonk's Big Adventure,1993,Hudson Soft,1,Platformer,8.7
+PlayStation,Castlevania: Symphony of the Night,1997,Konami,1,Action RPG,10.0
+PlayStation,Metal Gear Solid,1998,Konami,1,Action-Adventure,9.9
+PlayStation,Final Fantasy VII,1997,Square,1,RPG,9.8
+PlayStation,Final Fantasy Tactics,1997,Square,1,Strategy RPG,9.7
+PlayStation,Tekken 3,1997,Namco,1-2,Fighting,9.6
+PlayStation,Resident Evil 2,1998,Capcom,1,Survival Horror,9.6
+PlayStation,Suikoden II,1998,Konami,1,RPG,9.6
+PlayStation,Final Fantasy IX,2000,Square,1,RPG,9.6
+PlayStation,Gran Turismo 2,1999,Sony Computer Entertainment,1-2,Racing,9.5
+PlayStation,Silent Hill,1999,Konami,1,Survival Horror,9.5
+PlayStation,Vagrant Story,2000,Square,1,Action RPG,9.4
+PlayStation,Tony Hawk's Pro Skater 2,2000,Activision,1-2,Sports,9.4
+PlayStation,Xenogears,1998,Square,1,RPG,9.3
+PlayStation,Crash Bandicoot 3: Warped,1998,Sony Computer Entertainment,1,Platformer,9.2
+PlayStation,Ridge Racer Type 4,1998,Namco,1-2,Racing,9.2
+PlayStation,Spyro: Year of the Dragon,2000,Sony Computer Entertainment,1,Platformer,9.1
+PlayStation,Wipeout 3,1999,Psygnosis,1-2,Racing,9.0
+PlayStation,Resident Evil 3: Nemesis,1999,Capcom,1,Survival Horror,9.0
+PlayStation,Ape Escape,1999,Sony Computer Entertainment,1,Platformer,8.9
+PlayStation,Tomb Raider II,1997,Eidos Interactive,1,Action-Adventure,8.8
+SNES,Super Metroid,1994,Nintendo,1,Action-Adventure,10.0
+SNES,Chrono Trigger,1995,Square,1,RPG,10.0
+SNES,The Legend of Zelda: A Link to the Past,1991,Nintendo,1,Action-Adventure,9.9
+SNES,Super Mario World,1990,Nintendo,1-2,Platformer,9.8
+SNES,Final Fantasy VI,1994,Square,1,RPG,9.8
+SNES,Mega Man X,1993,Capcom,1,Action-Platformer,9.6
+SNES,Donkey Kong Country 2,1995,Nintendo,1-2,Platformer,9.6
+SNES,Super Castlevania IV,1991,Konami,1,Action-Platformer,9.5
+SNES,Contra III: The Alien Wars,1992,Konami,1-2,Run-and-Gun,9.5
+SNES,EarthBound,1994,Nintendo,1,RPG,9.5
+SNES,Yoshi's Island,1995,Nintendo,1,Platformer,9.5
+SNES,Super Mario Kart,1992,Nintendo,1-2,Racing,9.3
+SNES,Kirby Super Star,1996,Nintendo,1-2,Platformer,9.3
+SNES,Turtles in Time,1992,Konami,1-2,Beat 'em up,9.2
+SNES,Super Punch-Out!!,1994,Nintendo,1,Sports,9.2
+SNES,ActRaiser,1990,Enix,1,Action/Strategy,9.1
+SNES,Secret of Mana,1993,Square,1-3,Action RPG,9.1
+SNES,F-Zero,1990,Nintendo,1,Racing,9.0
+SNES,Star Fox,1993,Nintendo,1,Shooter,9.0
+SNES,Super Ghouls 'n Ghosts,1991,Capcom,1,Action-Platformer,8.9
+Sega 32X,Doom,1994,id Software,1,First-Person Shooter,8.6
+Sega 32X,Star Wars Arcade,1994,Sega,1-2,Rail Shooter,8.4
+Sega 32X,Virtua Fighter,1995,Sega,1-2,Fighting,8.2
+Sega 32X,Knuckles' Chaotix,1995,Sega,1,Platformer,8.1
+Sega 32X,NBA Jam Tournament Edition,1995,Acclaim,1-4,Sports,8.1
+Sega 32X,Space Harrier,1994,Sega,1,Rail Shooter,8.0
+Sega 32X,Blackthorne,1995,Interplay,1,Action-Platformer,8.0
+Sega 32X,Mortal Kombat II,1995,Acclaim,1-2,Fighting,8.0
+Sega 32X,Shadow Squadron,1995,Sega,1,Space Combat,7.9
+Sega 32X,Tempo,1995,Sega,1,Platformer,7.8
+Sega 32X,After Burner Complete,1995,Sega,1,Action,7.8
+Sega 32X,Primal Rage,1995,Atari,1-2,Fighting,7.8
+Sega 32X,World Series Baseball Starring Deion Sanders,1995,Sega,1-2,Sports,7.8
+Sega 32X,T-MEK,1995,Sega,1-2,Action,7.6
+Sega 32X,Metal Head,1995,Sega,1,Action,7.5
+Sega 32X,Zaxxon's Motherbase 2000,1995,Sega,1,Shoot 'em up,7.5
+Sega 32X,WWF Raw,1995,Acclaim,1-4,Wrestling,7.4
+Sega 32X,NFL Quarterback Club 95,1995,Acclaim,1-4,Sports,7.4
+Sega 32X,Fahrenheit,1995,Sega,1,Action,7.0
+Sega 32X,Cosmic Carnage,1995,Sega,1-2,Fighting,6.9
+Sega CD / Mega-CD,Snatcher,1994,Konami,1,Adventure,9.5
+Sega CD / Mega-CD,Sonic CD,1993,Sega,1,Platformer,9.4
+Sega CD / Mega-CD,Lunar: Eternal Blue,1994,Working Designs,1,RPG,9.4
+Sega CD / Mega-CD,Lunar: The Silver Star,1993,Working Designs,1,RPG,9.3
+Sega CD / Mega-CD,Robo Aleste,1992,Compile,1,Shoot 'em up,9.1
+Sega CD / Mega-CD,Popful Mail,1994,Working Designs,1,Action RPG,9.1
+Sega CD / Mega-CD,Shining Force CD,1994,Sega,1,Strategy RPG,9.0
+Sega CD / Mega-CD,Lords of Thunder,1995,Working Designs,1,Shoot 'em up,9.0
+Sega CD / Mega-CD,Final Fight CD,1993,Sega,1-2,Beat 'em up,8.9
+Sega CD / Mega-CD,Keio Flying Squadron,1993,Victor,1,Shoot 'em up,8.8
+Sega CD / Mega-CD,Earthworm Jim: Special Edition,1995,Shiny Entertainment,1,Platformer,8.8
+Sega CD / Mega-CD,Silpheed,1993,Game Arts,1,Shoot 'em up,8.7
+Sega CD / Mega-CD,Android Assault,1993,Scavenger,1,Shoot 'em up,8.6
+Sega CD / Mega-CD,Dark Wizard,1993,Sega,1,Strategy RPG,8.6
+Sega CD / Mega-CD,Ecco the Dolphin CD,1993,Sega,1,Action,8.5
+Sega CD / Mega-CD,Heart of the Alien,1994,Interplay,1,Cinematic Platformer,8.5
+Sega CD / Mega-CD,Batman Returns,1993,Sega,1,Action,8.4
+Sega CD / Mega-CD,Ecco: The Tides of Time CD,1994,Sega,1,Action,8.4
+Sega CD / Mega-CD,Road Avenger,1993,Sega,1,Interactive Movie,7.7
+Sega CD / Mega-CD,Time Gal,1993,Sega,1,Interactive Movie,7.6
+Sega Master System / Game Gear,Wonder Boy III: The Dragon's Trap,1989,Sega,1,Action-Adventure,9.4
+Sega Master System / Game Gear,Dragon's Trap,1989,Sega,1,Action-Adventure,9.4
+Sega Master System / Game Gear,Phantasy Star,1987,Sega,1,RPG,9.3
+Sega Master System / Game Gear,Castle of Illusion Starring Mickey Mouse,1990,Sega,1,Platformer,9.0
+Sega Master System / Game Gear,Sonic the Hedgehog,1991,Sega,1,Platformer,9.0
+Sega Master System / Game Gear,Power Strike II,1993,Sega,1,Shoot 'em up,9.0
+Sega Master System / Game Gear,Land of Illusion Starring Mickey Mouse,1992,Sega,1,Platformer,8.9
+Sega Master System / Game Gear,Shinobi,1987,Sega,1,Action,8.8
+Sega Master System / Game Gear,Master of Darkness,1992,Sega,1,Action-Platformer,8.8
+Sega Master System / Game Gear,Streets of Rage 2,1993,Sega,1-2,Beat 'em up,8.8
+Sega Master System / Game Gear,Gunstar Heroes,1995,Sega,1,Run-and-Gun,8.8
+Sega Master System / Game Gear,R-Type,1988,Sega,1,Shoot 'em up,8.7
+Sega Master System / Game Gear,Power Strike,1991,Sega,1,Shoot 'em up,8.7
+Sega Master System / Game Gear,Defenders of Oasis,1992,Sega,1,RPG,8.7
+Sega Master System / Game Gear,Golden Axe Warrior,1991,Sega,1,Action RPG,8.6
+Sega Master System / Game Gear,Ninja Gaiden,1992,Tecmo,1,Action-Platformer,8.6
+Sega Master System / Game Gear,Alex Kidd in Miracle World,1986,Sega,1,Platformer,8.5
+Sega Master System / Game Gear,Shining Force Gaiden,1992,Sega,1,Strategy RPG,8.5
+Sega Master System / Game Gear,Fantasy Zone,1986,Sega,1,Shoot 'em up,8.4
+Sega Master System / Game Gear,Sonic Chaos,1993,Sega,1,Platformer,8.3
+Sega Saturn,Panzer Dragoon Saga,1998,Sega,1,RPG,9.8
+Sega Saturn,Radiant Silvergun,1998,Treasure,1-2,Shoot 'em up,9.7
+Sega Saturn,Shining Force III,1997,Sega,1,Strategy RPG,9.5
+Sega Saturn,Guardian Heroes,1996,Sega,1-4,Beat 'em up,9.4
+Sega Saturn,Saturn Bomberman,1996,Hudson Soft,1-10,Action,9.4
+Sega Saturn,Dungeons & Dragons Collection,1999,Capcom,1-2,Beat 'em up,9.4
+Sega Saturn,Virtua Fighter 2,1995,Sega,1-2,Fighting,9.3
+Sega Saturn,NiGHTS into Dreams,1996,Sega,1-2,Action,9.3
+Sega Saturn,Panzer Dragoon Zwei,1996,Sega,1,Rail Shooter,9.3
+Sega Saturn,Sega Rally Championship,1994,Sega,1-2,Racing,9.2
+Sega Saturn,Dragon Force,1996,Working Designs,1,Strategy RPG,9.2
+Sega Saturn,X-Men vs. Street Fighter,1996,Capcom,1-2,Fighting,9.2
+Sega Saturn,Street Fighter Alpha 3,1998,Capcom,1-2,Fighting,9.2
+Sega Saturn,Fighters Megamix,1996,Sega,1-2,Fighting,9.1
+Sega Saturn,Thunder Force V,1997,Technosoft,1,Shoot 'em up,9.1
+Sega Saturn,Virtua Cop 2,1995,Sega,1-2,Light-gun Shooter,9.0
+Sega Saturn,Panzer Dragoon,1995,Sega,1,Rail Shooter,8.9
+Sega Saturn,Shining the Holy Ark,1996,Sega,1,RPG,8.9
+Sega Saturn,Burning Rangers,1998,Sega,1,Action,8.9
+Sega Saturn,Albert Odyssey: Legend of Eldean,1996,Working Designs,1,RPG,8.8
+Vectrex,Mine Storm,1982,General Consumer Electronics,1,Shoot 'em up,8.6
+Vectrex,Armor Attack,1982,Cinematronics,1-2,Arcade,8.4
+Vectrex,Star Castle,1983,Cinematronics,1,Arcade,8.4
+Vectrex,Berzerk,1982,Atari,1,Arcade,8.2
+Vectrex,Solar Quest,1982,Cinematronics,1,Shoot 'em up,8.2
+Vectrex,Scramble,1982,Cinematronics,1,Shoot 'em up,8.1
+Vectrex,Starhawk,1981,General Consumer Electronics,1,Shoot 'em up,8.0
+Vectrex,Rip-Off,1982,Cinematronics,1-2,Arcade,8.0
+Vectrex,Space Duel,1982,Atari,1-2,Arcade,8.0
+Vectrex,Cosmic Chasm,1982,General Consumer Electronics,1,Shoot 'em up,7.9
+Vectrex,Fortress of Narzod,1983,General Consumer Electronics,1,Action,7.9
+Vectrex,3D Mine Storm,1982,General Consumer Electronics,1,Shoot 'em up,7.8
+Vectrex,Pole Position,1983,Atari,1,Racing,7.8
+Vectrex,Blitz!,1982,General Consumer Electronics,1-2,Sports,7.7
+Vectrex,Clean Sweep,1982,General Consumer Electronics,1,Arcade,7.7
+Vectrex,Dark Tower,1983,General Consumer Electronics,1,Action,7.7
+Vectrex,Polar Rescue,1983,General Consumer Electronics,1,Action,7.6
+Vectrex,3D Crazy Coaster,1983,General Consumer Electronics,1,Action,7.5
+Vectrex,Spinball,1983,General Consumer Electronics,1,Pinball,7.5
+Vectrex,Heads Up,1983,General Consumer Electronics,1-2,Sports,7.4
+Vectrex Homebrew,Vector Patrol,2012,Homebrew,1,Action,8.2
+Vectrex Homebrew,War of the Robots,2011,Homebrew,1,Action,8.0
+Vectrex Homebrew,Donkey Kong,2013,Homebrew,1,Platformer,7.9
+Vectrex Homebrew,Scramble,2013,Homebrew,1,Shoot 'em up,7.8
+Vectrex Homebrew,Frogger,2014,Homebrew,1,Arcade,7.8
+Vectrex Homebrew,Pac-Man,2014,Homebrew,1,Arcade,7.8
+WonderSwan / WonderSwan Color,Judgement Silversword,2004,Qute,1,Shoot 'em up,9.2
+WonderSwan / WonderSwan Color,Final Fantasy IV,2002,Square,1,RPG,9.1
+WonderSwan / WonderSwan Color,Dicing Knight.,2004,Pallas,1,Action RPG,9.0
+WonderSwan / WonderSwan Color,Final Fantasy,2000,Square,1,RPG,8.9
+WonderSwan / WonderSwan Color,Gunpey,1999,Bandai,1-2,Puzzle,8.8
+WonderSwan / WonderSwan Color,Klonoa: Moonlight Museum,1999,Namco,1,Platformer,8.8
+WonderSwan / WonderSwan Color,Final Fantasy II,2001,Square,1,RPG,8.7
+WonderSwan / WonderSwan Color,Tetris,1999,Bandai,1-2,Puzzle,8.4
+WonderSwan / WonderSwan Color,Rockman & Forte: Mirai kara no Chousensha,2002,Bandai,1,Action-Platformer,8.4
+WonderSwan / WonderSwan Color,Makai-Mura for WonderSwan,1999,Capcom,1,Action-Platformer,8.3
+WonderSwan / WonderSwan Color,Guilty Gear Petit 2,2001,Sammy,1-2,Fighting,8.3
+WonderSwan / WonderSwan Color,Guilty Gear Petit,2001,Sammy,1-2,Fighting,8.2
+WonderSwan / WonderSwan Color,Chocobo's Dungeon for WonderSwan,1999,Square,1,RPG,8.1
+WonderSwan / WonderSwan Color,Front Mission: Gun Hazard,2000,Square,1,Strategy RPG,8.0
+WonderSwan / WonderSwan Color,Puzzle Bobble,2000,Bandai,1-2,Puzzle,8.0
+WonderSwan / WonderSwan Color,Digimon: Digital Monster,1999,Bandai,1,RPG,7.9
+WonderSwan / WonderSwan Color,Blue Wing Blitz,2004,Square Enix,1,Strategy RPG,7.9
+WonderSwan / WonderSwan Color,One Piece Grand Battle Swan Colosseum,2002,Bandai,1-2,Fighting,7.8
+WonderSwan / WonderSwan Color,Wonder Classic,1999,Bandai,1,Puzzle,7.6
+WonderSwan / WonderSwan Color,WonderSwan Color Gundam,2000,Bandai,1,Strategy,7.6

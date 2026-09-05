@@ -17,17 +17,23 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
   Hinter „Alle Konsolen" und jeder Konsole steht in Klammern die
   Spielanzahl darunter.
-  - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" oder
-    „Konsole umbenennen …". **Rechtsklick auf ein Spiel** → „Spiel
-    umbenennen …" oder „Spiel entfernen" (ein bereits angelegtes Design
-    bleibt unter „Projekte"). Umbenennen ändert nur das Label – die interne
-    ID (und damit `gameKey`, Vorlage und `gamelist.xml`) bleibt gleich, ein
-    verknüpftes Design und der Metadaten-Eintrag (per Titel gematcht, wird
-    mit umbenannt) bleiben erhalten. Die Änderungen liegen als Diff
-    (hinzugefügte Spiele / ausgeblendete Seed-Einträge / umbenannte
-    Konsolen & Spiele) in `localStorage` (`stickerstudio:catalogOverlay`)
-    und sind Teil des ZIP-Backups; ein entferntes Seed-Spiel mit gleichem
-    Titel wieder hinzufügen blendet es einfach wieder ein.
+  - **Rechtsklick auf eine Konsole** → „Hinzufügen" oder „Umbenennen"
+    (bei selbst hinzugefügten Konsolen zusätzlich „Entfernen").
+    **Rechtsklick auf ein Spiel** → „Umbenennen" oder „Entfernen" (ein
+    bereits angelegtes Design bleibt unter „Projekte"). Umbenennen ändert
+    nur das Label – die interne ID (und damit `gameKey`, Vorlage und
+    `gamelist.xml`) bleibt gleich, ein verknüpftes Design und der
+    Metadaten-Eintrag (per Titel gematcht, wird mit umbenannt) bleiben
+    erhalten. Die Änderungen liegen als Diff (hinzugefügte / entfernte /
+    umbenannte Konsolen & Spiele) in `localStorage`
+    (`stickerstudio:catalogOverlay`) und sind Teil des ZIP-Backups.
+  - **Basis-Set** (Toolbar): übernimmt Konsolen/Spiele aus der
+    mitgelieferten [`base_game_list.csv`](src/data/base_game_list.csv)
+    (Top-N je Konsole, 27 Systeme). Dialog mit auswählbarem Baum, „Weiter"
+    legt die markierten Einträge im Baum an **inklusive Metadaten** (Jahr,
+    Publisher, Spieler, Genre, Wertung → jeweilige `gamelist.xml`). Nicht
+    vorhandene Konsolen werden als eigene Konsolen angelegt; NES/SNES/… und
+    Namensgleiche landen in der passenden bestehenden Konsole.
   - **Filter** (Trichter-Symbol neben „Alle Konsolen"): alle Spiele, nur
     Spiele **mit** Bild oder nur **ohne** Bild (= Design hat eine Bild-Ebene).
     Bei aktivem Filter zeigt die Klammer `sichtbar/gesamt`; die Auswahl
@@ -221,7 +227,7 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
 | `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
 | `src/masking.ts` | Ebenenstapel in Plain-/Masken-Segmente aufteilen |
-| `src/data/catalog.ts` | Seed-Konsolen + Top-10, plus lokaler Overlay (Spiele hinzufügen/entfernen) |
+| `src/data/catalog.ts` | Seed-Konsolen + lokaler Overlay (Konsolen/Spiele hinzufügen/umbenennen/entfernen) |
 | `src/components/GameTree.tsx` | Baumansicht links (inkl. Rechtsklick-Menü) |
 | `src/components/ContextMenu.tsx` | Minimales Rechtsklick-Menü (ohne Extra-Dependency) |
 | `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |
@@ -236,6 +242,8 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
 | `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
 | `src/covers.ts` | Cover-Suche: SteamGridDB / IGDB (Keys, via CORS-Proxy) oder libretro-thumbnails |
+| `src/data/baseGameList.ts` | `base_game_list.csv` parsen (Konsolen/Spiele + Metadaten) |
+| `src/components/BaseImportDialog.tsx` | „Basis-Set": Auswahlbaum + Übernahme inkl. Metadaten |
 | `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
 | `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover (mit Sweep-Modus) |
 | `src/components/CoverSweepDialog.tsx` | „Alle Konsolen": alle bildlosen Karten nacheinander |

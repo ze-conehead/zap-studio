@@ -75,10 +75,11 @@ const SEED_CATALOG: CatalogConsole[] = [
 // ── Persisted overlay ───────────────────────────────────────────────────────
 
 export interface CatalogOverlay {
-  added: Record<string, CatalogGame[]>; // consoleId -> extra games
-  removed: Record<string, string[]>; // consoleId -> hidden seed game ids
-  consoleNames: Record<string, string>; // consoleId -> renamed console label
+  added: Record<string, CatalogGame[]>; // seed consoleId -> extra games
+  removed: Record<string, string[]>; // seed consoleId -> hidden seed game ids
+  consoleNames: Record<string, string>; // seed consoleId -> renamed console label
   gameTitles: Record<string, string>; // "consoleId/gameId" -> renamed game title
+  consoles: CatalogConsole[]; // fully custom consoles (id + name + games)
 }
 
 const EMPTY_OVERLAY: CatalogOverlay = {
@@ -86,6 +87,7 @@ const EMPTY_OVERLAY: CatalogOverlay = {
   removed: {},
   consoleNames: {},
   gameTitles: {},
+  consoles: [],
 };
 
 function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
@@ -94,6 +96,7 @@ function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
     removed: parsed.removed ?? {},
     consoleNames: parsed.consoleNames ?? {},
     gameTitles: parsed.gameTitles ?? {},
+    consoles: Array.isArray(parsed.consoles) ? parsed.consoles : [],
   };
 }
 
@@ -148,20 +151,36 @@ export function replaceCatalogOverlay(raw: string): void {
 
 // ── Public catalogue (seed + overlay merged) ────────────────────────────────
 
+const SEED_IDS = new Set(SEED_CATALOG.map((c) => c.id));
+
 export function getCatalog(): CatalogConsole[] {
-  const { added, removed, consoleNames, gameTitles } = loadCatalogOverlay();
-  return SEED_CATALOG.map((c) => {
+  const { added, removed, consoleNames, gameTitles, consoles } = loadCatalogOverlay();
+  const retitle = (cId: string, g: CatalogGame) => ({
+    id: g.id,
+    title: gameTitles[`${cId}/${g.id}`] ?? g.title,
+  });
+
+  const seed = SEED_CATALOG.map((c) => {
     const hidden = new Set(removed[c.id] ?? []);
-    const seedGames = c.games
-      .filter((g) => !hidden.has(g.id))
-      .map((g) => ({ id: g.id, title: gameTitles[`${c.id}/${g.id}`] ?? g.title }));
-    const extra = added[c.id] ?? [];
     return {
       id: c.id,
       name: consoleNames[c.id] ?? c.name,
-      games: [...seedGames, ...extra],
+      games: [
+        ...c.games.filter((g) => !hidden.has(g.id)).map((g) => retitle(c.id, g)),
+        ...(added[c.id] ?? []).map((g) => retitle(c.id, g)),
+      ],
     };
   });
+
+  const custom = consoles
+    .filter((c) => !SEED_IDS.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      games: c.games.map((g) => retitle(c.id, g)),
+    }));
+
+  return [...seed, ...custom];
 }
 
 export function findGame(gameKey: string | undefined) {
@@ -180,47 +199,91 @@ export const gameKeyOf = (
 
 // ── Mutations ───────────────────────────────────────────────────────────────
 
-// Adds a game to a console. Returns the created (or re-shown) game, or
-// undefined if the title was blank or the console id is unknown.
+// Adds a console (from the base-game-list import). Returns the existing one
+// if a console with the same slug already exists, or undefined for a blank
+// name.
+export function addConsole(rawName: string): CatalogConsole | undefined {
+  const name = rawName.trim();
+  if (!name) return undefined;
+  const id = slug(name) || `konsole-${Date.now().toString(36)}`;
+  const existing = getCatalog().find((c) => c.id === id);
+  if (existing) return existing;
+  const overlay = loadCatalogOverlay();
+  const c: CatalogConsole = { id, name, games: [] };
+  overlay.consoles = [...overlay.consoles, c];
+  saveOverlay(overlay);
+  return c;
+}
+
+// Removes a custom console and everything keyed on it. Seed consoles are
+// left alone.
+export function removeConsole(consoleId: string): void {
+  if (SEED_IDS.has(consoleId)) return;
+  const overlay = loadCatalogOverlay();
+  overlay.consoles = overlay.consoles.filter((c) => c.id !== consoleId);
+  delete overlay.added[consoleId];
+  delete overlay.removed[consoleId];
+  delete overlay.consoleNames[consoleId];
+  for (const k of Object.keys(overlay.gameTitles)) {
+    if (k.startsWith(`${consoleId}/`)) delete overlay.gameTitles[k];
+  }
+  saveOverlay(overlay);
+}
+
+// Adds a game to a console (seed or custom). Idempotent by slug: if the
+// game already exists it's returned unchanged. Returns undefined for a
+// blank title or an unknown console.
 export function addGame(consoleId: string, rawTitle: string): CatalogGame | undefined {
   const title = rawTitle.trim();
   if (!title) return undefined;
-  const seed = SEED_CATALOG.find((c) => c.id === consoleId);
-  if (!seed) return undefined;
 
   const overlay = loadCatalogOverlay();
-  const baseId = slug(title) || `spiel-${Date.now().toString(36)}`;
+  const seed = SEED_CATALOG.find((c) => c.id === consoleId);
+  const custom = overlay.consoles.find((c) => c.id === consoleId);
+  if (!seed && !custom) return undefined;
 
-  // Re-adding a previously removed seed game: just un-hide it.
-  const removedList = overlay.removed[consoleId] ?? [];
-  if (removedList.includes(baseId)) {
-    overlay.removed[consoleId] = removedList.filter((x) => x !== baseId);
-    saveOverlay(overlay);
-    return seed.games.find((g) => g.id === baseId);
+  const id = slug(title) || `spiel-${Date.now().toString(36)}`;
+
+  if (seed) {
+    // Re-adding a previously removed seed game: just un-hide it.
+    const removedList = overlay.removed[consoleId] ?? [];
+    if (removedList.includes(id)) {
+      overlay.removed[consoleId] = removedList.filter((x) => x !== id);
+      saveOverlay(overlay);
+      return seed.games.find((g) => g.id === id);
+    }
   }
 
-  const taken = new Set([
-    ...seed.games.map((g) => g.id),
-    ...(overlay.added[consoleId] ?? []).map((g) => g.id),
-  ]);
-  let id = baseId;
-  for (let n = 2; taken.has(id); n++) id = `${baseId}-${n}`;
+  const all = [
+    ...(seed?.games ?? []),
+    ...(overlay.added[consoleId] ?? []),
+    ...(custom?.games ?? []),
+  ];
+  const hit = all.find((g) => g.id === id);
+  if (hit) return hit;
 
   const game: CatalogGame = { id, title };
-  overlay.added[consoleId] = [...(overlay.added[consoleId] ?? []), game];
+  if (custom) custom.games = [...custom.games, game];
+  else overlay.added[consoleId] = [...(overlay.added[consoleId] ?? []), game];
   saveOverlay(overlay);
   return game;
 }
 
 export function removeGame(consoleId: string, gameId: string): void {
   const overlay = loadCatalogOverlay();
-  const added = overlay.added[consoleId] ?? [];
-  if (added.some((g) => g.id === gameId)) {
-    overlay.added[consoleId] = added.filter((g) => g.id !== gameId);
+
+  const custom = overlay.consoles.find((c) => c.id === consoleId);
+  if (custom) {
+    custom.games = custom.games.filter((g) => g.id !== gameId);
   } else {
-    const hidden = new Set(overlay.removed[consoleId] ?? []);
-    hidden.add(gameId);
-    overlay.removed[consoleId] = [...hidden];
+    const added = overlay.added[consoleId] ?? [];
+    if (added.some((g) => g.id === gameId)) {
+      overlay.added[consoleId] = added.filter((g) => g.id !== gameId);
+    } else {
+      const hidden = new Set(overlay.removed[consoleId] ?? []);
+      hidden.add(gameId);
+      overlay.removed[consoleId] = [...hidden];
+    }
   }
   delete overlay.gameTitles[`${consoleId}/${gameId}`];
   saveOverlay(overlay);
@@ -238,9 +301,18 @@ export function renameGame(
   if (!title) return false;
   const overlay = loadCatalogOverlay();
 
-  const custom = (overlay.added[consoleId] ?? []).find((g) => g.id === gameId);
-  if (custom) {
-    custom.title = title;
+  const addedGame = (overlay.added[consoleId] ?? []).find((g) => g.id === gameId);
+  if (addedGame) {
+    addedGame.title = title;
+    saveOverlay(overlay);
+    return true;
+  }
+
+  const customGame = overlay.consoles
+    .find((c) => c.id === consoleId)
+    ?.games.find((g) => g.id === gameId);
+  if (customGame) {
+    customGame.title = title;
     saveOverlay(overlay);
     return true;
   }
@@ -260,11 +332,21 @@ export function renameGame(
 export function renameConsole(consoleId: string, rawName: string): boolean {
   const name = rawName.trim();
   if (!name) return false;
+  const overlay = loadCatalogOverlay();
+
+  const custom = overlay.consoles.find((c) => c.id === consoleId);
+  if (custom) {
+    custom.name = name;
+    saveOverlay(overlay);
+    return true;
+  }
+
   const seed = SEED_CATALOG.find((c) => c.id === consoleId);
   if (!seed) return false;
-  const overlay = loadCatalogOverlay();
   if (name === seed.name) delete overlay.consoleNames[consoleId];
   else overlay.consoleNames[consoleId] = name;
   saveOverlay(overlay);
   return true;
 }
+
+export const isCustomConsole = (consoleId: string) => !SEED_IDS.has(consoleId);
