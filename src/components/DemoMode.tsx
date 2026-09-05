@@ -20,6 +20,7 @@ import { getCatalog } from "../data/catalog";
 import { drawPack, packImageSources, PACK_SIZE, type DemoCard } from "../demo";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
+import { useT } from "../i18n";
 import { captureTrim, CardStage } from "./CardStage";
 
 const THUMB_W = 300; // render width per card (trimmed)
@@ -29,6 +30,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 type Phase = "setup" | "loading" | "pack" | "open";
 
 export function DemoMode({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const catalog = getCatalog();
   const [phase, setPhase] = useState<Phase>("setup");
   const [consoleId, setConsoleId] = useState("all");
@@ -133,12 +135,12 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
 
   const label =
     consoleId === "all"
-      ? "Alle Konsolen"
+      ? t("All consoles")
       : (catalog.find((c) => c.id === consoleId)?.name ?? "");
 
   return (
     <div className="demo-backdrop">
-      <button className="demo-close" title="Schließen" onClick={onClose}>
+      <button className="demo-close" title={t("Close")} onClick={onClose}>
         <X className="size-4" />
       </button>
 
@@ -160,17 +162,16 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
 
       {phase === "setup" && (
         <div className="demo-setup">
-          <h2 className="text-lg font-semibold">Demo-Modus</h2>
+          <h2 className="text-lg font-semibold">{t("Demo mode")}</h2>
           <p className="text-sm text-muted-foreground">
-            Zieh ein Booster-Pack mit {PACK_SIZE} zufälligen Karten – aus einer
-            Konsole oder aus allen.
+            {t("Draw a booster pack of {n} random cards – from one console or from all of them.", { n: PACK_SIZE })}
           </p>
           <Select value={consoleId} onValueChange={setConsoleId}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alle Konsolen</SelectItem>
+              <SelectItem value="all">{t("All consoles")}</SelectItem>
               {catalog.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -179,14 +180,14 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
             </SelectContent>
           </Select>
           <Button onClick={() => void start()}>
-            <Sparkles /> Pack ziehen
+            <Sparkles /> {t("Draw pack")}
           </Button>
         </div>
       )}
 
       {phase === "loading" && (
         <div className="flex items-center gap-2 text-sm text-white/70">
-          <Loader2 className="size-4 animate-spin" /> Karten werden gerendert …
+          <Loader2 className="size-4 animate-spin" /> {t("Rendering cards …")}
         </div>
       )}
 
@@ -196,13 +197,13 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
             <button
               className={opening ? "demo-pack opening" : "demo-pack"}
               onClick={openPack}
-              title="Pack öffnen"
+              title={t("Open pack")}
             >
               <span className="demo-pack-strip" />
               <span className="demo-pack-body">
                 <span className="demo-pack-shine" />
                 <span className="demo-pack-label">{label}</span>
-                <span className="demo-pack-count">{cards.length} Karten</span>
+                <span className="demo-pack-count">{t("{n} cards", { n: cards.length })}</span>
               </span>
             </button>
           )}
@@ -235,11 +236,12 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
           {phase === "open" && (
             <div className="demo-bar">
               <span className="text-xs text-muted-foreground">
-                {label} · {cards.length} Karten
-                {cards.some((c) => c.holo) && " · ✨ 1 holografisch"}
+                {label}
+                {t(" · {n} cards", { n: cards.length })}
+                {cards.some((c) => c.holo) && t(" · ✨ 1 holographic")}
               </span>
               <Button variant="outline" size="sm" onClick={again}>
-                <Sparkles /> Neues Pack
+                <Sparkles /> {t("New pack")}
               </Button>
             </div>
           )}
@@ -281,6 +283,7 @@ function CardViewer({
   onNext: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [holo, setHolo] = useState(card.holo);
   const [rot, setRot] = useState(START);
   const [dragging, setDragging] = useState(false);
@@ -326,7 +329,7 @@ function CardViewer({
           e.stopPropagation();
           onPrev();
         }}
-        title="Vorherige Karte"
+        title={t("Previous card")}
       >
         <ChevronLeft />
       </button>
@@ -336,7 +339,7 @@ function CardViewer({
           e.stopPropagation();
           onNext();
         }}
-        title="Nächste Karte"
+        title={t("Next card")}
       >
         <ChevronRight />
       </button>
@@ -374,18 +377,18 @@ function CardViewer({
         </span>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
-          Holografisch
+          {t("Holographic")}
         </label>
         <Button variant="outline" size="sm" onClick={() => setRot(START)}>
-          <RotateCcw /> Zurücksetzen
+          <RotateCcw /> {t("Reset")}
         </Button>
         <Button variant="outline" size="sm" onClick={onClose}>
-          <X /> Zurück
+          <X /> {t("Back")}
         </Button>
       </div>
 
       <p className="preview3d-hint" onPointerDown={(e) => e.stopPropagation()}>
-        Ziehen zum Drehen · ← → für die nächste Karte
+        {t("Drag to rotate · ← → for the next card")}
       </p>
     </div>
   );

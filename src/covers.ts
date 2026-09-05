@@ -11,6 +11,7 @@
 // localhost). SteamGridDB images go through the wsrv.nl image proxy;
 // IGDB's image CDN already sends CORS headers.
 
+import { t } from "./i18n";
 export interface CoverCandidate {
   title: string;
   region: string; // libretro region tag / SGDB "WxH · style" / IGDB kind
@@ -107,15 +108,15 @@ async function sgdbFetch<T>(path: string): Promise<T> {
     });
   } catch {
     throw new Error(
-      "SteamGridDB nicht erreichbar – der CORS-Proxy (proxy.cors.sh) antwortet nicht.",
+      t("SteamGridDB not reachable – the CORS proxy (proxy.cors.sh) is not responding."),
     );
   }
   if (res.status === 401 || res.status === 403) {
     throw new Error(
-      "SteamGridDB-API-Key fehlt oder ist ungültig. Neuen Key unter steamgriddb.com anlegen.",
+      t("SteamGridDB API key missing or invalid. Create a new key at steamgriddb.com."),
     );
   }
-  if (!res.ok) throw new Error(`SteamGridDB-Fehler (HTTP ${res.status}).`);
+  if (!res.ok) throw new Error(t("SteamGridDB error (HTTP {status}).", { status: res.status }));
   return res.json() as Promise<T>;
 }
 
@@ -168,11 +169,11 @@ async function igdbToken(): Promise<string> {
       { method: "POST" },
     );
   } catch {
-    throw new Error("IGDB/Twitch nicht erreichbar – der CORS-Proxy antwortet nicht.");
+    throw new Error(t("IGDB/Twitch not reachable – the CORS proxy is not responding."));
   }
   if (!res.ok) {
     throw new Error(
-      "IGDB-Zugangsdaten ungültig. Client-ID und Client-Secret unter dev.twitch.tv anlegen.",
+      t("IGDB credentials invalid. Create a Client ID and Client Secret at dev.twitch.tv."),
     );
   }
   const data = (await res.json()) as { access_token: string; expires_in: number };
@@ -203,13 +204,13 @@ async function igdbQuery(body: string): Promise<IgdbGame[]> {
       body,
     });
   } catch {
-    throw new Error("IGDB nicht erreichbar – der CORS-Proxy antwortet nicht.");
+    throw new Error(t("IGDB not reachable – the CORS proxy is not responding."));
   }
   if (res.status === 401) {
     ls.set(IGDB_TOKEN, "");
-    throw new Error("IGDB-Token abgelaufen – bitte erneut suchen.");
+    throw new Error(t("IGDB token expired – please search again."));
   }
-  if (!res.ok) throw new Error(`IGDB-Fehler (HTTP ${res.status}).`);
+  if (!res.ok) throw new Error(t("IGDB error (HTTP {status}).", { status: res.status }));
   return res.json() as Promise<IgdbGame[]>;
 }
 
@@ -335,14 +336,14 @@ async function fetchTree(repo: string): Promise<TreeEntry[]> {
     try {
       res = await fetch(url);
     } catch {
-      lastErr = "GitHub nicht erreichbar.";
+      lastErr = t("GitHub not reachable.");
       continue;
     }
     if (res.ok) {
       const d = (await res.json()) as { tree?: TreeEntry[] };
       return (d.tree ?? []).filter((e) => e.type === "blob");
     }
-    lastErr = `GitHub-Anfrage fehlgeschlagen (HTTP ${res.status}).`;
+    lastErr = t("GitHub request failed (HTTP {status}).", { status: res.status });
     if (res.status < 500 && res.status !== 429) break; // 4xx won't fix itself
   }
   throw new Error(lastErr);

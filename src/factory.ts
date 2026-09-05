@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
@@ -16,7 +17,7 @@ export const uid = () =>
 
 const center = { x: CANVAS.w / 2, y: CANVAS.h / 2 };
 
-export function newProject(name = "Neues Sticker-Design"): Project {
+export function newProject(name = t("New sticker design")): Project {
   const now = Date.now();
   return {
     id: uid(),
@@ -41,7 +42,7 @@ export function newGlobalTemplate(): Project {
   const now = Date.now();
   return {
     id: GLOBAL_TEMPLATE_ID,
-    name: "Globale Vorlage",
+    name: t("Global template"),
     backgroundColor: DEFAULT_BACKGROUND.color,
     background: { ...DEFAULT_BACKGROUND, enabled: true },
     layers: [],
@@ -58,7 +59,7 @@ export function newConsoleTemplate(consoleId: string, consoleName: string): Proj
   const now = Date.now();
   return {
     id: templateId(consoleId),
-    name: `${consoleName} – Vorlage`,
+    name: t("{name} – template", { name: consoleName }),
     backgroundColor: "transparent",
     background: { ...TEMPLATE_BG },
     layers: [],
@@ -115,7 +116,7 @@ export function makeImageLayer(opts: {
 // Sizes a freshly-inserted main image so it fully covers the global main
 // alpha mask's box (fills width *and* height, aspect ratio kept, overflow
 // gets cropped by the mask). No-op unless the layer is the main image and a
-// mask exists. `mask` is the "Alle Konsolen" mainMask layer.
+// mask exists. `mask` is the "All consoles" mainMask layer.
 export function fitImageToMask(
   layer: ImageLayer,
   mask: Layer | undefined,
@@ -136,9 +137,9 @@ export function fitImageToMask(
   };
 }
 
-export function makeTextLayer(text = "Dein Text"): TextLayer {
+export function makeTextLayer(text = t("Your text")): TextLayer {
   return {
-    ...base(text.slice(0, 24) || "Text"),
+    ...base(text.slice(0, 24) || t("Text")),
     type: "text",
     text,
     fontFamily: FONTS[4].value, // Oswald
@@ -156,9 +157,9 @@ export function makeTextLayer(text = "Dein Text"): TextLayer {
 }
 
 const SHAPE_NAME: Record<ShapeKind, string> = {
-  rect: "Quadrat",
-  circle: "Kreis",
-  capsule: "Kapsel",
+  rect: "Square",
+  circle: "Circle",
+  capsule: "Capsule",
 };
 
 export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
@@ -168,7 +169,7 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
       ? { w: TRIM_RECT.w * 0.62, h: TRIM_RECT.w * 0.22 }
       : { w: square, h: square };
   return {
-    ...base(SHAPE_NAME[shape]),
+    ...base(t(SHAPE_NAME[shape])),
     type: "shape",
     shape,
     width: size.w,
@@ -180,11 +181,11 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   };
 }
 
-// "Alle Konsolen": the shared alpha frame every card's main image is
+// "All consoles": the shared alpha frame every card's main image is
 // clipped to. Starts as a rounded rectangle covering most of the trim area.
 export function makeMainMaskLayer(): ShapeLayer {
   return {
-    ...base("Haupt-Alpha-Maske"),
+    ...base(t("Main alpha mask")),
     type: "shape",
     shape: "rect",
     width: TRIM_RECT.w * 0.9,
@@ -205,10 +206,10 @@ const META_BADGE_PRESET: Record<
   MetaBadgeKind,
   { name: string; widthFactor: number; showRating: boolean; showYear: boolean; showPlayers: boolean }
 > = {
-  combo: { name: "Bewertung & Infos", widthFactor: 0.72, showRating: true, showYear: true, showPlayers: true },
-  rating: { name: "Bewertung", widthFactor: 0.26, showRating: true, showYear: false, showPlayers: false },
-  year: { name: "Erscheinungsjahr", widthFactor: 0.26, showRating: false, showYear: true, showPlayers: false },
-  players: { name: "Spieleranzahl", widthFactor: 0.28, showRating: false, showYear: false, showPlayers: true },
+  combo: { name: "Rating & info", widthFactor: 0.72, showRating: true, showYear: true, showPlayers: true },
+  rating: { name: "Rating", widthFactor: 0.26, showRating: true, showYear: false, showPlayers: false },
+  year: { name: "Release year", widthFactor: 0.26, showRating: false, showYear: true, showPlayers: false },
+  players: { name: "Player count", widthFactor: 0.28, showRating: false, showYear: false, showPlayers: true },
 };
 
 // A console-level badge showing rating/year/players read from gamelist.xml
@@ -217,7 +218,7 @@ const META_BADGE_PRESET: Record<
 export function makeMetaBadgeLayer(kind: MetaBadgeKind = "combo"): MetaBadgeLayer {
   const preset = META_BADGE_PRESET[kind];
   return {
-    ...base(preset.name),
+    ...base(t(preset.name)),
     type: "metabadge",
     width: TRIM_RECT.w * preset.widthFactor,
     height: 46,

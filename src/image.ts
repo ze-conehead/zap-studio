@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 export interface LoadedImage {
   src: string;
   naturalWidth: number;
@@ -8,7 +9,7 @@ const MAX_DIM = 2400; // downscale huge uploads to keep the project small & fast
 
 export async function fileToLayerSource(file: File): Promise<LoadedImage> {
   if (!file.type.startsWith("image/")) {
-    throw new Error("Bitte eine Bilddatei wählen.");
+    throw new Error(t("Please choose an image file."));
   }
   const dataUrl = await readAsDataURL(file);
 
@@ -57,10 +58,10 @@ export async function urlToLayerSource(url: string): Promise<LoadedImage> {
   try {
     parsed = new URL(url);
   } catch {
-    throw new Error("Ungültige URL.");
+    throw new Error(t("Invalid URL."));
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error("Nur http(s)-URLs werden unterstützt.");
+    throw new Error(t("Only http(s) URLs are supported."));
   }
 
   let res: Response;
@@ -68,28 +69,31 @@ export async function urlToLayerSource(url: string): Promise<LoadedImage> {
     res = await fetch(url, { mode: "cors", credentials: "omit" });
   } catch {
     throw new Error(
-      "Bild konnte nicht geladen werden – die Seite erlaubt keinen Zugriff von anderen Websites. Lade das Bild herunter und füge es als Datei ein.",
+      t(
+        "The image could not be loaded – the site does not allow cross-origin access. Download the image and add it as a file.",
+      ),
     );
   }
-  if (!res.ok) throw new Error(`Bild-URL nicht erreichbar (HTTP ${res.status}).`);
+  if (!res.ok)
+    throw new Error(t("Image URL not reachable (HTTP {status}).", { status: res.status }));
 
   const blob = await res.blob();
   const ext = parsed.pathname.split(".").pop()?.toLowerCase() ?? "";
   const type =
     blob.type && blob.type.startsWith("image/") ? blob.type : EXT_MIME[ext] ?? "";
-  if (!type) throw new Error("Die URL verweist nicht auf ein Bild.");
+  if (!type) throw new Error(t("The URL does not point to an image."));
 
   const name =
-    (parsed.pathname.split("/").pop() || "bild").replace(/\.[^.]+$/, "") || "Bild";
+    (parsed.pathname.split("/").pop() || "image").replace(/\.[^.]+$/, "") || "Image";
   return fileToLayerSource(new File([blob], name, { type }));
 }
 
 export function nameFromUrl(url: string): string {
   try {
     const p = new URL(url).pathname.split("/").pop() || "";
-    return p.replace(/\.[^.]+$/, "") || "Bild";
+    return p.replace(/\.[^.]+$/, "") || "Image";
   } catch {
-    return "Bild";
+    return "Image";
   }
 }
 
@@ -107,7 +111,7 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => res(img);
-    img.onerror = () => rej(new Error("Bild konnte nicht geladen werden."));
+    img.onerror = () => rej(new Error(t("The image could not be loaded.")));
     img.src = src;
   });
 }

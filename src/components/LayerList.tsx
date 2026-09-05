@@ -17,9 +17,11 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isImage, isMetaBadge, isShape } from "../factory";
+import { useT } from "../i18n";
 import { useStore } from "../store";
 
 export function LayerList() {
+  const t = useT();
   const { state, dispatch } = useStore();
   const layers = [...state.project.layers].reverse(); // top of stack first
 
@@ -46,12 +48,12 @@ export function LayerList() {
   return (
     <section className="border-b p-3">
       <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Ebenen
+        {t("Layers")}
       </h2>
 
       {layers.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Noch keine Ebenen. Füge oben Text, ein Bild oder eine Form hinzu.
+          {t("No layers yet. Add text, an image or a shape above.")}
         </p>
       )}
 
@@ -116,7 +118,7 @@ export function LayerList() {
               </button>
 
               <LayerIcon
-                title={l.visible ? "Ausblenden" : "Einblenden"}
+                title={l.visible ? t("Hide") : t("Show")}
                 onClick={() =>
                   dispatch({ type: "PATCH_LAYER", id: l.id, patch: { visible: !l.visible } })
                 }
@@ -124,7 +126,7 @@ export function LayerList() {
                 {l.visible ? <Eye /> : <EyeOff />}
               </LayerIcon>
               <LayerIcon
-                title={l.locked ? "Entsperren" : "Sperren"}
+                title={l.locked ? t("Unlock") : t("Lock")}
                 onClick={() =>
                   dispatch({ type: "PATCH_LAYER", id: l.id, patch: { locked: !l.locked } })
                 }
@@ -132,13 +134,13 @@ export function LayerList() {
                 {l.locked ? <Lock /> : <LockOpen />}
               </LayerIcon>
               <LayerIcon
-                title="Duplizieren"
+                title={t("Duplicate")}
                 onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
               >
                 <Copy />
               </LayerIcon>
               <LayerIcon
-                title="Löschen"
+                title={t("Delete")}
                 className="hover:text-destructive"
                 onClick={() => dispatch({ type: "DELETE_LAYER", id: l.id })}
               >
@@ -151,7 +153,7 @@ export function LayerList() {
 
       {layers.length > 1 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Ziehen zum Umsortieren.
+          {t("Drag to reorder.")}
         </p>
       )}
     </section>

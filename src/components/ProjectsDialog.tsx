@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getLang, useT } from "../i18n";
 import { unlinkProject } from "../gameIndex";
 import { deleteProject, listProjects, loadProject } from "../persist";
 import type { ProjectMeta } from "../types";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props) {
+  const t = useT();
   const [items, setItems] = useState<ProjectMeta[]>([]);
 
   const refresh = () => listProjects().then(setItems);
@@ -31,12 +33,12 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Deine Designs</DialogTitle>
+          <DialogTitle>{t("Your designs")}</DialogTitle>
         </DialogHeader>
 
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Noch keine gespeicherten Designs.
+            {t("No saved designs yet.")}
           </p>
         ) : (
           <ScrollArea className="max-h-[60vh] pr-3">
@@ -54,11 +56,11 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
                     <span className="font-medium">
                       {p.name}
                       {p.id === currentId && (
-                        <span className="text-muted-foreground"> · geöffnet</span>
+                        <span className="text-muted-foreground">{t(" · open")}</span>
                       )}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {new Date(p.updatedAt).toLocaleString("de-DE")}
+                      {new Date(p.updatedAt).toLocaleString(getLang() === "de" ? "de-DE" : "en-US")}
                     </span>
                   </button>
                   <Button
@@ -66,9 +68,9 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
                     size="icon"
                     className="text-muted-foreground hover:text-destructive"
                     disabled={p.id === currentId}
-                    title="Löschen"
+                    title={t("Delete")}
                     onClick={async () => {
-                      if (confirm(`„${p.name}" wirklich löschen?`)) {
+                      if (confirm(t("Really delete \u201c{name}\u201d?", { name: p.name }))) {
                         await deleteProject(p.id);
                         unlinkProject(p.id);
                         refresh();

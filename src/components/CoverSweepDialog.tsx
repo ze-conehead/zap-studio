@@ -1,11 +1,12 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { findGamesWithoutImage, insertCover, type QuickImportRow } from "../quickImport";
+import { useT } from "../i18n";
 import { Button } from "./ui/button";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
-// "Alle Konsolen" → "Cover suchen": walks every card that has no image yet,
+// "All consoles" → "Find cover": walks every card that has no image yet,
 // one cover-search dialog at a time. Picking a cover inserts it into that
 // game's design (on disk) and jumps to the next card.
 export function CoverSweepDialog({
@@ -15,6 +16,7 @@ export function CoverSweepDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const [phase, setPhase] = useState<"loading" | "run" | "done">("loading");
   const [queue, setQueue] = useState<QuickImportRow[]>([]);
   const [idx, setIdx] = useState(0);
@@ -78,22 +80,21 @@ export function CoverSweepDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Cover suchen – alle Karten</DialogTitle>
+          <DialogTitle>{t("Find covers – all cards")}</DialogTitle>
         </DialogHeader>
         {phase === "loading" ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Karten ohne Bild werden
-            gesucht …
+            <Loader2 className="size-4 animate-spin" /> {t("Looking for cards without an image …")}
           </div>
         ) : (
           <div className="flex flex-col gap-3 py-2">
             <p className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="size-4 text-emerald-500" />
               {inserted > 0
-                ? `${inserted} Cover eingefügt.`
-                : "Alle Karten haben bereits ein Bild."}
+                ? t("{n} cover(s) inserted.", { n: inserted })
+                : t("Every card already has an image.")}
             </p>
-            <Button onClick={() => onOpenChange(false)}>Schließen</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("Close")}</Button>
           </div>
         )}
       </DialogContent>

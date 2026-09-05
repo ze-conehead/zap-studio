@@ -12,6 +12,7 @@ import {
   upsertGameMeta,
   type GameMeta,
 } from "../gamelist";
+import { useT } from "../i18n";
 import { useStore } from "../store";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -19,15 +20,16 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
 export function MetadataPanel() {
+  const t = useT();
   const { state } = useStore();
   const project = state.project;
   // Live-update if a gamelist.xml is uploaded/removed while this is open.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
 
-  // The "Metadaten" tab is only shown for game cards (see App.tsx), so
+  // The "Metadata" tab is only shown for game cards (see App.tsx), so
   // templates never reach here — but stay defensive.
   if (project.isTemplate) {
-    return <Empty text="Metadaten gelten pro Spiel." />;
+    return <Empty text={t("Metadata is per game.")} />;
   }
 
   const found = findGame(project.gameKey);
@@ -35,7 +37,7 @@ export function MetadataPanel() {
   const title = found?.game.title ?? project.name;
 
   if (!consoleId) {
-    return <Empty text="Dieses Design ist keinem Spiel aus dem Baum zugeordnet." />;
+    return <Empty text={t("This design is not linked to a game from the tree.")} />;
   }
 
   return (
@@ -48,6 +50,7 @@ export function MetadataPanel() {
 }
 
 function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }) {
+  const t = useT();
   const games = loadGamelist(consoleId);
   const saved = findMeta(games, title);
   const [draft, setDraft] = useState<GameMeta>(() => saved ?? { name: title });
@@ -75,7 +78,7 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
       <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Metadaten
+            {t("Metadata")}
           </h2>
           <p className="mt-1 text-sm font-semibold">{title}</p>
         </div>
@@ -84,7 +87,7 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
             variant="ghost"
             size="icon"
             className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-            title="Eintrag löschen"
+            title={t("Delete entry")}
             onClick={handleDelete}
           >
             <Trash2 className="size-4" />
@@ -94,17 +97,16 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
 
       {!saved && (
         <p className="text-xs text-muted-foreground">
-          Noch kein Eintrag für dieses Spiel – einfach ausfüllen, es wird automatisch
-          gespeichert.
+          {t("No entry for this game yet – just fill it in, it saves automatically.")}
         </p>
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label className="text-xs text-muted-foreground">Bewertung</Label>
+        <Label className="text-xs text-muted-foreground">{t("Rating")}</Label>
         <RatingPicker value={rating} onChange={setRating} />
       </div>
 
-      <Field label="Bild (URL oder Pfad)">
+      <Field label={t("Image (URL or path)")}>
         <Input
           value={draft.image ?? ""}
           onChange={(e) => update({ image: e.target.value || undefined })}
@@ -113,7 +115,7 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
       </Field>
       {draft.image && <ImagePreview src={draft.image} />}
 
-      <Field label="Beschreibung">
+      <Field label={t("Description")}>
         <Textarea
           value={draft.desc ?? ""}
           onChange={(e) => update({ desc: e.target.value || undefined })}
@@ -121,7 +123,7 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
         />
       </Field>
 
-      <Field label="Release-Datum">
+      <Field label={t("Release date")}>
         <Input
           type="date"
           value={toDateInputValue(draft.releasedate)}
@@ -129,32 +131,32 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
         />
       </Field>
 
-      <Field label="Entwickler">
+      <Field label={t("Developer")}>
         <Input
           value={draft.developer ?? ""}
           onChange={(e) => update({ developer: e.target.value || undefined })}
         />
       </Field>
 
-      <Field label="Publisher">
+      <Field label={t("Publisher")}>
         <Input
           value={draft.publisher ?? ""}
           onChange={(e) => update({ publisher: e.target.value || undefined })}
         />
       </Field>
 
-      <Field label="Genre">
+      <Field label={t("Genre")}>
         <Input
           value={draft.genre ?? ""}
           onChange={(e) => update({ genre: e.target.value || undefined })}
         />
       </Field>
 
-      <Field label="Spieler">
+      <Field label={t("Players")}>
         <Input
           value={draft.players ?? ""}
           onChange={(e) => update({ players: e.target.value || undefined })}
-          placeholder="z. B. 1-4"
+          placeholder={t("e.g. 1-4")}
         />
       </Field>
     </section>
@@ -177,6 +179,7 @@ function RatingPicker({
   value: number | undefined;
   onChange: (stars: number) => void;
 }) {
+  const t = useT();
   const v = value !== undefined && !Number.isNaN(value) ? Math.max(0, Math.min(1, value)) : 0;
   const starsValue = v * 5;
 
@@ -195,7 +198,7 @@ function RatingPicker({
             key={i}
             type="button"
             className="relative size-4 shrink-0 cursor-pointer"
-            title={`${i + 1} von 5 Sternen (linke/rechte Hälfte für halbe Schritte)`}
+            title={t("{n} of 5 stars (left/right half for half steps)", { n: i + 1 })}
             onClick={(e) => handleClick(i, e)}
           >
             <Star className="absolute inset-0 size-4" fill="none" />
@@ -220,10 +223,11 @@ function RatingPicker({
 }
 
 function ImagePreview({ src }: { src: string }) {
+  const t = useT();
   if (!/^(https?:|data:)/.test(src)) {
     return (
       <p className="truncate text-xs text-muted-foreground" title={src}>
-        Bild (lokaler Pfad): {src}
+        {t("Image (local path): {src}", { src })}
       </p>
     );
   }
@@ -237,10 +241,11 @@ function ImagePreview({ src }: { src: string }) {
 }
 
 function Empty({ text }: { text: string }) {
+  const t = useT();
   return (
     <section className="p-3">
       <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Metadaten
+        {t("Metadata")}
       </h2>
       <p className="text-xs text-muted-foreground">{text}</p>
     </section>

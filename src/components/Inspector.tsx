@@ -26,6 +26,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 import { resolveBackground } from "../background";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
@@ -60,6 +61,7 @@ interface InspectorProps {
 }
 
 export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
+  const t = useT();
   const { state, selected, dispatch } = useStore();
 
   // Follow console renames from the tree without a reload.
@@ -78,17 +80,19 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       const global = state.project.isGlobalTemplate;
       return (
         <>
-          <Panel title={global ? "Globale Vorlage" : "Konsolen-Vorlage"}>
+          <Panel title={global ? t("Global template") : t("Console template")}>
             <p className="text-xs text-muted-foreground">
               {global ? (
                 <>
-                  Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-                  Karten – über allen Konsolen und über den Konsolen-Vorlagen.
+                  {t("These layers automatically appear on ")}
+                  <strong>{t("all")}</strong>
+                  {t(" cards \u2013 above every console and above the console templates.")}
                 </>
               ) : (
                 <>
-                  Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-                  Spiel-Karten von {consoleLabel}.
+                  {t("These layers automatically appear on ")}
+                  <strong>{t("all")}</strong>
+                  {t(" game cards for {name}.", { name: consoleLabel })}
                 </>
               )}
             </p>
@@ -105,18 +109,18 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       );
     }
     return (
-      <Panel title="Kartenhintergrund">
+      <Panel title={t("Card background")}>
         <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
         <p className="text-xs text-muted-foreground">
-          Wähle eine Ebene aus, um sie zu bearbeiten.
+          {t("Select a layer to edit it.")}
         </p>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Eigenschaften">
-      <Field label="Name">
+    <Panel title={t("Properties")}>
+      <Field label={t("Name")}>
         <Input
           value={selected.name}
           onChange={(e) => patch({ name: e.target.value }, false)}
@@ -128,19 +132,19 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         <NumberField label="X" value={round(selected.x)} onChange={(v) => patch({ x: v })} />
         <NumberField label="Y" value={round(selected.y)} onChange={(v) => patch({ y: v })} />
         <NumberField
-          label="Drehung °"
+          label={t("Rotation \u00b0")}
           value={round(selected.rotation)}
           onChange={(v) => patch({ rotation: v })}
         />
         <NumberField
-          label="Größe %"
+          label={t("Size %")}
           value={round(selected.scaleX * 100)}
           onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
         />
       </div>
 
       <SliderField
-        label={`Deckkraft ${Math.round(selected.opacity * 100)}%`}
+        label={t("Opacity {n}%", { n: Math.round(selected.opacity * 100) })}
         min={0}
         max={1}
         step={0.01}
@@ -155,7 +159,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
           className="flex-1"
           onClick={() => patch({ x: CANVAS.w / 2 })}
         >
-          <MoveHorizontal /> Zentr.
+          <MoveHorizontal /> {t("Center")}
         </Button>
         <Button
           variant="outline"
@@ -163,7 +167,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
           className="flex-1"
           onClick={() => patch({ y: CANVAS.h / 2 })}
         >
-          <MoveVertical /> Zentr.
+          <MoveVertical /> {t("Center")}
         </Button>
       </div>
 
@@ -178,9 +182,10 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   );
 }
 
-// "Hauptbild" (per game card) and "Haupt-Alpha-Maske" (on "Alle Konsolen").
+// "Main image" (per game card) and "Main alpha mask" (on "All consoles").
 // The card's main image is always clipped by the global main mask.
 function MainRoleControls({ patch }: { patch: Patch }) {
+  const t = useT();
   const { state, selected } = useStore();
   if (!selected) return null;
   const { isTemplate, isGlobalTemplate } = state.project;
@@ -189,18 +194,18 @@ function MainRoleControls({ patch }: { patch: Patch }) {
     if (selected.type !== "shape" && selected.type !== "image") return null;
     return (
       <div className="flex flex-col gap-1.5 border-t pt-3">
-        <Label>Haupt-Alpha-Maske</Label>
+        <Label>{t("Main alpha mask")}</Label>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <Checkbox
             checked={!!selected.mainMask}
             onCheckedChange={(v) => patch({ mainMask: !!v })}
           />
-          Als gemeinsame Alpha-Maske verwenden
+          {t("Use as shared alpha mask")}
         </label>
         <p className="text-xs text-muted-foreground">
-          Der Alpha-Kanal dieser Ebene beschneidet auf <strong>jeder</strong>{" "}
-          Karte deren Hauptbild. Die Form selbst wird auf den Karten nicht
-          gezeichnet.
+          {t("This layer's alpha channel clips the main image on ")}
+          <strong>{t("every")}</strong>
+          {t(" card. The shape itself is not drawn on the cards.")}
         </p>
       </div>
     );
@@ -209,18 +214,16 @@ function MainRoleControls({ patch }: { patch: Patch }) {
   if (!isTemplate && selected.type === "image") {
     return (
       <div className="flex flex-col gap-1.5 border-t pt-3">
-        <Label>Hauptbild</Label>
+        <Label>{t("Main image")}</Label>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <Checkbox
             checked={!!selected.main}
             onCheckedChange={(v) => patch({ main: !!v })}
           />
-          Dies ist das Hauptbild der Karte
+          {t("This is the card's main image")}
         </label>
         <p className="text-xs text-muted-foreground">
-          Wird von der Haupt-Alpha-Maske aus „Alle Konsolen" beschnitten (falls
-          dort gesetzt). Ohne Markierung gilt das einzige Bild der Karte
-          automatisch als Hauptbild.
+          {t("Clipped by the main alpha mask from \u201cAll consoles\u201d (if set there). Without a mark, the card's only image counts as the main image automatically.")}
         </p>
       </div>
     );
@@ -230,6 +233,7 @@ function MainRoleControls({ patch }: { patch: Patch }) {
 }
 
 function MaskControls({ patch }: { patch: Patch }) {
+  const t = useT();
   const { state, selected, dispatch } = useStore();
   if (!selected) return null;
   const layers = state.project.layers;
@@ -247,7 +251,7 @@ function MaskControls({ patch }: { patch: Patch }) {
     const nextBelow = layers[start - 1]; // candidate to pull into the group
     return (
       <div className="flex flex-col gap-1.5 border-t pt-3">
-        <Label>Maske</Label>
+        <Label>{t("Mask")}</Label>
         <Button
           variant="default"
           size="sm"
@@ -258,11 +262,11 @@ function MaskControls({ patch }: { patch: Patch }) {
             ])
           }
         >
-          <Crop /> Maske auflösen
+          <Crop /> {t("Dissolve mask")}
         </Button>
 
         <p className="text-xs text-muted-foreground">
-          {childIds.length} Ebene(n) in dieser Maske.
+          {t("{n} layer(s) in this mask.", { n: childIds.length })}
         </p>
 
         <div className="flex gap-2">
@@ -276,7 +280,7 @@ function MaskControls({ patch }: { patch: Patch }) {
               patchMany([{ id: nextBelow.id, patch: { clipped: true, mask: false } }])
             }
           >
-            <CornerDownRight /> Ebene aufnehmen
+            <CornerDownRight /> {t("Add layer")}
           </Button>
           <Button
             variant="outline"
@@ -289,7 +293,7 @@ function MaskControls({ patch }: { patch: Patch }) {
               )
             }
           >
-            Oberste lösen
+            {t("Release top")}
           </Button>
         </div>
 
@@ -298,8 +302,7 @@ function MaskControls({ patch }: { patch: Patch }) {
             checked={!!selected.groupTransform}
             onCheckedChange={(v) => patch({ groupTransform: !!v })}
           />
-          Ebenen mitbewegen (Verschieben / Skalieren / Drehen der Maske
-          betrifft alle Ebenen darin)
+          {t("Move layers along (moving / scaling / rotating the mask affects all layers in it)")}
         </label>
       </div>
     );
@@ -307,7 +310,7 @@ function MaskControls({ patch }: { patch: Patch }) {
 
   return (
     <div className="flex flex-col gap-1.5 border-t pt-3">
-      <Label>Alpha-Maske</Label>
+      <Label>{t("Alpha mask")}</Label>
       <div className="flex gap-2">
         <Button
           variant="outline"
@@ -315,7 +318,7 @@ function MaskControls({ patch }: { patch: Patch }) {
           className="flex-1"
           onClick={() => patch({ mask: true, clipped: false })}
         >
-          <Crop /> Als Maske
+          <Crop /> {t("As mask")}
         </Button>
         <Button
           variant={selected.clipped ? "default" : "outline"}
@@ -324,13 +327,13 @@ function MaskControls({ patch }: { patch: Patch }) {
           disabled={!canClip}
           onClick={() => patch({ clipped: !selected.clipped, mask: false })}
         >
-          <CornerDownRight /> In Maske
+          <CornerDownRight /> {t("Into mask")}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
         {selected.clipped
-          ? "Diese Ebene wird von der Maske darüber beschnitten. Weitere Ebenen dazwischen ebenfalls auf »In Maske« stellen, um sie in dieselbe Maske zu legen."
-          : "»Als Maske« macht diese Ebene zum Alpha-Kanal für die Ebene(n) darunter. »In Maske« legt sie in die Maske darüber."}
+          ? t("This layer is clipped by the mask above it. Set other layers in between to \u00abInto mask\u00bb to place them in the same mask.")
+          : t("\u00abAs mask\u00bb makes this layer the alpha channel for the layer(s) below it. \u00abInto mask\u00bb places it into the mask above.")}
       </p>
     </div>
   );
@@ -348,37 +351,36 @@ function BackgroundControls() {
 
 // Global guide lines — the same set on every card.
 function GuidesPanel({ guides }: { guides: GuideApi }) {
+  const t = useT();
   const { items, on } = guides.state;
   return (
-    <Panel title="Hilfslinien">
+    <Panel title={t("Guides")}>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("x")}>
-          + Vertikal
+          {t("+ Vertical")}
         </Button>
         <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("y")}>
-          + Horizontal
+          {t("+ Horizontal")}
         </Button>
       </div>
 
       {items.length > 0 && (
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
-          Hilfslinien anzeigen
+          {t("Show guides")}
         </label>
       )}
 
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Nur hier („Alle Konsolen") bearbeitbar, erscheinen aber auf allen
-          Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus
-          ziehen zum Löschen.
+          {t("Editable only here (\u201cAll consoles\u201d), but they appear on every card. Drag on the card to position, drag past the edge to delete.")}
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {items.map((g) => (
             <li key={g.id} className="flex items-center gap-2">
               <span className="w-14 shrink-0 text-xs text-muted-foreground">
-                {g.axis === "x" ? "Vertikal" : "Horiz."}
+                {g.axis === "x" ? t("Vertical") : t("Horiz.")}
               </span>
               <Input
                 type="number"
@@ -394,7 +396,7 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
                 variant="ghost"
                 size="icon"
                 className="size-7 text-muted-foreground hover:text-destructive"
-                title="Löschen"
+                title={t("Delete")}
                 onClick={() => guides.remove(g.id)}
               >
                 <Trash2 className="size-3.5" />
@@ -420,17 +422,18 @@ function BackgroundSourceControl({
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
 }) {
+  const t = useT();
   const { state, dispatch } = useStore();
   const src = state.project.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
   const options: { value: BackgroundSource; label: string; disabled?: boolean }[] = [
-    { value: "card", label: "Eigener Hintergrund" },
-    { value: "console", label: "Von der Konsolen-Vorlage", disabled: !consoleBg?.enabled },
-    { value: "global", label: "Von der globalen Vorlage", disabled: !globalBg?.enabled },
+    { value: "card", label: t("Own background") },
+    { value: "console", label: t("From the console template"), disabled: !consoleBg?.enabled },
+    { value: "global", label: t("From the global template"), disabled: !globalBg?.enabled },
   ];
 
   return (
     <>
-      <Field label="Hintergrund-Quelle">
+      <Field label={t("Background source")}>
         <Select
           value={src}
           onValueChange={(v) => dispatch({ type: "SET_BG_SOURCE", source: v as BackgroundSource })}
@@ -442,7 +445,7 @@ function BackgroundSourceControl({
             {options.map((o) => (
               <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
                 {o.label}
-                {o.disabled && o.value !== "card" ? " (nicht gesetzt)" : ""}
+                {o.disabled && o.value !== "card" ? t(" (not set)") : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -453,9 +456,9 @@ function BackgroundSourceControl({
         <BackgroundControls />
       ) : (
         <p className="text-xs text-muted-foreground">
-          Der Hintergrund kommt aus der{" "}
-          {src === "console" ? "Konsolen-Vorlage" : "globalen Vorlage"}. Dort
-          bearbeiten (Konsole/„Alle Konsolen" im Baum anklicken).
+          {t("The background comes from the ")}
+          {src === "console" ? t("console template") : t("global template")}
+          {t(". Edit it there (click the console / \u201cAll consoles\u201d in the tree).")}
         </p>
       )}
     </>
@@ -463,8 +466,9 @@ function BackgroundSourceControl({
 }
 
 // Template background editor. The console template's background is opt-in;
-// the global template ("Alle Konsolen") always has its own background on.
+// the global template ("All consoles") always has its own background on.
 function TemplateBackgroundControls() {
+  const t = useT();
   const { state, dispatch } = useStore();
   const global = !!state.project.isGlobalTemplate;
   const bg = resolveBackground(state.project);
@@ -479,7 +483,7 @@ function TemplateBackgroundControls() {
   return (
     <div className="flex flex-col gap-2 border-t pt-3">
       {global ? (
-        <p className="text-xs font-medium text-muted-foreground">Hintergrund</p>
+        <p className="text-xs font-medium text-muted-foreground">{t("Background")}</p>
       ) : (
         <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <Checkbox
@@ -488,7 +492,7 @@ function TemplateBackgroundControls() {
               dispatch({ type: "SET_BACKGROUND", patch: { enabled: !!v } })
             }
           />
-          Eigenen Hintergrund für diese Vorlage
+          {t("Own background for this template")}
         </label>
       )}
       {(global || bg.enabled) && (
@@ -498,15 +502,14 @@ function TemplateBackgroundControls() {
         />
       )}
       <p className="text-xs text-muted-foreground">
-        Karten können in ihren Eigenschaften wählen, ob sie diesen Hintergrund
-        übernehmen.
+        {t("Cards can choose in their properties whether to use this background.")}
       </p>
     </div>
   );
 }
 
 // Console template: upload a gamelist.xml (EmulationStation format) whose
-// entries are matched by title and shown in the "Metadaten" tab.
+// entries are matched by title and shown in the "Metadata" tab.
 function GamelistControls({
   consoleId,
   consoleName,
@@ -514,6 +517,7 @@ function GamelistControls({
   consoleId: string;
   consoleName: string;
 }) {
+  const t = useT();
   const [count, setCount] = useState(() => loadGamelist(consoleId).length);
   const [busy, setBusy] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -530,7 +534,7 @@ function GamelistControls({
 
   const onFile = async (file: File) => {
     try {
-      setBusy("gamelist.xml wird gelesen …");
+      setBusy(t("Reading gamelist.xml …"));
       applyXml(await file.text());
     } finally {
       setBusy(null);
@@ -539,9 +543,9 @@ function GamelistControls({
 
   const loadExample = async () => {
     try {
-      setBusy("Beispiel wird geladen …");
+      setBusy(t("Loading example …"));
       const res = await fetch(`/gamelists/${consoleId}.xml`);
-      if (!res.ok) throw new Error("Kein Beispiel für diese Konsole vorhanden.");
+      if (!res.ok) throw new Error(t("No example available for this console."));
       applyXml(await res.text());
     } catch (e) {
       alert((e as Error).message);
@@ -555,8 +559,8 @@ function GamelistControls({
       <Label>gamelist.xml</Label>
       <p className="text-xs text-muted-foreground">
         {count > 0
-          ? `${count} Spiel(e) geladen. Erscheinen im Tab „Metadaten" bei passenden Spiel-Karten.`
-          : `Noch keine Metadaten für ${consoleName}.`}
+          ? t("{n} game(s) loaded. Shown in the \u201cMetadata\u201d tab on matching game cards.", { n: count })
+          : t("No metadata for {name} yet.", { name: consoleName })}
       </p>
       <div className="flex gap-2">
         <Button
@@ -565,14 +569,14 @@ function GamelistControls({
           className="flex-1"
           onClick={() => fileRef.current?.click()}
         >
-          <Upload /> Hochladen …
+          <Upload /> {t("Upload …")}
         </Button>
         {count > 0 && (
           <Button
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-destructive"
-            title="Entfernen"
+            title={t("Remove")}
             onClick={() => {
               clearGamelist(consoleId);
               setCount(0);
@@ -583,7 +587,7 @@ function GamelistControls({
         )}
       </div>
       <Button variant="ghost" size="sm" onClick={loadExample}>
-        Beispiel für {consoleName} laden
+        {t("Load example for {name}", { name: consoleName })}
       </Button>
       {busy && <p className="text-xs text-muted-foreground">{busy}</p>}
       <input
@@ -609,6 +613,7 @@ function FillEditor({
   value: CardBackground;
   onChange: (patch: Partial<CardBackground>, history?: boolean) => void;
 }) {
+  const t = useT();
   return (
     <>
       <div className="flex gap-2">
@@ -620,21 +625,21 @@ function FillEditor({
             className="flex-1"
             onClick={() => set({ kind: k })}
           >
-            {k === "solid" ? "Farbe" : "Verlauf"}
+            {k === "solid" ? t("Color") : t("Gradient")}
           </Button>
         ))}
       </div>
 
       {f.kind === "solid" ? (
-        <ColorField label="Farbe" value={f.color} onChange={(v) => set({ color: v })} />
+        <ColorField label={t("Color")} value={f.color} onChange={(v) => set({ color: v })} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2">
-            <ColorField label="Von" value={f.color} onChange={(v) => set({ color: v })} />
-            <ColorField label="Nach" value={f.color2} onChange={(v) => set({ color2: v })} />
+            <ColorField label={t("From")} value={f.color} onChange={(v) => set({ color: v })} />
+            <ColorField label={t("To")} value={f.color2} onChange={(v) => set({ color2: v })} />
           </div>
           <SliderField
-            label={`Richtung ${Math.round(f.angle)}°`}
+            label={t("Direction {n}\u00b0", { n: Math.round(f.angle) })}
             min={0}
             max={360}
             step={5}
@@ -665,7 +670,7 @@ function FillEditor({
       )}
 
       <SliderField
-        label={`Körnung / Noise ${Math.round(f.noise * 100)}%`}
+        label={t("Grain / noise {n}%", { n: Math.round(f.noise * 100) })}
         min={0}
         max={1}
         step={0.01}
@@ -677,11 +682,12 @@ function FillEditor({
 }
 
 function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
+  const t = useT();
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
         <NumberField
-          label="Breite px"
+          label={t("Width px")}
           value={round(layer.width)}
           onChange={(v) => {
             const ratio = layer.height / layer.width;
@@ -689,29 +695,30 @@ function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
           }}
         />
         <NumberField
-          label="Ecken-Radius"
+          label={t("Corner radius")}
           value={round(layer.cornerRadius)}
           onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
         />
       </div>
       <p className="text-xs text-muted-foreground">
-        Original: {layer.naturalWidth}×{layer.naturalHeight} px
+        {t("Original: {w}\u00d7{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
       </p>
     </>
   );
 }
 
 function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
+  const t = useT();
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
         <NumberField
-          label="Breite px"
+          label={t("Width px")}
           value={round(layer.width)}
           onChange={(v) => patch({ width: Math.max(4, v) })}
         />
         <NumberField
-          label="Höhe px"
+          label={t("Height px")}
           value={round(layer.height)}
           onChange={(v) => patch({ height: Math.max(4, v) })}
         />
@@ -719,14 +726,14 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
 
       {layer.shape === "rect" && (
         <NumberField
-          label="Ecken-Radius"
+          label={t("Corner radius")}
           value={round(layer.cornerRadius)}
           onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
         />
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label>Füllung</Label>
+        <Label>{t("Fill")}</Label>
         <FillEditor
           value={layer.fill}
           onChange={(fp, history) => patch({ fill: { ...layer.fill, ...fp } }, history)}
@@ -735,12 +742,12 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
 
       <div className="grid grid-cols-2 gap-2">
         <ColorField
-          label="Kontur"
+          label={t("Stroke")}
           value={layer.stroke}
           onChange={(v) => patch({ stroke: v })}
         />
         <NumberField
-          label="Konturstärke"
+          label={t("Stroke width")}
           value={round(layer.strokeWidth)}
           onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
         />
@@ -750,59 +757,58 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
 }
 
 function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch }) {
+  const t = useT();
   return (
     <>
       <p className="text-xs text-muted-foreground">
-        Zeigt Bewertung, Release-Jahr und Spieleranzahl des jeweils geöffneten
-        Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der
-        globalen Vorlage platzieren.
+        {t("Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.")}
       </p>
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField
-          label="Breite px"
+          label={t("Width px")}
           value={round(layer.width)}
           onChange={(v) => patch({ width: Math.max(20, v) })}
         />
         <NumberField
-          label="Höhe px"
+          label={t("Height px")}
           value={round(layer.height)}
           onChange={(v) => patch({ height: Math.max(12, v) })}
         />
         <NumberField
-          label="Textgröße"
+          label={t("Text size")}
           value={round(layer.fontSize)}
           onChange={(v) => patch({ fontSize: Math.max(6, v) })}
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Inhalte</Label>
+        <Label>{t("Content")}</Label>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             checked={layer.showRating}
             onCheckedChange={(v) => patch({ showRating: !!v })}
           />
-          Bewertung
+          {t("Rating")}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             checked={layer.showYear}
             onCheckedChange={(v) => patch({ showYear: !!v })}
           />
-          Release-Jahr
+          {t("Release year")}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
             checked={layer.showPlayers}
             onCheckedChange={(v) => patch({ showPlayers: !!v })}
           />
-          Spieleranzahl
+          {t("Player count")}
         </label>
       </div>
 
       {layer.showPlayers && (
-        <Field label="Spieler-Icon">
+        <Field label={t("Players icon")}>
           <Select
             value={layer.playersIcon}
             onValueChange={(v) => patch({ playersIcon: v as PlayersIconStyle })}
@@ -811,19 +817,19 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="auto">Automatisch (1 = Einzelspieler)</SelectItem>
-              <SelectItem value="single">Immer Einzelspieler</SelectItem>
-              <SelectItem value="group">Immer Mehrspieler</SelectItem>
-              <SelectItem value="controller">Controller</SelectItem>
+              <SelectItem value="auto">{t("Automatic (1 = single player)")}</SelectItem>
+              <SelectItem value="single">{t("Always single player")}</SelectItem>
+              <SelectItem value="group">{t("Always multiplayer")}</SelectItem>
+              <SelectItem value="controller">{t("Controller")}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        <ColorField label="Textfarbe" value={layer.color} onChange={(v) => patch({ color: v })} />
+        <ColorField label={t("Text color")} value={layer.color} onChange={(v) => patch({ color: v })} />
         <ColorField
-          label="Sternfarbe"
+          label={t("Star color")}
           value={layer.starColor}
           onChange={(v) => patch({ starColor: v })}
         />
@@ -834,24 +840,24 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
           checked={layer.background}
           onCheckedChange={(v) => patch({ background: !!v })}
         />
-        Hintergrund-Chip
+        {t("Background chip")}
       </label>
       {layer.background && (
         <>
           <div className="grid grid-cols-2 gap-2">
             <ColorField
-              label="Hintergrundfarbe"
+              label={t("Background color")}
               value={layer.backgroundColor}
               onChange={(v) => patch({ backgroundColor: v })}
             />
             <NumberField
-              label="Ecken-Radius"
+              label={t("Corner radius")}
               value={round(layer.cornerRadius)}
               onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
             />
           </div>
           <SliderField
-            label={`Deckkraft ${Math.round(layer.backgroundOpacity * 100)}%`}
+            label={t("Opacity {n}%", { n: Math.round(layer.backgroundOpacity * 100) })}
             min={0}
             max={1}
             step={0.01}
@@ -865,9 +871,10 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
 }
 
 function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
+  const t = useT();
   return (
     <>
-      <Field label="Text">
+      <Field label={t("Text")}>
         <Textarea
           rows={2}
           value={layer.text}
@@ -876,7 +883,7 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
         />
       </Field>
 
-      <Field label="Schriftart">
+      <Field label={t("Font")}>
         <Select value={layer.fontFamily} onValueChange={(v) => patch({ fontFamily: v })}>
           <SelectTrigger style={{ fontFamily: layer.fontFamily }}>
             <SelectValue />
@@ -893,23 +900,23 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField
-          label="Größe px"
+          label={t("Size px")}
           value={round(layer.fontSize)}
           onChange={(v) => patch({ fontSize: Math.max(4, v) })}
         />
         <NumberField
-          label="Box-Breite"
+          label={t("Box width")}
           value={round(layer.width)}
           onChange={(v) => patch({ width: Math.max(20, v) })}
         />
         <NumberField
-          label="Zeilenhöhe"
+          label={t("Line height")}
           step={0.05}
           value={round(layer.lineHeight, 2)}
           onChange={(v) => patch({ lineHeight: v })}
         />
         <NumberField
-          label="Laufweite"
+          label={t("Letter spacing")}
           value={round(layer.letterSpacing)}
           onChange={(v) => patch({ letterSpacing: v })}
         />
@@ -937,18 +944,18 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
 
       <div className="grid grid-cols-2 gap-2">
         <ColorField
-          label="Textfarbe"
+          label={t("Text color")}
           value={layer.fill}
           onChange={(v) => patch({ fill: v })}
         />
         <ColorField
-          label="Konturfarbe"
+          label={t("Stroke color")}
           value={layer.stroke}
           onChange={(v) => patch({ stroke: v })}
         />
       </div>
       <NumberField
-        label="Konturstärke"
+        label={t("Stroke width")}
         value={round(layer.strokeWidth)}
         onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
       />

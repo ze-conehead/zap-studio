@@ -14,6 +14,7 @@ import {
   type CoverCandidate,
   type CoverSource,
 } from "../covers";
+import { useT } from "../i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -25,7 +26,7 @@ interface Props {
   consoleName: string;
   gameTitle: string;
   onPick: (url: string) => void;
-  // Sweep mode ("Alle Konsolen"): step through every image-less card.
+  // Sweep mode ("All consoles"): step through every image-less card.
   progress?: { index: number; total: number };
   onSkip?: () => void;
   busy?: boolean;
@@ -50,6 +51,7 @@ export function CoverSearchDialog({
   onSkip,
   busy = false,
 }: Props) {
+  const t = useT();
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "done"; results: CoverCandidate[] }
@@ -105,8 +107,10 @@ export function CoverSearchDialog({
       <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {progress ? `Cover ${progress.index + 1} / ${progress.total}: ` : "Cover für "}
-            „{gameTitle}"
+            {progress
+              ? t("Cover {n} / {total}:", { n: progress.index + 1, total: progress.total }) + " "
+              : t("Cover for") + " "}
+            “{gameTitle}”
             {progress && (
               <span className="ml-1 text-sm font-normal text-muted-foreground">
                 ({consoleName})
@@ -137,8 +141,8 @@ export function CoverSearchDialog({
           {configured && !editing ? (
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">
-                Zugangsdaten hinterlegt
-                {active === "libretro" && " (aber Suche nutzt libretro – s. u.)"}
+                {t("Credentials saved")}
+                {active === "libretro" && t(" (but search uses libretro – see below)")}
               </span>
               <Button
                 variant="ghost"
@@ -146,13 +150,13 @@ export function CoverSearchDialog({
                 className="h-7"
                 onClick={() => setEditing(true)}
               >
-                Ändern
+                {t("Change")}
               </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
               <span className="text-muted-foreground">
-                {SOURCE_LABEL[src]}-Zugangsdaten – kostenlos unter{" "}
+                {t("{source} credentials – free at ", { source: SOURCE_LABEL[src] })}
                 <a
                   href={CRED_LINK[src]}
                   target="_blank"
@@ -161,7 +165,7 @@ export function CoverSearchDialog({
                 >
                   {src === "sgdb" ? "steamgriddb.com" : "dev.twitch.tv"}
                 </a>
-                . Anfragen laufen über den Proxy proxy.cors.sh.
+                {t(". Requests go through the proxy proxy.cors.sh.")}
               </span>
               {src === "sgdb" ? (
                 <div className="flex gap-1.5">
@@ -169,11 +173,11 @@ export function CoverSearchDialog({
                     className="h-7"
                     value={sgKey}
                     onChange={(e) => setSgKey(e.target.value)}
-                    placeholder="API-Key"
+                    placeholder={t("API key")}
                     onKeyDown={(e) => e.key === "Enter" && saveCreds()}
                   />
                   <Button size="sm" className="h-7" onClick={saveCreds}>
-                    Speichern
+                    {t("Save")}
                   </Button>
                 </div>
               ) : (
@@ -182,24 +186,24 @@ export function CoverSearchDialog({
                     className="h-7"
                     value={igId}
                     onChange={(e) => setIgId(e.target.value)}
-                    placeholder="Client-ID"
+                    placeholder={t("Client ID")}
                   />
                   <div className="flex gap-1.5">
                     <Input
                       className="h-7"
                       value={igSecret}
                       onChange={(e) => setIgSecret(e.target.value)}
-                      placeholder="Client-Secret"
+                      placeholder={t("Client secret")}
                       onKeyDown={(e) => e.key === "Enter" && saveCreds()}
                     />
                     <Button size="sm" className="h-7" onClick={saveCreds}>
-                      Speichern
+                      {t("Save")}
                     </Button>
                   </div>
                 </div>
               )}
               <span className="text-muted-foreground">
-                Ohne Zugangsdaten: libretro-thumbnails (nur Retro-/Emulations-Konsolen).
+                {t("Without credentials: libretro-thumbnails (retro / emulated consoles only).")}
               </span>
             </div>
           )}
@@ -207,7 +211,7 @@ export function CoverSearchDialog({
 
         {state.status === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Suche Cover …
+            <Loader2 className="size-4 animate-spin" /> {t("Searching covers …")}
           </div>
         )}
 
@@ -219,23 +223,20 @@ export function CoverSearchDialog({
               size="sm"
               onClick={() => setReloadKey((n) => n + 1)}
             >
-              <RotateCcw /> Erneut versuchen
+              <RotateCcw /> {t("Try again")}
             </Button>
           </div>
         )}
 
         {state.status === "done" && !supported && (
           <p className="py-6 text-sm text-muted-foreground">
-            Für „{consoleName}" gibt es ohne Zugangsdaten keine Cover-Datenbank
-            (libretro-thumbnails deckt nur Retro-/Emulations-Konsolen ab).
-            Zugangsdaten oben eintragen oder Cover manuell über „+ Bild → Von URL
-            einfügen" hinzufügen.
+            {t("Without credentials there's no cover database for \u201c{name}\u201d (libretro-thumbnails only covers retro / emulated consoles). Enter credentials above or add a cover manually via \u201c+ Image \u2192 Add from URL\u201d.", { name: consoleName })}
           </p>
         )}
 
         {state.status === "done" && supported && state.results.length === 0 && (
           <p className="py-6 text-sm text-muted-foreground">
-            Keine Cover für „{gameTitle}" gefunden.
+            {t("No covers found for \u201c{title}\u201d.", { title: gameTitle })}
           </p>
         )}
 
@@ -269,15 +270,15 @@ export function CoverSearchDialog({
             <span className="text-xs text-muted-foreground">
               {busy ? (
                 <span className="flex items-center gap-1.5">
-                  <Loader2 className="size-3.5 animate-spin" /> wird eingefügt …
+                  <Loader2 className="size-3.5 animate-spin" /> {t("inserting …")}
                 </span>
               ) : (
-                "Cover anklicken zum Einfügen – dann geht es zur nächsten Karte."
+                t("Click a cover to insert it – then it moves to the next card.")
               )}
             </span>
             {onSkip && (
               <Button variant="outline" size="sm" disabled={busy} onClick={onSkip}>
-                Überspringen
+                {t("Skip")}
               </Button>
             )}
           </div>

@@ -2,6 +2,7 @@ import { RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useT } from "../i18n";
 import { exportPng } from "../export";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -15,6 +16,7 @@ export function CardPreview({
   canvas: React.MutableRefObject<CanvasHandle | null>;
   onClose: () => void;
 }) {
+  const t = useT();
   const [img, setImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
@@ -26,7 +28,7 @@ export function CardPreview({
     const stage = canvas.current?.getStage();
     const w = canvas.current?.getStageWidth() ?? 0;
     if (!stage || !w) {
-      setErr("Keine Karte zum Anzeigen.");
+      setErr(t("No card to show."));
       return;
     }
     exportPng({ stage, stageWidth: w, mode: "trim" })
@@ -85,10 +87,10 @@ export function CardPreview({
           onPointerCancel={endDrag}
         >
           <div className="face front">
-            {img && <img src={img} alt="Kartenvorschau" draggable={false} />}
+            {img && <img src={img} alt={t("Card preview")} draggable={false} />}
             {!img && (
               <div className="preview3d-placeholder">
-                {err ?? "wird gerendert …"}
+                {err ?? t("rendering …")}
               </div>
             )}
             <div className="foil" />
@@ -106,18 +108,18 @@ export function CardPreview({
       <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
-          Holographische Karte
+          {t("Holographic card")}
         </label>
         <Button variant="outline" size="sm" onClick={() => setRot(START)}>
-          <RotateCcw /> Ansicht zurücksetzen
+          <RotateCcw /> {t("Reset view")}
         </Button>
         <Button variant="outline" size="sm" onClick={onClose}>
-          <X /> Schließen
+          <X /> {t("Close")}
         </Button>
       </div>
 
       <p className="preview3d-hint" onPointerDown={(e) => e.stopPropagation()}>
-        Ziehen zum Drehen
+        {t("Drag to rotate")}
       </p>
     </div>
   );

@@ -6,6 +6,7 @@ import {
   type QuickImportResult,
   type QuickImportRow,
 } from "../quickImport";
+import { useT } from "../i18n";
 import type { ImageLayer } from "../types";
 import { Button } from "./ui/button";
 import {
@@ -33,6 +34,7 @@ export function QuickImportDialog({
   currentGameKey,
   onAddLayerToCurrent,
 }: Props) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>("loading");
   const [rows, setRows] = useState<QuickImportRow[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -94,20 +96,19 @@ export function QuickImportDialog({
         <DialogHeader>
           <DialogTitle>Quick Import</DialogTitle>
           <DialogDescription>
-            Spiele ohne Bild. Trage je eine Bild-URL ein und klick „Fertig" – die
-            Bilder werden geladen und als Ebene ins jeweilige Design gelegt.
+            {t("Games without an image. Enter one image URL each and click \u201cDone\u201d – the images are loaded and added as a layer to each design.")}
           </DialogDescription>
         </DialogHeader>
 
         {phase === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Spiele werden geprüft …
+            <Loader2 className="size-4 animate-spin" /> {t("Checking games …")}
           </div>
         )}
 
         {phase !== "loading" && rows.length === 0 && (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Alle Spiele haben bereits ein Bild.
+            {t("Every game already has an image.")}
           </p>
         )}
 
@@ -116,8 +117,8 @@ export function QuickImportDialog({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-muted/95 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">Konsole</th>
-                  <th className="px-3 py-2 text-left font-medium">Spiel</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Console")}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Game")}</th>
                   <th className="px-3 py-2 text-left font-medium">URL</th>
                   <th className="w-8 px-2 py-2" />
                 </tr>
@@ -134,7 +135,7 @@ export function QuickImportDialog({
                       <td className="px-3 py-2">
                         {res?.ok ? (
                           <span className="text-xs text-muted-foreground">
-                            geladen
+                            {t("loaded")}
                           </span>
                         ) : (
                           <Input
@@ -170,23 +171,24 @@ export function QuickImportDialog({
         <DialogFooter className="items-center gap-2 sm:justify-between">
           <span className="text-xs text-muted-foreground">
             {phase === "running"
-              ? `Lädt … ${progress.done}/${progress.total}`
+              ? t("Loading … {done}/{total}", { done: progress.done, total: progress.total })
               : phase === "done"
-                ? `${okCount} geladen${failCount ? `, ${failCount} fehlgeschlagen` : ""}`
+                ? t("{ok} loaded", { ok: okCount }) +
+                  (failCount ? t(", {fail} failed", { fail: failCount }) : "")
                 : rows.length > 0
-                  ? `${filledCount} von ${pending.length} ausgefüllt`
+                  ? t("{filled} of {total} filled in", { filled: filledCount, total: pending.length })
                   : ""}
           </span>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {phase === "done" ? "Schließen" : "Abbrechen"}
+              {phase === "done" ? t("Close") : t("Cancel")}
             </Button>
             {rows.length > 0 && (
               <Button onClick={run} disabled={phase === "running" || filledCount === 0}>
                 {phase === "running" && (
                   <Loader2 className="size-4 animate-spin" />
                 )}
-                Fertig
+                {t("Done")}
               </Button>
             )}
           </div>

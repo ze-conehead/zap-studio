@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { newProject, uid } from "./factory";
 import type { Layer, Project } from "./types";
 
@@ -18,10 +19,10 @@ export function serializeProject(p: Project): string {
 export function parseProject(json: string): Project {
   const data = JSON.parse(json) as Partial<FileShape>;
   if (data.format !== FORMAT || !data.project) {
-    throw new Error("Keine gültige Projektdatei.");
+    throw new Error(t("Not a valid project file."));
   }
   const src = data.project;
-  const base = newProject(src.name || "Importiertes Design");
+  const base = newProject(src.name || t("Imported design"));
   return {
     ...base,
     name: src.name || base.name,

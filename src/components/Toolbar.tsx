@@ -11,6 +11,7 @@ import {
   ImagePlus,
   Images,
   Import,
+  Languages,
   ListPlus,
   MoveHorizontal,
   MoveVertical,
@@ -44,9 +45,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { exportBackup, importBackup } from "../backup";
 import { findGame } from "../data/catalog";
 import {
-  EXPORT_LABELS,
+  EXPORT_MODES,
   downloadBlob,
   downloadDataUrl,
+  exportLabel,
   exportPng,
   type ExportMode,
 } from "../export";
@@ -63,6 +65,7 @@ import type { Layer, ShapeKind } from "../types";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
+import { useLang, useT } from "../i18n";
 import type { GuideApi } from "../App";
 import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
@@ -92,6 +95,8 @@ export function Toolbar({
   onImportJson,
 }: Props) {
   const { state, dispatch } = useStore();
+  const t = useT();
+  const [lang, setLang] = useLang();
   const { project, past, future, showBleed, showSafe } = state;
   const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
@@ -108,7 +113,7 @@ export function Toolbar({
 
   const saveBackup = async () => {
     try {
-      setBusy("Backup wird gepackt …");
+      setBusy(t("Packing backup …"));
       const { blob, name } = await exportBackup();
       downloadBlob(blob, name);
     } catch (e) {
@@ -121,16 +126,22 @@ export function Toolbar({
   const loadBackup = async (file: File) => {
     if (
       !confirm(
-        "Backup laden? Projekte und Vorlagen aus der Datei werden übernommen " +
-          "(vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
+        t(
+          "Load backup? Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.",
+        ),
       )
     ) {
       return;
     }
     try {
-      setBusy("Backup wird geladen …");
+      setBusy(t("Loading backup …"));
       const { projects, templates } = await importBackup(file);
-      alert(`${projects} Projekt(e) und ${templates} Vorlage(n) übernommen.`);
+      alert(
+        t("{projects} project(s) and {templates} template(s) imported.", {
+          projects,
+          templates,
+        }),
+      );
       location.reload();
     } catch (e) {
       alert((e as Error).message);
@@ -149,7 +160,7 @@ export function Toolbar({
 
   const addImageFromFile = async (file: File) => {
     try {
-      setBusy("Bild wird geladen …");
+      setBusy(t("Loading image …"));
       const img = await fileToLayerSource(file);
       addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
     } catch (e) {
@@ -163,7 +174,7 @@ export function Toolbar({
     const url = imgUrl.trim();
     if (!url) return;
     try {
-      setBusy("Bild wird geladen …");
+      setBusy(t("Loading image …"));
       const img = await urlToLayerSource(url);
       addImageLayer({ ...img, name: nameFromUrl(url) });
       setImgUrl("");
@@ -178,7 +189,7 @@ export function Toolbar({
   const addCoverFromUrl = async (url: string) => {
     setCoverSearchOpen(false);
     try {
-      setBusy("Cover wird geladen …");
+      setBusy(t("Loading cover …"));
       const img = await urlToLayerSource(url);
       dispatch({
         type: "ADD_LAYER",
@@ -202,7 +213,7 @@ export function Toolbar({
     const w = canvas.current?.getStageWidth() ?? 0;
     if (!stage || !w) return;
     try {
-      setBusy("PNG wird erzeugt …");
+      setBusy(t("Generating PNG …"));
       const url = await exportPng({ stage, stageWidth: w, mode });
       const safe = project.name.replace(/[^\w\-]+/g, "_").slice(0, 40) || "sticker";
       downloadDataUrl(url, `${safe}_${mode}.png`);
@@ -225,7 +236,7 @@ export function Toolbar({
     <header className="relative z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-sidebar px-3.5 py-2">
       <div className="flex items-center gap-2">
         {project.isTemplate && (
-          <Badge>{project.isGlobalTemplate ? "Global" : "Vorlage"}</Badge>
+          <Badge>{project.isGlobalTemplate ? t("Global") : t("Template")}</Badge>
         )}
         <Input
           className="h-8 w-52 font-semibold"
@@ -234,7 +245,7 @@ export function Toolbar({
         />
         <span
           className="text-xs text-muted-foreground"
-          title={state.dirty ? "nicht gespeichert" : "gespeichert"}
+          title={state.dirty ? t("unsaved") : t("saved")}
         >
           {state.dirty ? "●" : "○"}
         </span>
@@ -248,13 +259,13 @@ export function Toolbar({
           size="sm"
           onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
         >
-          <Type /> Text
+          <Type /> {t("Text")}
         </Button>
 
         <Popover open={imgOpen} onOpenChange={setImgOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm">
-              <ImagePlus /> Bild <ChevronDown className="opacity-60" />
+              <ImagePlus /> {t("Image")} <ChevronDown className="opacity-60" />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 space-y-3">
@@ -266,15 +277,15 @@ export function Toolbar({
                 fileRef.current?.click();
               }}
             >
-              Datei hochladen …
+              {t("Upload file …")}
             </Button>
             <Separator />
             <div className="space-y-1.5">
-              <Label>Von URL einfügen</Label>
+              <Label>{t("Add from URL")}</Label>
               <div className="flex gap-1.5">
                 <Input
                   type="url"
-                  placeholder="https://…/bild.png"
+                  placeholder={t("https://…/image.png")}
                   value={imgUrl}
                   onChange={(e) => setImgUrl(e.target.value)}
                   onKeyDown={(e) => {
@@ -297,22 +308,22 @@ export function Toolbar({
                 : setCoverSearchOpen(true)
             }
           >
-            <Images /> Cover suchen
+            <Images /> {t("Find cover")}
           </Button>
         )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              <Square /> Form <ChevronDown className="opacity-60" />
+              <Square /> {t("Shape")} <ChevronDown className="opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {(
               [
-                ["capsule", "Kapsel", Pill],
-                ["rect", "Quadrat", Square],
-                ["circle", "Kreis", Circle],
+                ["capsule", "Capsule", Pill],
+                ["rect", "Square", Square],
+                ["circle", "Circle", Circle],
               ] as const
             ).map(([kind, label, Icon]) => (
               <DropdownMenuItem
@@ -324,17 +335,17 @@ export function Toolbar({
                   })
                 }
               >
-                <Icon /> {label}
+                <Icon /> {t(label)}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Aus gamelist.xml</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
             {(
               [
-                ["rating", "Bewertung", Star],
-                ["year", "Erscheinungsjahr", CalendarDays],
-                ["players", "Spieleranzahl", Users],
-                ["combo", "Alle kombiniert", Award],
+                ["rating", "Rating", Star],
+                ["year", "Release year", CalendarDays],
+                ["players", "Player count", Users],
+                ["combo", "All combined", Award],
               ] as const
             ).map(([kind, label, Icon]) => (
               <DropdownMenuItem
@@ -346,7 +357,7 @@ export function Toolbar({
                   })
                 }
               >
-                <Icon /> {label}
+                <Icon /> {t(label)}
               </DropdownMenuItem>
             ))}
             {project.isGlobalTemplate && (
@@ -357,7 +368,7 @@ export function Toolbar({
                     dispatch({ type: "ADD_LAYER", layer: makeMainMaskLayer() })
                   }
                 >
-                  <Crop /> Haupt-Alpha-Maske
+                  <Crop /> {t("Main alpha mask")}
                 </DropdownMenuItem>
               </>
             )}
@@ -369,14 +380,14 @@ export function Toolbar({
 
       <div className="flex items-center gap-1">
         <IconBtn
-          label="Rückgängig (⌘Z)"
+          label={t("Undo (⌘Z)")}
           disabled={!past.length}
           onClick={() => dispatch({ type: "UNDO" })}
         >
           <Undo2 />
         </IconBtn>
         <IconBtn
-          label="Wiederholen (⌘⇧Z)"
+          label={t("Redo (⌘⇧Z)")}
           disabled={!future.length}
           onClick={() => dispatch({ type: "REDO" })}
         >
@@ -392,14 +403,14 @@ export function Toolbar({
             checked={showBleed}
             onCheckedChange={() => dispatch({ type: "TOGGLE", key: "showBleed" })}
           />
-          Beschnitt
+          {t("Bleed")}
         </label>
         <label className="flex items-center gap-1.5">
           <Checkbox
             checked={showSafe}
             onCheckedChange={() => dispatch({ type: "TOGGLE", key: "showSafe" })}
           />
-          Sicherheitszone
+          {t("Safe zone")}
         </label>
         {project.isGlobalTemplate && (
           <>
@@ -408,20 +419,20 @@ export function Toolbar({
                 checked={guides.state.on}
                 onCheckedChange={() => guides.toggle()}
               />
-              Hilfslinien
+              {t("Guides")}
             </label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title="Hilfslinie hinzufügen">
+                <Button variant="ghost" size="icon" title={t("Add guide")}>
                   <Ruler />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem onClick={() => guides.add("x")}>
-                  <MoveVertical /> Vertikale Hilfslinie
+                  <MoveVertical /> {t("Vertical guide")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => guides.add("y")}>
-                  <MoveHorizontal /> Horizontale Hilfslinie
+                  <MoveHorizontal /> {t("Horizontal guide")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -430,11 +441,26 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" title={t("Language")}>
+              <Languages /> {lang.toUpperCase()}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setLang("en")} disabled={lang === "en"}>
+              English
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLang("de")} disabled={lang === "de"}>
+              Deutsch
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button variant="outline" size="sm" onClick={onOpenDemo}>
           <Sparkles /> Demo
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenPreview}>
-          <Box /> 3D-Vorschau
+          <Box /> {t("3D preview")}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -443,24 +469,24 @@ export function Toolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
-            {(Object.keys(EXPORT_LABELS) as ExportMode[]).map((m) => (
+            {EXPORT_MODES.map((m) => (
               <DropdownMenuItem key={m} onClick={() => runExport(m)}>
-                {EXPORT_LABELS[m]}
+                {exportLabel(m)}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Projektdatei</DropdownMenuLabel>
-            <DropdownMenuItem onClick={saveJson}>Als JSON speichern</DropdownMenuItem>
+            <DropdownMenuLabel>{t("Project file")}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={saveJson}>{t("Save as JSON")}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => jsonRef.current?.click()}>
-              JSON-Projekt öffnen …
+              {t("Open JSON project …")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Komplett-Backup</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>
             <DropdownMenuItem onClick={saveBackup}>
-              Backup (.zip) speichern
+              {t("Save backup (.zip)")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => zipRef.current?.click()}>
-              Backup (.zip) laden …
+              {t("Load backup (.zip) …")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -469,23 +495,23 @@ export function Toolbar({
           variant="outline"
           size="sm"
           onClick={() => setBaseImportOpen(true)}
-          title="Konsolen & Spiele aus der Basis-Liste (base_game_list.csv) übernehmen"
+          title={t("Import consoles & games from the base list (base_game_list.csv)")}
         >
-          <ListPlus /> Basis-Set
+          <ListPlus /> {t("Base set")}
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setQuickImportOpen(true)}
-          title="Bild-URLs für alle Spiele ohne Bild in einer Tabelle eintragen"
+          title={t("Enter image URLs for every game without an image in a table")}
         >
           <Import /> Quick Import
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenProjects}>
-          <FolderOpen /> Projekte
+          <FolderOpen /> {t("Projects")}
         </Button>
         <Button variant="outline" size="sm" onClick={onNewProject}>
-          <FilePlus2 /> Neu
+          <FilePlus2 /> {t("New")}
         </Button>
       </div>
 

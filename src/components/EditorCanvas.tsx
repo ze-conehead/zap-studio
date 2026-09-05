@@ -44,6 +44,7 @@ import type {
   ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
 } from "../types";
+import { t } from "../i18n";
 import { fontStyleString } from "../textUtil";
 
 export interface CanvasHandle {
@@ -73,7 +74,7 @@ export function withMainMask(
   const stencil: TLayer = {
     ...mainMask,
     id: `__mainmask__${mainMask.id}`,
-    name: "Haupt-Alpha-Maske",
+    name: t("Main alpha mask"),
     mask: true,
     clipped: false,
     groupTransform: false,

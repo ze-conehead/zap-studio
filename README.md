@@ -211,6 +211,12 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     Konva-Primitiven (kein Bild-Icon), landet also unverändert im
     PNG-Export.
 
+- **Sprache**: Umschalter oben rechts (Weltkugel-Icon) zwischen **English**
+  (Standard) und **Deutsch**. Die Wahl liegt in `localStorage`
+  (`stickerstudio:lang`); alle Texte kommen aus [src/i18n.ts](src/i18n.ts)
+  mit der Übersetzungstabelle [src/locale/de.ts](src/locale/de.ts) (die
+  englischen Strings im Code sind die Schlüssel).
+
 ## Entwicklung
 
 ```bash
@@ -235,6 +241,8 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/components/ContextMenu.tsx` | Minimales Rechtsklick-Menü (ohne Extra-Dependency) |
 | `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |
 | `src/types.ts` | Datenmodell (Layer, Project) |
+| `src/i18n.ts` | Sprachumschaltung (EN/DE), `t()`-Funktion + `useT()`-Hook |
+| `src/locale/de.ts` | Deutsche Übersetzungstabelle (Schlüssel = englischer Text) |
 | `src/store.tsx` | Reducer, Undo/Redo, Autosave, Shortcuts |
 | `src/components/EditorCanvas.tsx` | Konva-Bühne, Transformer, Hilfslinien |
 | `src/components/Toolbar.tsx` | Ebene hinzufügen, Export, Projekte |

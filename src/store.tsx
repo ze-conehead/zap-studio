@@ -7,6 +7,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { t } from "./i18n";
 import { resolveBackground } from "./background";
 import { newProject } from "./factory";
 import { saveProject } from "./persist";
@@ -160,7 +161,7 @@ function reducer(state: State, action: Action): State {
       const copy = {
         ...orig,
         id: crypto.randomUUID?.() ?? `${Date.now()}`,
-        name: `${orig.name} Kopie`,
+        name: t("{name} copy", { name: orig.name }),
         x: orig.x + 24,
         y: orig.y + 24,
       } as Layer;

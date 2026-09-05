@@ -1,4 +1,4 @@
-// "Demo-Modus": draws a booster pack of random game cards (one console or
+// "Demo mode": draws a booster pack of random game cards (one console or
 // all of them), renders each design the same way the editor does and lets
 // you flip through them in 3D. Nothing here writes to the project store.
 

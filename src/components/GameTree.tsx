@@ -28,6 +28,7 @@ import {
 } from "../data/catalog";
 import { renameGameMeta } from "../gamelist";
 import { loadImagedGameKeys } from "../quickImport";
+import { useT } from "../i18n";
 import { useStore } from "../store";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 
@@ -35,9 +36,9 @@ type TreeFilter = "all" | "with" | "without";
 
 const FILTER_KEY = "stickerstudio:treeFilter";
 const FILTER_LABEL: Record<TreeFilter, string> = {
-  all: "Alle Spiele",
-  with: "Nur mit Bild",
-  without: "Nur ohne Bild",
+  all: "All games",
+  with: "With image only",
+  without: "Without image only",
 };
 
 function loadTreeFilter(): TreeFilter {
@@ -72,6 +73,7 @@ export function GameTree({
   onOpenConsole,
   onOpenGlobal,
 }: Props) {
+  const t = useT();
   // Re-render when a game is added/removed elsewhere (right-click menu).
   const catalogVersion = useSyncExternalStore(
     subscribeCatalog,
@@ -134,7 +136,7 @@ export function GameTree({
     setOpen((o) => ({ ...o, [consoleId]: true }));
 
   const handleAddGame = (consoleId: string, consoleName: string) => {
-    const title = window.prompt(`Neues Spiel für ${consoleName}:`)?.trim();
+    const title = window.prompt(t("New game for {name}:", { name: consoleName }))?.trim();
     if (!title) return;
     const game = addGame(consoleId, title);
     if (game) expand(consoleId);
@@ -143,7 +145,9 @@ export function GameTree({
   const handleRemoveGame = (consoleId: string, game: { id: string; title: string }) => {
     if (
       window.confirm(
-        `„${game.title}" aus der Liste entfernen? Ein bereits angelegtes Sticker-Design bleibt unter „Projekte" erhalten.`,
+        t("Remove \u201c{title}\u201d from the list? An existing sticker design stays under \u201cProjects\u201d.", {
+          title: game.title,
+        }),
       )
     ) {
       removeGame(consoleId, game.id);
@@ -151,7 +155,7 @@ export function GameTree({
   };
 
   const handleRenameGame = (consoleId: string, game: { id: string; title: string }) => {
-    const next = window.prompt("Spiel umbenennen:", game.title)?.trim();
+    const next = window.prompt(t("Rename game:"), game.title)?.trim();
     if (!next || next === game.title) return;
     if (renameGame(consoleId, game.id, next)) {
       // keep the gamelist.xml entry (matched by title) attached
@@ -160,7 +164,7 @@ export function GameTree({
   };
 
   const handleRenameConsole = (consoleId: string, consoleName: string) => {
-    const next = window.prompt("Konsole umbenennen:", consoleName)?.trim();
+    const next = window.prompt(t("Rename console:"), consoleName)?.trim();
     if (!next || next === consoleName) return;
     renameConsole(consoleId, next);
   };
@@ -168,7 +172,9 @@ export function GameTree({
   const handleRemoveConsole = (consoleId: string, consoleName: string) => {
     if (
       window.confirm(
-        `Konsole „${consoleName}" mit allen Spielen aus dem Baum entfernen? Angelegte Sticker-Designs bleiben unter „Projekte".`,
+        t("Remove console \u201c{name}\u201d and all its games from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
+          name: consoleName,
+        }),
       )
     ) {
       removeConsole(consoleId);
@@ -178,7 +184,7 @@ export function GameTree({
   return (
     <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Konsolen &amp; Spiele
+        {t("Consoles & games")}
       </h2>
 
       <div className="mx-2 mb-1 flex min-w-0 items-center gap-1">
@@ -187,11 +193,11 @@ export function GameTree({
             "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
             activeGlobal && "bg-primary/15 ring-1 ring-primary",
           )}
-          title="Globale Vorlage – erscheint auf allen Karten"
+          title={t("Global template – appears on every card")}
           onClick={onOpenGlobal}
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate text-left">Alle Konsolen</span>
+          <span className="min-w-0 flex-1 truncate text-left">{t("All consoles")}</span>
           <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
             {countText(shownGames, totalGames)}
           </span>
@@ -203,17 +209,17 @@ export function GameTree({
                 "rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground",
                 filter !== "all" && "text-primary",
               )}
-              title={`Spiele filtern: ${FILTER_LABEL[filter]}`}
+              title={t("Filter games: {label}", { label: t(FILTER_LABEL[filter]) })}
             >
               <ListFilter className="size-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Spiele anzeigen</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("Show games")}</DropdownMenuLabel>
             {(Object.keys(FILTER_LABEL) as TreeFilter[]).map((f) => (
               <DropdownMenuItem key={f} onClick={() => changeFilter(f)}>
                 <Check className={cn("size-4", filter !== f && "opacity-0")} />
-                {FILTER_LABEL[f]}
+                {t(FILTER_LABEL[f])}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -245,17 +251,17 @@ export function GameTree({
                         y: e.clientY,
                         items: [
                           {
-                            label: "Hinzufügen",
+                            label: t("Add"),
                             onSelect: () => handleAddGame(c.id, c.name),
                           },
                           {
-                            label: "Umbenennen",
+                            label: t("Rename"),
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
                           ...(isCustomConsole(c.id)
                             ? [
                                 {
-                                  label: "Entfernen",
+                                  label: t("Remove"),
                                   destructive: true,
                                   onSelect: () => handleRemoveConsole(c.id, c.name),
                                 },
@@ -267,7 +273,7 @@ export function GameTree({
                   >
                     <CollapsibleTrigger
                       className="rounded p-1 text-muted-foreground hover:text-foreground"
-                      title={expanded ? "Zuklappen" : "Aufklappen"}
+                      title={expanded ? t("Collapse") : t("Expand")}
                     >
                       {expanded ? (
                         <ChevronDown className="size-3.5" />
@@ -277,7 +283,7 @@ export function GameTree({
                     </CollapsibleTrigger>
                     <button
                       className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
-                      title={`${c.name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen / Konsole umbenennen)`}
+                      title={t("{name} – edit shared template (right-click: add game / rename console)", { name: c.name })}
                       onClick={() => onOpenConsole(c.id, c.name)}
                     >
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
@@ -292,8 +298,8 @@ export function GameTree({
                     {filter !== "all" && games.length === 0 && (
                       <p className="px-1.5 py-1.5 text-[11px] text-muted-foreground">
                         {filter === "with"
-                          ? "Kein Spiel mit Bild."
-                          : "Alle Spiele haben ein Bild."}
+                          ? t("No game with an image.")
+                          : t("Every game has an image.")}
                       </p>
                     )}
                     {games.map(({ g, i }) => {
@@ -308,7 +314,7 @@ export function GameTree({
                               ? "bg-primary font-semibold text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
-                          title={`${g.title} (Rechtsklick: umbenennen / entfernen)`}
+                          title={t("{title} (right-click: rename / remove)", { title: g.title })}
                           onClick={() => onPickGame(c.name, g.title, key)}
                           onContextMenu={(e) => {
                             e.preventDefault();
@@ -318,11 +324,11 @@ export function GameTree({
                               y: e.clientY,
                               items: [
                                 {
-                                  label: "Umbenennen",
+                                  label: t("Rename"),
                                   onSelect: () => handleRenameGame(c.id, g),
                                 },
                                 {
-                                  label: "Entfernen",
+                                  label: t("Remove"),
                                   destructive: true,
                                   onSelect: () => handleRemoveGame(c.id, g),
                                 },
@@ -346,10 +352,12 @@ export function GameTree({
       </ScrollArea>
 
       <p className="border-t px-3 py-3 text-xs text-muted-foreground">
-        <strong className="text-foreground">Konsolenname</strong> anklicken:
-        gemeinsame Vorlage. <strong className="text-foreground">Spiel</strong>{" "}
-        anklicken: dessen Sticker-Design. <strong className="text-foreground">Rechtsklick</strong>:
-        hinzufügen / umbenennen / entfernen.
+        <strong className="text-foreground">{t("Console")}</strong>
+        {t(" click: shared template. ")}
+        <strong className="text-foreground">{t("Game")}</strong>
+        {t(" click: its design. ")}
+        <strong className="text-foreground">{t("Right-click")}</strong>
+        {t(": add / rename / remove.")}
       </p>
 
       {menu && (

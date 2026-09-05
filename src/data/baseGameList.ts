@@ -1,6 +1,6 @@
 // The bundled "base game list" (base_game_list.csv): a curated top-N per
 // console with year / publisher / players / genre / rating. Used by the
-// "Basis-Set" import to seed the console/game tree plus gamelist metadata.
+// "Base set" import to seed the console/game tree plus gamelist metadata.
 
 import type { GameMeta } from "../gamelist";
 import raw from "./base_game_list.csv?raw";

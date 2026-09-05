@@ -36,7 +36,7 @@ export interface BaseLayer {
   clipped?: boolean; // this layer is clipped by the mask layer directly above it
   groupTransform?: boolean; // mask only: moving/scaling it also moves its clipped layers
   main?: boolean; // game card: the card's main image, clipped by the global main mask
-  mainMask?: boolean; // "Alle Konsolen" only: the shared alpha frame for every card's main image
+  mainMask?: boolean; // "All consoles" only: the shared alpha frame for every card's main image
 }
 
 export interface ImageLayer extends BaseLayer {

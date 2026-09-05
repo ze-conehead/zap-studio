@@ -23,13 +23,14 @@ import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider } from "./store";
+import { t, useT } from "./i18n";
 import type { CardBackground, Layer, Project } from "./types";
 
 interface Templates {
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: Layer; // "Alle Konsolen" alpha frame for the card's main image
+  mainMask?: Layer; // "All consoles" alpha frame for the card's main image
 }
 
 export interface GuideApi {
@@ -114,7 +115,7 @@ export default function App() {
   // Boot: restore last project or start a fresh one.
   useEffect(() => {
     (async () => {
-      // "Alle Konsolen" always has its own (enabled) background, and cards
+      // "All consoles" always has its own (enabled) background, and cards
       // may reference it — make sure it exists and is on from the start.
       const g = await loadProject(GLOBAL_TEMPLATE_ID);
       if (!g) {
@@ -198,7 +199,7 @@ export default function App() {
     if (project?.id === GLOBAL_TEMPLATE_ID) return;
     const existing = await loadProject(GLOBAL_TEMPLATE_ID);
     if (existing?.background && !existing.background.enabled) {
-      // "Alle Konsolen" always has its own background on.
+      // "All consoles" always has its own background on.
       existing.background = { ...existing.background, enabled: true };
     }
     setProject(existing ?? newGlobalTemplate());
@@ -207,7 +208,7 @@ export default function App() {
   if (!project) {
     return (
       <div className="grid h-full place-items-center text-sm text-muted-foreground">
-        lädt …
+        {t("loading …")}
       </div>
     );
   }
@@ -285,6 +286,7 @@ function Shell({
   const canvas = useRef<CanvasHandle | null>(null);
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
+  const t = useT();
   return (
     <div className="flex h-full flex-col">
       <Toolbar
@@ -318,8 +320,8 @@ function Shell({
           <LayerList />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3">
-              <TabsTrigger value="props">Eigenschaften</TabsTrigger>
-              {showMeta && <TabsTrigger value="meta">Metadaten</TabsTrigger>}
+              <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
+              {showMeta && <TabsTrigger value="meta">{t("Metadata")}</TabsTrigger>}
             </TabsList>
             <TabsContent value="props" className="mt-0">
               <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />

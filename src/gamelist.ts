@@ -1,6 +1,7 @@
 // EmulationStation-style gamelist.xml — one per console, stored locally.
 // <gameList><game><name/><desc/><image/><releasedate/><developer/>...</game></gameList>
 
+import { t } from "./i18n";
 import { findGame } from "./data/catalog";
 import type { Project } from "./types";
 
@@ -70,11 +71,11 @@ function text(el: Element, tag: string): string | undefined {
 export function parseGamelistXml(xml: string): GameMeta[] {
   const doc = new DOMParser().parseFromString(xml, "application/xml");
   if (doc.querySelector("parsererror")) {
-    throw new Error("Die Datei ist keine gültige gamelist.xml (XML-Fehler).");
+    throw new Error(t("The file is not a valid gamelist.xml (XML error)."));
   }
   const games = [...doc.querySelectorAll("gameList > game")];
   if (games.length === 0) {
-    throw new Error("Keine <game>-Einträge in der Datei gefunden.");
+    throw new Error(t("No <game> entries found in the file."));
   }
   return games
     .map((g) => ({
@@ -98,7 +99,7 @@ export function findMeta(games: GameMeta[], title: string): GameMeta | undefined
   return games.find((g) => g.name.trim().toLowerCase() === t);
 }
 
-// Create-or-update the entry for `title`. Used by the editable Metadaten
+// Create-or-update the entry for `title`. Used by the editable Metadata
 // panel so a game can get its own gamelist entry without an XML upload.
 export function upsertGameMeta(
   consoleId: string,

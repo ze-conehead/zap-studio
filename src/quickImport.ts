@@ -1,7 +1,7 @@
 // "Quick Import": a table of every game that still has no image, one row
 // per game with a URL field. On confirm, each URL is fetched, embedded and
 // added as an image layer to that game's sticker design (creating the
-// design if it doesn't exist yet) — the bulk version of "Cover suchen".
+// design if it doesn't exist yet) — the bulk version of "Find cover".
 
 import { TRIM_RECT } from "./card";
 import { getCatalog, gameKeyOf } from "./data/catalog";

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type Konva from "konva";
 import {
   BLEED_PX,
@@ -11,11 +12,17 @@ import { ensureFontsLoaded } from "./fonts";
 
 export type ExportMode = "trim" | "bleed" | "marks";
 
-export const EXPORT_LABELS: Record<ExportMode, string> = {
-  trim: "PNG – Endformat (54 × 85,6 mm)",
-  bleed: "PNG – mit 3 mm Beschnitt",
-  marks: "PNG – Beschnitt + Schnittmarken",
-};
+export const EXPORT_MODES: ExportMode[] = ["trim", "bleed", "marks"];
+
+export function exportLabel(mode: ExportMode): string {
+  return t(
+    {
+      trim: "PNG – final size (54 × 85.6 mm)",
+      bleed: "PNG – with 3 mm bleed",
+      marks: "PNG – bleed + crop marks",
+    }[mode],
+  );
+}
 
 interface ExportOpts {
   stage: Konva.Stage;

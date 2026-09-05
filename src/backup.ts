@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { set } from "idb-keyval";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { loadAllProjects } from "./persist";
@@ -135,12 +136,12 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
   const entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
 
   const manifestRaw = entries["manifest.json"];
-  if (!manifestRaw) throw new Error("Keine gültige Backup-Datei (manifest.json fehlt).");
+  if (!manifestRaw) throw new Error(t("Not a valid backup file (manifest.json missing)."));
   const manifest = JSON.parse(strFromU8(manifestRaw)) as {
     format?: string;
     assets?: Record<string, string>;
   };
-  if (manifest.format !== BACKUP_FORMAT) throw new Error("Unbekanntes Backup-Format.");
+  if (manifest.format !== BACKUP_FORMAT) throw new Error(t("Unknown backup format."));
 
   const assetUrl = new Map<string, string>();
   for (const path of Object.keys(entries)) {
