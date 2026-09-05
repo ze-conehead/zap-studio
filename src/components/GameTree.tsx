@@ -1,6 +1,5 @@
 import { Check, ChevronDown, ChevronRight, Gamepad2, Globe, ListFilter } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -120,6 +119,15 @@ export function GameTree({
     filter === "all" ||
     (filter === "with" ? gameHasImage(gameKey) : !gameHasImage(gameKey));
 
+  const countText = (shown: number, total: number) =>
+    filter === "all" ? `(${total})` : `(${shown}/${total})`;
+
+  const totalGames = catalog.reduce((n, c) => n + c.games.length, 0);
+  const shownGames = catalog.reduce(
+    (n, c) => n + c.games.filter((g) => matchesFilter(gameKeyOf(c, g))).length,
+    0,
+  );
+
   const expand = (consoleId: string) =>
     setOpen((o) => ({ ...o, [consoleId]: true }));
 
@@ -172,6 +180,9 @@ export function GameTree({
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 truncate text-left">Alle Konsolen</span>
+          <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
+            {countText(shownGames, totalGames)}
+          </span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -250,11 +261,9 @@ export function GameTree({
                     >
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
                       <span className="flex-1 truncate text-left">{c.name}</span>
-                      <Badge variant="secondary" className="rounded-full">
-                        {filter === "all"
-                          ? c.games.length
-                          : `${games.length}/${c.games.length}`}
-                      </Badge>
+                      <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
+                        {countText(games.length, c.games.length)}
+                      </span>
                     </button>
                   </div>
 

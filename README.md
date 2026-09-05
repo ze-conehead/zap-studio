@@ -15,6 +15,8 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
+  Hinter „Alle Konsolen" und jeder Konsole steht in Klammern die
+  Spielanzahl darunter.
   - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" oder
     „Konsole umbenennen …". **Rechtsklick auf ein Spiel** → „Spiel
     umbenennen …" oder „Spiel entfernen" (ein bereits angelegtes Design
@@ -28,8 +30,9 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     Titel wieder hinzufügen blendet es einfach wieder ein.
   - **Filter** (Trichter-Symbol neben „Alle Konsolen"): alle Spiele, nur
     Spiele **mit** Bild oder nur **ohne** Bild (= Design hat eine Bild-Ebene).
-    Der Konsolen-Zähler zeigt dann `sichtbar/gesamt`; die Auswahl bleibt in
-    `localStorage` gespeichert. Das gerade offene Design zählt live mit.
+    Bei aktivem Filter zeigt die Klammer `sichtbar/gesamt`; die Auswahl
+    bleibt in `localStorage` gespeichert. Das gerade offene Design zählt
+    live mit.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
     welche Konsole. Projekt `tpl-global`.
