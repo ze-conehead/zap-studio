@@ -169,17 +169,17 @@ export function GameTree({
         Konsolen &amp; Spiele
       </h2>
 
-      <div className="mx-2 mb-1 flex items-center gap-1">
+      <div className="mx-2 mb-1 flex min-w-0 items-center gap-1">
         <button
           className={cn(
-            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
+            "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
             activeGlobal && "bg-primary/15 ring-1 ring-primary",
           )}
           title="Globale Vorlage – erscheint auf allen Karten"
           onClick={onOpenGlobal}
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
-          <span className="flex-1 truncate text-left">Alle Konsolen</span>
+          <span className="min-w-0 flex-1 truncate text-left">Alle Konsolen</span>
           <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
             {countText(shownGames, totalGames)}
           </span>
@@ -223,7 +223,7 @@ export function GameTree({
                 >
                   <div
                     className={cn(
-                      "flex items-center gap-1 rounded-md",
+                      "flex min-w-0 items-center gap-1 rounded-md",
                       activeConsoleId === c.id && "bg-primary/15 ring-1 ring-primary",
                     )}
                     onContextMenu={(e) => {
@@ -255,12 +255,12 @@ export function GameTree({
                       )}
                     </CollapsibleTrigger>
                     <button
-                      className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
                       title={`${c.name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen / Konsole umbenennen)`}
                       onClick={() => onOpenConsole(c.id, c.name)}
                     >
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate text-left">{c.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-left">{c.name}</span>
                       <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
                         {countText(games.length, c.games.length)}
                       </span>
@@ -282,7 +282,7 @@ export function GameTree({
                         <button
                           key={g.id}
                           className={cn(
-                            "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] transition-colors",
+                            "flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] transition-colors",
                             active
                               ? "bg-primary font-semibold text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -312,7 +312,7 @@ export function GameTree({
                           <span className="w-4 shrink-0 text-right text-[11px] tabular-nums opacity-70">
                             {i + 1}
                           </span>
-                          <span className="flex-1 truncate">{g.title}</span>
+                          <span className="min-w-0 flex-1 truncate">{g.title}</span>
                         </button>
                       );
                     })}
