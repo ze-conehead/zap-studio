@@ -96,6 +96,11 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   bettet es ein und legt es als Hauptbild-Ebene an (derselbe Pfad wie „Von
   URL einfügen"). Die Quelle wird oben im Dialog umgeschaltet, Zugangsdaten
   liegen in `localStorage`.
+  - Auf **„Alle Konsolen"** geht derselbe Button **alle Karten ohne Bild
+    nacheinander durch**: pro Karte der Such-Dialog mit Zähler „Cover
+    3 / 25", ein Klick fügt das Cover ins jeweilige Design ein (legt es bei
+    Bedarf an) und springt zur nächsten Karte; „Überspringen" lässt eine
+    Karte aus.
   - **SteamGridDB**: API-Key (kostenlos unter
     [steamgriddb.com](https://www.steamgriddb.com/profile/preferences/api)).
     Alle Konsolen, hochauflösendes Box-Art, viele Varianten.
@@ -232,7 +237,8 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
 | `src/covers.ts` | Cover-Suche: SteamGridDB / IGDB (Keys, via CORS-Proxy) oder libretro-thumbnails |
 | `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
-| `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover |
+| `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover (mit Sweep-Modus) |
+| `src/components/CoverSweepDialog.tsx` | „Alle Konsolen": alle bildlosen Karten nacheinander |
 | `src/demo.ts` | Demo-Modus: Booster-Pack ziehen (Zufallskarten, Holo-Chance) |
 | `src/components/DemoMode.tsx` | Pack-Öffnen-Animation, Kartenraster, 3D-Einzelansicht |
 | `src/components/CardStage.tsx` | Karte read-only rendern & als PNG abgreifen |

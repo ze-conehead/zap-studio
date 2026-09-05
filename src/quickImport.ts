@@ -78,6 +78,36 @@ function titleLayer(gameTitle: string) {
   };
 }
 
+// Fetches `url`, embeds it and adds it as the main image of `row`'s design
+// on disk — creating and linking the design if it doesn't exist yet. Throws
+// on a failed fetch (CORS, 404, not an image).
+export async function insertCover(
+  row: QuickImportRow,
+  url: string,
+): Promise<void> {
+  const img = await urlToLayerSource(url);
+  const layer: ImageLayer = {
+    ...makeImageLayer({ ...img, name: row.gameTitle }),
+    main: true,
+  };
+  const pid = getGameProject(row.gameKey);
+  const existing = pid ? await loadProject(pid) : undefined;
+  if (existing) {
+    await saveProject({
+      ...existing,
+      layers: [...existing.layers.map((l) => ({ ...l, main: false })), layer],
+      updatedAt: Date.now(),
+    });
+  } else {
+    const p = newProject(row.gameTitle);
+    p.gameKey = row.gameKey;
+    p.consoleName = row.consoleName;
+    p.layers = [titleLayer(row.gameTitle), layer];
+    linkGameProject(row.gameKey, p.id);
+    await saveProject(p);
+  }
+}
+
 // Fetches every row's URL and adds it as an image layer to that game's
 // design. Rows are processed one by one; a failed fetch (CORS, 404, not an
 // image) is recorded and the rest continue.
@@ -88,34 +118,14 @@ export async function applyQuickImport(
   const results: QuickImportResult[] = [];
   for (const e of entries) {
     try {
-      const img = await urlToLayerSource(e.url);
-      const layer: ImageLayer = {
-        ...makeImageLayer({ ...img, name: e.gameTitle }),
-        main: true,
-      };
-
       if (e.gameKey === currentGameKey) {
-        addToCurrent(layer);
+        const img = await urlToLayerSource(e.url);
+        addToCurrent({
+          ...makeImageLayer({ ...img, name: e.gameTitle }),
+          main: true,
+        });
       } else {
-        const pid = getGameProject(e.gameKey);
-        const existing = pid ? await loadProject(pid) : undefined;
-        if (existing) {
-          await saveProject({
-            ...existing,
-            layers: [
-              ...existing.layers.map((l) => ({ ...l, main: false })),
-              layer,
-            ],
-            updatedAt: Date.now(),
-          });
-        } else {
-          const p = newProject(e.gameTitle);
-          p.gameKey = e.gameKey;
-          p.consoleName = e.consoleName;
-          p.layers = [titleLayer(e.gameTitle), layer];
-          linkGameProject(e.gameKey, p.id);
-          await saveProject(p);
-        }
+        await insertCover(e, e.url);
       }
       results.push({ ...e, ok: true });
     } catch (err) {

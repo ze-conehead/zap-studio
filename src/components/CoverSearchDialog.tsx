@@ -25,6 +25,10 @@ interface Props {
   consoleName: string;
   gameTitle: string;
   onPick: (url: string) => void;
+  // Sweep mode ("Alle Konsolen"): step through every image-less card.
+  progress?: { index: number; total: number };
+  onSkip?: () => void;
+  busy?: boolean;
 }
 
 const SOURCE_LABEL: Record<Exclude<CoverSource, "libretro">, string> = {
@@ -42,6 +46,9 @@ export function CoverSearchDialog({
   consoleName,
   gameTitle,
   onPick,
+  progress,
+  onSkip,
+  busy = false,
 }: Props) {
   const [state, setState] = useState<
     | { status: "loading" }
@@ -97,7 +104,15 @@ export function CoverSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cover für „{gameTitle}"</DialogTitle>
+          <DialogTitle>
+            {progress ? `Cover ${progress.index + 1} / ${progress.total}: ` : "Cover für "}
+            „{gameTitle}"
+            {progress && (
+              <span className="ml-1 text-sm font-normal text-muted-foreground">
+                ({consoleName})
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
@@ -221,7 +236,8 @@ export function CoverSearchDialog({
               <button
                 key={c.url}
                 type="button"
-                className="group flex flex-col items-center gap-1 rounded-md border p-1.5 text-left hover:border-primary"
+                disabled={busy}
+                className="group flex flex-col items-center gap-1 rounded-md border p-1.5 text-left hover:border-primary disabled:opacity-50"
                 title={`${c.title} ${c.region}`.trim()}
                 onClick={() => onPick(c.url)}
               >
@@ -236,6 +252,25 @@ export function CoverSearchDialog({
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {(onSkip || busy) && (
+          <div className="flex items-center justify-between border-t pt-3">
+            <span className="text-xs text-muted-foreground">
+              {busy ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="size-3.5 animate-spin" /> wird eingefügt …
+                </span>
+              ) : (
+                "Cover anklicken zum Einfügen – dann geht es zur nächsten Karte."
+              )}
+            </span>
+            {onSkip && (
+              <Button variant="outline" size="sm" disabled={busy} onClick={onSkip}>
+                Überspringen
+              </Button>
+            )}
           </div>
         )}
       </DialogContent>

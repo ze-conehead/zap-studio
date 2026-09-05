@@ -63,6 +63,7 @@ import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { GuideApi } from "../App";
 import { CoverSearchDialog } from "./CoverSearchDialog";
+import { CoverSweepDialog } from "./CoverSweepDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 import { QuickImportDialog } from "./QuickImportDialog";
 
@@ -94,6 +95,7 @@ export function Toolbar({
   const [imgUrl, setImgUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [coverSearchOpen, setCoverSearchOpen] = useState(false);
+  const [coverSweepOpen, setCoverSweepOpen] = useState(false);
   const [quickImportOpen, setQuickImportOpen] = useState(false);
 
   const foundGame = findGame(project.gameKey);
@@ -270,8 +272,16 @@ export function Toolbar({
           </PopoverContent>
         </Popover>
 
-        {foundGame && (
-          <Button variant="outline" size="sm" onClick={() => setCoverSearchOpen(true)}>
+        {(foundGame || project.isGlobalTemplate) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              project.isGlobalTemplate
+                ? setCoverSweepOpen(true)
+                : setCoverSearchOpen(true)
+            }
+          >
             <Images /> Cover suchen
           </Button>
         )}
@@ -504,6 +514,10 @@ export function Toolbar({
           gameTitle={foundGame.game.title}
           onPick={(url) => void addCoverFromUrl(url)}
         />
+      )}
+
+      {project.isGlobalTemplate && (
+        <CoverSweepDialog open={coverSweepOpen} onOpenChange={setCoverSweepOpen} />
       )}
 
       <QuickImportDialog
