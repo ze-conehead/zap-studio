@@ -21,7 +21,15 @@ import {
   noiseTile,
   resolveBackground,
 } from "../background";
-import { CANVAS, CORNER_RADIUS_PX, SAFE_RECT, TRIM_RECT } from "../card";
+import {
+  CANVAS,
+  CORNER_RADIUS_PX,
+  FOLD_X,
+  PANELS,
+  SAFE_RECT,
+  TRIM_RECT,
+} from "../card";
+import { t, useT } from "../i18n";
 import type { GameMeta } from "../gamelist";
 import {
   getGamelistVersion,
@@ -44,7 +52,6 @@ import type {
   ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
 } from "../types";
-import { t } from "../i18n";
 import { fontStyleString } from "../textUtil";
 
 export interface CanvasHandle {
@@ -285,6 +292,7 @@ export function EditorCanvas({
 
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} showSafe={showSafe} />
+            <PanelGuides />
           </Layer>
 
           {guides.state.on && guides.state.items.length > 0 && (
@@ -879,6 +887,42 @@ function Guides({ showBleed, showSafe }: { showBleed: boolean; showSafe: boolean
         />
       )}
       {showBleed && <RoundedCardOutline />}
+    </>
+  );
+}
+
+// Fold lines + panel names for multi-panel formats (DVD wrap, J-card).
+// Sits in the "guides" layer so it never shows up in exports.
+function PanelGuides() {
+  const t = useT();
+  if (FOLD_X.length === 0) return null;
+  return (
+    <>
+      {FOLD_X.map((x) => (
+        <Line
+          key={x}
+          points={[x, 0, x, CANVAS.h]}
+          stroke="#f59e0b"
+          strokeWidth={1.5}
+          dash={[12, 7]}
+        />
+      ))}
+      {PANELS.map((p) => (
+        <Text
+          key={`${p.name}-${p.x}`}
+          x={p.x}
+          y={TRIM_RECT.y + 8}
+          width={p.w}
+          align="center"
+          text={t(p.name).toUpperCase()}
+          fontFamily="system-ui, sans-serif"
+          fontStyle="bold"
+          fontSize={14}
+          fill="#f59e0b"
+          opacity={0.85}
+          listening={false}
+        />
+      ))}
     </>
   );
 }

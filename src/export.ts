@@ -4,6 +4,7 @@ import {
   BLEED_PX,
   CANVAS,
   DPI,
+  FOLD_X,
   MARKS_MARGIN_PX,
   PX_PER_MM,
   TRIM_RECT,
@@ -105,6 +106,21 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
   hMark(left, bottom, -1); vMark(left, bottom, 1);
   hMark(right, bottom, 1); vMark(right, bottom, 1);
   ctx.stroke();
+
+  // Fold ticks at every panel boundary (multi-panel formats).
+  if (FOLD_X.length) {
+    ctx.save();
+    ctx.strokeStyle = "#000000";
+    ctx.setLineDash([PX_PER_MM * 1.2, PX_PER_MM * 1.2]);
+    ctx.beginPath();
+    for (const fx of FOLD_X) {
+      const x = M + fx;
+      vMark(x, top, -1);
+      vMark(x, bottom, 1);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 
   return out.toDataURL("image/png");
 }

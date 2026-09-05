@@ -10,6 +10,14 @@ export type FormatId =
   | "dvd-insert"
   | "cassette-jcard";
 
+// A multi-panel format (DVD wrap, cassette J-card) is one artboard split
+// into panels by fold lines. The panels partition trimMM.w left-to-right;
+// their widths must add up to trimMM.w.
+export interface FormatPanel {
+  name: string; // English i18n key
+  wMM: number;
+}
+
 export interface CardFormat {
   id: FormatId;
   name: string; // English i18n key
@@ -19,6 +27,7 @@ export interface CardFormat {
   safeMM: number;
   thickRatio: number; // 3D preview thickness ÷ trim height
   hasBack: boolean; // only the credit card has a separate back
+  panels?: FormatPanel[]; // absent = a single print area
 }
 
 // Dimensions are approximate real-world values — tune here if needed.
@@ -55,23 +64,33 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "dvd-insert": {
     id: "dvd-insert",
-    name: "DVD case insert",
-    trimMM: { w: 129, h: 183 },
+    name: "DVD case wrap",
+    trimMM: { w: 275, h: 183 }, // back 130.5 + spine 14 + front 130.5
     bleedMM: 3,
     cornerRadiusMM: 0,
     safeMM: 4,
     thickRatio: 0.0008,
     hasBack: false,
+    panels: [
+      { name: "Back", wMM: 130.5 },
+      { name: "Spine", wMM: 14 },
+      { name: "Front", wMM: 130.5 },
+    ],
   },
   "cassette-jcard": {
     id: "cassette-jcard",
     name: "Cassette case (J-card)",
-    trimMM: { w: 63.5, h: 101.6 },
+    trimMM: { w: 140, h: 101.6 }, // front 64 + spine 12 + back 64
     bleedMM: 3,
     cornerRadiusMM: 0,
     safeMM: 3,
     thickRatio: 0.0008,
     hasBack: false,
+    panels: [
+      { name: "Front", wMM: 64 },
+      { name: "Spine", wMM: 12 },
+      { name: "Back", wMM: 64 },
+    ],
   },
 };
 

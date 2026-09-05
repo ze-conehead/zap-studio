@@ -44,3 +44,27 @@ export const SAFE_RECT = {
 
 export const CORNER_RADIUS_MM = FMT.cornerRadiusMM; // for the preview mask only
 export const CORNER_RADIUS_PX = mm(CORNER_RADIUS_MM);
+
+// Multi-panel formats (DVD wrap / J-card): panel rectangles in canvas px,
+// left-to-right across the trim. Empty for single-panel formats.
+export interface CanvasPanel {
+  name: string; // i18n key
+  x: number;
+  w: number;
+}
+export const PANELS: CanvasPanel[] = (() => {
+  if (!FMT.panels) return [];
+  const out: CanvasPanel[] = [];
+  let x = TRIM_RECT.x;
+  FMT.panels.forEach((p, i) => {
+    const last = i === FMT.panels!.length - 1;
+    const w = last ? TRIM_RECT.x + TRIM_RECT.w - x : mm(p.wMM);
+    out.push({ name: p.name, x, w });
+    x += w;
+  });
+  return out;
+})();
+
+// x of every internal fold (panel boundary).
+export const FOLD_X: number[] = PANELS.slice(1).map((p) => p.x);
+

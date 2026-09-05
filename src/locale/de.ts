@@ -80,8 +80,10 @@ export const de: Record<string, string> = {
   "Credit card": "Kreditkarte",
   "Cassette label": "Kassetten-Label",
   "Floppy disk label": "Disketten-Label",
-  "DVD case insert": "DVD-Hüllen-Einleger",
+  "DVD case wrap": "DVD-Hüllen-Wrap",
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
+  Spine: "Rücken",
+  "Fold lines dashed": "Faltlinien gestrichelt",
 
   // ── Factory defaults (layer / project names) ─────────────────────────────
   "New sticker design": "Neues Sticker-Design",

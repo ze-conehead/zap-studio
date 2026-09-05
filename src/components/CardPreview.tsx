@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useT } from "../i18n";
 import { exportPng } from "../export";
-import { previewCssVars } from "../formats";
+import { getFormat, previewCssVars } from "../formats";
 import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -115,6 +115,44 @@ export function CardPreview({
     ["--foil-pos" as string]: `${50 + rot.y * 1.6}% ${50 + rot.x * 1.6}%`,
     ["--foil-angle" as string]: `${110 + rot.y * 0.6}deg`,
   };
+
+  // Multi-panel formats (DVD wrap, J-card) aren't a card you turn over —
+  // show the flat artboard with the fold lines marked.
+  const panels = getFormat().panels;
+  if (panels && panels.length > 1) {
+    const totalW = panels.reduce((s, p) => s + p.wMM, 0);
+    let acc = 0;
+    const folds = panels.slice(0, -1).map((p) => {
+      acc += p.wMM;
+      return (acc / totalW) * 100;
+    });
+    return (
+      <div className="preview3d-backdrop" onPointerDown={onClose}>
+        <div className="flat-preview" onPointerDown={(e) => e.stopPropagation()}>
+          {img ? (
+            <img src={img} alt={t("Card preview")} draggable={false} />
+          ) : (
+            <div className="preview3d-placeholder">{err ?? t("rendering …")}</div>
+          )}
+          {folds.map((pct) => (
+            <span
+              key={pct}
+              className="flat-preview-fold"
+              style={{ left: `${pct}%` }}
+            />
+          ))}
+        </div>
+        <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
+          <span className="text-xs text-muted-foreground">
+            {t("Fold lines dashed")}
+          </span>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            <X /> {t("Close")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="preview3d-backdrop" onPointerDown={onClose}>

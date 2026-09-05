@@ -224,11 +224,16 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 
 - **Format**: globaler Umschalter oben rechts (Formen-Icon) zwischen
   **Kreditkarte**, **Kassetten-Label**, **Disketten-Label**,
-  **DVD-Hüllen-Einleger** und **Kassettenhülle (J-Card)**. Definiert in
+  **DVD-Hüllen-Wrap** und **Kassettenhülle (J-Card)**. Definiert in
   [src/formats.ts](src/formats.ts) (Maße dort anpassbar); die Wahl liegt in
   `localStorage` (`stickerstudio:format`), ein Wechsel lädt die Seite neu.
   Jedes Format hat eigene Designs, eigene Vorlagen („Alle Konsolen" /
   Konsolen-Vorlagen, id-Suffix `--<format>`) und einen eigenen Spiel-Index.
+  **Mehrpanel-Formate** (DVD-Wrap = Rücken + Buchrücken + Front, J-Card =
+  Front + Rücken + Rückseite) sind ein durchgehendes Artboard mit
+  Faltlinien (`panels` in `formats.ts`); die Falze erscheinen als
+  Hilfslinien im Editor, als Falt-Marken im „Schnittmarken"-Export und in
+  einer flachen 3D-Vorschau.
 
 ## Entwicklung
 
