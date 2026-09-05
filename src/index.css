@@ -148,10 +148,13 @@
   perspective-origin: 50% 40%;
 }
 .preview3d-card {
-  --thick: 15px;
-  --radius: 20px;
+  /* ID-1 is 54 x 85.6 mm, 0.76 mm thick, 3.18 mm corner radius — derive both
+     from the card height so they stay right at any preview size. */
+  --card-h: min(72vh, 640px);
+  --thick: calc(var(--card-h) * 0.00888);
+  --radius: calc(var(--card-h) * 0.03716);
   position: relative;
-  height: min(72vh, 640px);
+  height: var(--card-h);
   aspect-ratio: 638 / 1011;
   transform-style: preserve-3d;
   transform-origin: 50% 50% calc(var(--thick) / -2);
@@ -167,7 +170,8 @@
 .preview3d-card .face {
   position: absolute;
   inset: 0;
-  border-radius: var(--radius);
+  /* 3.18 mm of 54 mm wide / 85.6 mm tall — a true circular ID-1 corner. */
+  border-radius: 5.889% / 3.716%;
   overflow: hidden;
   backface-visibility: hidden;
 }
@@ -224,6 +228,7 @@
 .preview3d-placeholder {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -243,6 +248,7 @@
 .preview3d-card .sparkle {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   pointer-events: none;
   transition: opacity 220ms ease;
 }
@@ -456,7 +462,7 @@
 .demo-card {
   position: relative;
   aspect-ratio: 638 / 1011;
-  border-radius: 8px;
+  border-radius: 5.889% / 3.716%;
   overflow: hidden;
   background: #18181b;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
