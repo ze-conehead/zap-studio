@@ -35,9 +35,8 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     live mit.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
-    welche Konsole. Projekt `tpl-global`. Hat keinen „Metadaten"-Tab, ihr
-    eigener Hintergrund ist immer an, und **Hilfslinien werden nur hier
-    angelegt/bearbeitet** (siehe unten).
+    welche Konsole. Projekt `tpl-global`. Ihr eigener Hintergrund ist immer
+    an, und **Hilfslinien werden nur hier angelegt/bearbeitet** (siehe unten).
   - **Konsolen-Vorlage** (Konsolenname anklicken) – Ebenen auf allen
     Spiel-Karten dieser Konsole. Projekt `tpl-<konsole>`.
   - **Spiel-Design** – die Karte selbst.
@@ -165,9 +164,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   hochladbar (EmulationStation-Format: `<name>`, `<desc>`, `<image>`,
   `<releasedate>`, `<developer>`, `<publisher>`, `<genre>`, `<players>`,
   `<rating>`) – im Konsolen-Vorlage-Panel unter „Eigenschaften"
-  (Konsolenname im Baum anklicken). Die Sidebar rechts hat dafür einen
-  eigenen **Tab „Metadaten"**: bei einer offenen Spiel-Karte zeigt er den
-  per Titel aus der geladenen `gamelist.xml` gefundenen Eintrag als
+  (Konsolenname im Baum anklicken). Nur bei einer offenen **Spiel-Karte**
+  hat die Sidebar rechts einen **Tab „Metadaten"** (Vorlagen haben keinen):
+  er zeigt den per Titel aus der geladenen `gamelist.xml` gefundenen
+  Eintrag als
   **editierbares Formular** – Sterne-Wertung anklicken (linke/rechte
   Hälfte eines Sterns für halbe Schritte, 0,5er-Genauigkeit), Bild-URL/-Pfad,
   Beschreibung, Release-Datum, Entwickler, Publisher, Genre und Spieler-

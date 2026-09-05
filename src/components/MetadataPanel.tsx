@@ -24,17 +24,10 @@ export function MetadataPanel() {
   // Live-update if a gamelist.xml is uploaded/removed while this is open.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
 
-  if (project.isGlobalTemplate) {
-    return (
-      <Empty text="Metadaten gelten pro Spiel – wähle ein Spiel im Baum links, um sie zu sehen." />
-    );
-  }
+  // The "Metadaten" tab is only shown for game cards (see App.tsx), so
+  // templates never reach here — but stay defensive.
   if (project.isTemplate) {
-    return (
-      <Empty
-        text={`Metadaten gelten pro Spiel. Wähle links ein Spiel dieser Konsole aus, um seine Metadaten zu bearbeiten.`}
-      />
-    );
+    return <Empty text="Metadaten gelten pro Spiel." />;
   }
 
   const found = findGame(project.gameKey);

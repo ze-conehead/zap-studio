@@ -231,6 +231,7 @@ export default function App() {
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
         activeGlobal={!!project.isGlobalTemplate}
+        showMeta={!project.isTemplate}
         onPickGame={pickGame}
         onOpenConsole={openConsoleTemplate}
         onOpenGlobal={openGlobalTemplate}
@@ -257,6 +258,7 @@ function Shell({
   activeGameKey,
   activeConsoleId,
   activeGlobal,
+  showMeta,
   onPickGame,
   onOpenConsole,
   onOpenGlobal,
@@ -272,6 +274,7 @@ function Shell({
   activeGameKey?: string;
   activeConsoleId?: string;
   activeGlobal: boolean;
+  showMeta: boolean;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
   onOpenGlobal: () => void;
@@ -315,12 +318,12 @@ function Shell({
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3">
               <TabsTrigger value="props">Eigenschaften</TabsTrigger>
-              {!activeGlobal && <TabsTrigger value="meta">Metadaten</TabsTrigger>}
+              {showMeta && <TabsTrigger value="meta">Metadaten</TabsTrigger>}
             </TabsList>
             <TabsContent value="props" className="mt-0">
               <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
             </TabsContent>
-            {!activeGlobal && (
+            {showMeta && (
               <TabsContent value="meta" className="mt-0">
                 <MetadataPanel />
               </TabsContent>
