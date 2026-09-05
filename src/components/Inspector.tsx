@@ -11,7 +11,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,11 @@ import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import { resolveBackground } from "../background";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
+import {
+  getCatalog,
+  getCatalogVersion,
+  subscribeCatalog,
+} from "../data/catalog";
 import { isImage, isMetaBadge, isShape, isText } from "../factory";
 import { FONTS } from "../fonts";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
@@ -56,6 +61,14 @@ interface InspectorProps {
 export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   const { state, selected, dispatch } = useStore();
 
+  // Follow console renames from the tree without a reload.
+  useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
+  const consoleLabel =
+    (state.project.consoleId &&
+      getCatalog().find((c) => c.id === state.project.consoleId)?.name) ||
+    state.project.consoleName ||
+    state.project.name;
+
   const patch: Patch = (p, history = true) =>
     selected && dispatch({ type: "PATCH_LAYER", id: selected.id, patch: p, history });
 
@@ -74,7 +87,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
               ) : (
                 <>
                   Diese Ebenen erscheinen automatisch auf <strong>allen</strong>{" "}
-                  Spiel-Karten von {state.project.consoleName}.
+                  Spiel-Karten von {consoleLabel}.
                 </>
               )}
             </p>
@@ -82,7 +95,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
             {!global && state.project.consoleId && (
               <GamelistControls
                 consoleId={state.project.consoleId}
-                consoleName={state.project.consoleName ?? state.project.name}
+                consoleName={consoleLabel}
               />
             )}
           </Panel>

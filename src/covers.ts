@@ -13,18 +13,26 @@ export interface CoverCandidate {
 // https://github.com/libretro-thumbnails
 const REPO_BY_CONSOLE: Record<string, string> = {
   "nintendo 64": "Nintendo_-_Nintendo_64",
+  n64: "Nintendo_-_Nintendo_64",
   "sega mega drive": "Sega_-_Mega_Drive_-_Genesis",
+  "mega drive": "Sega_-_Mega_Drive_-_Genesis",
   "sega genesis": "Sega_-_Mega_Drive_-_Genesis",
+  genesis: "Sega_-_Mega_Drive_-_Genesis",
   "super nintendo": "Nintendo_-_Super_Nintendo_Entertainment_System",
   "super nintendo entertainment system": "Nintendo_-_Super_Nintendo_Entertainment_System",
   snes: "Nintendo_-_Super_Nintendo_Entertainment_System",
+  "super famicom": "Nintendo_-_Super_Nintendo_Entertainment_System",
   "nintendo entertainment system": "Nintendo_-_Nintendo_Entertainment_System",
   nes: "Nintendo_-_Nintendo_Entertainment_System",
+  famicom: "Nintendo_-_Nintendo_Entertainment_System",
   "game boy": "Nintendo_-_Game_Boy",
   "game boy color": "Nintendo_-_Game_Boy_Color",
+  gbc: "Nintendo_-_Game_Boy_Color",
   "game boy advance": "Nintendo_-_Game_Boy_Advance",
+  gba: "Nintendo_-_Game_Boy_Advance",
   gamecube: "Nintendo_-_GameCube",
   "nintendo gamecube": "Nintendo_-_GameCube",
+  gcn: "Nintendo_-_GameCube",
   wii: "Nintendo_-_Wii",
   "wii u": "Nintendo_-_Wii_U",
   "nintendo ds": "Nintendo_-_Nintendo_DS",
@@ -32,6 +40,8 @@ const REPO_BY_CONSOLE: Record<string, string> = {
   playstation: "Sony_-_PlayStation",
   "playstation 1": "Sony_-_PlayStation",
   ps1: "Sony_-_PlayStation",
+  psx: "Sony_-_PlayStation",
+  psone: "Sony_-_PlayStation",
   "playstation 2": "Sony_-_PlayStation_2",
   ps2: "Sony_-_PlayStation_2",
   "playstation 3": "Sony_-_PlayStation_3",
@@ -53,6 +63,7 @@ const REPO_BY_CONSOLE: Record<string, string> = {
   "master system": "Sega_-_Master_System_-_Mark_III",
   "atari 2600": "Atari_-_2600",
   "neo geo": "SNK_-_Neo_Geo",
+  neogeo: "SNK_-_Neo_Geo",
 };
 
 function normalizeConsoleName(name: string): string {

@@ -15,13 +15,17 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
-  - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" (Titel
-    abfragen). **Rechtsklick auf ein Spiel** → „Spiel entfernen" (ein
-    bereits angelegtes Design bleibt unter „Projekte"). Die Änderungen
-    liegen als Diff (hinzugefügte Spiele / ausgeblendete Seed-Einträge) in
-    `localStorage` (`stickerstudio:catalogOverlay`) und sind Teil des
-    ZIP-Backups; ein entferntes Seed-Spiel mit gleichem Titel wieder
-    hinzufügen blendet es einfach wieder ein.
+  - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" oder
+    „Konsole umbenennen …". **Rechtsklick auf ein Spiel** → „Spiel
+    umbenennen …" oder „Spiel entfernen" (ein bereits angelegtes Design
+    bleibt unter „Projekte"). Umbenennen ändert nur das Label – die interne
+    ID (und damit `gameKey`, Vorlage und `gamelist.xml`) bleibt gleich, ein
+    verknüpftes Design und der Metadaten-Eintrag (per Titel gematcht, wird
+    mit umbenannt) bleiben erhalten. Die Änderungen liegen als Diff
+    (hinzugefügte Spiele / ausgeblendete Seed-Einträge / umbenannte
+    Konsolen & Spiele) in `localStorage` (`stickerstudio:catalogOverlay`)
+    und sind Teil des ZIP-Backups; ein entferntes Seed-Spiel mit gleichem
+    Titel wieder hinzufügen blendet es einfach wieder ein.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
     welche Konsole. Projekt `tpl-global`.

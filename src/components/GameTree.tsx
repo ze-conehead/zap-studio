@@ -14,8 +14,11 @@ import {
   getCatalog,
   getCatalogVersion,
   removeGame,
+  renameConsole,
+  renameGame,
   subscribeCatalog,
 } from "../data/catalog";
+import { renameGameMeta } from "../gamelist";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 
 interface Props {
@@ -71,6 +74,21 @@ export function GameTree({
     }
   };
 
+  const handleRenameGame = (consoleId: string, game: { id: string; title: string }) => {
+    const next = window.prompt("Spiel umbenennen:", game.title)?.trim();
+    if (!next || next === game.title) return;
+    if (renameGame(consoleId, game.id, next)) {
+      // keep the gamelist.xml entry (matched by title) attached
+      renameGameMeta(consoleId, game.title, next);
+    }
+  };
+
+  const handleRenameConsole = (consoleId: string, consoleName: string) => {
+    const next = window.prompt("Konsole umbenennen:", consoleName)?.trim();
+    if (!next || next === consoleName) return;
+    renameConsole(consoleId, next);
+  };
+
   return (
     <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -114,6 +132,10 @@ export function GameTree({
                             label: "Neues Spiel hinzufügen …",
                             onSelect: () => handleAddGame(c.id, c.name),
                           },
+                          {
+                            label: "Konsole umbenennen …",
+                            onSelect: () => handleRenameConsole(c.id, c.name),
+                          },
                         ],
                       });
                     }}
@@ -130,7 +152,7 @@ export function GameTree({
                     </CollapsibleTrigger>
                     <button
                       className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
-                      title={`${c.name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen)`}
+                      title={`${c.name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen / Konsole umbenennen)`}
                       onClick={() => onOpenConsole(c.id, c.name)}
                     >
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
@@ -154,7 +176,7 @@ export function GameTree({
                               ? "bg-primary font-semibold text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
-                          title={`${g.title} (Rechtsklick: entfernen)`}
+                          title={`${g.title} (Rechtsklick: umbenennen / entfernen)`}
                           onClick={() => onPickGame(c.name, g.title, key)}
                           onContextMenu={(e) => {
                             e.preventDefault();
@@ -163,6 +185,10 @@ export function GameTree({
                               x: e.clientX,
                               y: e.clientY,
                               items: [
+                                {
+                                  label: "Spiel umbenennen …",
+                                  onSelect: () => handleRenameGame(c.id, g),
+                                },
                                 {
                                   label: "Spiel entfernen",
                                   destructive: true,
@@ -191,7 +217,7 @@ export function GameTree({
         <strong className="text-foreground">Konsolenname</strong> anklicken:
         gemeinsame Vorlage. <strong className="text-foreground">Spiel</strong>{" "}
         anklicken: dessen Sticker-Design. <strong className="text-foreground">Rechtsklick</strong>:
-        Spiel hinzufügen / entfernen.
+        hinzufügen / umbenennen / entfernen.
       </p>
 
       {menu && (

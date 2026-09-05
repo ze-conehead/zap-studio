@@ -167,6 +167,8 @@ export default function App() {
   const openConsoleTemplate = async (consoleId: string, consoleName: string) => {
     if (project?.id === templateId(consoleId)) return;
     const existing = await loadProject(templateId(consoleId));
+    // keep the stored label in sync with a console renamed in the tree
+    if (existing) existing.consoleName = consoleName;
     setProject(existing ?? newConsoleTemplate(consoleId, consoleName));
   };
 

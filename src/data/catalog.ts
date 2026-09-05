@@ -77,6 +77,24 @@ const SEED_CATALOG: CatalogConsole[] = [
 export interface CatalogOverlay {
   added: Record<string, CatalogGame[]>; // consoleId -> extra games
   removed: Record<string, string[]>; // consoleId -> hidden seed game ids
+  consoleNames: Record<string, string>; // consoleId -> renamed console label
+  gameTitles: Record<string, string>; // "consoleId/gameId" -> renamed game title
+}
+
+const EMPTY_OVERLAY: CatalogOverlay = {
+  added: {},
+  removed: {},
+  consoleNames: {},
+  gameTitles: {},
+};
+
+function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
+  return {
+    added: parsed.added ?? {},
+    removed: parsed.removed ?? {},
+    consoleNames: parsed.consoleNames ?? {},
+    gameTitles: parsed.gameTitles ?? {},
+  };
 }
 
 const OVERLAY_KEY = "stickerstudio:catalogOverlay";
@@ -103,11 +121,10 @@ export function getCatalogVersion(): number {
 export function loadCatalogOverlay(): CatalogOverlay {
   try {
     const raw = localStorage.getItem(OVERLAY_KEY);
-    if (!raw) return { added: {}, removed: {} };
-    const parsed = JSON.parse(raw) as Partial<CatalogOverlay>;
-    return { added: parsed.added ?? {}, removed: parsed.removed ?? {} };
+    if (!raw) return { ...EMPTY_OVERLAY };
+    return normalizeOverlay(JSON.parse(raw) as Partial<CatalogOverlay>);
   } catch {
-    return { added: {}, removed: {} };
+    return { ...EMPTY_OVERLAY };
   }
 }
 
@@ -123,8 +140,7 @@ function saveOverlay(overlay: CatalogOverlay): void {
 // Replace the whole overlay (used when restoring a backup).
 export function replaceCatalogOverlay(raw: string): void {
   try {
-    const parsed = JSON.parse(raw) as Partial<CatalogOverlay>;
-    saveOverlay({ added: parsed.added ?? {}, removed: parsed.removed ?? {} });
+    saveOverlay(normalizeOverlay(JSON.parse(raw) as Partial<CatalogOverlay>));
   } catch {
     /* ignore malformed */
   }
@@ -133,12 +149,18 @@ export function replaceCatalogOverlay(raw: string): void {
 // ── Public catalogue (seed + overlay merged) ────────────────────────────────
 
 export function getCatalog(): CatalogConsole[] {
-  const { added, removed } = loadCatalogOverlay();
+  const { added, removed, consoleNames, gameTitles } = loadCatalogOverlay();
   return SEED_CATALOG.map((c) => {
     const hidden = new Set(removed[c.id] ?? []);
-    const seedGames = c.games.filter((g) => !hidden.has(g.id));
+    const seedGames = c.games
+      .filter((g) => !hidden.has(g.id))
+      .map((g) => ({ id: g.id, title: gameTitles[`${c.id}/${g.id}`] ?? g.title }));
     const extra = added[c.id] ?? [];
-    return { ...c, games: [...seedGames, ...extra] };
+    return {
+      id: c.id,
+      name: consoleNames[c.id] ?? c.name,
+      games: [...seedGames, ...extra],
+    };
   });
 }
 
@@ -200,5 +222,49 @@ export function removeGame(consoleId: string, gameId: string): void {
     hidden.add(gameId);
     overlay.removed[consoleId] = [...hidden];
   }
+  delete overlay.gameTitles[`${consoleId}/${gameId}`];
   saveOverlay(overlay);
+}
+
+// Renames a game (its id / gameKey stays put, so a linked design and its
+// gamelist metadata keep matching). Returns false if the title was blank
+// or the game id is unknown.
+export function renameGame(
+  consoleId: string,
+  gameId: string,
+  rawTitle: string,
+): boolean {
+  const title = rawTitle.trim();
+  if (!title) return false;
+  const overlay = loadCatalogOverlay();
+
+  const custom = (overlay.added[consoleId] ?? []).find((g) => g.id === gameId);
+  if (custom) {
+    custom.title = title;
+    saveOverlay(overlay);
+    return true;
+  }
+
+  const seed = SEED_CATALOG.find((c) => c.id === consoleId)?.games.find(
+    (g) => g.id === gameId,
+  );
+  if (!seed) return false;
+  if (title === seed.title) delete overlay.gameTitles[`${consoleId}/${gameId}`];
+  else overlay.gameTitles[`${consoleId}/${gameId}`] = title;
+  saveOverlay(overlay);
+  return true;
+}
+
+// Renames a console. The console id (and every gameKey / template / gamelist
+// keyed on it) is left untouched. Returns false for a blank name or unknown id.
+export function renameConsole(consoleId: string, rawName: string): boolean {
+  const name = rawName.trim();
+  if (!name) return false;
+  const seed = SEED_CATALOG.find((c) => c.id === consoleId);
+  if (!seed) return false;
+  const overlay = loadCatalogOverlay();
+  if (name === seed.name) delete overlay.consoleNames[consoleId];
+  else overlay.consoleNames[consoleId] = name;
+  saveOverlay(overlay);
+  return true;
 }

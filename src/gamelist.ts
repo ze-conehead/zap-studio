@@ -125,6 +125,21 @@ export function removeGameMeta(consoleId: string, title: string): void {
   );
 }
 
+// Keeps a gamelist entry attached to its game after the game is renamed in
+// the tree (metadata is matched by title). No-op if there's no entry.
+export function renameGameMeta(
+  consoleId: string,
+  oldTitle: string,
+  newTitle: string,
+): void {
+  const games = loadGamelist(consoleId);
+  const t = oldTitle.trim().toLowerCase();
+  const idx = games.findIndex((g) => g.name.trim().toLowerCase() === t);
+  if (idx < 0) return;
+  games[idx] = { ...games[idx], name: newTitle };
+  saveGamelist(consoleId, games);
+}
+
 // "20170428T000000" -> "2017-04-28" (for <input type="date">)
 export function toDateInputValue(raw: string | undefined): string {
   const m = /^(\d{4})(\d{2})(\d{2})/.exec(raw ?? "");
