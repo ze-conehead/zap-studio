@@ -51,7 +51,7 @@ export function LayerList() {
 
       {layers.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Noch keine Ebenen. Füge oben Text, ein Bild oder ein Logo hinzu.
+          Noch keine Ebenen. Füge oben Text, ein Bild oder eine Form hinzu.
         </p>
       )}
 

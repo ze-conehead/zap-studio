@@ -73,10 +73,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 
   Umgesetzt über `globalCompositeOperation: "destination-in"` je Masken-
   gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
-- **Ebenen**: Hintergrundbild, Konsolenlogos, beliebig viele Textebenen.
-  Auswählen, verschieben, skalieren, drehen, sperren, ausblenden,
-  duplizieren. Reihenfolge per **Drag & Drop** in der Ebenenliste
-  (Greifpunkt links, Drop-Linie zeigt die Zielposition).
+- **Ebenen**: Bilder, Formen, beliebig viele Textebenen. Auswählen,
+  verschieben, skalieren, drehen, sperren, ausblenden, duplizieren.
+  Reihenfolge per **Drag & Drop** in der Ebenenliste (Greifpunkt links,
+  Drop-Linie zeigt die Zielposition).
 - **Bilder**: „+ Bild" → Datei hochladen oder von einer URL einfügen
   (PNG/JPG/SVG/WebP …). URL-Bilder werden heruntergeladen und ins Projekt
   eingebettet – der Host muss Cross-Origin-Zugriff erlauben, sonst kommt ein
@@ -100,8 +100,6 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   (fehlt das Design noch, wird es angelegt). Fehlgeschlagene URLs (CORS,
   404, kein Bild) bleiben mit Fehlermeldung stehen und lassen sich erneut
   versuchen. Siehe [src/quickImport.ts](src/quickImport.ts).
-- **Logo-Presets**: 6 neutrale, generische Platzhaltermarken (`src/assets/logos.ts`).
-  Eigene Artwork-Dateien einfach als Bild hochladen.
 - **Schriften**: System-Fonts + Google Fonts (Oswald, Bebas Neue,
   Montserrat, Press Start 2P, Rubik Mono One). Farbe, Kontur, Ausrichtung,
   Zeilenhöhe, Laufweite.
@@ -207,6 +205,6 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 
 ## Rechtliches
 
-Die mitgelieferten Logos sind generische Platzhalter. Echte Konsolen- und
-Spielelogos sind markenrechtlich geschützt – lade dafür eigene, lizenzierte
-Grafiken hoch.
+Konsolen- und Spielelogos sowie Cover-Art sind marken- bzw.
+urheberrechtlich geschützt – lade nur eigene oder lizenzierte Grafiken hoch
+und nutze das Ergebnis privat.

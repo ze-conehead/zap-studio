@@ -15,7 +15,6 @@ import {
   Pill,
   Redo2,
   Ruler,
-  Shapes,
   Square,
   Star,
   Type,
@@ -39,7 +38,6 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { LOGO_PRESETS, logoDataUri } from "../assets/logos";
 import { exportBackup, importBackup } from "../backup";
 import { findGame } from "../data/catalog";
 import {
@@ -57,7 +55,7 @@ import {
   type MetaBadgeKind,
 } from "../factory";
 import type { ShapeKind } from "../types";
-import { dataUriDimensions, fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
+import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { GuideApi } from "../App";
@@ -172,14 +170,6 @@ export function Toolbar({
     } finally {
       setBusy(null);
     }
-  };
-
-  const addLogo = async (svg: string, label: string) => {
-    const dims = await dataUriDimensions(logoDataUri(svg));
-    dispatch({
-      type: "ADD_LAYER",
-      layer: makeImageLayer({ ...dims, name: label, fit: "contain" }),
-    });
   };
 
   const runExport = async (mode: ExportMode) => {
@@ -325,31 +315,6 @@ export function Toolbar({
               >
                 <Icon /> {label}
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Shapes /> Logo <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="grid w-64 grid-cols-3 gap-1">
-            {LOGO_PRESETS.map((l) => (
-              <button
-                key={l.id}
-                className="flex flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-accent"
-                title={l.label}
-                onClick={() => addLogo(l.svg, l.label)}
-              >
-                <img
-                  src={logoDataUri(l.svg)}
-                  alt={l.label}
-                  className="h-8 w-14 object-contain"
-                />
-                <span className="truncate">{l.label}</span>
-              </button>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
