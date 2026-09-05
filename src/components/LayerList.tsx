@@ -21,6 +21,7 @@ import { useT } from "../i18n";
 import { useStore } from "../store";
 import type { Layer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
+import { CoverButton } from "./CoverButton";
 
 export function LayerList({ mainMask }: { mainMask?: Layer }) {
   const t = useT();
@@ -53,7 +54,10 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("Layers")}
         </h2>
-        <AddLayerMenu mainMask={mainMask} />
+        <div className="flex items-center gap-1">
+          <CoverButton mainMask={mainMask} />
+          <AddLayerMenu mainMask={mainMask} />
+        </div>
       </div>
 
       {layers.length === 0 && (

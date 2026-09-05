@@ -17,6 +17,7 @@ export const de: Record<string, string> = {
   "Add from URL": "Von URL einfügen",
   "https://…/image.png": "https://…/bild.png",
   "Find cover": "Cover suchen",
+  "Find covers": "Cover suchen",
   Shape: "Form",
   Square: "Quadrat",
   Circle: "Kreis",

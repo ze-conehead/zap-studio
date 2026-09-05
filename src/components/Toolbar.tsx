@@ -4,7 +4,6 @@ import {
   Download,
   FilePlus2,
   FolderOpen,
-  Images,
   Import,
   Languages,
   ListPlus,
@@ -30,7 +29,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportBackup, importBackup } from "../backup";
-import { findGame } from "../data/catalog";
 import {
   EXPORT_MODES,
   downloadBlob,
@@ -39,15 +37,11 @@ import {
   exportPng,
   type ExportMode,
 } from "../export";
-import { fitImageToMask, makeImageLayer } from "../factory";
-import type { Layer } from "../types";
-import { urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
 import type { GuideApi } from "../App";
 import { BaseImportDialog } from "./BaseImportDialog";
-import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 import { QuickImportDialog } from "./QuickImportDialog";
@@ -55,7 +49,6 @@ import { QuickImportDialog } from "./QuickImportDialog";
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
   guides: GuideApi;
-  mainMask?: Layer;
   onNewProject: () => void;
   onOpenProjects: () => void;
   onOpenPreview: () => void;
@@ -66,7 +59,6 @@ interface Props {
 export function Toolbar({
   canvas,
   guides,
-  mainMask,
   onNewProject,
   onOpenProjects,
   onOpenPreview,
@@ -80,12 +72,10 @@ export function Toolbar({
   const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [coverSearchOpen, setCoverSearchOpen] = useState(false);
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
   const [baseImportOpen, setBaseImportOpen] = useState(false);
   const [quickImportOpen, setQuickImportOpen] = useState(false);
 
-  const foundGame = findGame(project.gameKey);
 
   const saveBackup = async () => {
     try {
@@ -125,28 +115,6 @@ export function Toolbar({
     }
   };
 
-  const addCoverFromUrl = async (url: string) => {
-    setCoverSearchOpen(false);
-    try {
-      setBusy(t("Loading cover …"));
-      const img = await urlToLayerSource(url);
-      dispatch({
-        type: "ADD_LAYER",
-        layer: fitImageToMask(
-          {
-            ...makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
-            main: true,
-          },
-          mainMask,
-        ),
-      });
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const runExport = async (mode: ExportMode) => {
     const stage = canvas.current?.getStage();
     const w = canvas.current?.getStageWidth() ?? 0;
@@ -178,12 +146,6 @@ export function Toolbar({
           <Badge>{project.isGlobalTemplate ? t("Global") : t("Template")}</Badge>
         )}
         <span
-          className="max-w-52 truncate text-sm font-semibold"
-          title={project.name}
-        >
-          {project.name}
-        </span>
-        <span
           className="text-xs text-muted-foreground"
           title={state.dirty ? t("unsaved") : t("saved")}
         >
@@ -191,19 +153,15 @@ export function Toolbar({
         </span>
       </div>
 
-      {(foundGame || project.isGlobalTemplate) && (
+      {project.isGlobalTemplate && (
         <>
           <Separator orientation="vertical" className="h-6" />
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              project.isGlobalTemplate
-                ? setCoverSweepOpen(true)
-                : setCoverSearchOpen(true)
-            }
+            onClick={() => setCoverSweepOpen(true)}
           >
-            <Images /> {t("Find cover")}
+            {t("Find covers")}
           </Button>
         </>
       )}
@@ -375,16 +333,6 @@ export function Toolbar({
           e.target.value = "";
         }}
       />
-
-      {foundGame && (
-        <CoverSearchDialog
-          open={coverSearchOpen}
-          onOpenChange={setCoverSearchOpen}
-          consoleName={foundGame.console.name}
-          gameTitle={foundGame.game.title}
-          onPick={(url) => void addCoverFromUrl(url)}
-        />
-      )}
 
       {project.isGlobalTemplate && (
         <CoverSweepDialog open={coverSweepOpen} onOpenChange={setCoverSweepOpen} />
