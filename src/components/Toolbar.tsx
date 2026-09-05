@@ -1,29 +1,19 @@
 import {
-  Award,
   Box,
-  CalendarDays,
   ChevronDown,
-  Circle,
-  Crop,
   Download,
   FilePlus2,
   FolderOpen,
-  ImagePlus,
   Images,
   Import,
   Languages,
   ListPlus,
   MoveHorizontal,
   MoveVertical,
-  Pill,
   Redo2,
   Ruler,
   Sparkles,
-  Square,
-  Star,
-  Type,
   Undo2,
-  Users,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportBackup, importBackup } from "../backup";
@@ -52,17 +39,9 @@ import {
   exportPng,
   type ExportMode,
 } from "../export";
-import {
-  fitImageToMask,
-  makeImageLayer,
-  makeMainMaskLayer,
-  makeMetaBadgeLayer,
-  makeShapeLayer,
-  makeTextLayer,
-  type MetaBadgeKind,
-} from "../factory";
-import type { Layer, ShapeKind } from "../types";
-import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
+import { fitImageToMask, makeImageLayer } from "../factory";
+import type { Layer } from "../types";
+import { urlToLayerSource } from "../image";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
@@ -98,11 +77,8 @@ export function Toolbar({
   const t = useT();
   const [lang, setLang] = useLang();
   const { project, past, future, showBleed, showSafe } = state;
-  const fileRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
-  const [imgOpen, setImgOpen] = useState(false);
-  const [imgUrl, setImgUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [coverSearchOpen, setCoverSearchOpen] = useState(false);
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
@@ -145,43 +121,6 @@ export function Toolbar({
       location.reload();
     } catch (e) {
       alert((e as Error).message);
-      setBusy(null);
-    }
-  };
-
-  // Fresh image on a game card: the first image is the card's main image,
-  // and a main image is sized to fully cover the global alpha mask.
-  const addImageLayer = (img: Parameters<typeof makeImageLayer>[0]) => {
-    const firstImage = !project.layers.some((l) => l.type === "image");
-    let layer = makeImageLayer(img);
-    if (firstImage && !project.isTemplate) layer = { ...layer, main: true };
-    dispatch({ type: "ADD_LAYER", layer: fitImageToMask(layer, mainMask) });
-  };
-
-  const addImageFromFile = async (file: File) => {
-    try {
-      setBusy(t("Loading image …"));
-      const img = await fileToLayerSource(file);
-      addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const addImageFromUrl = async () => {
-    const url = imgUrl.trim();
-    if (!url) return;
-    try {
-      setBusy(t("Loading image …"));
-      const img = await urlToLayerSource(url);
-      addImageLayer({ ...img, name: nameFromUrl(url) });
-      setImgUrl("");
-      setImgOpen(false);
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
       setBusy(null);
     }
   };
@@ -252,54 +191,9 @@ export function Toolbar({
         </span>
       </div>
 
-      <Separator orientation="vertical" className="h-6" />
-
-      <div className="flex items-center gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
-        >
-          <Type /> {t("Text")}
-        </Button>
-
-        <Popover open={imgOpen} onOpenChange={setImgOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
-              <ImagePlus /> {t("Image")} <ChevronDown className="opacity-60" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 space-y-3">
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => {
-                setImgOpen(false);
-                fileRef.current?.click();
-              }}
-            >
-              {t("Upload file …")}
-            </Button>
-            <Separator />
-            <div className="space-y-1.5">
-              <Label>{t("Add from URL")}</Label>
-              <div className="flex gap-1.5">
-                <Input
-                  type="url"
-                  placeholder={t("https://…/image.png")}
-                  value={imgUrl}
-                  onChange={(e) => setImgUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void addImageFromUrl();
-                  }}
-                />
-                <Button onClick={() => void addImageFromUrl()}>OK</Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {(foundGame || project.isGlobalTemplate) && (
+      {(foundGame || project.isGlobalTemplate) && (
+        <>
+          <Separator orientation="vertical" className="h-6" />
           <Button
             variant="outline"
             size="sm"
@@ -311,71 +205,8 @@ export function Toolbar({
           >
             <Images /> {t("Find cover")}
           </Button>
-        )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Square /> {t("Shape")} <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {(
-              [
-                ["capsule", "Capsule", Pill],
-                ["rect", "Square", Square],
-                ["circle", "Circle", Circle],
-              ] as const
-            ).map(([kind, label, Icon]) => (
-              <DropdownMenuItem
-                key={kind}
-                onClick={() =>
-                  dispatch({
-                    type: "ADD_LAYER",
-                    layer: makeShapeLayer(kind as ShapeKind),
-                  })
-                }
-              >
-                <Icon /> {t(label)}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
-            {(
-              [
-                ["rating", "Rating", Star],
-                ["year", "Release year", CalendarDays],
-                ["players", "Player count", Users],
-                ["combo", "All combined", Award],
-              ] as const
-            ).map(([kind, label, Icon]) => (
-              <DropdownMenuItem
-                key={kind}
-                onClick={() =>
-                  dispatch({
-                    type: "ADD_LAYER",
-                    layer: makeMetaBadgeLayer(kind as MetaBadgeKind),
-                  })
-                }
-              >
-                <Icon /> {t(label)}
-              </DropdownMenuItem>
-            ))}
-            {project.isGlobalTemplate && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    dispatch({ type: "ADD_LAYER", layer: makeMainMaskLayer() })
-                  }
-                >
-                  <Crop /> {t("Main alpha mask")}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        </>
+      )}
 
       <Separator orientation="vertical" className="h-6" />
 
@@ -530,17 +361,6 @@ export function Toolbar({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) void loadBackup(f);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void addImageFromFile(f);
           e.target.value = "";
         }}
       />

@@ -317,7 +317,7 @@ function Shell({
           guides={guides}
         />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
-          <LayerList />
+          <LayerList mainMask={mainMask} />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3">
               <TabsTrigger value="props">{t("Properties")}</TabsTrigger>

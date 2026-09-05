@@ -19,8 +19,10 @@ import { cn } from "@/lib/utils";
 import { isImage, isMetaBadge, isShape } from "../factory";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import type { Layer } from "../types";
+import { AddLayerMenu } from "./AddLayerMenu";
 
-export function LayerList() {
+export function LayerList({ mainMask }: { mainMask?: Layer }) {
   const t = useT();
   const { state, dispatch } = useStore();
   const layers = [...state.project.layers].reverse(); // top of stack first
@@ -47,9 +49,12 @@ export function LayerList() {
 
   return (
     <section className="border-b p-3">
-      <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("Layers")}
-      </h2>
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("Layers")}
+        </h2>
+        <AddLayerMenu mainMask={mainMask} />
+      </div>
 
       {layers.length === 0 && (
         <p className="text-xs text-muted-foreground">
