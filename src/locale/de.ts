@@ -257,7 +257,6 @@ export const de: Record<string, string> = {
   Unlock: "Entsperren",
   Lock: "Sperren",
   Duplicate: "Duplizieren",
-  "Drag to reorder.": "Ziehen zum Umsortieren.",
 
   // ── MetadataPanel ────────────────────────────────────────────────────────
   "Metadata is per game.": "Metadaten gelten pro Spiel.",

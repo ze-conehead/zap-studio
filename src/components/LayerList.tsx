@@ -159,12 +159,6 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
           );
         })}
       </ul>
-
-      {layers.length > 1 && (
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {t("Drag to reorder.")}
-        </p>
-      )}
     </section>
   );
 }
