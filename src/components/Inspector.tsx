@@ -39,6 +39,7 @@ import { FONTS } from "../fonts";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
+import { DEFAULT_BACKGROUND_SOURCE } from "../types";
 import type {
   BackgroundSource,
   CardBackground,
@@ -420,7 +421,7 @@ function BackgroundSourceControl({
   globalBg?: CardBackground;
 }) {
   const { state, dispatch } = useStore();
-  const src = state.project.backgroundSource ?? "card";
+  const src = state.project.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
   const options: { value: BackgroundSource; label: string; disabled?: boolean }[] = [
     { value: "card", label: "Eigener Hintergrund" },
     { value: "console", label: "Von der Konsolen-Vorlage", disabled: !consoleBg?.enabled },

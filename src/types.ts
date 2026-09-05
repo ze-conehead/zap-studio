@@ -17,6 +17,9 @@ export interface CardBackground {
 // On a game card: which background actually shows.
 export type BackgroundSource = "card" | "console" | "global";
 
+// New cards take the global template's background until changed.
+export const DEFAULT_BACKGROUND_SOURCE: BackgroundSource = "global";
+
 export interface BaseLayer {
   id: string;
   type: LayerType;
@@ -100,7 +103,7 @@ export interface Project {
   name: string;
   backgroundColor: string; // legacy / primary colour mirror
   background?: CardBackground;
-  backgroundSource?: BackgroundSource; // game cards only; default "card"
+  backgroundSource?: BackgroundSource; // game cards only; default DEFAULT_BACKGROUND_SOURCE
   layers: Layer[]; // index 0 = bottom of the stack
   createdAt: number;
   updatedAt: number;

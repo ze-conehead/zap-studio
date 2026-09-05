@@ -54,7 +54,9 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     Vorlage** hat immer einen (kein Opt-in).
   - Jede Karte wählt unter **Hintergrund-Quelle**: eigener Hintergrund,
     „Von der Konsolen-Vorlage" oder „Von der globalen Vorlage". Nicht
-    gesetzte Quellen sind deaktiviert.
+    gesetzte Quellen sind deaktiviert. **Standard ist „Von der globalen
+    Vorlage"** – neue Karten übernehmen deren Hintergrund, bis man ihn
+    umstellt.
 - **Formen**: „+ Form" → Kapsel, Quadrat/Rechteck, Kreis. Jede Form hat
   dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
   optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck

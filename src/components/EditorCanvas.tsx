@@ -33,6 +33,7 @@ import {
 import { useImage } from "../hooks/useImage";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
+import { DEFAULT_BACKGROUND_SOURCE } from "../types";
 import type {
   CardBackground,
   ImageLayer as TImageLayer,
@@ -95,7 +96,7 @@ export function effectiveBackground(
   const own = resolveBackground(project);
   if (project.isTemplate) return own.enabled ? own : null;
 
-  const src = project.backgroundSource ?? "card";
+  const src = project.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
   if (src === "global" && globalBg?.enabled) return globalBg;
   if (src === "console" && consoleBg?.enabled) return consoleBg;
   return own;
