@@ -14,6 +14,13 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Spielen ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
   legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
   bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
+  - **Rechtsklick auf eine Konsole** → „Neues Spiel hinzufügen …" (Titel
+    abfragen). **Rechtsklick auf ein Spiel** → „Spiel entfernen" (ein
+    bereits angelegtes Design bleibt unter „Projekte"). Die Änderungen
+    liegen als Diff (hinzugefügte Spiele / ausgeblendete Seed-Einträge) in
+    `localStorage` (`stickerstudio:catalogOverlay`) und sind Teil des
+    ZIP-Backups; ein entferntes Seed-Spiel mit gleichem Titel wieder
+    hinzufügen blendet es einfach wieder ein.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
     welche Konsole. Projekt `tpl-global`.
@@ -97,9 +104,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   - PNG mit Beschnitt + Schnittmarken
   - Einzelnes Projekt als `.json` (Bilder eingebettet) speichern / laden
   - **Komplett-Backup als `.zip`**: alle Projekte, Vorlagen (global +
-    Konsole), Hilfslinien und der Spiel-Index; Bilder als echte,
-    deduplizierte Dateien unter `assets/`. Laden übernimmt alles (gleiche
-    IDs werden überschrieben) und lädt die Seite neu.
+    Konsole), Hilfslinien, der Spiel-Index und die Baum-Änderungen
+    (hinzugefügte/entfernte Spiele); Bilder als echte, deduplizierte
+    Dateien unter `assets/`. Laden übernimmt alles (gleiche IDs werden
+    überschrieben) und lädt die Seite neu.
 - **Autosave** in IndexedDB, mehrere Designs über den „Projekte"-Dialog.
 - **Shortcuts**: ⌘Z / ⌘⇧Z (Undo/Redo), Entf (Ebene löschen), Esc (Auswahl aufheben).
 - **gamelist.xml / Metadaten**: pro Konsole eine eigene `gamelist.xml`
@@ -155,8 +163,9 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/card.ts` | Kartenmaße, DPI, abgeleitete Pixelwerte |
 | `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
 | `src/masking.ts` | Ebenenstapel in Plain-/Masken-Segmente aufteilen |
-| `src/data/catalog.ts` | Beispiel-Konsolen und ihre Top-10-Spiele |
-| `src/components/GameTree.tsx` | Baumansicht links |
+| `src/data/catalog.ts` | Seed-Konsolen + Top-10, plus lokaler Overlay (Spiele hinzufügen/entfernen) |
+| `src/components/GameTree.tsx` | Baumansicht links (inkl. Rechtsklick-Menü) |
+| `src/components/ContextMenu.tsx` | Minimales Rechtsklick-Menü (ohne Extra-Dependency) |
 | `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |
 | `src/types.ts` | Datenmodell (Layer, Project) |
 | `src/store.tsx` | Reducer, Undo/Redo, Autosave, Shortcuts |

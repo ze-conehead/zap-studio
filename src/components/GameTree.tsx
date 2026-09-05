@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Gamepad2, Globe } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -8,7 +8,15 @@ import {
 } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { CATALOG, gameKeyOf } from "../data/catalog";
+import {
+  addGame,
+  gameKeyOf,
+  getCatalog,
+  getCatalogVersion,
+  removeGame,
+  subscribeCatalog,
+} from "../data/catalog";
+import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 
 interface Props {
   activeGameKey?: string;
@@ -19,6 +27,12 @@ interface Props {
   onOpenGlobal: () => void;
 }
 
+interface MenuState {
+  x: number;
+  y: number;
+  items: ContextMenuItem[];
+}
+
 export function GameTree({
   activeGameKey,
   activeConsoleId,
@@ -27,10 +41,35 @@ export function GameTree({
   onOpenConsole,
   onOpenGlobal,
 }: Props) {
+  // Re-render when a game is added/removed elsewhere (right-click menu).
+  useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
+  const catalog = getCatalog();
+
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    activeConsole ? { [activeConsole]: true } : { [CATALOG[0].id]: true },
+    activeConsole ? { [activeConsole]: true } : { [catalog[0]?.id ?? ""]: true },
   );
+  const [menu, setMenu] = useState<MenuState | null>(null);
+
+  const expand = (consoleId: string) =>
+    setOpen((o) => ({ ...o, [consoleId]: true }));
+
+  const handleAddGame = (consoleId: string, consoleName: string) => {
+    const title = window.prompt(`Neues Spiel für ${consoleName}:`)?.trim();
+    if (!title) return;
+    const game = addGame(consoleId, title);
+    if (game) expand(consoleId);
+  };
+
+  const handleRemoveGame = (consoleId: string, game: { id: string; title: string }) => {
+    if (
+      window.confirm(
+        `„${game.title}" aus der Liste entfernen? Ein bereits angelegtes Sticker-Design bleibt unter „Projekte" erhalten.`,
+      )
+    ) {
+      removeGame(consoleId, game.id);
+    }
+  };
 
   return (
     <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
@@ -52,7 +91,7 @@ export function GameTree({
 
       <ScrollArea className="min-h-0 flex-1">
         <ul className="px-2">
-          {CATALOG.map((c) => {
+          {catalog.map((c) => {
             const expanded = !!open[c.id];
             return (
               <li key={c.id}>
@@ -65,6 +104,19 @@ export function GameTree({
                       "flex items-center gap-1 rounded-md",
                       activeConsoleId === c.id && "bg-primary/15 ring-1 ring-primary",
                     )}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        items: [
+                          {
+                            label: "Neues Spiel hinzufügen …",
+                            onSelect: () => handleAddGame(c.id, c.name),
+                          },
+                        ],
+                      });
+                    }}
                   >
                     <CollapsibleTrigger
                       className="rounded p-1 text-muted-foreground hover:text-foreground"
@@ -78,7 +130,7 @@ export function GameTree({
                     </CollapsibleTrigger>
                     <button
                       className="flex flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
-                      title={`${c.name} – gemeinsame Vorlage bearbeiten`}
+                      title={`${c.name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen)`}
                       onClick={() => onOpenConsole(c.id, c.name)}
                     >
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
@@ -102,8 +154,23 @@ export function GameTree({
                               ? "bg-primary font-semibold text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
-                          title={g.title}
+                          title={`${g.title} (Rechtsklick: entfernen)`}
                           onClick={() => onPickGame(c.name, g.title, key)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setMenu({
+                              x: e.clientX,
+                              y: e.clientY,
+                              items: [
+                                {
+                                  label: "Spiel entfernen",
+                                  destructive: true,
+                                  onSelect: () => handleRemoveGame(c.id, g),
+                                },
+                              ],
+                            });
+                          }}
                         >
                           <span className="w-4 shrink-0 text-right text-[11px] tabular-nums opacity-70">
                             {i + 1}
@@ -123,8 +190,18 @@ export function GameTree({
       <p className="border-t px-3 py-3 text-xs text-muted-foreground">
         <strong className="text-foreground">Konsolenname</strong> anklicken:
         gemeinsame Vorlage. <strong className="text-foreground">Spiel</strong>{" "}
-        anklicken: dessen Sticker-Design.
+        anklicken: dessen Sticker-Design. <strong className="text-foreground">Rechtsklick</strong>:
+        Spiel hinzufügen / entfernen.
       </p>
+
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={menu.items}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </nav>
   );
 }

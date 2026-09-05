@@ -4,11 +4,13 @@ import { loadAllProjects } from "./persist";
 import type { Project } from "./types";
 
 // Full backup: every project + every template + the global settings
-// (guides, game index), with images stored as real files and deduplicated.
+// (guides, game index, catalogue edits), with images stored as real files
+// and deduplicated.
 
 const BACKUP_FORMAT = "credit-card-sticker-studio-backup";
 const GUIDES_KEY = "stickerstudio:guides";
 const GAME_INDEX_KEY = "stickerstudio:gameIndex";
+const CATALOG_OVERLAY_KEY = "stickerstudio:catalogOverlay";
 
 const MIME_EXT: Record<string, string> = {
   "image/png": "png",
@@ -102,8 +104,10 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
 
   const guides = localStorage.getItem(GUIDES_KEY);
   const gameIndex = localStorage.getItem(GAME_INDEX_KEY);
+  const catalogOverlay = localStorage.getItem(CATALOG_OVERLAY_KEY);
   if (guides) files["settings/guides.json"] = strToU8(guides);
   if (gameIndex) files["settings/gameIndex.json"] = strToU8(gameIndex);
+  if (catalogOverlay) files["settings/catalogOverlay.json"] = strToU8(catalogOverlay);
 
   files["manifest.json"] = strToU8(
     JSON.stringify(
@@ -178,6 +182,12 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
     } catch {
       /* keep existing index */
     }
+  }
+  if (entries["settings/catalogOverlay.json"]) {
+    localStorage.setItem(
+      CATALOG_OVERLAY_KEY,
+      strFromU8(entries["settings/catalogOverlay.json"]),
+    );
   }
 
   return { projects: np, templates: nt };
