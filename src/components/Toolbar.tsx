@@ -238,11 +238,12 @@ export function Toolbar({
         {project.isTemplate && (
           <Badge>{project.isGlobalTemplate ? t("Global") : t("Template")}</Badge>
         )}
-        <Input
-          className="h-8 w-52 font-semibold"
-          value={project.name}
-          onChange={(e) => dispatch({ type: "RENAME", name: e.target.value })}
-        />
+        <span
+          className="max-w-52 truncate text-sm font-semibold"
+          title={project.name}
+        >
+          {project.name}
+        </span>
         <span
           className="text-xs text-muted-foreground"
           title={state.dirty ? t("unsaved") : t("saved")}
