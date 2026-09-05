@@ -16,6 +16,7 @@ import {
   Pill,
   Redo2,
   Ruler,
+  Sparkles,
   Square,
   Star,
   Type,
@@ -71,6 +72,7 @@ interface Props {
   onNewProject: () => void;
   onOpenProjects: () => void;
   onOpenPreview: () => void;
+  onOpenDemo: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -80,6 +82,7 @@ export function Toolbar({
   onNewProject,
   onOpenProjects,
   onOpenPreview,
+  onOpenDemo,
   onImportJson,
 }: Props) {
   const { state, dispatch } = useStore();
@@ -402,6 +405,9 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <Button variant="outline" size="sm" onClick={onOpenDemo}>
+          <Sparkles /> Demo
+        </Button>
         <Button variant="outline" size="sm" onClick={onOpenPreview}>
           <Box /> 3D-Vorschau
         </Button>

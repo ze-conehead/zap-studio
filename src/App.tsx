@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CANVAS, TRIM_RECT } from "./card";
 import { CardPreview } from "./components/CardPreview";
+import { DemoMode } from "./components/DemoMode";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
 import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
@@ -280,6 +281,7 @@ function Shell({
 }) {
   const canvas = useRef<CanvasHandle | null>(null);
   const [preview, setPreview] = useState(false);
+  const [demo, setDemo] = useState(false);
   return (
     <div className="flex h-full flex-col">
       <Toolbar
@@ -288,6 +290,7 @@ function Shell({
         onNewProject={onNewProject}
         onOpenProjects={onOpenProjects}
         onOpenPreview={() => setPreview(true)}
+        onOpenDemo={() => setDemo(true)}
         onImportJson={onImportJson}
       />
       <div className="flex min-h-0 flex-1">
@@ -327,6 +330,7 @@ function Shell({
       </div>
 
       {preview && <CardPreview canvas={canvas} onClose={() => setPreview(false)} />}
+      {demo && <DemoMode onClose={() => setDemo(false)} />}
     </div>
   );
 }

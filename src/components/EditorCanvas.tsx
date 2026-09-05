@@ -54,7 +54,7 @@ export interface CanvasHandle {
 // above the card's main image, so segmentLayers()/destination-in clips it
 // like any other mask. Only for game cards, and only when the main image
 // isn't already part of a card mask.
-function withMainMask(
+export function withMainMask(
   project: Project,
   layers: TLayer[],
   mainMask: TLayer | undefined,
@@ -87,7 +87,7 @@ function withMainMask(
 }
 
 // Which background actually paints for the current view.
-function effectiveBackground(
+export function effectiveBackground(
   project: Project,
   consoleBg?: CardBackground,
   globalBg?: CardBackground,
@@ -462,7 +462,7 @@ function LayerNode({
   );
 }
 
-function LayerInner({
+export function LayerInner({
   layer,
   asMask = false,
   meta,
@@ -722,7 +722,7 @@ function PlayersGlyph({
   );
 }
 
-function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
+export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
   const full = { x: 0, y: 0, width: CANVAS.w, height: CANVAS.h };
 
   const fill =

@@ -132,6 +132,18 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   Eingabe im Inspector. Auf Spiel-Karten und Konsolen-Vorlagen werden sie
   nur angezeigt (nicht verschiebbar). Global in `localStorage` gespeichert,
   nicht im PNG-Export.
+- **Demo-Modus** (Toolbar-Button „Demo"): Booster-Pack-Simulation. Erst
+  wählst du eine Konsole oder „Alle Konsolen", dann liegt ein geschlossenes
+  Pack mit 12 zufälligen Karten da. Ein Klick reißt es auf – die Karten
+  fliegen per 3D-Animation heraus und legen sich als Raster ab. Mit **10 %
+  Wahrscheinlichkeit** ist eine davon **holografisch** (goldener Rahmen +
+  Foil-Schimmer). Jede Karte lässt sich anklicken und in derselben
+  3D-Ansicht wie die Vorschau frei drehen; ← → oder die Pfeil-Buttons
+  blättern durch das Pack. Die Karten werden dafür mit derselben
+  Konva-Pipeline wie im Editor gerendert (inkl. Vorlagen, Masken und
+  Haupt-Alpha-Maske), Spiele ohne Design bekommen eine Titel-Platzhalterkarte.
+  Siehe [src/demo.ts](src/demo.ts) und
+  [src/components/DemoMode.tsx](src/components/DemoMode.tsx).
 - **3D-Vorschau**: Button in der Toolbar öffnet die Karte als 3D-Objekt
   (CSS-Perspektive), mit der Maus frei drehbar. Checkbox „Holographische
   Karte" legt einen Regenbogen-Foil-/Glitzer-/Glanz-Effekt darüber, der
@@ -219,6 +231,9 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/covers.ts` | Cover-Suche: SteamGridDB / IGDB (Keys, via CORS-Proxy) oder libretro-thumbnails |
 | `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
 | `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover |
+| `src/demo.ts` | Demo-Modus: Booster-Pack ziehen (Zufallskarten, Holo-Chance) |
+| `src/components/DemoMode.tsx` | Pack-Öffnen-Animation, Kartenraster, 3D-Einzelansicht |
+| `src/components/CardStage.tsx` | Karte read-only rendern & als PNG abgreifen |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
 
 ## Rechtliches
