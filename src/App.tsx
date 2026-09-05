@@ -28,6 +28,7 @@ interface Templates {
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  mainMask?: Layer; // "Alle Konsolen" alpha frame for the card's main image
 }
 
 export interface GuideApi {
@@ -83,15 +84,26 @@ export default function App() {
 
       const globalBg = globalP?.background;
       const consoleBg = consoleP?.background;
+
+      // The global "main alpha mask" clips each card's main image; it never
+      // paints as an overlay layer itself.
+      const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
+      const globalLayers = (globalP?.layers ?? []).filter((l) => !l.mainMask);
+
       let overlay: Layer[] = [];
       if (project.isGlobalTemplate) {
         overlay = [];
       } else if (project.isTemplate) {
-        overlay = globalP?.layers ?? [];
+        overlay = globalLayers;
       } else {
-        overlay = [...(consoleP?.layers ?? []), ...(globalP?.layers ?? [])];
+        overlay = [...(consoleP?.layers ?? []), ...globalLayers];
       }
-      setTemplates({ overlay, consoleBg, globalBg });
+      setTemplates({
+        overlay,
+        consoleBg,
+        globalBg,
+        mainMask: project.isTemplate ? undefined : mainMask,
+      });
     })();
     return () => {
       alive = false;
@@ -213,6 +225,7 @@ export default function App() {
         overlay={templates.overlay}
         consoleBg={templates.consoleBg}
         globalBg={templates.globalBg}
+        mainMask={templates.mainMask}
         guides={guideApi}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
@@ -238,6 +251,7 @@ function Shell({
   overlay,
   consoleBg,
   globalBg,
+  mainMask,
   guides,
   activeGameKey,
   activeConsoleId,
@@ -252,6 +266,7 @@ function Shell({
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  mainMask?: Layer;
   guides: GuideApi;
   activeGameKey?: string;
   activeConsoleId?: string;
@@ -289,6 +304,7 @@ function Shell({
           overlay={overlay}
           consoleBg={consoleBg}
           globalBg={globalBg}
+          mainMask={mainMask}
           guides={guides}
         />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">

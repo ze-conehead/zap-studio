@@ -166,6 +166,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         </Button>
       </div>
 
+      <MainRoleControls patch={patch} />
       <MaskControls patch={patch} />
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
@@ -174,6 +175,57 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       {isMetaBadge(selected) && <MetaBadgeProps layer={selected} patch={patch} />}
     </Panel>
   );
+}
+
+// "Hauptbild" (per game card) and "Haupt-Alpha-Maske" (on "Alle Konsolen").
+// The card's main image is always clipped by the global main mask.
+function MainRoleControls({ patch }: { patch: Patch }) {
+  const { state, selected } = useStore();
+  if (!selected) return null;
+  const { isTemplate, isGlobalTemplate } = state.project;
+
+  if (isGlobalTemplate) {
+    if (selected.type !== "shape" && selected.type !== "image") return null;
+    return (
+      <div className="flex flex-col gap-1.5 border-t pt-3">
+        <Label>Haupt-Alpha-Maske</Label>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={!!selected.mainMask}
+            onCheckedChange={(v) => patch({ mainMask: !!v })}
+          />
+          Als gemeinsame Alpha-Maske verwenden
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Der Alpha-Kanal dieser Ebene beschneidet auf <strong>jeder</strong>{" "}
+          Karte deren Hauptbild. Die Form selbst wird auf den Karten nicht
+          gezeichnet.
+        </p>
+      </div>
+    );
+  }
+
+  if (!isTemplate && selected.type === "image") {
+    return (
+      <div className="flex flex-col gap-1.5 border-t pt-3">
+        <Label>Hauptbild</Label>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={!!selected.main}
+            onCheckedChange={(v) => patch({ main: !!v })}
+          />
+          Dies ist das Hauptbild der Karte
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Wird von der Haupt-Alpha-Maske aus „Alle Konsolen" beschnitten (falls
+          dort gesetzt). Ohne Markierung gilt das einzige Bild der Karte
+          automatisch als Hauptbild.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function MaskControls({ patch }: { patch: Patch }) {

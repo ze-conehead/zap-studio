@@ -156,6 +156,23 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   };
 }
 
+// "Alle Konsolen": the shared alpha frame every card's main image is
+// clipped to. Starts as a rounded rectangle covering most of the trim area.
+export function makeMainMaskLayer(): ShapeLayer {
+  return {
+    ...base("Haupt-Alpha-Maske"),
+    type: "shape",
+    shape: "rect",
+    width: TRIM_RECT.w * 0.9,
+    height: TRIM_RECT.h * 0.62,
+    cornerRadius: 40,
+    fill: { ...DEFAULT_SHAPE_FILL },
+    stroke: "#000000",
+    strokeWidth: 0,
+    mainMask: true,
+  };
+}
+
 // Which pieces a newly-created metadata badge starts with — either all
 // three combined, or one standalone element placeable on its own.
 export type MetaBadgeKind = "combo" | "rating" | "year" | "players";

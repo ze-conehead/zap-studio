@@ -73,6 +73,14 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
 
   Umgesetzt über `globalCompositeOperation: "destination-in"` je Masken-
   gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
+- **Hauptbild + Haupt-Alpha-Maske**: Jede Spiel-Karte hat ein *Hauptbild*
+  (Bild-Ebene, Checkbox „Hauptbild" im Inspector; „Cover suchen" und „Quick
+  Import" setzen es automatisch, sonst gilt das einzige Bild der Karte).
+  Bei **„Alle Konsolen"** legt man **eine** *Haupt-Alpha-Maske* an
+  („+ Form → Haupt-Alpha-Maske" oder Checkbox an einer Form/einem Bild).
+  Deren Alpha-Kanal beschneidet auf **jeder** Karte automatisch das
+  Hauptbild – der Rahmen wird also nur einmal gestaltet. Die Maskenform
+  selbst wird auf den Karten nicht gezeichnet.
 - **Ebenen**: Bilder, Formen, beliebig viele Textebenen. Auswählen,
   verschieben, skalieren, drehen, sperren, ausblenden, duplizieren.
   Reihenfolge per **Drag & Drop** in der Ebenenliste (Greifpunkt links,

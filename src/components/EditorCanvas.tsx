@@ -50,6 +50,42 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
+// Splices the global "main alpha mask" in as a real mask layer directly
+// above the card's main image, so segmentLayers()/destination-in clips it
+// like any other mask. Only for game cards, and only when the main image
+// isn't already part of a card mask.
+function withMainMask(
+  project: Project,
+  layers: TLayer[],
+  mainMask: TLayer | undefined,
+): TLayer[] {
+  if (!mainMask || project.isTemplate) return layers;
+
+  let idx = layers.findIndex((l) => l.type === "image" && l.main && l.visible);
+  if (idx < 0) {
+    const imgs = layers.filter((l) => l.type === "image" && l.visible);
+    if (imgs.length === 1) idx = layers.indexOf(imgs[0]);
+  }
+  if (idx < 0) return layers;
+  if (layers[idx].mask || layers[idx].clipped) return layers;
+
+  const stencil: TLayer = {
+    ...mainMask,
+    id: `__mainmask__${mainMask.id}`,
+    name: "Haupt-Alpha-Maske",
+    mask: true,
+    clipped: false,
+    groupTransform: false,
+    main: false,
+    mainMask: false,
+    locked: true,
+    visible: true,
+  };
+  const out = layers.map((l, i) => (i === idx ? { ...l, clipped: true } : l));
+  out.splice(idx + 1, 0, stencil);
+  return out;
+}
+
 // Which background actually paints for the current view.
 function effectiveBackground(
   project: Project,
@@ -70,12 +106,14 @@ export function EditorCanvas({
   overlay = [],
   consoleBg,
   globalBg,
+  mainMask,
   guides,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  mainMask?: TLayer;
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
@@ -85,6 +123,12 @@ export function EditorCanvas({
   // navigating away, so MetaBadge layers stay live.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
   const badgeMeta = resolveBadgeMeta(project);
+
+  // On a game card, the global "main alpha mask" is spliced in right above
+  // the card's main image (the sole image, if none is flagged) so the
+  // existing mask pipeline clips it — the frame is defined once at "Alle
+  // Konsolen".
+  const renderLayers = withMainMask(project, project.layers, mainMask);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -170,7 +214,7 @@ export function EditorCanvas({
             </Layer>
           )}
 
-          {segmentLayers(project.layers).map((seg, i) => {
+          {segmentLayers(renderLayers).map((seg, i) => {
             const render = (
               layer: TLayer,
               asMask = false,

@@ -89,7 +89,10 @@ export async function applyQuickImport(
   for (const e of entries) {
     try {
       const img = await urlToLayerSource(e.url);
-      const layer = makeImageLayer({ ...img, name: e.gameTitle });
+      const layer: ImageLayer = {
+        ...makeImageLayer({ ...img, name: e.gameTitle }),
+        main: true,
+      };
 
       if (e.gameKey === currentGameKey) {
         addToCurrent(layer);
@@ -99,7 +102,10 @@ export async function applyQuickImport(
         if (existing) {
           await saveProject({
             ...existing,
-            layers: [...existing.layers, layer],
+            layers: [
+              ...existing.layers.map((l) => ({ ...l, main: false })),
+              layer,
+            ],
             updatedAt: Date.now(),
           });
         } else {

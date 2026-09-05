@@ -93,11 +93,19 @@ function reducer(state: State, action: Action): State {
         updatedAt: Date.now(),
       });
 
-    case "ADD_LAYER":
+    case "ADD_LAYER": {
+      // "main" / "mainMask" are single-slot roles — a new layer claiming one
+      // clears it on the others.
+      const cleared = layers.map((l) => ({
+        ...l,
+        ...(action.layer.main ? { main: false } : null),
+        ...(action.layer.mainMask ? { mainMask: false } : null),
+      }));
       return {
-        ...commit(state, touch(project, [...layers, action.layer])),
+        ...commit(state, touch(project, [...cleared, action.layer])),
         selectedId: action.layer.id,
       };
+    }
 
     case "PATCH_LAYER": {
       const i = idx(action.id);
@@ -109,6 +117,15 @@ function reducer(state: State, action: Action): State {
       if (action.patch.mask === true && i > 0 && !next[i - 1].mask) {
         next = next.map((l, j) =>
           j === i - 1 ? ({ ...l, clipped: true } as Layer) : l,
+        );
+      }
+      // Single-slot roles: clear the previous holder.
+      if (action.patch.main === true) {
+        next = next.map((l, j) => (j === i ? l : ({ ...l, main: false } as Layer)));
+      }
+      if (action.patch.mainMask === true) {
+        next = next.map((l, j) =>
+          j === i ? l : ({ ...l, mainMask: false } as Layer),
         );
       }
       const p = touch(project, next);

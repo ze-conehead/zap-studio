@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChevronDown,
   Circle,
+  Crop,
   Download,
   FilePlus2,
   FolderOpen,
@@ -49,6 +50,7 @@ import {
 } from "../export";
 import {
   makeImageLayer,
+  makeMainMaskLayer,
   makeMetaBadgeLayer,
   makeShapeLayer,
   makeTextLayer,
@@ -163,7 +165,10 @@ export function Toolbar({
       const img = await urlToLayerSource(url);
       dispatch({
         type: "ADD_LAYER",
-        layer: makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
+        layer: {
+          ...makeImageLayer({ ...img, name: foundGame?.game.title ?? "Cover" }),
+          main: true,
+        },
       });
     } catch (e) {
       alert((e as Error).message);
@@ -316,6 +321,18 @@ export function Toolbar({
                 <Icon /> {label}
               </DropdownMenuItem>
             ))}
+            {project.isGlobalTemplate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    dispatch({ type: "ADD_LAYER", layer: makeMainMaskLayer() })
+                  }
+                >
+                  <Crop /> Haupt-Alpha-Maske
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
