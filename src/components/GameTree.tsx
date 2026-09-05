@@ -129,11 +129,11 @@ export function GameTree({
                         y: e.clientY,
                         items: [
                           {
-                            label: "Neues Spiel hinzufügen …",
+                            label: "Hinzufügen …",
                             onSelect: () => handleAddGame(c.id, c.name),
                           },
                           {
-                            label: "Konsole umbenennen …",
+                            label: "Umbenennen …",
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
                         ],
@@ -186,11 +186,11 @@ export function GameTree({
                               y: e.clientY,
                               items: [
                                 {
-                                  label: "Spiel umbenennen …",
+                                  label: "Umbenennen …",
                                   onSelect: () => handleRenameGame(c.id, g),
                                 },
                                 {
-                                  label: "Spiel entfernen",
+                                  label: "Entfernen",
                                   destructive: true,
                                   onSelect: () => handleRemoveGame(c.id, g),
                                 },
