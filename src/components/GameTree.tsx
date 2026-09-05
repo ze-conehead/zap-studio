@@ -1,11 +1,18 @@
-import { ChevronDown, ChevronRight, Gamepad2, Globe } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { Check, ChevronDown, ChevronRight, Gamepad2, Globe, ListFilter } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
@@ -19,7 +26,27 @@ import {
   subscribeCatalog,
 } from "../data/catalog";
 import { renameGameMeta } from "../gamelist";
+import { loadImagedGameKeys } from "../quickImport";
+import { useStore } from "../store";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
+
+type TreeFilter = "all" | "with" | "without";
+
+const FILTER_KEY = "stickerstudio:treeFilter";
+const FILTER_LABEL: Record<TreeFilter, string> = {
+  all: "Alle Spiele",
+  with: "Nur mit Bild",
+  without: "Nur ohne Bild",
+};
+
+function loadTreeFilter(): TreeFilter {
+  try {
+    const v = localStorage.getItem(FILTER_KEY);
+    return v === "with" || v === "without" ? v : "all";
+  } catch {
+    return "all";
+  }
+}
 
 interface Props {
   activeGameKey?: string;
@@ -45,14 +72,53 @@ export function GameTree({
   onOpenGlobal,
 }: Props) {
   // Re-render when a game is added/removed elsewhere (right-click menu).
-  useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
+  const catalogVersion = useSyncExternalStore(
+    subscribeCatalog,
+    getCatalogVersion,
+    getCatalogVersion,
+  );
   const catalog = getCatalog();
+
+  const { state } = useStore();
+  const currentGameKey = state.project.gameKey;
+  const currentHasImage = state.project.layers.some((l) => l.type === "image");
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     activeConsole ? { [activeConsole]: true } : { [catalog[0]?.id ?? ""]: true },
   );
   const [menu, setMenu] = useState<MenuState | null>(null);
+
+  const [filter, setFilter] = useState<TreeFilter>(loadTreeFilter);
+  const [imaged, setImaged] = useState<Set<string>>(() => new Set());
+
+  // Which games have an image — from IndexedDB, refreshed on navigation and
+  // catalogue / current-image changes. The open design is overlaid live.
+  useEffect(() => {
+    let alive = true;
+    loadImagedGameKeys().then((s) => {
+      if (alive) setImaged(s);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeGameKey, activeConsoleId, catalogVersion, currentHasImage]);
+
+  const changeFilter = (f: TreeFilter) => {
+    setFilter(f);
+    try {
+      localStorage.setItem(FILTER_KEY, f);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const gameHasImage = (gameKey: string) =>
+    gameKey === currentGameKey ? currentHasImage : imaged.has(gameKey);
+
+  const matchesFilter = (gameKey: string) =>
+    filter === "all" ||
+    (filter === "with" ? gameHasImage(gameKey) : !gameHasImage(gameKey));
 
   const expand = (consoleId: string) =>
     setOpen((o) => ({ ...o, [consoleId]: true }));
@@ -95,22 +161,49 @@ export function GameTree({
         Konsolen &amp; Spiele
       </h2>
 
-      <button
-        className={cn(
-          "mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
-          activeGlobal && "bg-primary/15 ring-1 ring-primary",
-        )}
-        title="Globale Vorlage – erscheint auf allen Karten"
-        onClick={onOpenGlobal}
-      >
-        <Globe className="size-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate text-left">Alle Konsolen</span>
-      </button>
+      <div className="mx-2 mb-1 flex items-center gap-1">
+        <button
+          className={cn(
+            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent",
+            activeGlobal && "bg-primary/15 ring-1 ring-primary",
+          )}
+          title="Globale Vorlage – erscheint auf allen Karten"
+          onClick={onOpenGlobal}
+        >
+          <Globe className="size-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 truncate text-left">Alle Konsolen</span>
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground",
+                filter !== "all" && "text-primary",
+              )}
+              title={`Spiele filtern: ${FILTER_LABEL[filter]}`}
+            >
+              <ListFilter className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Spiele anzeigen</DropdownMenuLabel>
+            {(Object.keys(FILTER_LABEL) as TreeFilter[]).map((f) => (
+              <DropdownMenuItem key={f} onClick={() => changeFilter(f)}>
+                <Check className={cn("size-4", filter !== f && "opacity-0")} />
+                {FILTER_LABEL[f]}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <ScrollArea className="min-h-0 flex-1">
         <ul className="px-2">
           {catalog.map((c) => {
             const expanded = !!open[c.id];
+            const games = c.games
+              .map((g, i) => ({ g, i }))
+              .filter(({ g }) => matchesFilter(gameKeyOf(c, g)));
             return (
               <li key={c.id}>
                 <Collapsible
@@ -158,13 +251,22 @@ export function GameTree({
                       <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
                       <span className="flex-1 truncate text-left">{c.name}</span>
                       <Badge variant="secondary" className="rounded-full">
-                        {c.games.length}
+                        {filter === "all"
+                          ? c.games.length
+                          : `${games.length}/${c.games.length}`}
                       </Badge>
                     </button>
                   </div>
 
                   <CollapsibleContent className="ml-3 border-l pl-1">
-                    {c.games.map((g, i) => {
+                    {filter !== "all" && games.length === 0 && (
+                      <p className="px-1.5 py-1.5 text-[11px] text-muted-foreground">
+                        {filter === "with"
+                          ? "Kein Spiel mit Bild."
+                          : "Alle Spiele haben ein Bild."}
+                      </p>
+                    )}
+                    {games.map(({ g, i }) => {
                       const key = gameKeyOf(c, g);
                       const active = key === activeGameKey;
                       return (

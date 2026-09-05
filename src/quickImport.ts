@@ -25,18 +25,33 @@ export interface QuickImportResult extends QuickImportRow {
 const hasImageLayer = (layers: { type: string }[]) =>
   layers.some((l) => l.type === "image");
 
-// Every catalogue game whose linked design has no image layer (or has no
-// design at all).
-export async function findGamesWithoutImage(): Promise<QuickImportRow[]> {
+// gameKeys whose linked sticker design has at least one image layer.
+// (Reads IndexedDB, so it can lag the live editor by one autosave — callers
+// that care about the currently-open design should overlay its state.)
+export async function loadImagedGameKeys(): Promise<Set<string>> {
   const projects = await loadAllProjects();
   const byId = new Map(projects.map((p) => [p.id, p]));
-  const rows: QuickImportRow[] = [];
+  const imaged = new Set<string>();
   for (const c of getCatalog()) {
     for (const g of c.games) {
       const gameKey = gameKeyOf(c, g);
       const pid = getGameProject(gameKey);
       const proj = pid ? byId.get(pid) : undefined;
-      if (!proj || !hasImageLayer(proj.layers)) {
+      if (proj && hasImageLayer(proj.layers)) imaged.add(gameKey);
+    }
+  }
+  return imaged;
+}
+
+// Every catalogue game whose linked design has no image layer (or has no
+// design at all).
+export async function findGamesWithoutImage(): Promise<QuickImportRow[]> {
+  const imaged = await loadImagedGameKeys();
+  const rows: QuickImportRow[] = [];
+  for (const c of getCatalog()) {
+    for (const g of c.games) {
+      const gameKey = gameKeyOf(c, g);
+      if (!imaged.has(gameKey)) {
         rows.push({ gameKey, consoleName: c.name, gameTitle: g.title });
       }
     }

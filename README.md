@@ -26,6 +26,10 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
     Konsolen & Spiele) in `localStorage` (`stickerstudio:catalogOverlay`)
     und sind Teil des ZIP-Backups; ein entferntes Seed-Spiel mit gleichem
     Titel wieder hinzufügen blendet es einfach wieder ein.
+  - **Filter** (Trichter-Symbol neben „Alle Konsolen"): alle Spiele, nur
+    Spiele **mit** Bild oder nur **ohne** Bild (= Design hat eine Bild-Ebene).
+    Der Konsolen-Zähler zeigt dann `sichtbar/gesamt`; die Auswahl bleibt in
+    `localStorage` gespeichert. Das gerade offene Design zählt live mit.
 - **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
   - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
     welche Konsole. Projekt `tpl-global`.
