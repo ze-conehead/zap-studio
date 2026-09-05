@@ -1,13 +1,107 @@
-// Cover art lookup backed by the community-maintained "libretro-thumbnails"
-// GitHub org — real box-art scans, no API key, no server of our own needed.
-// Coverage is limited to systems RetroArch can emulate, so current-gen
-// consoles (Switch, PS5, Xbox Series) have no repo and return no results.
+// Cover art lookup. Two sources:
+//  - SteamGridDB (when an API key is configured): every platform, high-res
+//    box art. Its API and CDN both block browser CORS and the API needs a
+//    Bearer key, so requests go through the public CORS proxy proxy.cors.sh
+//    (free for localhost) and images through the wsrv.nl image proxy.
+//  - libretro-thumbnails (no key): static box-art scans on GitHub, retro /
+//    emulated systems only. Used as the fallback when there's no key.
 
 export interface CoverCandidate {
-  title: string; // filename core, without region/version tags
-  region: string; // e.g. "(USA)", "(Europe) (En,Fr,De)" — may be empty
-  url: string; // full-resolution raw.githubusercontent.com URL
+  title: string;
+  region: string; // libretro region tag, or SGDB "WxH · style"
+  url: string; // full-resolution, CORS-fetchable
+  thumb?: string; // smaller preview, CORS-fetchable
 }
+
+// ── SteamGridDB ─────────────────────────────────────────────────────────────
+
+const SGDB_KEY_STORAGE = "stickerstudio:sgdbKey";
+const CORS_PROXY = "https://proxy.cors.sh/";
+const IMG_PROXY = "https://wsrv.nl/?url=";
+
+export function getSgdbKey(): string {
+  try {
+    return localStorage.getItem(SGDB_KEY_STORAGE)?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setSgdbKey(key: string): void {
+  try {
+    const k = key.trim();
+    if (k) localStorage.setItem(SGDB_KEY_STORAGE, k);
+    else localStorage.removeItem(SGDB_KEY_STORAGE);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function usingSGDB(): boolean {
+  return !!getSgdbKey();
+}
+
+const proxied = (url: string) => IMG_PROXY + encodeURIComponent(url);
+
+interface SgdbGame {
+  id: number;
+  name: string;
+}
+interface SgdbGrid {
+  url: string;
+  thumb?: string;
+  width: number;
+  height: number;
+  style?: string;
+}
+
+async function sgdbFetch<T>(path: string): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${CORS_PROXY}https://www.steamgriddb.com/api/v2${path}`, {
+      headers: { Authorization: `Bearer ${getSgdbKey()}` },
+    });
+  } catch {
+    throw new Error(
+      "SteamGridDB nicht erreichbar – der CORS-Proxy (proxy.cors.sh) antwortet nicht.",
+    );
+  }
+  if (res.status === 401 || res.status === 403) {
+    throw new Error(
+      "SteamGridDB-API-Key fehlt oder ist ungültig. Neuen Key unter steamgriddb.com anlegen.",
+    );
+  }
+  if (!res.ok) throw new Error(`SteamGridDB-Fehler (HTTP ${res.status}).`);
+  return res.json() as Promise<T>;
+}
+
+async function searchCoversSGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const found = await sgdbFetch<{ data?: SgdbGame[] }>(
+    `/search/autocomplete/${encodeURIComponent(gameTitle)}`,
+  );
+  const games = found.data ?? [];
+  if (!games.length) return [];
+
+  const q = normalizeTitle(gameTitle);
+  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
+
+  const q1 = `/grids/game/${game.id}?types=static&nsfw=false&humor=false`;
+  let grids =
+    (await sgdbFetch<{ data?: SgdbGrid[] }>(`${q1}&dimensions=600x900,660x930,342x482`))
+      .data ?? [];
+  if (!grids.length) {
+    grids = (await sgdbFetch<{ data?: SgdbGrid[] }>(q1)).data ?? [];
+  }
+
+  return grids.slice(0, 24).map((g) => ({
+    title: game.name,
+    region: `${g.width}×${g.height}${g.style ? ` · ${g.style}` : ""}`,
+    url: proxied(g.url),
+    thumb: g.thumb ? proxied(g.thumb) : undefined,
+  }));
+}
+
+// ── libretro-thumbnails ─────────────────────────────────────────────────────
 
 // Console name (normalized, lowercase) -> libretro-thumbnails repo slug.
 // https://github.com/libretro-thumbnails
@@ -117,10 +211,7 @@ function splitBoxartName(filename: string): { core: string; region: string } {
   return { core: name.slice(0, firstParen), region: name.slice(firstParen).trim() };
 }
 
-// Searches the console's libretro-thumbnails box-art folder for filenames
-// matching `gameTitle`. Returns [] if the console has no known repo, or
-// nothing matched. Exact-title hits and non-beta/proto scans sort first.
-export async function searchCovers(
+async function searchCoversLibretro(
   consoleName: string,
   gameTitle: string,
 ): Promise<CoverCandidate[]> {
@@ -160,4 +251,18 @@ export async function searchCovers(
       .map(encodeURIComponent)
       .join("/")}`,
   }));
+}
+
+// ── Public entry point ─────────────────────────────────────────────────────
+
+// SteamGridDB when an API key is set (every console, high-res), otherwise
+// libretro-thumbnails (retro consoles, no key).
+export async function searchCovers(
+  consoleName: string,
+  gameTitle: string,
+): Promise<CoverCandidate[]> {
+  const title = gameTitle.trim();
+  if (!title) return [];
+  if (usingSGDB()) return searchCoversSGDB(title);
+  return searchCoversLibretro(consoleName, title);
 }
