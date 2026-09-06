@@ -9,6 +9,7 @@ import { downloadBlob } from "../export";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
+import { stickerSheetPdf } from "../pdf";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
@@ -19,6 +20,7 @@ import {
   type SheetGame,
   type SheetOptions,
   type SheetResult,
+  type SheetTarget,
 } from "../sheet";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -120,8 +122,24 @@ export function CutSheetDialog({
     };
   }, [phase, cards, opts]);
 
-  const download = () => {
+  const wmd = opts.target === "wmd";
+
+  const download = async () => {
     if (!result) return;
+
+    if (wmd) {
+      const pg = result.pages[0];
+      const blob = await stickerSheetPdf({
+        imageDataUrl: pg.dataUrl,
+        widthMM: pg.widthMM,
+        heightMM: pg.heightMM,
+        bleedMM: pg.bleedMM,
+        cutRects: pg.cutRects,
+      });
+      downloadBlob(blob, "sticker-sheet-wmd.pdf");
+      return;
+    }
+
     const files: Record<string, Uint8Array> = {};
     const multi = result.pages.length > 1;
     const sizeLines: string[] = [];
@@ -171,7 +189,9 @@ export function CutSheetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col">
         <DialogHeader>
-          <DialogTitle>{t("Cut sheet for Cricut")}</DialogTitle>
+          <DialogTitle>
+            {wmd ? t("Sticker sheet for wir-machen-druck.de") : t("Cut sheet for Cricut")}
+          </DialogTitle>
         </DialogHeader>
 
         {/* off-screen render targets */}
@@ -195,11 +215,34 @@ export function CutSheetDialog({
 
         {phase === "pick" && (
           <>
+            <div className="flex gap-1 rounded-md border p-0.5 text-xs">
+              {(["cricut", "wmd"] as SheetTarget[]).map((tg) => (
+                <button
+                  key={tg}
+                  className={
+                    "flex-1 rounded px-2 py-1.5 " +
+                    (opts.target === tg
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-accent")
+                  }
+                  onClick={() => setOpts((o) => ({ ...o, target: tg }))}
+                >
+                  {tg === "cricut"
+                    ? t("Cricut Explore (Print then Cut)")
+                    : t("wir-machen-druck.de (print PDF)")}
+                </button>
+              ))}
+            </div>
+
             <p className="text-xs text-muted-foreground">
-              {t(
-                "Packs the finished designs onto {w} DPI sheets at real size — each card printed full-bleed — plus a matching SVG that cuts each card at its rounded trim edge. Print at 100 %, then Print then Cut on the Cricut.",
-                { w: "300" },
-              )}
+              {wmd
+                ? t(
+                    "Builds a single print-ready PDF: every design on one sheet at real size, each card full-bleed, with a 2 mm outer bleed and a “kiss_cut” contour (100 % magenta spot colour) around each card — the cut line their production expects.",
+                  )
+                : t(
+                    "Packs the finished designs onto {w} DPI sheets at real size — each card printed full-bleed — plus a matching SVG that cuts each card at its rounded trim edge. Print at 100 %, then Print then Cut on the Cricut.",
+                    { w: "300" },
+                  )}
             </p>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -220,18 +263,20 @@ export function CutSheetDialog({
                 />
                 mm
               </label>
-              <label className="flex items-center gap-1.5">
-                <Checkbox
-                  checked={opts.background === "white"}
-                  onCheckedChange={(v) =>
-                    setOpts((o) => ({
-                      ...o,
-                      background: v ? "white" : "transparent",
-                    }))
-                  }
-                />
-                {t("White background")}
-              </label>
+              {!wmd && (
+                <label className="flex items-center gap-1.5">
+                  <Checkbox
+                    checked={opts.background === "white"}
+                    onCheckedChange={(v) =>
+                      setOpts((o) => ({
+                        ...o,
+                        background: v ? "white" : "transparent",
+                      }))
+                    }
+                  />
+                  {t("White background")}
+                </label>
+              )}
             </div>
 
             {games.length === 0 ? (
@@ -371,18 +416,26 @@ export function CutSheetDialog({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {t(
-                "Cyan = the cut line (cut.svg). The .zip has the full-bleed print PNG and the matching SVG; the README lists the exact print size. Fits the Cricut print area ({w}×{h} mm). Print at 100 %.",
-                { w: PRINT_W_MM, h: PRINT_H_MM },
-              )}
+              {wmd
+                ? t(
+                    "Cyan = the “kiss_cut” contour. The PDF is one sheet, {w}×{h} mm incl. a 2 mm outer bleed, CMYK image + magenta spot cut line — upload it as the print data. Order the sheet at this exact size.",
+                    {
+                      w: result.pages[0].widthMM.toFixed(1),
+                      h: result.pages[0].heightMM.toFixed(1),
+                    },
+                  )
+                : t(
+                    "Cyan = the cut line (cut.svg). The .zip has the full-bleed print PNG and the matching SVG; the README lists the exact print size. Fits the Cricut print area ({w}×{h} mm). Print at 100 %.",
+                    { w: PRINT_W_MM, h: PRINT_H_MM },
+                  )}
             </p>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setPhase("pick")}>
                 {t("Back to selection")}
               </Button>
-              <Button size="sm" onClick={download}>
-                {t("Download .zip (print + cut)")}
+              <Button size="sm" onClick={() => void download()}>
+                {wmd ? t("Download PDF") : t("Download .zip (print + cut)")}
               </Button>
             </div>
           </>

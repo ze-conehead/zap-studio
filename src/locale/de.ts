@@ -365,7 +365,18 @@ export const de: Record<string, string> = {
   "This card": "Diese Karte",
   "Multiple cards": "Mehrere Karten",
   "Cut sheet for Cricut …": "Schneidebogen für Cricut …",
+  "Print / cut sheet (Cricut · wir-machen-druck) …":
+    "Druck-/Schneidebogen (Cricut · wir-machen-druck) …",
   "Cut sheet for Cricut": "Schneidebogen für Cricut",
+  "Sticker sheet for wir-machen-druck.de":
+    "Stickerbogen für wir-machen-druck.de",
+  "Cricut Explore (Print then Cut)": "Cricut Explore (Print then Cut)",
+  "wir-machen-druck.de (print PDF)": "wir-machen-druck.de (Druck-PDF)",
+  "Builds a single print-ready PDF: every design on one sheet at real size, each card full-bleed, with a 2 mm outer bleed and a “kiss_cut” contour (100 % magenta spot colour) around each card — the cut line their production expects.":
+    "Erstellt ein einzelnes druckfertiges PDF: alle Designs auf einem Bogen in Originalgröße, jede Karte mit vollem Anschnitt, 2 mm Außen-Anschnitt und eine „kiss_cut“-Kontur (100 % Magenta-Sonderfarbe) um jede Karte – die Schnittlinie, die deren Produktion erwartet.",
+  "Cyan = the “kiss_cut” contour. The PDF is one sheet, {w}×{h} mm incl. a 2 mm outer bleed, CMYK image + magenta spot cut line — upload it as the print data. Order the sheet at this exact size.":
+    "Cyan = die „kiss_cut“-Kontur. Das PDF ist ein Bogen, {w}×{h} mm inkl. 2 mm Außen-Anschnitt, CMYK-Bild + Magenta-Sonderfarben-Schnittlinie – als Druckdaten hochladen. Den Bogen in exakt dieser Größe bestellen.",
+  "Download PDF": "PDF herunterladen",
   "Packs the finished designs onto {w} DPI sheets at real size — each card printed full-bleed — plus a matching SVG that cuts each card at its rounded trim edge. Print at 100 %, then Print then Cut on the Cricut.":
     "Packt die fertigen Designs in Originalgröße auf {w}-DPI-Bögen – jede Karte mit vollem Anschnitt gedruckt – plus ein passendes SVG, das jede Karte an der abgerundeten Schnittkante schneidet. Mit 100 % drucken, dann am Cricut „Print then Cut“.",
   Gap: "Abstand",

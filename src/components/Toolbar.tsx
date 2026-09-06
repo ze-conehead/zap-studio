@@ -299,7 +299,7 @@ export function Toolbar({
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setCutSheetOpen(true)}>
-              {t("Cut sheet for Cricut …")}
+              {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t("Project file")}</DropdownMenuLabel>

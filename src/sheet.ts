@@ -94,19 +94,36 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
   return out;
 }
 
+export type SheetTarget = "cricut" | "wmd";
+
+// Outer bleed added around the whole wir-machen-druck sheet.
+export const WMD_BLEED_MM = 2;
+
 export interface SheetOptions {
   gapMM: number; // blank space between the full-bleed cards
   background: "transparent" | "white";
+  target: SheetTarget;
 }
 
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   gapMM: 3,
   background: "transparent",
+  target: "cricut",
 };
+
+export interface CutRect {
+  xMM: number; // from the page's top-left (incl. outer bleed)
+  yMM: number;
+  wMM: number;
+  hMM: number;
+  rMM: number;
+}
 
 export interface SheetPage {
   dataUrl: string;
   cutSvg: string; // matching cut line: one rounded rect (trim edge) per card
+  cutRects: CutRect[];
+  bleedMM: number; // outer sheet bleed (wir-machen-druck) / 0 for Cricut
   count: number; // cards on this page
   widthMM: number;
   heightMM: number;
@@ -135,21 +152,34 @@ export async function composeSheet(
 ): Promise<SheetResult> {
   if (!cardImages.length) throw new Error("no cards");
 
+  const wmd = opts.target === "wmd";
   const gap = Math.max(0, opts.gapMM) * PX_PER_MM;
   // Each printed cell is the whole card canvas — trim plus the full bleed on
   // every side, always visible.
   const cellW = CANVAS.w;
   const cellH = CANVAS.h;
+  const outerBleed = wmd ? WMD_BLEED_MM * PX_PER_MM : 0;
+  const whiteBg = wmd || opts.background === "white";
 
-  const printW = PRINT_W_MM * PX_PER_MM;
-  const printH = PRINT_H_MM * PX_PER_MM;
-  const cols = Math.max(0, Math.floor((printW + gap) / (cellW + gap)));
-  const rows = Math.max(0, Math.floor((printH + gap) / (cellH + gap)));
-  if (cols < 1 || rows < 1) {
-    throw new Error("card-too-big");
+  let cols: number;
+  let rows: number;
+  let perPage: number;
+  let pageCount: number;
+  if (wmd) {
+    // One sheet, free size — a roughly square grid of every card.
+    cols = Math.max(1, Math.ceil(Math.sqrt(cardImages.length)));
+    rows = Math.ceil(cardImages.length / cols);
+    perPage = cardImages.length;
+    pageCount = 1;
+  } else {
+    const printW = PRINT_W_MM * PX_PER_MM;
+    const printH = PRINT_H_MM * PX_PER_MM;
+    cols = Math.floor((printW + gap) / (cellW + gap));
+    rows = Math.floor((printH + gap) / (cellH + gap));
+    if (cols < 1 || rows < 1) throw new Error("card-too-big");
+    perPage = cols * rows;
+    pageCount = Math.ceil(cardImages.length / perPage);
   }
-  const perPage = cols * rows;
-  const pageCount = Math.ceil(cardImages.length / perPage);
 
   const imgs = await Promise.all(cardImages.map(loadImage));
   const pages: SheetPage[] = [];
@@ -163,30 +193,33 @@ export async function composeSheet(
   for (let p = 0; p < pageCount; p++) {
     const slice = imgs.slice(p * perPage, p * perPage + perPage);
     const pcols = Math.min(cols, slice.length);
-    const prows = Math.ceil(slice.length / cols);
-    const pageW = Math.round(pcols * cellW + (pcols - 1) * gap);
-    const pageH = Math.round(prows * cellH + (prows - 1) * gap);
-    const cutRects: string[] = [];
+    const prows = Math.ceil(slice.length / pcols);
+    const pageW = Math.round(pcols * cellW + (pcols - 1) * gap + outerBleed * 2);
+    const pageH = Math.round(prows * cellH + (prows - 1) * gap + outerBleed * 2);
+    const cutRects: CutRect[] = [];
 
     const canvas = document.createElement("canvas");
     canvas.width = pageW;
     canvas.height = pageH;
     const ctx = canvas.getContext("2d")!;
-    if (opts.background === "white") {
+    if (whiteBg) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, pageW, pageH);
     }
 
     slice.forEach((img, i) => {
-      const cx = (i % cols) * (cellW + gap);
-      const cy = Math.floor(i / cols) * (cellH + gap);
+      const cx = outerBleed + (i % pcols) * (cellW + gap);
+      const cy = outerBleed + Math.floor(i / pcols) * (cellH + gap);
       // Print: the full-bleed card, unclipped.
       ctx.drawImage(img, cx, cy, cellW, cellH);
       // Cut: the rounded trim edge inside the bleed.
-      cutRects.push(
-        `<rect x="${mm(cx + TRIM_RECT.x)}" y="${mm(cy + TRIM_RECT.y)}" ` +
-          `width="${trimWmm}" height="${trimHmm}" rx="${rMm}" ry="${rMm}"/>`,
-      );
+      cutRects.push({
+        xMM: mm(cx + TRIM_RECT.x),
+        yMM: mm(cy + TRIM_RECT.y),
+        wMM: trimWmm,
+        hMM: trimHmm,
+        rMM: rMm,
+      });
     });
 
     const pageWmm = mm(pageW);
@@ -194,12 +227,20 @@ export async function composeSheet(
     const cutSvg =
       `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWmm}mm" height="${pageHmm}mm" ` +
       `viewBox="0 0 ${pageWmm} ${pageHmm}">` +
-      `<g fill="none" stroke="#22d3ee" stroke-width="0.2">${cutRects.join("")}</g>` +
-      `</svg>`;
+      `<g fill="none" stroke="#22d3ee" stroke-width="0.2">` +
+      cutRects
+        .map(
+          (r) =>
+            `<rect x="${r.xMM}" y="${r.yMM}" width="${r.wMM}" height="${r.hMM}" rx="${r.rMM}" ry="${r.rMM}"/>`,
+        )
+        .join("") +
+      `</g></svg>`;
 
     pages.push({
       dataUrl: canvas.toDataURL("image/png"),
       cutSvg,
+      cutRects,
+      bleedMM: mm(outerBleed),
       count: slice.length,
       widthMM: pageWmm,
       heightMM: pageHmm,
