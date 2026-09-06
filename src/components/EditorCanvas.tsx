@@ -104,11 +104,19 @@ export function withMainMask(
 
 // The fill a background layer actually paints. `inherit` (front game cards)
 // lets it pull the fill from the console / global template instead.
+// `fallback` is painted when the face has no background layer at all — a
+// console or card with none inherits the global background.
 export function effectiveBgFill(
   bgLayer: TBackgroundLayer | undefined,
-  opts: { inherit: boolean; consoleBg?: CardBackground; globalBg?: CardBackground },
+  opts: {
+    inherit: boolean;
+    fallback?: CardBackground;
+    consoleBg?: CardBackground;
+    globalBg?: CardBackground;
+  },
 ): CardBackground | null {
-  if (!bgLayer || !bgLayer.visible) return null;
+  if (!bgLayer) return opts.fallback ?? null;
+  if (!bgLayer.visible) return null;
   if (opts.inherit) {
     if (bgLayer.source === "global") return opts.globalBg ?? null;
     if (bgLayer.source === "console") return opts.consoleBg ?? null;
@@ -266,10 +274,12 @@ function FaceStage({
   const bgLayer = faceLayers.find(isBackground);
   const layerList = faceLayers.filter((l) => !isBackground(l));
 
-  // Front game cards may inherit the background fill from a template; the
-  // back and templates always use their own.
+  // Front game cards may inherit the background fill from a template; a card
+  // or console template with no background layer at all falls back to the
+  // global background. The back face and the global template use their own.
   const bg = effectiveBgFill(bgLayer, {
     inherit: !back && !project.isTemplate,
+    fallback: back || project.isGlobalTemplate ? undefined : globalBg,
     consoleBg,
     globalBg,
   });

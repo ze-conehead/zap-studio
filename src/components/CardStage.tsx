@@ -31,6 +31,7 @@ export function CardStage({
   const content = card.project.layers.filter((l) => !isBackground(l));
   const bg = effectiveBgFill(bgLayer, {
     inherit: !card.project.isTemplate,
+    fallback: card.project.isGlobalTemplate ? undefined : card.globalBg,
     consoleBg: card.consoleBg,
     globalBg: card.globalBg,
   });
