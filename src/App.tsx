@@ -6,6 +6,7 @@ import { DemoMode } from "./components/DemoMode";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
 import { GameTree } from "./components/GameTree";
 import { Inspector } from "./components/Inspector";
+import { FaceControl } from "./components/FaceControl";
 import { LayerList } from "./components/LayerList";
 import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
@@ -310,6 +311,7 @@ function Shell({
           guides={guides}
         />
         <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
+          <FaceControl />
           <LayerList mainMask={mainMask} />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3">

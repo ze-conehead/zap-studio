@@ -9,7 +9,6 @@ import {
   ListPlus,
   MoveHorizontal,
   MoveVertical,
-  Plus,
   Redo2,
   Ruler,
   Shapes,
@@ -20,7 +19,6 @@ import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -156,33 +154,6 @@ export function Toolbar({
         >
           {state.dirty ? "●" : "○"}
         </span>
-        {getFormat().hasBack && project.back ? (
-          <div className="flex overflow-hidden rounded-md border text-xs font-medium">
-            {(["front", "back"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => dispatch({ type: "SET_SIDE", side: s })}
-                className={cn(
-                  "px-2.5 py-1",
-                  side === s
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                {s === "front" ? t("Front") : t("Back")}
-              </button>
-            ))}
-          </div>
-        ) : getFormat().hasBack ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7"
-            onClick={() => dispatch({ type: "ADD_BACK" })}
-          >
-            <Plus /> {t("Add back side")}
-          </Button>
-        ) : null}
       </div>
 
       {project.isGlobalTemplate && (
