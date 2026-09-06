@@ -104,6 +104,12 @@
     border-color: var(--border);
     outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
   }
+  /* Radix poppers (Select / Dropdown / Popover / Tooltip) pin their wrapper
+     to z-index 50; lift it above the app's full-screen overlays (demo mode
+     z-55, 3D preview z-60) so their menus are visible and clickable there. */
+  [data-radix-popper-content-wrapper] {
+    z-index: 70 !important;
+  }
   html,
   body,
   #root {
