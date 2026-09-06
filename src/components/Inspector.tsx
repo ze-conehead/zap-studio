@@ -132,13 +132,17 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
     );
   }
 
-  // Meta badges are named after their fixed kind and can't be masked — the
-  // rename field and the alpha-mask controls don't apply to them.
+  // Meta badges are named after their fixed kind and can't be masked; the
+  // shared "Main alpha mask" is a fixed role — neither needs the rename
+  // field or the mask controls. Shapes resize via width/height (ShapeProps)
+  // so their corner radius stays constant — no group-scaling "Size %".
   const isMeta = isMetaBadge(selected);
+  const isMainMask = !!selected.mainMask;
+  const isShapeSel = isShape(selected);
 
   return (
     <Panel title={t("Properties")}>
-      {!isMeta && (
+      {!isMeta && !isMainMask && (
         <Field label={t("Name")}>
           <Input
             value={selected.name}
@@ -156,11 +160,13 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
           value={round(selected.rotation)}
           onChange={(v) => patch({ rotation: v })}
         />
-        <NumberField
-          label={t("Size %")}
-          value={round(selected.scaleX * 100)}
-          onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
-        />
+        {!isShapeSel && (
+          <NumberField
+            label={t("Size %")}
+            value={round(selected.scaleX * 100)}
+            onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
+          />
+        )}
       </div>
 
       <SliderField
@@ -191,8 +197,8 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         </Button>
       </div>
 
-      <MainRoleControls patch={patch} />
-      {!isMeta && <MaskControls patch={patch} />}
+      {!isMainMask && <MainRoleControls patch={patch} />}
+      {!isMeta && !isMainMask && <MaskControls patch={patch} />}
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}

@@ -608,6 +608,28 @@ function LayerNode({
       ? () => applyGroup(true)
       : () => {
           const n = ref.current!;
+          // Shapes bake the resize into width/height and keep scale at 1, so
+          // a rounded corner stays a true constant radius instead of being
+          // stretched by a non-uniform node scale.
+          if (layer.type === "shape") {
+            const sx = n.scaleX();
+            const sy = n.scaleY();
+            n.scaleX(1);
+            n.scaleY(1);
+            onChange(
+              {
+                x: n.x(),
+                y: n.y(),
+                rotation: n.rotation(),
+                scaleX: 1,
+                scaleY: 1,
+                width: Math.max(4, layer.width * sx),
+                height: Math.max(4, layer.height * sy),
+              },
+              true,
+            );
+            return;
+          }
           onChange(
             {
               x: n.x(),
