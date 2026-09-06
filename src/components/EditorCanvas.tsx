@@ -25,7 +25,8 @@ import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
 import { gradientFill, noiseTile } from "../background";
-import { isBackground } from "../factory";
+import { isBackground, makeImageLayer } from "../factory";
+import { fileToLayerSource } from "../image";
 import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../card";
 import { t, useT } from "../i18n";
 import type { GameMeta } from "../gamelist";
@@ -189,6 +190,13 @@ export function EditorCanvas({
     <div
       className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#161617] p-6"
       ref={wrapRef}
+      // Swallow file drops that miss a face so the browser doesn't open them.
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
     >
       <div className="flex items-start gap-6">
         <FaceStage
@@ -320,6 +328,38 @@ function FaceStage({
   const cropped = !showBleed;
   const viewW = (cropped ? TRIM_RECT.w : CANVAS.w) * scale;
   const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
+
+  // Drag image files straight from the OS onto a face → added as plain
+  // image layers at the drop point (never the card's main image).
+  const [dropActive, setDropActive] = useState(false);
+  const dropImages = async (e: React.DragEvent<HTMLDivElement>) => {
+    const files = Array.from(e.dataTransfer.files).filter((f) =>
+      f.type.startsWith("image/"),
+    );
+    if (!files.length) return;
+    if (!active) dispatch({ type: "SET_SIDE", side });
+
+    const boxRect = e.currentTarget.getBoundingClientRect();
+    let cx = (cropped ? TRIM_RECT.x : 0) + (e.clientX - boxRect.left) / scale;
+    let cy = (cropped ? TRIM_RECT.y : 0) + (e.clientY - boxRect.top) / scale;
+    for (const file of files) {
+      try {
+        const img = await fileToLayerSource(file);
+        dispatch({
+          type: "ADD_LAYER",
+          layer: {
+            ...makeImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") }),
+            x: cx,
+            y: cy,
+          },
+        });
+        cx += 24;
+        cy += 24;
+      } catch (err) {
+        alert((err as Error).message);
+      }
+    }
+  };
   const guidesEditable =
     !back && !!project.isGlobalTemplate && !guides.state.locked;
 
@@ -360,15 +400,34 @@ function FaceStage({
       <div
         className={cn(
           "relative overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]",
-          caption &&
-            (active
-              ? "outline outline-2 outline-offset-2 outline-primary"
-              : "outline outline-1 outline-offset-2 outline-white/10"),
+          dropActive
+            ? "outline-dashed outline-2 outline-offset-2 outline-primary"
+            : caption &&
+                (active
+                  ? "outline outline-2 outline-offset-2 outline-primary"
+                  : "outline outline-1 outline-offset-2 outline-white/10"),
         )}
         style={{
           width: viewW,
           height: viewH,
           borderRadius: cropped ? CORNER_RADIUS_PX * scale : 3,
+        }}
+        onDragOver={(e) => {
+          if (!e.dataTransfer.types.includes("Files")) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setDropActive(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setDropActive(false);
+          }
+        }}
+        onDrop={(e) => {
+          if (!e.dataTransfer.types.includes("Files")) return;
+          e.preventDefault();
+          setDropActive(false);
+          void dropImages(e);
         }}
       >
         <Stage
