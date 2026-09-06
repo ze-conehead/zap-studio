@@ -19,6 +19,10 @@ interface State {
   selectedId: string | null;
   past: Project[];
   future: Project[];
+  // The project as it was before the current run of transient (history:false)
+  // edits — a drag, a slider. The next committed edit pushes THIS to history
+  // instead of the already-moved project, so one undo reverts the whole drag.
+  pending: Project | null;
   showBleed: boolean;
   dirty: boolean;
 }
@@ -50,9 +54,21 @@ const HISTORY_LIMIT = 60;
 function commit(state: State, project: Project): State {
   return {
     ...state,
-    past: [...state.past, state.project].slice(-HISTORY_LIMIT),
+    past: [...state.past, state.pending ?? state.project].slice(-HISTORY_LIMIT),
     future: [],
     project,
+    pending: null,
+    dirty: true,
+  };
+}
+
+// A transient (history:false) edit: update the project but remember the
+// pre-edit baseline so the eventual commit can undo the whole run at once.
+function touch(state: State, project: Project): State {
+  return {
+    ...state,
+    project,
+    pending: state.pending ?? state.project,
     dirty: true,
   };
 }
@@ -82,6 +98,7 @@ function reducer(state: State, action: Action): State {
         selectedId: null,
         past: [],
         future: [],
+        pending: null,
         dirty: false,
       };
 
@@ -174,9 +191,7 @@ function reducer(state: State, action: Action): State {
         );
       }
       const p = write(project, next);
-      return action.history === false
-        ? { ...state, project: p, dirty: true }
-        : commit(state, p);
+      return action.history === false ? touch(state, p) : commit(state, p);
     }
 
     case "PATCH_LAYERS": {
@@ -185,9 +200,7 @@ function reducer(state: State, action: Action): State {
         map.has(l.id) ? ({ ...l, ...map.get(l.id) } as Layer) : l,
       );
       const p = write(project, next);
-      return action.history === false
-        ? { ...state, project: p, dirty: true }
-        : commit(state, p);
+      return action.history === false ? touch(state, p) : commit(state, p);
     }
 
     case "DELETE_LAYER": {
@@ -234,6 +247,17 @@ function reducer(state: State, action: Action): State {
       return { ...state, [action.key]: !state[action.key] };
 
     case "UNDO": {
+      // A transient run still open (mid-drag, no commit yet): just drop it
+      // back to its baseline — nothing to redo.
+      if (state.pending) {
+        return {
+          ...state,
+          project: state.pending,
+          side: state.pending.back ? state.side : "front",
+          pending: null,
+          dirty: true,
+        };
+      }
       if (!state.past.length) return state;
       const past = [...state.past];
       const prev = past.pop()!;
@@ -256,6 +280,7 @@ function reducer(state: State, action: Action): State {
         future: rest,
         project: next,
         side: next.back ? state.side : "front",
+        pending: null,
         dirty: true,
       };
     }
@@ -286,6 +311,7 @@ export function StoreProvider({
     selectedId: null,
     past: [],
     future: [],
+    pending: null,
     showBleed: false,
     dirty: false,
   });
