@@ -434,15 +434,6 @@ export function GameTree({
         </ul>
       </ScrollArea>
 
-      <p className="border-t px-3 py-3 text-xs text-muted-foreground">
-        <strong className="text-foreground">{t("Console")}</strong>
-        {t(" click: shared template. ")}
-        <strong className="text-foreground">{t("Game")}</strong>
-        {t(" click: its design. ")}
-        <strong className="text-foreground">{t("Right-click")}</strong>
-        {t(": add / rename / remove.")}
-      </p>
-
       {menu && (
         <ContextMenu
           x={menu.x}

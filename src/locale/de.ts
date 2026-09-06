@@ -158,10 +158,6 @@ export const de: Record<string, string> = {
   "{title} (right-click: rename / remove)": "{title} (Rechtsklick: umbenennen / entfernen)",
   Console: "Konsole",
   Game: "Spiel",
-  "Right-click": "Rechtsklick",
-  " click: shared template. ": " anklicken: gemeinsame Vorlage. ",
-  " click: its design. ": " anklicken: dessen Design. ",
-  ": add / rename / remove.": ": hinzufügen / umbenennen / entfernen.",
 
   // ── Inspector ────────────────────────────────────────────────────────────
   "Console template": "Konsolen-Vorlage",
