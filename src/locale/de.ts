@@ -271,6 +271,7 @@ export const de: Record<string, string> = {
 
   // ── LayerList ────────────────────────────────────────────────────────────
   Layers: "Ebenen",
+  "Editable only in “All consoles”": "Nur unter „Alle Konsolen“ bearbeitbar",
   "No layers yet. Add text, an image or a shape above.":
     "Noch keine Ebenen. Füge oben Text, ein Bild oder eine Form hinzu.",
   Hide: "Ausblenden",

@@ -523,6 +523,9 @@ function FaceStage({
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} />
             <PanelGuides />
+            {!back && !project.isGlobalTemplate && mainMask && (
+              <MainMaskOutline mask={mainMask} />
+            )}
           </Layer>
 
           {guides.state.on && guides.state.items.length > 0 && (
@@ -1246,6 +1249,47 @@ function RoundedCardOutline() {
       strokeWidth={1}
       opacity={0.3}
     />
+  );
+}
+
+// The shared "Main alpha mask" from "All consoles", drawn as an outline for
+// reference on console templates and game cards (it's an editable shape only
+// on the global template). Never painted into an export (sits in a guide
+// layer) and not interactive.
+function MainMaskOutline({ mask }: { mask: TLayer }) {
+  if (mask.type !== "shape") return null;
+  const w = mask.width;
+  const h = mask.height;
+  const line = {
+    stroke: "#a78bfa",
+    strokeWidth: 1.5,
+    dash: [7, 5] as number[],
+    listening: false as const,
+  };
+  return (
+    <Group
+      x={mask.x}
+      y={mask.y}
+      rotation={mask.rotation}
+      scaleX={mask.scaleX}
+      scaleY={mask.scaleY}
+      listening={false}
+    >
+      {mask.shape === "circle" ? (
+        <Ellipse radiusX={w / 2} radiusY={h / 2} {...line} />
+      ) : (
+        <Rect
+          x={-w / 2}
+          y={-h / 2}
+          width={w}
+          height={h}
+          cornerRadius={
+            mask.shape === "capsule" ? Math.min(w, h) / 2 : mask.cornerRadius
+          }
+          {...line}
+        />
+      )}
+    </Group>
   );
 }
 

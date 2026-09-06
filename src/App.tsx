@@ -126,7 +126,9 @@ export default function App() {
         overlay,
         consoleBg,
         globalBg,
-        mainMask: project.isTemplate ? undefined : mainMask,
+        // Editable in place on "All consoles"; a reference outline everywhere
+        // else (console templates + game cards).
+        mainMask: project.isGlobalTemplate ? undefined : mainMask,
       });
     })();
     return () => {

@@ -73,6 +73,22 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
       )}
 
       <ul className="flex flex-col gap-1">
+        {mainMask &&
+          !state.project.isGlobalTemplate &&
+          state.side !== "back" && (
+            <li
+              className="flex items-center gap-1.5 rounded-md border border-dashed bg-card px-1 py-1 text-sm text-muted-foreground"
+              title={t("Editable only in “All consoles”")}
+            >
+              <span className="size-3.5 shrink-0" />
+              <Crop className="size-3.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">
+                {t("Main alpha mask")}
+              </span>
+              <Lock className="mr-1 size-3.5 shrink-0 opacity-60" />
+            </li>
+          )}
+
         {layers.map((l) => {
           const active = l.id === state.selectedId;
           const bg = isBackground(l);
