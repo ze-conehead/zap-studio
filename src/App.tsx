@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CANVAS, TRIM_RECT } from "./card";
+import { CANVAS } from "./card";
 import { CardPreview } from "./components/CardPreview";
 import { DemoMode } from "./components/DemoMode";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
@@ -13,7 +13,6 @@ import { Toolbar } from "./components/Toolbar";
 import {
   GLOBAL_TEMPLATE_ID,
   isBackground,
-  makeTextLayer,
   newConsoleTemplate,
   newGlobalTemplate,
   newProject,
@@ -178,18 +177,10 @@ export default function App() {
       }
     }
 
+    // A fresh game design starts empty — no auto title layer.
     const p = newProject(gameTitle);
     p.gameKey = gameKey;
     p.consoleName = consoleName;
-    p.layers = [
-      {
-        ...makeTextLayer(gameTitle),
-        name: gameTitle,
-        y: TRIM_RECT.y + TRIM_RECT.h * 0.16,
-        width: TRIM_RECT.w * 0.86,
-        fontSize: 40,
-      },
-    ];
     linkGameProject(gameKey, p.id);
     await swap(p);
   };

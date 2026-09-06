@@ -1,4 +1,12 @@
-import { Check, ChevronDown, ChevronRight, Gamepad2, Globe, ListFilter } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Gamepad2,
+  Globe,
+  ListFilter,
+  Plus,
+} from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   Collapsible,
@@ -291,6 +299,16 @@ export function GameTree({
                       <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
                         {countText(games.length, c.games.length)}
                       </span>
+                    </button>
+                    <button
+                      className="mr-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title={t("Add game")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddGame(c.id, c.name);
+                      }}
+                    >
+                      <Plus className="size-3.5" />
                     </button>
                   </div>
 

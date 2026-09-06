@@ -141,6 +141,7 @@ export const de: Record<string, string> = {
   "Filter games: {label}": "Spiele filtern: {label}",
   "Show games": "Spiele anzeigen",
   Add: "Hinzufügen",
+  "Add game": "Spiel hinzufügen",
   Rename: "Umbenennen",
   Remove: "Entfernen",
   Collapse: "Zuklappen",

@@ -3,9 +3,8 @@
 // added as an image layer to that game's sticker design (creating the
 // design if it doesn't exist yet) — the bulk version of "Find cover".
 
-import { TRIM_RECT } from "./card";
 import { getCatalog, gameKeyOf } from "./data/catalog";
-import { fitImageToMask, makeImageLayer, makeTextLayer, newProject } from "./factory";
+import { fitImageToMask, makeImageLayer, newProject } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
@@ -69,16 +68,6 @@ interface ApplyOptions {
   onProgress?: (done: number, total: number) => void;
 }
 
-function titleLayer(gameTitle: string) {
-  return {
-    ...makeTextLayer(gameTitle),
-    name: gameTitle,
-    y: TRIM_RECT.y + TRIM_RECT.h * 0.16,
-    width: TRIM_RECT.w * 0.86,
-    fontSize: 40,
-  };
-}
-
 // Fetches `url`, embeds it and adds it as the main image of `row`'s design
 // on disk — creating and linking the design if it doesn't exist yet. Throws
 // on a failed fetch (CORS, 404, not an image).
@@ -103,7 +92,7 @@ export async function insertCover(
     const p = newProject(row.gameTitle);
     p.gameKey = row.gameKey;
     p.consoleName = row.consoleName;
-    p.layers = [titleLayer(row.gameTitle), layer];
+    p.layers = [layer];
     linkGameProject(row.gameKey, p.id);
     await saveProject(p);
   }
