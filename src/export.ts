@@ -37,10 +37,14 @@ interface ExportOpts {
 export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promise<string> {
   await ensureFontsLoaded();
 
-  // Guides (bleed/safe outlines + user guide lines) never belong in the file.
+  // Guides (bleed/safe outlines + user guide lines) and the selection
+  // transformer never belong in the file.
   const guideLayers = stage.find(".guides");
   const wasVisible = guideLayers.map((l) => l.visible());
   guideLayers.forEach((l) => l.visible(false));
+  const transformers = stage.find("Transformer");
+  const trWasVisible = transformers.map((n) => n.visible());
+  transformers.forEach((n) => n.visible(false));
   stage.draw();
 
   const pixelRatio = CANVAS.w / stageWidth;
@@ -48,6 +52,7 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
   // full is CANVAS.w x CANVAS.h (trim + bleed on every side)
 
   guideLayers.forEach((l, i) => l.visible(wasVisible[i]));
+  transformers.forEach((n, i) => n.visible(trWasVisible[i]));
   stage.draw();
 
   if (mode === "bleed") return full.toDataURL("image/png");

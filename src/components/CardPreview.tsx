@@ -10,10 +10,6 @@ import type { CanvasHandle } from "./EditorCanvas";
 
 const START = { x: -10, y: -20 };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const raf2 = () =>
-  new Promise<void>((r) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => r())),
-  );
 
 export function CardPreview({
   canvas,
@@ -23,7 +19,7 @@ export function CardPreview({
   onClose: () => void;
 }) {
   const t = useT();
-  const { state, dispatch } = useStore();
+  const { state } = useStore();
   const hasBack = !!state.project.back;
   const [img, setImg] = useState<string | null>(null);
   const [backImg, setBackImg] = useState<string | null>(null);
@@ -34,44 +30,26 @@ export function CardPreview({
   const drag = useRef<{ x: number; y: number; rx: number; ry: number } | null>(null);
 
   useEffect(() => {
-    const stage = canvas.current?.getStage();
     const w = canvas.current?.getStageWidth() ?? 0;
-    if (!stage || !w) {
+    const front = canvas.current?.getStage("front");
+    if (!front || !w) {
       setErr(t("No card to show."));
       return;
     }
-    const capture = () => exportPng({ stage, stageWidth: w, mode: "trim" });
-
-    // Nothing to toggle: capture the visible front straight away.
-    if (!hasBack && state.side === "front") {
-      capture().then(setImg).catch((e) => setErr((e as Error).message));
-      return;
-    }
-
-    // Flip the editor to each face just long enough to grab a frame, then
-    // put the view back exactly as the user left it.
-    const originalSide = state.side;
-    const originalSelected = state.selectedId;
+    // Both faces are mounted at once now — grab each stage directly.
     let cancelled = false;
-    (async () => {
-      try {
-        dispatch({ type: "SET_SIDE", side: "front" });
-        await raf2();
-        if (cancelled) return;
-        setImg(await capture());
-        if (hasBack) {
-          dispatch({ type: "SET_SIDE", side: "back" });
-          await raf2();
-          if (cancelled) return;
-          setBackImg(await capture());
-        }
-      } catch (e) {
-        if (!cancelled) setErr((e as Error).message);
-      } finally {
-        dispatch({ type: "SET_SIDE", side: originalSide });
-        if (originalSelected) dispatch({ type: "SELECT", id: originalSelected });
+    const fail = (e: unknown) => !cancelled && setErr((e as Error).message);
+    exportPng({ stage: front, stageWidth: w, mode: "trim" })
+      .then((d) => !cancelled && setImg(d))
+      .catch(fail);
+    if (hasBack) {
+      const b = canvas.current?.getStage("back");
+      if (b) {
+        exportPng({ stage: b, stageWidth: w, mode: "trim" })
+          .then((d) => !cancelled && setBackImg(d))
+          .catch(fail);
       }
-    })();
+    }
     return () => {
       cancelled = true;
     };

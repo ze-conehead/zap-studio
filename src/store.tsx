@@ -27,7 +27,7 @@ interface State {
 type Action =
   | { type: "LOAD"; project: Project }
   | { type: "RENAME"; name: string }
-  | { type: "SET_SIDE"; side: CardSide }
+  | { type: "SET_SIDE"; side: CardSide; selectId?: string | null }
   | { type: "ADD_BACK" }
   | { type: "REMOVE_BACK" }
   | { type: "ADD_LAYER"; layer: Layer }
@@ -91,7 +91,11 @@ function reducer(state: State, action: Action): State {
 
     case "SET_SIDE":
       if (action.side === "back" && !project.back) return state;
-      return { ...state, side: action.side, selectedId: null };
+      return {
+        ...state,
+        side: action.side,
+        selectedId: action.selectId !== undefined ? action.selectId : null,
+      };
 
     case "ADD_BACK":
       if (!getFormat().hasBack) return state;

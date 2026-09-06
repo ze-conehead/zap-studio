@@ -1,5 +1,13 @@
 import Konva from "konva";
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Trash2 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Circle,
   Ellipse,
@@ -13,6 +21,7 @@ import {
   Text,
   Transformer,
 } from "react-konva";
+import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
 import { gradientFill, noiseTile } from "../background";
@@ -40,6 +49,7 @@ import { useStore } from "../store";
 import type {
   BackgroundLayer as TBackgroundLayer,
   CardBackground,
+  CardSide,
   ImageLayer as TImageLayer,
   Layer as TLayer,
   MetaBadgeLayer as TMetaBadgeLayer,
@@ -51,7 +61,8 @@ import type {
 import { fontStyleString } from "../textUtil";
 
 export interface CanvasHandle {
-  getStage: () => Konva.Stage | null;
+  // `side` omitted → the currently active face.
+  getStage: (side?: CardSide) => Konva.Stage | null;
   getStageWidth: () => number;
 }
 
@@ -121,15 +132,136 @@ export function EditorCanvas({
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
-  const { project, side, selectedId, showBleed, showSafe } = state;
-  const back = side === "back";
+  const { project, side, showBleed, showSafe } = state;
   // Re-render whenever a gamelist.xml is uploaded/removed, even without
   // navigating away, so MetaBadge layers stay live.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
   const badgeMeta = resolveBadgeMeta(project);
 
-  // The active face's stack, split into the (pinned, bottom) background layer
-  // and everything else.
+  const hasBack = !!project.back;
+  const nFaces = hasBack ? 2 : 1;
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const stages = useRef<Record<CardSide, Konva.Stage | null>>({
+    front: null,
+    back: null,
+  });
+  const [scale, setScale] = useState(0.5);
+
+  const registerFront = useCallback((s: Konva.Stage | null) => {
+    stages.current.front = s;
+  }, []);
+  const registerBack = useCallback((s: Konva.Stage | null) => {
+    stages.current.back = s;
+  }, []);
+
+  // Fit both faces + the gap into the canvas area.
+  const measure = useCallback(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const pad = 48;
+    const gap = 24;
+    const availW = el.clientWidth - pad - gap * (nFaces - 1);
+    const availH = el.clientHeight - pad;
+    setScale(
+      Math.max(
+        0.12,
+        Math.min(availW / (CANVAS.w * nFaces), availH / CANVAS.h),
+      ),
+    );
+  }, [nFaces]);
+  useLayoutEffect(() => {
+    measure();
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  handleRef.current = {
+    getStage: (s) => stages.current[s ?? side],
+    getStageWidth: () => CANVAS.w * scale,
+  };
+
+  return (
+    <div
+      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#161617] p-6"
+      ref={wrapRef}
+    >
+      <div className="flex items-start gap-6">
+        <FaceStage
+          side="front"
+          active={side === "front"}
+          caption={hasBack}
+          scale={scale}
+          overlay={overlay}
+          consoleBg={consoleBg}
+          globalBg={globalBg}
+          mainMask={mainMask}
+          guides={guides}
+          badgeMeta={badgeMeta}
+          showBleed={showBleed}
+          showSafe={showSafe}
+          registerStage={registerFront}
+        />
+        {hasBack && (
+          <FaceStage
+            side="back"
+            active={side === "back"}
+            caption
+            scale={scale}
+            guides={guides}
+            badgeMeta={badgeMeta}
+            showBleed={showBleed}
+            showSafe={showSafe}
+            onRemove={() => dispatch({ type: "REMOVE_BACK" })}
+            registerStage={registerBack}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// One editable card face. Two of these sit side by side once a back exists;
+// clicking a face (or one of its layers) makes it the active one.
+function FaceStage({
+  side,
+  active,
+  caption,
+  scale,
+  overlay = [],
+  consoleBg,
+  globalBg,
+  mainMask,
+  guides,
+  badgeMeta,
+  showBleed,
+  showSafe,
+  registerStage,
+  onRemove,
+}: {
+  side: CardSide;
+  active: boolean;
+  caption: boolean;
+  scale: number;
+  overlay?: TLayer[];
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
+  mainMask?: TLayer;
+  guides: GuideApi;
+  badgeMeta?: GameMeta;
+  showBleed: boolean;
+  showSafe: boolean;
+  registerStage: (s: Konva.Stage | null) => void;
+  onRemove?: () => void;
+}) {
+  const t = useT();
+  const { state, dispatch } = useStore();
+  const { project, selectedId } = state;
+  const back = side === "back";
+
   const faceLayers = back ? project.back?.layers ?? [] : project.layers;
   const bgLayer = faceLayers.find(isBackground);
   const layerList = faceLayers.filter((l) => !isBackground(l));
@@ -147,65 +279,80 @@ export function EditorCanvas({
     : withMainMask(project, layerList, mainMask);
   const overlayLayers = back ? [] : overlay;
 
-  const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const nodeRefs = useRef(new Map<string, Konva.Node>());
-  const [scale, setScale] = useState(0.5);
 
-  // Fit stage to container width.
-  useLayoutEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const pad = 48;
-      const availW = el.clientWidth - pad;
-      const availH = el.clientHeight - pad;
-      setScale(Math.max(0.15, Math.min(availW / CANVAS.w, availH / CANVAS.h)));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  useEffect(() => {
+    registerStage(stageRef.current);
+    return () => registerStage(null);
+  }, [registerStage]);
 
-  handleRef.current = {
-    getStage: () => stageRef.current,
-    getStageWidth: () => CANVAS.w * scale,
-  };
-
-  // Keep transformer bound to the selected node.
+  // Bind the transformer to the selected node — only on the active face.
   useEffect(() => {
     const tr = trRef.current;
     if (!tr) return;
-    const node = selectedId ? nodeRefs.current.get(selectedId) : undefined;
+    const node =
+      active && selectedId ? nodeRefs.current.get(selectedId) : undefined;
     const layer = layerList.find((l) => l.id === selectedId);
-    tr.nodes(node && layer && !layer.locked ? [node] : []);
+    tr.nodes(active && node && layer && !layer.locked ? [node] : []);
     tr.getLayer()?.batchDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, side, project]);
+  }, [selectedId, active, project, side]);
 
-  const stageW = CANVAS.w * scale;
-  const stageH = CANVAS.h * scale;
-
+  const selectLayer = (id: string) =>
+    dispatch(
+      active
+        ? { type: "SELECT", id }
+        : { type: "SET_SIDE", side, selectId: id },
+    );
   const deselect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (e.target === e.target.getStage() || e.target.name() === "bg") {
-      dispatch({ type: "SELECT", id: null });
+      dispatch(
+        active
+          ? { type: "SELECT", id: null }
+          : { type: "SET_SIDE", side, selectId: null },
+      );
     }
   };
 
-  // In the clean preview we crop the on-screen view to the trim box (with
-  // rounded card corners). The Konva stage itself stays full-bleed size so
-  // exports are unaffected.
+  const stageW = CANVAS.w * scale;
+  const stageH = CANVAS.h * scale;
   const cropped = !showBleed;
   const viewW = (cropped ? TRIM_RECT.w : CANVAS.w) * scale;
   const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
+  const guidesEditable = !back && !!project.isGlobalTemplate;
 
   return (
-    <div
-      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#161617] p-6"
-      ref={wrapRef}
-    >
+    <div className="flex flex-col">
+      {caption && (
+        <div className="mb-1.5 flex h-5 items-center justify-between text-xs font-medium">
+          <span className={cn(active ? "text-foreground" : "text-muted-foreground")}>
+            {back ? t("Back") : t("Front")}
+          </span>
+          {onRemove && (
+            <button
+              className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+              title={t("Remove back side")}
+              onClick={() => {
+                if (window.confirm(t("Remove the back side? Its layers are deleted."))) {
+                  onRemove();
+                }
+              }}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       <div
-        className="relative overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+        className={cn(
+          "relative overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]",
+          caption &&
+            (active
+              ? "outline outline-2 outline-offset-2 outline-primary"
+              : "outline outline-1 outline-offset-2 outline-white/10"),
+        )}
         style={{
           width: viewW,
           height: viewH,
@@ -243,14 +390,14 @@ export function EditorCanvas({
                   key={layer.id}
                   layer={layer}
                   asMask={asMask}
-                  selected={layer.id === selectedId}
+                  selected={active && layer.id === selectedId}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);
                   }}
-                  onSelect={() => dispatch({ type: "SELECT", id: layer.id })}
+                  onSelect={() => selectLayer(layer.id)}
                   onChange={(patch, history) =>
                     dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history })
                   }
@@ -293,12 +440,12 @@ export function EditorCanvas({
           </Layer>
 
           {guides.state.on && guides.state.items.length > 0 && (
-            <Layer name="guides" listening={!!project.isGlobalTemplate}>
+            <Layer name="guides" listening={guidesEditable}>
               {guides.state.items.map((g) => (
                 <GuideLine
                   key={g.id}
                   guide={g}
-                  readOnly={!project.isGlobalTemplate}
+                  readOnly={!guidesEditable}
                   onMove={(pos) => guides.update(g.id, pos)}
                   onRemove={() => guides.remove(g.id)}
                 />
