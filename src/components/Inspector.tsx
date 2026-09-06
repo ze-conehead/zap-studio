@@ -461,6 +461,15 @@ function BackFacePanel() {
 function GuidesPanel({ guides }: { guides: GuideApi }) {
   const t = useT();
   const { items, on } = guides.state;
+  // Display/entry unit for the position fields. Percent is relative to the
+  // trim box (0 % = top/left trim edge, 100 % = bottom/right); the stored
+  // value stays in px either way, so switching back to mm shows the result.
+  const [unit, setUnit] = useState<"mm" | "%">("mm");
+  const toValue = (g: (typeof items)[number]) =>
+    unit === "mm" ? round(pxToMm(g.pos, g.axis), 1) : round(pxToPct(g.pos, g.axis), 1);
+  const fromValue = (v: number, axis: "x" | "y") =>
+    unit === "mm" ? mmToPxGuide(v, axis) : pctToPxGuide(v, axis);
+
   return (
     <Panel title={t("Guides")}>
       <div className="flex gap-2">
@@ -473,10 +482,25 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
       </div>
 
       {items.length > 0 && (
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
-          {t("Show guides")}
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
+            {t("Show guides")}
+          </label>
+          <div className="flex gap-1">
+            {(["mm", "%"] as const).map((u) => (
+              <Button
+                key={u}
+                variant={unit === u ? "default" : "outline"}
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setUnit(u)}
+              >
+                {u}
+              </Button>
+            ))}
+          </div>
+        </div>
       )}
 
       {items.length === 0 ? (
@@ -493,13 +517,13 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
               <Input
                 type="number"
                 className="h-7"
-                value={round(pxToMm(g.pos, g.axis))}
+                value={toValue(g)}
                 onChange={(e) => {
                   const v = Number(e.target.value);
-                  if (Number.isFinite(v)) guides.update(g.id, mmToPxGuide(v, g.axis));
+                  if (Number.isFinite(v)) guides.update(g.id, fromValue(v, g.axis));
                 }}
               />
-              <span className="text-xs text-muted-foreground">mm</span>
+              <span className="w-4 text-xs text-muted-foreground">{unit}</span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -517,10 +541,18 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
   );
 }
 
+const trimOrigin = (axis: "x" | "y") => (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y);
+const trimSpan = (axis: "x" | "y") => (axis === "x" ? TRIM_RECT.w : TRIM_RECT.h);
+
 const pxToMm = (pos: number, axis: "x" | "y") =>
-  (pos - (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y)) / PX_PER_MM;
+  (pos - trimOrigin(axis)) / PX_PER_MM;
 const mmToPxGuide = (mm: number, axis: "x" | "y") =>
-  mm * PX_PER_MM + (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y);
+  mm * PX_PER_MM + trimOrigin(axis);
+
+const pxToPct = (pos: number, axis: "x" | "y") =>
+  ((pos - trimOrigin(axis)) / trimSpan(axis)) * 100;
+const pctToPxGuide = (pct: number, axis: "x" | "y") =>
+  (pct / 100) * trimSpan(axis) + trimOrigin(axis);
 
 // Console template: upload a gamelist.xml (EmulationStation format) whose
 // entries are matched by title and shown in the "Metadata" tab.
