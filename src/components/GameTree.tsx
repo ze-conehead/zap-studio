@@ -122,7 +122,7 @@ export function GameTree({
         dispatch({
           type: "ADD_LAYER",
           layer: fitImageToMask(
-            { ...makeImageLayer({ ...img, name: row.gameTitle }), main: true },
+            { ...makeImageLayer({ ...img, name: t("Main image") }), main: true },
             mainMask,
           ),
         });

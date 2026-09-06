@@ -133,8 +133,11 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
                   <CornerDownRight className="size-3.5 shrink-0 text-primary" />
                 )}
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate" title={l.name}>
-                  {l.name}
+                <span
+                  className="truncate"
+                  title={isImage(l) && l.main ? t("Main image") : l.name}
+                >
+                  {isImage(l) && l.main ? t("Main image") : l.name}
                 </span>
                 {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
               </button>

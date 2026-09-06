@@ -132,17 +132,20 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
     );
   }
 
-  // Meta badges are named after their fixed kind and can't be masked; the
-  // shared "Main alpha mask" is a fixed role — neither needs the rename
-  // field or the mask controls. Shapes resize via width/height (ShapeProps)
-  // so their corner radius stays constant — no group-scaling "Size %".
+  // Meta badges are named after their fixed kind, the shared "Main alpha
+  // mask" is a fixed role, and the main image is always "Main image" — none
+  // of them get the rename field. Meta badges, the main mask and images are
+  // content, not per-card masks, so no mask controls. Shapes resize via
+  // width/height (ShapeProps), so no group-scaling "Size %".
   const isMeta = isMetaBadge(selected);
   const isMainMask = !!selected.mainMask;
   const isShapeSel = isShape(selected);
+  const isImageSel = isImage(selected);
+  const fixedName = isMeta || isMainMask || (isImageSel && !!selected.main);
 
   return (
     <Panel title={t("Properties")}>
-      {!isMeta && !isMainMask && (
+      {!fixedName && (
         <Field label={t("Name")}>
           <Input
             value={selected.name}
@@ -198,7 +201,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       </div>
 
       {!isMainMask && <MainRoleControls patch={patch} />}
-      {!isMeta && !isMainMask && <MaskControls patch={patch} />}
+      {!isMeta && !isMainMask && !isImageSel && <MaskControls patch={patch} />}
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}

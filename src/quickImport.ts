@@ -6,6 +6,7 @@
 import { getCatalog, gameKeyOf } from "./data/catalog";
 import { fitImageToMask, makeImageLayer, newProject } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
+import { t } from "./i18n";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
 import { loadMainMask } from "./templates";
@@ -82,7 +83,7 @@ export async function insertCover(
 ): Promise<void> {
   const img = await urlToLayerSource(url);
   const layer = fitImageToMask(
-    { ...makeImageLayer({ ...img, name: row.gameTitle }), main: true },
+    { ...makeImageLayer({ ...img, name: t("Main image") }), main: true },
     await loadMainMask(),
   );
   const pid = getGameProject(row.gameKey);
@@ -118,7 +119,7 @@ export async function applyQuickImport(
         const img = await urlToLayerSource(e.url);
         addToCurrent(
           fitImageToMask(
-            { ...makeImageLayer({ ...img, name: e.gameTitle }), main: true },
+            { ...makeImageLayer({ ...img, name: t("Main image") }), main: true },
             mask,
           ),
         );

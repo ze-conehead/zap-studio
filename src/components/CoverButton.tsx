@@ -30,7 +30,7 @@ export function CoverButton({ mainMask }: { mainMask?: Layer }) {
         type: "ADD_LAYER",
         layer: fitImageToMask(
           {
-            ...makeImageLayer({ ...img, name: foundGame.game.title }),
+            ...makeImageLayer({ ...img, name: t("Main image") }),
             main: true,
           },
           mainMask,

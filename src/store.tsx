@@ -126,15 +126,19 @@ function reducer(state: State, action: Action): State {
         };
       }
       // "main" / "mainMask" are single-slot roles — a new layer claiming one
-      // clears it on the others.
+      // clears it on the others. The main image is always labelled "Main image".
+      const added =
+        action.layer.type === "image" && action.layer.main
+          ? { ...action.layer, name: t("Main image") }
+          : action.layer;
       const cleared = layers.map((l) => ({
         ...l,
-        ...(action.layer.main ? { main: false } : null),
-        ...(action.layer.mainMask ? { mainMask: false } : null),
+        ...(added.main ? { main: false } : null),
+        ...(added.mainMask ? { mainMask: false } : null),
       }));
       return {
-        ...commit(state, write(project, [...cleared, action.layer])),
-        selectedId: action.layer.id,
+        ...commit(state, write(project, [...cleared, added])),
+        selectedId: added.id,
       };
     }
 
@@ -144,6 +148,12 @@ function reducer(state: State, action: Action): State {
       let next = layers.map((l, j) =>
         j === i ? ({ ...l, ...action.patch } as Layer) : l,
       );
+      // An image promoted to the main image is always labelled "Main image".
+      if (action.patch.main === true && next[i].type === "image") {
+        next = next.map((l, j) =>
+          j === i ? ({ ...l, name: t("Main image") } as Layer) : l,
+        );
+      }
       // Turning a layer into a mask auto-clips the layer directly below it.
       if (
         action.patch.mask === true &&
