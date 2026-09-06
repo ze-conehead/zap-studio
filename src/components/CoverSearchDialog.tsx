@@ -1,5 +1,5 @@
-import { Loader2, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, RotateCcw, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   effectiveSource,
   getCoverSource,
@@ -57,13 +57,40 @@ export function CoverSearchDialog({
     | { status: "done"; results: CoverCandidate[] }
     | { status: "error"; message: string }
   >({ status: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
+  const [query, setQuery] = useState(gameTitle);
   const [source, setSource] = useState<CoverSource>("sgdb");
   const [editing, setEditing] = useState(false);
   const [sgKey, setSgKey] = useState("");
   const [igId, setIgId] = useState("");
   const [igSecret, setIgSecret] = useState("");
 
+  // Only the latest search updates the results.
+  const runId = useRef(0);
+  const runSearch = useCallback(
+    (rawTerm: string) => {
+      const term = rawTerm.trim();
+      if (!term) return;
+      const id = ++runId.current;
+      setState({ status: "loading" });
+      searchCovers(consoleName, term)
+        .then((results) => {
+          if (runId.current === id) setState({ status: "done", results });
+        })
+        .catch((e: Error) => {
+          if (runId.current === id) setState({ status: "error", message: e.message });
+        });
+    },
+    [consoleName],
+  );
+
+  // Auto-search when the dialog opens or the target game changes (sweep mode).
+  useEffect(() => {
+    if (!open) return;
+    setQuery(gameTitle);
+    runSearch(gameTitle);
+  }, [open, gameTitle, runSearch]);
+
+  // Reset the credentials sub-panel when the dialog opens.
   useEffect(() => {
     if (!open) return;
     const s = getCoverSource();
@@ -73,33 +100,27 @@ export function CoverSearchDialog({
     const c = getIgdbCreds();
     setIgId(c.clientId);
     setIgSecret(c.clientSecret);
-    setState({ status: "loading" });
-    let cancelled = false;
-    searchCovers(consoleName, gameTitle)
-      .then((results) => !cancelled && setState({ status: "done", results }))
-      .catch((e: Error) => !cancelled && setState({ status: "error", message: e.message }));
-    return () => {
-      cancelled = true;
-    };
-  }, [open, consoleName, gameTitle, reloadKey]);
+  }, [open]);
 
   const src = source as Exclude<CoverSource, "libretro">;
   const configured = isConfigured(src);
   const active = effectiveSource();
   const supported = active !== "libretro" || !!resolveLibretroRepo(consoleName);
+  const term = query.trim() || gameTitle;
+  const search = () => runSearch(term);
 
   const pickSource = (s: CoverSource) => {
     setSource(s);
     setCoverSource(s);
     setEditing(!isConfigured(s));
-    setReloadKey((n) => n + 1);
+    search();
   };
 
   const saveCreds = () => {
     if (src === "sgdb") setSgdbKey(sgKey);
     else setIgdbCreds(igId, igSecret);
     setEditing(false);
-    setReloadKey((n) => n + 1);
+    search();
   };
 
   return (
@@ -118,6 +139,18 @@ export function CoverSearchDialog({
             )}
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex gap-1.5">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && search()}
+            placeholder={t("Search term")}
+          />
+          <Button size="icon" title={t("Search")} onClick={search}>
+            <Search />
+          </Button>
+        </div>
 
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
           <div className="flex gap-1">
@@ -218,11 +251,7 @@ export function CoverSearchDialog({
         {state.status === "error" && (
           <div className="flex flex-col items-start gap-3 py-6">
             <p className="text-sm text-destructive">{state.message}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setReloadKey((n) => n + 1)}
-            >
+            <Button variant="outline" size="sm" onClick={search}>
               <RotateCcw /> {t("Try again")}
             </Button>
           </div>
@@ -236,7 +265,7 @@ export function CoverSearchDialog({
 
         {state.status === "done" && supported && state.results.length === 0 && (
           <p className="py-6 text-sm text-muted-foreground">
-            {t("No covers found for \u201c{title}\u201d.", { title: gameTitle })}
+            {t("No covers found for \u201c{title}\u201d.", { title: term })}
           </p>
         )}
 

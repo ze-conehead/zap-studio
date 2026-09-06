@@ -346,6 +346,8 @@ export const de: Record<string, string> = {
   "Without credentials: libretro-thumbnails (retro / emulated consoles only).":
     "Ohne Zugangsdaten: libretro-thumbnails (nur Retro-/Emulations-Konsolen).",
   "Searching covers …": "Suche Cover …",
+  "Search term": "Suchbegriff",
+  Search: "Suchen",
   "Try again": "Erneut versuchen",
   "Without credentials there's no cover database for “{name}” (libretro-thumbnails only covers retro / emulated consoles). Enter credentials above or add a cover manually via “+ Image → Add from URL”.":
     "Für „{name}“ gibt es ohne Zugangsdaten keine Cover-Datenbank (libretro-thumbnails deckt nur Retro-/Emulations-Konsolen ab). Zugangsdaten oben eintragen oder Cover manuell über „+ Bild → Von URL einfügen“ hinzufügen.",
