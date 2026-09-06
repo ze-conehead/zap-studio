@@ -9,9 +9,11 @@ export type PlayersIconStyle = "auto" | "single" | "group" | "controller";
 
 export interface CardBackground {
   kind: "solid" | "gradient";
-  color: string; // solid fill, or first gradient stop
-  color2: string; // second gradient stop
-  angle: number; // gradient direction in degrees (0 = →, 90 = ↓)
+  color: string; // solid fill (also kept in sync with the first gradient stop)
+  color2: string; // legacy second gradient stop (mirrors stops[1])
+  stops?: string[]; // gradient stops, >= 2; falls back to [color, color2]
+  gradientKind?: "linear" | "radial"; // default "linear"
+  angle: number; // linear gradient direction in degrees (0 = →, 90 = ↓)
   noise: number; // grain overlay strength, 0..1 (0 = off)
   enabled?: boolean; // templates only: false => contributes no background
 }

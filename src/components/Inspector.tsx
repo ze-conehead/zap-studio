@@ -6,12 +6,15 @@ import {
   CornerDownRight,
   Crop,
   Italic,
+  Minus,
   MoveHorizontal,
   MoveVertical,
+  Plus,
   Trash2,
   Upload,
 } from "lucide-react";
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { gradientStops } from "../background";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -639,38 +642,59 @@ function FillEditor({
         <ColorField label={t("Color")} value={f.color} onChange={(v) => set({ color: v })} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2">
-            <ColorField label={t("From")} value={f.color} onChange={(v) => set({ color: v })} />
-            <ColorField label={t("To")} value={f.color2} onChange={(v) => set({ color2: v })} />
-          </div>
-          <SliderField
-            label={t("Direction {n}\u00b0", { n: Math.round(f.angle) })}
-            min={0}
-            max={360}
-            step={5}
-            value={f.angle}
-            onChange={(v, done) => set({ angle: v }, done)}
-          />
-          <div className="flex gap-1.5">
-            {(
-              [
-                ["↓", 90],
-                ["→", 0],
-                ["↘", 45],
-                ["↗", 315],
-              ] as const
-            ).map(([label, a]) => (
+          <div className="flex gap-2">
+            {(["linear", "radial"] as const).map((gk) => (
               <Button
-                key={a}
-                variant={f.angle === a ? "default" : "outline"}
+                key={gk}
+                variant={(f.gradientKind ?? "linear") === gk ? "default" : "outline"}
                 size="sm"
                 className="flex-1"
-                onClick={() => set({ angle: a })}
+                onClick={() => set({ gradientKind: gk })}
               >
-                {label}
+                {gk === "linear" ? t("Linear") : t("Radial")}
               </Button>
             ))}
           </div>
+
+          <GradientStops
+            stops={gradientStops(f)}
+            onChange={(stops, done) =>
+              set({ stops, color: stops[0], color2: stops[1] ?? stops[0] }, done)
+            }
+          />
+
+          {(f.gradientKind ?? "linear") === "linear" && (
+            <>
+              <SliderField
+                label={t("Direction {n}\u00b0", { n: Math.round(f.angle) })}
+                min={0}
+                max={360}
+                step={5}
+                value={f.angle}
+                onChange={(v, done) => set({ angle: v }, done)}
+              />
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    ["↓", 90],
+                    ["→", 0],
+                    ["↘", 45],
+                    ["↗", 315],
+                  ] as const
+                ).map(([label, a]) => (
+                  <Button
+                    key={a}
+                    variant={f.angle === a ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => set({ angle: a })}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -683,6 +707,56 @@ function FillEditor({
         onChange={(v, done) => set({ noise: v }, done)}
       />
     </>
+  );
+}
+
+// The gradient's colour stops (2–6), with add / remove.
+function GradientStops({
+  stops,
+  onChange,
+}: {
+  stops: string[];
+  onChange: (stops: string[], done?: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label>{t("Colors")}</Label>
+        <div className="flex gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            disabled={stops.length <= 2}
+            title={t("Remove color")}
+            onClick={() => onChange(stops.slice(0, -1))}
+          >
+            <Minus className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            disabled={stops.length >= 6}
+            title={t("Add color")}
+            onClick={() => onChange([...stops, stops[stops.length - 1]])}
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {stops.map((c, i) => (
+          <ColorField
+            key={i}
+            label={`${i + 1}`}
+            value={c}
+            onChange={(v) => onChange(stops.map((x, j) => (j === i ? v : x)))}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

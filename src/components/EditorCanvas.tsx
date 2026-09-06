@@ -15,7 +15,7 @@ import {
 } from "react-konva";
 import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
-import { gradientPoints, gradientPointsBox, noiseTile } from "../background";
+import { gradientFill, noiseTile } from "../background";
 import { isBackground } from "../factory";
 import {
   CANVAS,
@@ -511,14 +511,7 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
 
   const paint =
     fill.kind === "gradient"
-      ? (() => {
-          const { start, end } = gradientPointsBox(w, h, fill.angle, ellipse);
-          return {
-            fillLinearGradientStartPoint: start,
-            fillLinearGradientEndPoint: end,
-            fillLinearGradientColorStops: [0, fill.color, 1, fill.color2],
-          };
-        })()
+      ? gradientFill(fill, w, h, ellipse)
       : { fill: fill.color };
 
   const stroke =
@@ -749,14 +742,7 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
 
   const fill =
     bg.kind === "gradient"
-      ? (() => {
-          const { start, end } = gradientPoints(bg.angle);
-          return {
-            fillLinearGradientStartPoint: start,
-            fillLinearGradientEndPoint: end,
-            fillLinearGradientColorStops: [0, bg.color, 1, bg.color2],
-          };
-        })()
+      ? gradientFill(bg, CANVAS.w, CANVAS.h)
       : { fill: bg.color };
 
   return (

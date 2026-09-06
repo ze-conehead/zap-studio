@@ -54,6 +54,47 @@ export function gradientPointsBox(
 export const gradientPoints = (angle: number) =>
   gradientPointsBox(CANVAS.w, CANVAS.h, angle);
 
+// The gradient's colour stops (>= 2). Legacy fills only had color / color2.
+export function gradientStops(bg: CardBackground): string[] {
+  if (bg.stops && bg.stops.length >= 2) return bg.stops;
+  return [bg.color, bg.color2 ?? bg.color];
+}
+
+// Konva "colorStops" array: [pos, colour, pos, colour, …] evenly spaced.
+function colorStopArray(stops: string[]): (number | string)[] {
+  const n = stops.length;
+  return stops.flatMap((c, i) => [n <= 1 ? 0 : i / (n - 1), c]);
+}
+
+// Konva fill props for a gradient (linear or radial) over a w×h box.
+// originCentered: shape origin is its centre (Ellipse) rather than top-left.
+export function gradientFill(
+  bg: CardBackground,
+  w: number,
+  h: number,
+  originCentered = false,
+) {
+  const stops = colorStopArray(gradientStops(bg));
+  if ((bg.gradientKind ?? "linear") === "radial") {
+    const cx = originCentered ? 0 : w / 2;
+    const cy = originCentered ? 0 : h / 2;
+    const center = { x: cx, y: cy };
+    return {
+      fillRadialGradientStartPoint: center,
+      fillRadialGradientEndPoint: center,
+      fillRadialGradientStartRadius: 0,
+      fillRadialGradientEndRadius: Math.hypot(w, h) / 2,
+      fillRadialGradientColorStops: stops,
+    };
+  }
+  const { start, end } = gradientPointsBox(w, h, bg.angle, originCentered);
+  return {
+    fillLinearGradientStartPoint: start,
+    fillLinearGradientEndPoint: end,
+    fillLinearGradientColorStops: stops,
+  };
+}
+
 // Monochrome grain tile, generated once and reused for preview + export.
 let tile: HTMLCanvasElement | null = null;
 export function noiseTile(): HTMLCanvasElement {
