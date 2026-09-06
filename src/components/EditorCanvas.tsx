@@ -323,6 +323,18 @@ function FaceStage({
   const guidesEditable =
     !back && !!project.isGlobalTemplate && !guides.state.locked;
 
+  // Dragged layers snap to the guides while snapping is on and guides are
+  // visible. Tolerance is a fixed on-screen distance (≈ 7 px).
+  const gs = guides.state;
+  const snapLines: SnapLines | undefined =
+    gs.on && gs.snap && gs.items.length > 0
+      ? {
+          xs: gs.items.filter((g) => g.axis === "x").map((g) => g.pos),
+          ys: gs.items.filter((g) => g.axis === "y").map((g) => g.pos),
+          tol: 7 / scale,
+        }
+      : undefined;
+
   return (
     <div className="flex flex-col">
       {caption && (
@@ -393,6 +405,7 @@ function FaceStage({
                   selected={active && layer.id === selectedId}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
+                  snapLines={snapLines}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);
@@ -489,12 +502,47 @@ interface GroupSnapshot {
   }[];
 }
 
+// Guide positions (canvas px) a dragged layer can snap to, plus how close
+// (canvas px) counts as "near".
+interface SnapLines {
+  xs: number[];
+  ys: number[];
+  tol: number;
+}
+
+// While dragging, nudge `node` so its nearest edge or centre lines up with a
+// guide within `tol`. Mutates the node directly; the caller then commits.
+function snapNodeToGuides(node: Konva.Node, lines: SnapLines) {
+  const box = node.getClientRect({ relativeTo: node.getLayer() ?? undefined });
+  const anchorsX = [box.x, box.x + box.width / 2, box.x + box.width];
+  const anchorsY = [box.y, box.y + box.height / 2, box.y + box.height];
+
+  const nearest = (anchors: number[], guides: number[], tol: number) => {
+    let delta = 0;
+    let best = tol + 1;
+    for (const a of anchors) {
+      for (const g of guides) {
+        const d = g - a;
+        if (Math.abs(d) < best) {
+          best = Math.abs(d);
+          delta = d;
+        }
+      }
+    }
+    return best <= tol ? delta : 0;
+  };
+
+  node.x(node.x() + nearest(anchorsX, lines.xs, lines.tol));
+  node.y(node.y() + nearest(anchorsY, lines.ys, lines.tol));
+}
+
 function LayerNode({
   layer,
   asMask = false,
   selected = false,
   groupChildren,
   meta,
+  snapLines,
   register,
   onSelect,
   onChange,
@@ -505,6 +553,7 @@ function LayerNode({
   selected?: boolean;
   groupChildren?: TLayer[];
   meta?: GameMeta;
+  snapLines?: SnapLines;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
@@ -597,12 +646,16 @@ function LayerNode({
     onDragStart: grouped ? snapshot : undefined,
     onDragMove: grouped
       ? () => applyGroup(false)
-      : (e: Konva.KonvaEventObject<DragEvent>) =>
-          onChange({ x: e.target.x(), y: e.target.y() }, false),
+      : (e: Konva.KonvaEventObject<DragEvent>) => {
+          if (snapLines) snapNodeToGuides(e.target, snapLines);
+          onChange({ x: e.target.x(), y: e.target.y() }, false);
+        },
     onDragEnd: grouped
       ? () => applyGroup(true)
-      : (e: Konva.KonvaEventObject<DragEvent>) =>
-          onChange({ x: e.target.x(), y: e.target.y() }, true),
+      : (e: Konva.KonvaEventObject<DragEvent>) => {
+          if (snapLines) snapNodeToGuides(e.target, snapLines);
+          onChange({ x: e.target.x(), y: e.target.y() }, true);
+        },
     onTransformStart: grouped ? snapshot : undefined,
     onTransformEnd: grouped
       ? () => applyGroup(true)

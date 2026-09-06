@@ -39,6 +39,7 @@ export interface GuideApi {
   state: GuidesState;
   toggle: () => void;
   setLocked: (locked: boolean) => void;
+  setSnap: (snap: boolean) => void;
   add: (axis: "x" | "y") => void;
   update: (id: string, pos: number) => void;
   remove: (id: string) => void;
@@ -58,6 +59,7 @@ export default function App() {
   const toggleGuides = () => setGuides((g) => ({ ...g, on: !g.on }));
   const setGuidesLocked = (locked: boolean) =>
     setGuides((g) => ({ ...g, locked }));
+  const setGuidesSnap = (snap: boolean) => setGuides((g) => ({ ...g, snap }));
   const addGuide = (axis: "x" | "y") =>
     setGuides((g) => ({
       ...g,
@@ -222,6 +224,7 @@ export default function App() {
     state: guides,
     toggle: toggleGuides,
     setLocked: setGuidesLocked,
+    setSnap: setGuidesSnap,
     add: addGuide,
     update: updateGuide,
     remove: removeGuide,

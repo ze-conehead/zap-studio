@@ -10,6 +10,7 @@ export interface Guide {
 export interface GuidesState {
   on: boolean;
   locked: boolean; // guides can't be dragged / edited while locked
+  snap: boolean; // dragged layers snap their edges / centre to a nearby guide
   items: Guide[];
 }
 
@@ -19,12 +20,17 @@ export function loadGuides(): GuidesState {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || "");
     if (raw && Array.isArray(raw.items)) {
-      return { on: !!raw.on, locked: !!raw.locked, items: raw.items as Guide[] };
+      return {
+        on: !!raw.on,
+        locked: !!raw.locked,
+        snap: raw.snap !== false,
+        items: raw.items as Guide[],
+      };
     }
   } catch {
     /* no stored guides yet */
   }
-  return { on: false, locked: false, items: [] };
+  return { on: false, locked: false, snap: true, items: [] };
 }
 
 export function saveGuides(state: GuidesState): void {

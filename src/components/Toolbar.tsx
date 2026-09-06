@@ -205,6 +205,15 @@ export function Toolbar({
           />
           {t("Guides")}
         </label>
+        {guides.state.on && guides.state.items.length > 0 && (
+          <label className="flex items-center gap-1.5">
+            <Checkbox
+              checked={guides.state.snap}
+              onCheckedChange={(v) => guides.setSnap(!!v)}
+            />
+            {t("Snap")}
+          </label>
+        )}
         {project.isGlobalTemplate && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

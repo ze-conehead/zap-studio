@@ -520,10 +520,20 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
 
       {items.length > 0 && (
         <div className="flex items-center justify-between gap-2">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
-            {t("Show guides")}
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={on} onCheckedChange={() => guides.toggle()} />
+              {t("Show guides")}
+            </label>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={guides.state.snap}
+                disabled={!on}
+                onCheckedChange={(v) => guides.setSnap(!!v)}
+              />
+              {t("Snap layers to guides")}
+            </label>
+          </div>
           <div className="flex gap-1">
             <Button
               variant={locked ? "default" : "outline"}

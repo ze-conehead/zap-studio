@@ -34,6 +34,7 @@ export const de: Record<string, string> = {
   "Redo (⌘⇧Z)": "Wiederholen (⌘⇧Z)",
   Bleed: "Beschnitt",
   Guides: "Hilfslinien",
+  Snap: "Einrasten",
   "Add guide": "Hilfslinie hinzufügen",
   "Vertical guide": "Vertikale Hilfslinie",
   "Horizontal guide": "Horizontale Hilfslinie",
@@ -198,6 +199,7 @@ export const de: Record<string, string> = {
   "+ Vertical": "+ Vertikal",
   "+ Horizontal": "+ Horizontal",
   "Show guides": "Hilfslinien anzeigen",
+  "Snap layers to guides": "Ebenen an Hilfslinien einrasten",
   "Lock guides": "Hilfslinien sperren",
   "Editable only here (“All consoles”), but they appear on every card. Drag on the card to position, drag past the edge to delete.":
     "Nur hier („Alle Konsolen“) bearbeitbar, erscheinen aber auf allen Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus ziehen zum Löschen.",
