@@ -278,7 +278,7 @@ export function CoverSearchDialog({
 
         {state.status === "done" && state.results.length > 0 && (
           <>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+            <div className="mx-auto grid max-w-5xl grid-cols-4 gap-3">
               {state.results.slice(0, visible).map((c) => (
                 <button
                   key={c.url}
