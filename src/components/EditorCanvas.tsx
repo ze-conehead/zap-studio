@@ -375,6 +375,19 @@ function FaceStage({
         }
       : undefined;
 
+  // Which guides the dragged layer is snapped to right now — highlighted so
+  // it's clear what it's aligning to. Only updates when the set changes.
+  const [snapHit, setSnapHit] = useState<SnapHit | null>(null);
+  const reportSnap = useCallback((hit: SnapHit | null) => {
+    setSnapHit((prev) => {
+      const eq = (a?: number[], b?: number[]) =>
+        !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
+      if (!hit) return prev === null ? prev : null;
+      if (prev && eq(prev.xs, hit.xs) && eq(prev.ys, hit.ys)) return prev;
+      return hit;
+    });
+  }, []);
+
   return (
     <div className="flex flex-col">
       {caption && (
@@ -465,6 +478,7 @@ function FaceStage({
                   groupChildren={groupChildren}
                   meta={badgeMeta}
                   snapLines={snapLines}
+                  onSnap={reportSnap}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);
@@ -518,6 +532,10 @@ function FaceStage({
                   key={g.id}
                   guide={g}
                   readOnly={!guidesEditable}
+                  highlight={
+                    !!snapHit &&
+                    (g.axis === "x" ? snapHit.xs : snapHit.ys).includes(g.pos)
+                  }
                   onMove={(pos) => guides.update(g.id, pos)}
                   onRemove={() => guides.remove(g.id)}
                 />
@@ -569,9 +587,16 @@ interface SnapLines {
   tol: number;
 }
 
+// Which guide positions a dragged layer is currently snapped to.
+interface SnapHit {
+  xs: number[];
+  ys: number[];
+}
+
 // While dragging, nudge `node` so its nearest edge or centre lines up with a
 // guide within `tol`. Mutates the node directly; the caller then commits.
-function snapNodeToGuides(node: Konva.Node, lines: SnapLines) {
+// Returns the guide position it locked onto per axis (for the highlight).
+function snapNodeToGuides(node: Konva.Node, lines: SnapLines): SnapHit {
   const box = node.getClientRect({ relativeTo: node.getLayer() ?? undefined });
   const anchorsX = [box.x, box.x + box.width / 2, box.x + box.width];
   const anchorsY = [box.y, box.y + box.height / 2, box.y + box.height];
@@ -579,20 +604,28 @@ function snapNodeToGuides(node: Konva.Node, lines: SnapLines) {
   const nearest = (anchors: number[], guides: number[], tol: number) => {
     let delta = 0;
     let best = tol + 1;
+    let hit: number | null = null;
     for (const a of anchors) {
       for (const g of guides) {
         const d = g - a;
         if (Math.abs(d) < best) {
           best = Math.abs(d);
           delta = d;
+          hit = g;
         }
       }
     }
-    return best <= tol ? delta : 0;
+    return best <= tol ? { delta, hit } : { delta: 0, hit: null };
   };
 
-  node.x(node.x() + nearest(anchorsX, lines.xs, lines.tol));
-  node.y(node.y() + nearest(anchorsY, lines.ys, lines.tol));
+  const rx = nearest(anchorsX, lines.xs, lines.tol);
+  const ry = nearest(anchorsY, lines.ys, lines.tol);
+  node.x(node.x() + rx.delta);
+  node.y(node.y() + ry.delta);
+  return {
+    xs: rx.hit != null ? [rx.hit] : [],
+    ys: ry.hit != null ? [ry.hit] : [],
+  };
 }
 
 function LayerNode({
@@ -602,6 +635,7 @@ function LayerNode({
   groupChildren,
   meta,
   snapLines,
+  onSnap,
   register,
   onSelect,
   onChange,
@@ -613,6 +647,7 @@ function LayerNode({
   groupChildren?: TLayer[];
   meta?: GameMeta;
   snapLines?: SnapLines;
+  onSnap?: (hit: SnapHit | null) => void;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
@@ -706,13 +741,14 @@ function LayerNode({
     onDragMove: grouped
       ? () => applyGroup(false)
       : (e: Konva.KonvaEventObject<DragEvent>) => {
-          if (snapLines) snapNodeToGuides(e.target, snapLines);
+          if (snapLines) onSnap?.(snapNodeToGuides(e.target, snapLines));
           onChange({ x: e.target.x(), y: e.target.y() }, false);
         },
     onDragEnd: grouped
       ? () => applyGroup(true)
       : (e: Konva.KonvaEventObject<DragEvent>) => {
           if (snapLines) snapNodeToGuides(e.target, snapLines);
+          onSnap?.(null);
           onChange({ x: e.target.x(), y: e.target.y() }, true);
         },
     onTransformStart: grouped ? snapshot : undefined,
@@ -1218,15 +1254,20 @@ function GuideLine({
   onMove,
   onRemove,
   readOnly = false,
+  highlight = false,
 }: {
   guide: Guide;
   onMove: (pos: number) => void;
   onRemove: () => void;
   readOnly?: boolean;
+  highlight?: boolean;
 }) {
   const vertical = guide.axis === "x";
   const ref = useRef<Konva.Line>(null);
   const limit = vertical ? CANVAS.w : CANVAS.h;
+  const stroke = highlight ? "#f59e0b" : "#22d3ee";
+  const strokeWidth = highlight ? 2 : 1;
+  const dash = highlight ? undefined : [5, 4];
 
   const finish = (commit: boolean) => {
     const n = ref.current;
@@ -1252,9 +1293,9 @@ function GuideLine({
         x={vertical ? guide.pos : 0}
         y={vertical ? 0 : guide.pos}
         points={vertical ? [0, 0, 0, CANVAS.h] : [0, 0, CANVAS.w, 0]}
-        stroke="#22d3ee"
-        strokeWidth={1}
-        dash={[5, 4]}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        dash={dash}
         listening={false}
       />
     );
@@ -1266,9 +1307,9 @@ function GuideLine({
       x={vertical ? guide.pos : 0}
       y={vertical ? 0 : guide.pos}
       points={vertical ? [0, 0, 0, CANVAS.h] : [0, 0, CANVAS.w, 0]}
-      stroke="#22d3ee"
-      strokeWidth={1}
-      dash={[5, 4]}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      dash={dash}
       hitStrokeWidth={14}
       draggable
       onDragMove={() => finish(false)}
