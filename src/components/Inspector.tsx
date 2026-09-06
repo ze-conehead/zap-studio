@@ -387,13 +387,6 @@ function BackgroundLayerProps({
   const source = layer.source ?? "card";
   return (
     <Panel title={t("Background")}>
-      <Field label={t("Name")}>
-        <Input
-          value={layer.name}
-          onChange={(e) => patch({ name: e.target.value }, false)}
-          onBlur={(e) => patch({ name: e.target.value })}
-        />
-      </Field>
       <SliderField
         label={t("Opacity {n}%", { n: Math.round(layer.opacity * 100) })}
         min={0}
