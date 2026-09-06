@@ -298,6 +298,7 @@ function Shell({
           activeGameKey={activeGameKey}
           activeConsoleId={activeConsoleId}
           activeGlobal={activeGlobal}
+          mainMask={mainMask}
           onPickGame={onPickGame}
           onOpenConsole={onOpenConsole}
           onOpenGlobal={onOpenGlobal}

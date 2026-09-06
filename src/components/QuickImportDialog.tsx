@@ -23,6 +23,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentGameKey?: string;
+  consoleId?: string;
+  consoleName?: string;
   onAddLayerToCurrent: (layer: ImageLayer) => void;
 }
 
@@ -32,6 +34,8 @@ export function QuickImportDialog({
   open,
   onOpenChange,
   currentGameKey,
+  consoleId,
+  consoleName,
   onAddLayerToCurrent,
 }: Props) {
   const t = useT();
@@ -47,7 +51,7 @@ export function QuickImportDialog({
     setUrls({});
     setResults([]);
     let cancelled = false;
-    findGamesWithoutImage().then((r) => {
+    findGamesWithoutImage({ consoleId }).then((r) => {
       if (cancelled) return;
       setRows(r);
       setPhase("editing");
@@ -55,7 +59,7 @@ export function QuickImportDialog({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, consoleId]);
 
   const resultByKey = new Map(results.map((r) => [r.gameKey, r]));
   const pending = phase === "done" ? rows.filter((r) => !resultByKey.get(r.gameKey)?.ok) : rows;
@@ -94,7 +98,9 @@ export function QuickImportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col">
         <DialogHeader>
-          <DialogTitle>Quick Import</DialogTitle>
+          <DialogTitle>
+            {consoleName ? `Quick Import – ${consoleName}` : "Quick Import"}
+          </DialogTitle>
           <DialogDescription>
             {t("Games without an image. Enter one image URL each and click \u201cDone\u201d – the images are loaded and added as a layer to each design.")}
           </DialogDescription>

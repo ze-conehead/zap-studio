@@ -18,6 +18,8 @@ export const de: Record<string, string> = {
   "https://…/image.png": "https://…/bild.png",
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
+  "Insert cover by URL": "Cover per URL einfügen",
+  "Image URL for the cover:": "Bild-URL für das Cover:",
   Shape: "Form",
   Square: "Quadrat",
   Circle: "Kreis",
@@ -364,6 +366,7 @@ export const de: Record<string, string> = {
 
   // ── CoverSweepDialog ─────────────────────────────────────────────────────
   "Find covers – all cards": "Cover suchen – alle Karten",
+  "Find covers – {name}": "Cover suchen – {name}",
   "Looking for cards without an image …": "Karten ohne Bild werden gesucht …",
   "{n} cover(s) inserted.": "{n} Cover eingefügt.",
   "Every card already has an image.": "Alle Karten haben bereits ein Bild.",

@@ -44,13 +44,18 @@ export async function loadImagedGameKeys(): Promise<Set<string>> {
 }
 
 // Every catalogue game whose linked design has no image layer (or has no
-// design at all).
-export async function findGamesWithoutImage(): Promise<QuickImportRow[]> {
+// design at all). `consoleId` limits it to one console; `excludeGameKey`
+// drops one game (e.g. the design currently open in the editor).
+export async function findGamesWithoutImage(
+  opts: { consoleId?: string; excludeGameKey?: string } = {},
+): Promise<QuickImportRow[]> {
   const imaged = await loadImagedGameKeys();
   const rows: QuickImportRow[] = [];
   for (const c of getCatalog()) {
+    if (opts.consoleId && c.id !== opts.consoleId) continue;
     for (const g of c.games) {
       const gameKey = gameKeyOf(c, g);
+      if (gameKey === opts.excludeGameKey) continue;
       if (!imaged.has(gameKey)) {
         rows.push({ gameKey, consoleName: c.name, gameTitle: g.title });
       }

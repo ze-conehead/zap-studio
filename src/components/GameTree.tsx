@@ -34,11 +34,21 @@ import {
   renameGame,
   subscribeCatalog,
 } from "../data/catalog";
+import { fitImageToMask, makeImageLayer } from "../factory";
 import { renameGameMeta } from "../gamelist";
-import { loadImagedGameKeys } from "../quickImport";
+import { urlToLayerSource } from "../image";
+import {
+  insertCover,
+  loadImagedGameKeys,
+  type QuickImportRow,
+} from "../quickImport";
+import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
+import { CoverSearchDialog } from "./CoverSearchDialog";
+import { CoverSweepDialog } from "./CoverSweepDialog";
+import { QuickImportDialog } from "./QuickImportDialog";
 
 type TreeFilter = "all" | "with" | "without";
 
@@ -62,10 +72,13 @@ interface Props {
   activeGameKey?: string;
   activeConsoleId?: string;
   activeGlobal: boolean;
+  mainMask?: Layer;
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
   onOpenGlobal: () => void;
 }
+
+type SweepScope = { consoleId?: string; consoleName?: string };
 
 interface MenuState {
   x: number;
@@ -77,6 +90,7 @@ export function GameTree({
   activeGameKey,
   activeConsoleId,
   activeGlobal,
+  mainMask,
   onPickGame,
   onOpenConsole,
   onOpenGlobal,
@@ -90,9 +104,50 @@ export function GameTree({
   );
   const catalog = getCatalog();
 
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const currentGameKey = state.project.gameKey;
   const currentHasImage = state.project.layers.some((l) => l.type === "image");
+
+  // Cover actions from the right-click menus.
+  const [sweep, setSweep] = useState<SweepScope | null>(null);
+  const [quick, setQuick] = useState<SweepScope | null>(null);
+  const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
+
+  // Add a cover to a single game: straight into the live editor when that
+  // game's design is the one open, otherwise onto its design on disk.
+  const insertCoverForGame = async (row: QuickImportRow, url: string) => {
+    try {
+      if (row.gameKey === currentGameKey) {
+        const img = await urlToLayerSource(url);
+        dispatch({
+          type: "ADD_LAYER",
+          layer: fitImageToMask(
+            { ...makeImageLayer({ ...img, name: row.gameTitle }), main: true },
+            mainMask,
+          ),
+        });
+      } else {
+        await insertCover(row, url);
+      }
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  const promptCoverUrl = (row: QuickImportRow) => {
+    const url = window.prompt(t("Image URL for the cover:"))?.trim();
+    if (url) void insertCoverForGame(row, url);
+  };
+
+  const coverMenuItems = (row: QuickImportRow): ContextMenuItem[] => [
+    { label: t("Find cover"), onSelect: () => setGameCover(row) },
+    { label: t("Insert cover by URL"), onSelect: () => promptCoverUrl(row) },
+  ];
+
+  const sweepMenuItems = (scope: SweepScope): ContextMenuItem[] => [
+    { label: t("Find cover"), onSelect: () => setSweep(scope) },
+    { label: t("Insert cover by URL"), onSelect: () => setQuick(scope) },
+  ];
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
@@ -203,6 +258,10 @@ export function GameTree({
           )}
           title={t("Global template – appears on every card")}
           onClick={onOpenGlobal}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setMenu({ x: e.clientX, y: e.clientY, items: sweepMenuItems({}) });
+          }}
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-left">{t("All consoles")}</span>
@@ -266,6 +325,7 @@ export function GameTree({
                             label: t("Rename"),
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
+                          ...sweepMenuItems({ consoleId: c.id, consoleName: c.name }),
                           ...(isCustomConsole(c.id)
                             ? [
                                 {
@@ -345,6 +405,11 @@ export function GameTree({
                                   label: t("Rename"),
                                   onSelect: () => handleRenameGame(c.id, g),
                                 },
+                                ...coverMenuItems({
+                                  gameKey: key,
+                                  consoleName: c.name,
+                                  gameTitle: g.title,
+                                }),
                                 {
                                   label: t("Remove"),
                                   destructive: true,
@@ -384,6 +449,40 @@ export function GameTree({
           y={menu.y}
           items={menu.items}
           onClose={() => setMenu(null)}
+        />
+      )}
+
+      {sweep && (
+        <CoverSweepDialog
+          open
+          onOpenChange={(o) => !o && setSweep(null)}
+          consoleId={sweep.consoleId}
+          consoleName={sweep.consoleName}
+          excludeGameKey={currentGameKey}
+        />
+      )}
+
+      {quick && (
+        <QuickImportDialog
+          open
+          onOpenChange={(o) => !o && setQuick(null)}
+          consoleId={quick.consoleId}
+          consoleName={quick.consoleName}
+          currentGameKey={currentGameKey}
+          onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
+        />
+      )}
+
+      {gameCover && (
+        <CoverSearchDialog
+          open
+          onOpenChange={(o) => !o && setGameCover(null)}
+          consoleName={gameCover.consoleName}
+          gameTitle={gameCover.gameTitle}
+          onPick={(url) => {
+            setGameCover(null);
+            void insertCoverForGame(gameCover, url);
+          }}
         />
       )}
     </nav>

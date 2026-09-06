@@ -6,15 +6,22 @@ import { Button } from "./ui/button";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
-// "All consoles" → "Find cover": walks every card that has no image yet,
-// one cover-search dialog at a time. Picking a cover inserts it into that
-// game's design (on disk) and jumps to the next card.
+// "Find cover" for many cards at once: walks every card that has no image
+// yet, one cover-search dialog at a time. Picking a cover inserts it into
+// that game's design (on disk) and jumps to the next card. Scoped to one
+// console with `consoleId`; `excludeGameKey` skips the open design.
 export function CoverSweepDialog({
   open,
   onOpenChange,
+  consoleId,
+  consoleName,
+  excludeGameKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  consoleId?: string;
+  consoleName?: string;
+  excludeGameKey?: string;
 }) {
   const t = useT();
   const [phase, setPhase] = useState<"loading" | "run" | "done">("loading");
@@ -30,7 +37,7 @@ export function CoverSweepDialog({
     setInserted(0);
     setBusy(false);
     let cancelled = false;
-    findGamesWithoutImage().then((rows) => {
+    findGamesWithoutImage({ consoleId, excludeGameKey }).then((rows) => {
       if (cancelled) return;
       setQueue(rows);
       setPhase(rows.length ? "run" : "done");
@@ -38,7 +45,7 @@ export function CoverSweepDialog({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, consoleId, excludeGameKey]);
 
   const advance = () => {
     if (idx + 1 >= queue.length) setPhase("done");
@@ -80,7 +87,11 @@ export function CoverSweepDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t("Find covers – all cards")}</DialogTitle>
+          <DialogTitle>
+            {consoleName
+              ? t("Find covers – {name}", { name: consoleName })
+              : t("Find covers – all cards")}
+          </DialogTitle>
         </DialogHeader>
         {phase === "loading" ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
