@@ -258,7 +258,6 @@ export const de: Record<string, string> = {
   "Shows the player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
     "Zeigt die Spieleranzahl des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
   "Text size": "Textgröße",
-  Content: "Inhalte",
   "Players icon": "Spieler-Icon",
   "Automatic (1 = single player)": "Automatisch (1 = Einzelspieler)",
   "Always single player": "Immer Einzelspieler",

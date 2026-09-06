@@ -256,6 +256,17 @@ export function isShape(l: Layer): l is ShapeLayer {
 export function isMetaBadge(l: Layer): l is MetaBadgeLayer {
   return l.type === "metabadge";
 }
+
+// `kind` was added later; for older badges fall back to whichever preset
+// their visible pieces match (all three / none → "combo").
+export function metaBadgeKind(l: MetaBadgeLayer): MetaBadgeKind {
+  if (l.kind) return l.kind;
+  const { showRating: r, showYear: y, showPlayers: p } = l;
+  if (r && !y && !p) return "rating";
+  if (!r && y && !p) return "year";
+  if (!r && !y && p) return "players";
+  return "combo";
+}
 export function isBackground(l: Layer): l is BackgroundLayer {
   return l.type === "background";
 }

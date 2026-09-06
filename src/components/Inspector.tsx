@@ -37,7 +37,7 @@ import {
   getCatalogVersion,
   subscribeCatalog,
 } from "../data/catalog";
-import { isImage, isMetaBadge, isShape, isText } from "../factory";
+import { isImage, isMetaBadge, isShape, isText, metaBadgeKind } from "../factory";
 import { FONTS } from "../fonts";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
@@ -848,7 +848,7 @@ const META_BADGE_BLURB: Record<MetaBadgeLayer["kind"], string> = {
 
 function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch }) {
   const t = useT();
-  const kind = layer.kind ?? "combo";
+  const kind = metaBadgeKind(layer);
   return (
     <>
       <p className="text-xs text-muted-foreground">{t(META_BADGE_BLURB[kind])}</p>
@@ -870,33 +870,6 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
           onChange={(v) => patch({ fontSize: Math.max(6, v) })}
         />
       </div>
-
-      {kind === "combo" && (
-        <div className="flex flex-col gap-1.5">
-          <Label>{t("Content")}</Label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={layer.showRating}
-              onCheckedChange={(v) => patch({ showRating: !!v })}
-            />
-            {t("Rating")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={layer.showYear}
-              onCheckedChange={(v) => patch({ showYear: !!v })}
-            />
-            {t("Release year")}
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={layer.showPlayers}
-              onCheckedChange={(v) => patch({ showPlayers: !!v })}
-            />
-            {t("Player count")}
-          </label>
-        </div>
-      )}
 
       {layer.showPlayers && (
         <Field label={t("Players icon")}>
