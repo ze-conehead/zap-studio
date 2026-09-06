@@ -6,6 +6,8 @@ import {
   CornerDownRight,
   Crop,
   Italic,
+  Lock,
+  LockOpen,
   Minus,
   MoveHorizontal,
   MoveVertical,
@@ -457,7 +459,7 @@ function BackFacePanel() {
 // Global guide lines — the same set on every card.
 function GuidesPanel({ guides }: { guides: GuideApi }) {
   const t = useT();
-  const { items, on } = guides.state;
+  const { items, on, locked } = guides.state;
   // Display/entry unit for the position fields. Percent is relative to the
   // trim box (0 % = top/left trim edge, 100 % = bottom/right); the stored
   // value stays in px either way, so switching back to mm shows the result.
@@ -467,13 +469,51 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
   const fromValue = (v: number, axis: "x" | "y") =>
     unit === "mm" ? mmToPxGuide(v, axis) : pctToPxGuide(v, axis);
 
+  const row = (g: (typeof items)[number]) => (
+    <div key={g.id} className="flex items-center gap-1">
+      <Input
+        type="number"
+        className="h-7 min-w-0 flex-1"
+        disabled={locked}
+        value={toValue(g)}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          if (Number.isFinite(v)) guides.update(g.id, fromValue(v, g.axis));
+        }}
+      />
+      <span className="shrink-0 text-[10px] text-muted-foreground">{unit}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
+        title={t("Delete")}
+        disabled={locked}
+        onClick={() => guides.remove(g.id)}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+    </div>
+  );
+
   return (
     <Panel title={t("Guides")}>
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("x")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={locked}
+          onClick={() => guides.add("x")}
+        >
           {t("+ Vertical")}
         </Button>
-        <Button variant="outline" size="sm" className="flex-1" onClick={() => guides.add("y")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={locked}
+          onClick={() => guides.add("y")}
+        >
           {t("+ Horizontal")}
         </Button>
       </div>
@@ -485,6 +525,16 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
             {t("Show guides")}
           </label>
           <div className="flex gap-1">
+            <Button
+              variant={locked ? "default" : "outline"}
+              size="sm"
+              className="h-6 gap-1 px-2 text-xs"
+              title={t("Lock guides")}
+              onClick={() => guides.setLocked(!locked)}
+            >
+              {locked ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
+              {t("Lock")}
+            </Button>
             {(["mm", "%"] as const).map((u) => (
               <Button
                 key={u}
@@ -505,34 +555,16 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
           {t("Editable only here (\u201cAll consoles\u201d), but they appear on every card. Drag on the card to position, drag past the edge to delete.")}
         </p>
       ) : (
-        <ul className="flex flex-col gap-1.5">
-          {items.map((g) => (
-            <li key={g.id} className="flex items-center gap-2">
-              <span className="w-14 shrink-0 text-xs text-muted-foreground">
-                {g.axis === "x" ? t("Vertical") : t("Horiz.")}
-              </span>
-              <Input
-                type="number"
-                className="h-7"
-                value={toValue(g)}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  if (Number.isFinite(v)) guides.update(g.id, fromValue(v, g.axis));
-                }}
-              />
-              <span className="w-4 text-xs text-muted-foreground">{unit}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-muted-foreground hover:text-destructive"
-                title={t("Delete")}
-                onClick={() => guides.remove(g.id)}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("Vertical")}</Label>
+            {items.filter((g) => g.axis === "x").map(row)}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("Horiz.")}</Label>
+            {items.filter((g) => g.axis === "y").map(row)}
+          </div>
+        </div>
       )}
     </Panel>
   );

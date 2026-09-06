@@ -320,7 +320,8 @@ function FaceStage({
   const cropped = !showBleed;
   const viewW = (cropped ? TRIM_RECT.w : CANVAS.w) * scale;
   const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
-  const guidesEditable = !back && !!project.isGlobalTemplate;
+  const guidesEditable =
+    !back && !!project.isGlobalTemplate && !guides.state.locked;
 
   return (
     <div className="flex flex-col">

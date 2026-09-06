@@ -198,6 +198,7 @@ export const de: Record<string, string> = {
   "+ Vertical": "+ Vertikal",
   "+ Horizontal": "+ Horizontal",
   "Show guides": "Hilfslinien anzeigen",
+  "Lock guides": "Hilfslinien sperren",
   "Editable only here (“All consoles”), but they appear on every card. Drag on the card to position, drag past the edge to delete.":
     "Nur hier („Alle Konsolen“) bearbeitbar, erscheinen aber auf allen Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus ziehen zum Löschen.",
   Vertical: "Vertikal",

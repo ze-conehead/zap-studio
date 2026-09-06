@@ -38,6 +38,7 @@ interface Templates {
 export interface GuideApi {
   state: GuidesState;
   toggle: () => void;
+  setLocked: (locked: boolean) => void;
   add: (axis: "x" | "y") => void;
   update: (id: string, pos: number) => void;
   remove: (id: string) => void;
@@ -55,8 +56,11 @@ export default function App() {
   }, [guides]);
 
   const toggleGuides = () => setGuides((g) => ({ ...g, on: !g.on }));
+  const setGuidesLocked = (locked: boolean) =>
+    setGuides((g) => ({ ...g, locked }));
   const addGuide = (axis: "x" | "y") =>
     setGuides((g) => ({
+      ...g,
       on: true,
       items: [
         ...g.items,
@@ -64,9 +68,15 @@ export default function App() {
       ],
     }));
   const updateGuide = (id: string, pos: number) =>
-    setGuides((g) => ({ ...g, items: g.items.map((x) => (x.id === id ? { ...x, pos } : x)) }));
+    setGuides((g) =>
+      g.locked
+        ? g
+        : { ...g, items: g.items.map((x) => (x.id === id ? { ...x, pos } : x)) },
+    );
   const removeGuide = (id: string) =>
-    setGuides((g) => ({ ...g, items: g.items.filter((x) => x.id !== id) }));
+    setGuides((g) =>
+      g.locked ? g : { ...g, items: g.items.filter((x) => x.id !== id) },
+    );
 
   // Load the console + global template projects for the current view and
   // derive the read-only overlay layers and their backgrounds:
@@ -211,6 +221,7 @@ export default function App() {
   const guideApi: GuideApi = {
     state: guides,
     toggle: toggleGuides,
+    setLocked: setGuidesLocked,
     add: addGuide,
     update: updateGuide,
     remove: removeGuide,
