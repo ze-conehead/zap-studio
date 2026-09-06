@@ -46,6 +46,7 @@ import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../forma
 import type { GuideApi } from "../App";
 import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
+import { CutSheetDialog } from "./CutSheetDialog";
 import type { CanvasHandle } from "./EditorCanvas";
 import { QuickImportDialog } from "./QuickImportDialog";
 
@@ -78,6 +79,7 @@ export function Toolbar({
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
   const [baseImportOpen, setBaseImportOpen] = useState(false);
   const [quickImportOpen, setQuickImportOpen] = useState(false);
+  const [cutSheetOpen, setCutSheetOpen] = useState(false);
 
 
   const saveBackup = async () => {
@@ -288,11 +290,17 @@ export function Toolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel>{t("This card")}</DropdownMenuLabel>
             {EXPORT_MODES.map((m) => (
               <DropdownMenuItem key={m} onClick={() => runExport(m)}>
                 {exportLabel(m)}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setCutSheetOpen(true)}>
+              {t("Cut sheet for Cricut …")}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t("Project file")}</DropdownMenuLabel>
             <DropdownMenuItem onClick={saveJson}>{t("Save as JSON")}</DropdownMenuItem>
@@ -368,6 +376,8 @@ export function Toolbar({
       )}
 
       <BaseImportDialog open={baseImportOpen} onOpenChange={setBaseImportOpen} />
+
+      <CutSheetDialog open={cutSheetOpen} onOpenChange={setCutSheetOpen} />
 
       <QuickImportDialog
         open={quickImportOpen}

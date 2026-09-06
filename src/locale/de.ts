@@ -361,6 +361,33 @@ export const de: Record<string, string> = {
     "Cover anklicken zum Einfügen – dann geht es zur nächsten Karte.",
   Skip: "Überspringen",
 
+  // ── CutSheetDialog ───────────────────────────────────────────────────────
+  "This card": "Diese Karte",
+  "Multiple cards": "Mehrere Karten",
+  "Cut sheet for Cricut …": "Schneidebogen für Cricut …",
+  "Cut sheet for Cricut": "Schneidebogen für Cricut",
+  "Packs the finished designs onto transparent PNG sheets at real size ({w} DPI is baked in). Print each sheet at 100 %, then let the Cricut Print then Cut every card.":
+    "Packt die fertigen Designs in Originalgröße auf transparente PNG-Bögen ({w} DPI fest eingebrannt). Jeden Bogen mit 100 % drucken, dann jede Karte vom Cricut per „Print then Cut“ schneiden lassen.",
+  Gap: "Abstand",
+  "White background": "Weißer Hintergrund",
+  "Select all": "Alle auswählen",
+  "Deselect all": "Alle abwählen",
+  "Build sheet": "Bogen erstellen",
+  "Back to selection": "Zurück zur Auswahl",
+  "{cards} card(s) · {cols}×{rows} per sheet · {pages} sheet(s)":
+    "{cards} Karte(n) · {cols}×{rows} pro Bogen · {pages} Bogen/Bögen",
+  "Each sheet fits the Cricut print area ({w}×{h} mm). Cricut Design Space: Upload the PNG → “Complex” → it traces a cut line per card → Print then Cut. Print at 100 % / actual size.":
+    "Jeder Bogen passt in den Cricut-Druckbereich ({w}×{h} mm). Cricut Design Space: PNG hochladen → „Complex“ → es zieht pro Karte eine Schnittlinie → Print then Cut. Mit 100 % / Originalgröße drucken.",
+  "One PNG per Cricut sheet. In Cricut Design Space: Upload → select the PNG → “Complex” → Continue → it traces a cut line around each card → “Print then Cut”. Print at 100 % (actual size).":
+    "Ein PNG pro Cricut-Bogen. In Cricut Design Space: Hochladen → PNG wählen → „Complex“ → Weiter → es zieht um jede Karte eine Schnittlinie → „Print then Cut“. Mit 100 % (Originalgröße) drucken.",
+  "Download PNG": "PNG herunterladen",
+  "Download .zip": ".zip herunterladen",
+  "A single card is larger than the Cricut print area for this format.":
+    "Eine einzelne Karte ist größer als der Cricut-Druckbereich für dieses Format.",
+  "None of the selected games has a saved design.":
+    "Keins der ausgewählten Spiele hat ein gespeichertes Design.",
+  "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
+
   // ── CoverSweepDialog ─────────────────────────────────────────────────────
   "Find covers – all cards": "Cover suchen – alle Karten",
   "Find covers – {name}": "Cover suchen – {name}",

@@ -1,0 +1,368 @@
+import type Konva from "konva";
+import { ChevronLeft, ChevronRight, Loader2, Scissors } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { zipSync, strToU8 } from "fflate";
+import { TRIM_RECT } from "../card";
+import type { DemoCard } from "../demo";
+import { packImageSources } from "../demo";
+import { downloadBlob, downloadDataUrl } from "../export";
+import { ensureFontsLoaded } from "../fonts";
+import { preloadImage } from "../hooks/useImage";
+import { useT } from "../i18n";
+import {
+  composeSheet,
+  DEFAULT_SHEET_OPTIONS,
+  listGameDesigns,
+  loadSheetCards,
+  PRINT_H_MM,
+  PRINT_W_MM,
+  type SheetGame,
+  type SheetOptions,
+  type SheetResult,
+} from "../sheet";
+import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { CardStage } from "./CardStage";
+
+type Phase = "pick" | "rendering" | "done" | "error";
+
+export function CutSheetDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const t = useT();
+  const [phase, setPhase] = useState<Phase>("pick");
+  const [games, setGames] = useState<SheetGame[]>([]);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [opts, setOpts] = useState<SheetOptions>(DEFAULT_SHEET_OPTIONS);
+  const [cards, setCards] = useState<DemoCard[]>([]);
+  const [result, setResult] = useState<SheetResult | null>(null);
+  const [pageIdx, setPageIdx] = useState(0);
+  const [error, setError] = useState("");
+
+  const stages = useRef<(Konva.Stage | null)[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    setPhase("pick");
+    setResult(null);
+    setCards([]);
+    setPageIdx(0);
+    setError("");
+    listGameDesigns().then((g) => {
+      setGames(g);
+      setPicked(new Set(g.map((x) => x.gameKey)));
+    });
+  }, [open]);
+
+  const start = async () => {
+    const keys = games
+      .map((g) => g.gameKey)
+      .filter((k) => picked.has(k));
+    if (!keys.length) return;
+    setPhase("rendering");
+    setError("");
+    try {
+      const loaded = await loadSheetCards(keys);
+      if (!loaded.length) throw new Error("empty");
+      await ensureFontsLoaded();
+      await Promise.all(packImageSources(loaded).map(preloadImage));
+      stages.current = [];
+      setCards(loaded);
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("error");
+    }
+  };
+
+  // Capture the hidden stages once painted, then build the sheet(s).
+  useEffect(() => {
+    if (phase !== "rendering" || !cards.length) return;
+    let alive = true;
+    const id = requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (!alive) return;
+        (async () => {
+          try {
+            const images = cards.map((_, i) => {
+              const s = stages.current[i];
+              return s ? s.toDataURL({ pixelRatio: 1 }) : "";
+            });
+            const r = await composeSheet(
+              images.filter(Boolean),
+              opts,
+            );
+            if (!alive) return;
+            setResult(r);
+            setPageIdx(0);
+            setPhase("done");
+          } catch (e) {
+            if (alive) {
+              setError((e as Error).message);
+              setPhase("error");
+            }
+          }
+        })();
+      }),
+    );
+    return () => {
+      alive = false;
+      cancelAnimationFrame(id);
+    };
+  }, [phase, cards, opts]);
+
+  const download = () => {
+    if (!result) return;
+    if (result.pages.length === 1) {
+      downloadDataUrl(result.pages[0].dataUrl, "cricut-cut-sheet.png");
+      return;
+    }
+    const files: Record<string, Uint8Array> = {};
+    result.pages.forEach((pg, i) => {
+      const b64 = pg.dataUrl.split(",")[1];
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+      files[`cut-sheet_${i + 1}.png`] = bytes;
+    });
+    files["README.txt"] = strToU8(
+      t(
+        "One PNG per Cricut sheet. In Cricut Design Space: Upload → select the PNG → “Complex” → Continue → it traces a cut line around each card → “Print then Cut”. Print at 100 % (actual size).",
+      ),
+    );
+    const zipped = zipSync(files, { level: 6 });
+    downloadBlob(
+      new Blob([zipped], { type: "application/zip" }),
+      "cricut-cut-sheets.zip",
+    );
+  };
+
+  const errorText =
+    error === "card-too-big"
+      ? t("A single card is larger than the Cricut print area for this format.")
+      : error === "empty" || error === "no cards"
+        ? t("None of the selected games has a saved design.")
+        : t("Could not build the sheet.");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col">
+        <DialogHeader>
+          <DialogTitle>{t("Cut sheet for Cricut")}</DialogTitle>
+        </DialogHeader>
+
+        {/* off-screen render targets */}
+        {phase === "rendering" && cards.length > 0 && (
+          <div
+            aria-hidden
+            style={{ position: "fixed", left: -20000, top: 0, opacity: 0 }}
+          >
+            {cards.map((c, i) => (
+              <CardStage
+                key={c.key}
+                card={c}
+                width={TRIM_RECT.w}
+                stageRef={(s) => {
+                  stages.current[i] = s;
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {phase === "pick" && (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "Packs the finished designs onto transparent PNG sheets at real size ({w} DPI is baked in). Print each sheet at 100 %, then let the Cricut Print then Cut every card.",
+                { w: "300" },
+              )}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+              <label className="flex items-center gap-1.5">
+                {t("Gap")}
+                <input
+                  type="number"
+                  className="h-7 w-16 rounded border bg-transparent px-2"
+                  value={opts.gapMM}
+                  min={0}
+                  step={0.5}
+                  onChange={(e) =>
+                    setOpts((o) => ({
+                      ...o,
+                      gapMM: Math.max(0, Number(e.target.value) || 0),
+                    }))
+                  }
+                />
+                mm
+              </label>
+              <label className="flex items-center gap-1.5">
+                <Checkbox
+                  checked={opts.background === "white"}
+                  onCheckedChange={(v) =>
+                    setOpts((o) => ({
+                      ...o,
+                      background: v ? "white" : "transparent",
+                    }))
+                  }
+                />
+                {t("White background")}
+              </label>
+            </div>
+
+            {games.length === 0 ? (
+              <p className="py-6 text-sm text-muted-foreground">
+                {t("No saved designs yet.")}
+              </p>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+                <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+                  <span>{t("{n} game(s) selected", { n: picked.size })}</span>
+                  <button
+                    className="rounded px-1.5 hover:bg-accent"
+                    onClick={() =>
+                      setPicked((p) =>
+                        p.size === games.length
+                          ? new Set()
+                          : new Set(games.map((g) => g.gameKey)),
+                      )
+                    }
+                  >
+                    {picked.size === games.length
+                      ? t("Deselect all")
+                      : t("Select all")}
+                  </button>
+                </div>
+                <ul className="p-1">
+                  {games.map((g) => (
+                    <li key={g.gameKey}>
+                      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent">
+                        <Checkbox
+                          checked={picked.has(g.gameKey)}
+                          onCheckedChange={() =>
+                            setPicked((p) => {
+                              const n = new Set(p);
+                              n.has(g.gameKey)
+                                ? n.delete(g.gameKey)
+                                : n.add(g.gameKey);
+                              return n;
+                            })
+                          }
+                        />
+                        <span className="flex-1 truncate">{g.gameTitle}</span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {g.consoleName}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                {t("Cancel")}
+              </Button>
+              <Button size="sm" disabled={picked.size === 0} onClick={() => void start()}>
+                <Scissors /> {t("Build sheet")}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {phase === "rendering" && (
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> {t("Rendering cards …")}
+          </div>
+        )}
+
+        {phase === "error" && (
+          <div className="flex flex-col items-start gap-3 py-8">
+            <p className="text-sm text-destructive">{errorText}</p>
+            <Button variant="outline" size="sm" onClick={() => setPhase("pick")}>
+              {t("Back to selection")}
+            </Button>
+          </div>
+        )}
+
+        {phase === "done" && result && (
+          <>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {t("{cards} card(s) · {cols}×{rows} per sheet · {pages} sheet(s)", {
+                  cards: cards.length,
+                  cols: result.cols,
+                  rows: result.rows,
+                  pages: result.pages.length,
+                })}
+              </span>
+              {result.pages.length > 1 && (
+                <span className="flex items-center gap-1">
+                  <button
+                    className="rounded p-1 hover:bg-accent disabled:opacity-30"
+                    disabled={pageIdx === 0}
+                    onClick={() => setPageIdx((i) => i - 1)}
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </button>
+                  {pageIdx + 1} / {result.pages.length}
+                  <button
+                    className="rounded p-1 hover:bg-accent disabled:opacity-30"
+                    disabled={pageIdx === result.pages.length - 1}
+                    onClick={() => setPageIdx((i) => i + 1)}
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </button>
+                </span>
+              )}
+            </div>
+
+            <div
+              className="grid min-h-0 flex-1 place-items-center overflow-auto rounded-md border p-3"
+              style={{
+                backgroundImage:
+                  "repeating-conic-gradient(#e5e7eb 0% 25%, #f8fafc 0% 50%)",
+                backgroundSize: "16px 16px",
+              }}
+            >
+              <img
+                src={result.pages[pageIdx].dataUrl}
+                alt=""
+                className="max-h-[46vh] w-auto shadow-lg"
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "Each sheet fits the Cricut print area ({w}×{h} mm). Cricut Design Space: Upload the PNG → “Complex” → it traces a cut line per card → Print then Cut. Print at 100 % / actual size.",
+                { w: PRINT_W_MM, h: PRINT_H_MM },
+              )}
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPhase("pick")}>
+                {t("Back to selection")}
+              </Button>
+              <Button size="sm" onClick={download}>
+                {result.pages.length > 1
+                  ? t("Download .zip")
+                  : t("Download PNG")}
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
