@@ -19,7 +19,6 @@ interface State {
   selectedId: string | null;
   past: Project[];
   future: Project[];
-  showSafe: boolean;
   showBleed: boolean;
   dirty: boolean;
 }
@@ -41,7 +40,7 @@ type Action =
   | { type: "DUPLICATE_LAYER"; id: string }
   | { type: "SET_LAYER_ORDER"; order: string[] }
   | { type: "SELECT"; id: string | null }
-  | { type: "TOGGLE"; key: "showSafe" | "showBleed" }
+  | { type: "TOGGLE"; key: "showBleed" }
   | { type: "UNDO" }
   | { type: "REDO" }
   | { type: "SAVED" };
@@ -287,7 +286,6 @@ export function StoreProvider({
     selectedId: null,
     past: [],
     future: [],
-    showSafe: false,
     showBleed: false,
     dirty: false,
   });

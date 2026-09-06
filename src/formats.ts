@@ -24,7 +24,6 @@ export interface CardFormat {
   trimMM: { w: number; h: number };
   bleedMM: number;
   cornerRadiusMM: number; // preview mask only
-  safeMM: number;
   thickRatio: number; // 3D preview thickness ÷ trim height
   hasBack: boolean; // only the credit card has a separate back
   panels?: FormatPanel[]; // absent = a single print area
@@ -38,7 +37,6 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     trimMM: { w: 54, h: 85.6 },
     bleedMM: 3,
     cornerRadiusMM: 3.18,
-    safeMM: 3,
     thickRatio: 0.00888,
     hasBack: true,
   },
@@ -48,7 +46,6 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     trimMM: { w: 63.5, h: 42.7 },
     bleedMM: 2,
     cornerRadiusMM: 1.5,
-    safeMM: 2,
     thickRatio: 0.0015,
     hasBack: false,
   },
@@ -58,7 +55,6 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     trimMM: { w: 70, h: 70 },
     bleedMM: 2,
     cornerRadiusMM: 2,
-    safeMM: 2,
     thickRatio: 0.0015,
     hasBack: false,
   },
@@ -69,7 +65,6 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     trimMM: { w: 289, h: 183 },
     bleedMM: 3,
     cornerRadiusMM: 0,
-    safeMM: 4,
     thickRatio: 0.0008,
     hasBack: false,
     panels: [
@@ -87,7 +82,6 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     trimMM: { w: 154, h: 101.6 },
     bleedMM: 3,
     cornerRadiusMM: 0,
-    safeMM: 3,
     thickRatio: 0.0008,
     hasBack: false,
     panels: [

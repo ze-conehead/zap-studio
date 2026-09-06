@@ -26,14 +26,7 @@ import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
 import { gradientFill, noiseTile } from "../background";
 import { isBackground } from "../factory";
-import {
-  CANVAS,
-  CORNER_RADIUS_PX,
-  FOLD_X,
-  PANELS,
-  SAFE_RECT,
-  TRIM_RECT,
-} from "../card";
+import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../card";
 import { t, useT } from "../i18n";
 import type { GameMeta } from "../gamelist";
 import {
@@ -140,7 +133,7 @@ export function EditorCanvas({
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
-  const { project, side, showBleed, showSafe } = state;
+  const { project, side, showBleed } = state;
   // Re-render whenever a gamelist.xml is uploaded/removed, even without
   // navigating away, so MetaBadge layers stay live.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
@@ -210,7 +203,6 @@ export function EditorCanvas({
           guides={guides}
           badgeMeta={badgeMeta}
           showBleed={showBleed}
-          showSafe={showSafe}
           registerStage={registerFront}
         />
         {hasBack && (
@@ -222,7 +214,6 @@ export function EditorCanvas({
             guides={guides}
             badgeMeta={badgeMeta}
             showBleed={showBleed}
-            showSafe={showSafe}
             onRemove={() => dispatch({ type: "REMOVE_BACK" })}
             registerStage={registerBack}
           />
@@ -246,7 +237,6 @@ function FaceStage({
   guides,
   badgeMeta,
   showBleed,
-  showSafe,
   registerStage,
   onRemove,
 }: {
@@ -261,7 +251,6 @@ function FaceStage({
   guides: GuideApi;
   badgeMeta?: GameMeta;
   showBleed: boolean;
-  showSafe: boolean;
   registerStage: (s: Konva.Stage | null) => void;
   onRemove?: () => void;
 }) {
@@ -445,7 +434,7 @@ function FaceStage({
           )}
 
           <Layer name="guides" listening={false}>
-            <Guides showBleed={showBleed} showSafe={showSafe} />
+            <Guides showBleed={showBleed} />
             <PanelGuides />
           </Layer>
 
@@ -1005,42 +994,28 @@ function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
   );
 }
 
-function Guides({ showBleed, showSafe }: { showBleed: boolean; showSafe: boolean }) {
+function Guides({ showBleed }: { showBleed: boolean }) {
+  if (!showBleed) return null;
   return (
     <>
-      {showBleed && (
-        <>
-          <Rect
-            x={TRIM_RECT.x}
-            y={TRIM_RECT.y}
-            width={TRIM_RECT.w}
-            height={TRIM_RECT.h}
-            stroke="#f8fafc"
-            strokeWidth={1.5}
-            dash={[8, 6]}
-          />
-          <Rect
-            x={0.75}
-            y={0.75}
-            width={CANVAS.w - 1.5}
-            height={CANVAS.h - 1.5}
-            stroke="#f472b6"
-            strokeWidth={1.5}
-          />
-        </>
-      )}
-      {showSafe && (
-        <Rect
-          x={SAFE_RECT.x}
-          y={SAFE_RECT.y}
-          width={SAFE_RECT.w}
-          height={SAFE_RECT.h}
-          stroke="#4ade80"
-          strokeWidth={1.5}
-          dash={[5, 5]}
-        />
-      )}
-      {showBleed && <RoundedCardOutline />}
+      <Rect
+        x={TRIM_RECT.x}
+        y={TRIM_RECT.y}
+        width={TRIM_RECT.w}
+        height={TRIM_RECT.h}
+        stroke="#f8fafc"
+        strokeWidth={1.5}
+        dash={[8, 6]}
+      />
+      <Rect
+        x={0.75}
+        y={0.75}
+        width={CANVAS.w - 1.5}
+        height={CANVAS.h - 1.5}
+        stroke="#f472b6"
+        strokeWidth={1.5}
+      />
+      <RoundedCardOutline />
     </>
   );
 }

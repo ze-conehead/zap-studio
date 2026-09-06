@@ -70,7 +70,7 @@ export function Toolbar({
   const { state, dispatch } = useStore();
   const t = useT();
   const [lang, setLang] = useLang();
-  const { project, side, past, future, showBleed, showSafe } = state;
+  const { project, side, past, future, showBleed } = state;
   const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -200,36 +200,27 @@ export function Toolbar({
         </label>
         <label className="flex items-center gap-1.5">
           <Checkbox
-            checked={showSafe}
-            onCheckedChange={() => dispatch({ type: "TOGGLE", key: "showSafe" })}
+            checked={guides.state.on}
+            onCheckedChange={() => guides.toggle()}
           />
-          {t("Safe zone")}
+          {t("Guides")}
         </label>
         {project.isGlobalTemplate && (
-          <>
-            <label className="flex items-center gap-1.5">
-              <Checkbox
-                checked={guides.state.on}
-                onCheckedChange={() => guides.toggle()}
-              />
-              {t("Guides")}
-            </label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={t("Add guide")}>
-                  <Ruler />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => guides.add("x")}>
-                  <MoveVertical /> {t("Vertical guide")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => guides.add("y")}>
-                  <MoveHorizontal /> {t("Horizontal guide")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" title={t("Add guide")}>
+                <Ruler />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => guides.add("x")}>
+                <MoveVertical /> {t("Vertical guide")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => guides.add("y")}>
+                <MoveHorizontal /> {t("Horizontal guide")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

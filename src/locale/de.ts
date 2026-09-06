@@ -33,7 +33,6 @@ export const de: Record<string, string> = {
   "Undo (⌘Z)": "Rückgängig (⌘Z)",
   "Redo (⌘⇧Z)": "Wiederholen (⌘⇧Z)",
   Bleed: "Beschnitt",
-  "Safe zone": "Sicherheitszone",
   Guides: "Hilfslinien",
   "Add guide": "Hilfslinie hinzufügen",
   "Vertical guide": "Vertikale Hilfslinie",

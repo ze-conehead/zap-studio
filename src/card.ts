@@ -33,15 +33,6 @@ export const TRIM_RECT = {
   h: mm(TRIM_MM.h),
 };
 
-// Safe area: keep important content this far inside the trim.
-export const SAFE_MM = FMT.safeMM;
-export const SAFE_RECT = {
-  x: TRIM_RECT.x + mm(SAFE_MM),
-  y: TRIM_RECT.y + mm(SAFE_MM),
-  w: TRIM_RECT.w - mm(SAFE_MM) * 2,
-  h: TRIM_RECT.h - mm(SAFE_MM) * 2,
-};
-
 export const CORNER_RADIUS_MM = FMT.cornerRadiusMM; // for the preview mask only
 export const CORNER_RADIUS_PX = mm(CORNER_RADIUS_MM);
 
