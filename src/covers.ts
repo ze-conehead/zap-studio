@@ -6,10 +6,10 @@
 //                   when the chosen source has no credentials.
 //
 // SteamGridDB's API and CDN block browser CORS, and IGDB's API needs an
-// OAuth token from Twitch (also CORS-blocked). With no backend, those API
-// calls run through the public CORS proxy proxy.cors.sh (free for
-// localhost). SteamGridDB images go through the wsrv.nl image proxy;
-// IGDB's image CDN already sends CORS headers.
+// OAuth token from Twitch (also CORS-blocked). Vite's dev/preview server
+// forwards them for us (see the cover-art proxy in vite.config.ts), so an
+// API key only ever goes browser → local Vite → upstream. IGDB's image CDN
+// and libretro-thumbnails (GitHub) already send CORS headers.
 
 import { t } from "./i18n";
 export interface CoverCandidate {
@@ -21,9 +21,12 @@ export interface CoverCandidate {
 
 export type CoverSource = "sgdb" | "igdb" | "libretro";
 
-const CORS_PROXY = "https://proxy.cors.sh/";
-const IMG_PROXY = "https://wsrv.nl/?url=";
-const proxied = (url: string) => IMG_PROXY + encodeURIComponent(url);
+// Same-origin paths handled by the Vite cover-art proxy (vite.config.ts).
+const SGDB_API = "/api/sgdb";
+const IGDB_API = "/api/igdb";
+const TWITCH_API = "/api/twitch";
+const proxied = (url: string) =>
+  `${window.location.origin}/img?url=${encodeURIComponent(url)}`;
 
 // ── stored settings ────────────────────────────────────────────────────────
 
@@ -103,13 +106,11 @@ interface SgdbGrid {
 async function sgdbFetch<T>(path: string): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${CORS_PROXY}https://www.steamgriddb.com/api/v2${path}`, {
+    res = await fetch(`${SGDB_API}${path}`, {
       headers: { Authorization: `Bearer ${getSgdbKey()}` },
     });
   } catch {
-    throw new Error(
-      t("SteamGridDB not reachable – the CORS proxy (proxy.cors.sh) is not responding."),
-    );
+    throw new Error(t("SteamGridDB is not reachable."));
   }
   if (res.status === 401 || res.status === 403) {
     throw new Error(
@@ -163,13 +164,13 @@ async function igdbToken(): Promise<string> {
   let res: Response;
   try {
     res = await fetch(
-      `${CORS_PROXY}https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(
+      `${TWITCH_API}/oauth2/token?client_id=${encodeURIComponent(
         clientId,
       )}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
       { method: "POST" },
     );
   } catch {
-    throw new Error(t("IGDB/Twitch not reachable – the CORS proxy is not responding."));
+    throw new Error(t("IGDB/Twitch is not reachable."));
   }
   if (!res.ok) {
     throw new Error(
@@ -198,13 +199,13 @@ async function igdbQuery(body: string): Promise<IgdbGame[]> {
   const { clientId } = getIgdbCreds();
   let res: Response;
   try {
-    res = await fetch(`${CORS_PROXY}https://api.igdb.com/v4/games`, {
+    res = await fetch(`${IGDB_API}/games`, {
       method: "POST",
       headers: { "Client-ID": clientId, Authorization: `Bearer ${token}` },
       body,
     });
   } catch {
-    throw new Error(t("IGDB not reachable – the CORS proxy is not responding."));
+    throw new Error(t("IGDB is not reachable."));
   }
   if (res.status === 401) {
     ls.set(IGDB_TOKEN, "");

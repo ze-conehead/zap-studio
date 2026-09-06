@@ -198,7 +198,7 @@ export function CoverSearchDialog({
                 >
                   {src === "sgdb" ? "steamgriddb.com" : "dev.twitch.tv"}
                 </a>
-                {t(". Requests go through the proxy proxy.cors.sh.")}
+                {t(". Requests are proxied locally by the dev server; the key stays on this machine.")}
               </span>
               {src === "sgdb" ? (
                 <div className="flex gap-1.5">

@@ -106,17 +106,14 @@ export const de: Record<string, string> = {
   "The image could not be loaded.": "Bild konnte nicht geladen werden.",
 
   // ── covers.ts ────────────────────────────────────────────────────────────
-  "SteamGridDB not reachable – the CORS proxy (proxy.cors.sh) is not responding.":
-    "SteamGridDB nicht erreichbar – der CORS-Proxy (proxy.cors.sh) antwortet nicht.",
+  "SteamGridDB is not reachable.": "SteamGridDB ist nicht erreichbar.",
   "SteamGridDB API key missing or invalid. Create a new key at steamgriddb.com.":
     "SteamGridDB-API-Key fehlt oder ist ungültig. Neuen Key unter steamgriddb.com anlegen.",
   "SteamGridDB error (HTTP {status}).": "SteamGridDB-Fehler (HTTP {status}).",
-  "IGDB/Twitch not reachable – the CORS proxy is not responding.":
-    "IGDB/Twitch nicht erreichbar – der CORS-Proxy antwortet nicht.",
+  "IGDB/Twitch is not reachable.": "IGDB/Twitch ist nicht erreichbar.",
   "IGDB credentials invalid. Create a Client ID and Client Secret at dev.twitch.tv.":
     "IGDB-Zugangsdaten ungültig. Client-ID und Client-Secret unter dev.twitch.tv anlegen.",
-  "IGDB not reachable – the CORS proxy is not responding.":
-    "IGDB nicht erreichbar – der CORS-Proxy antwortet nicht.",
+  "IGDB is not reachable.": "IGDB ist nicht erreichbar.",
   "IGDB token expired – please search again.": "IGDB-Token abgelaufen – bitte erneut suchen.",
   "IGDB error (HTTP {status}).": "IGDB-Fehler (HTTP {status}).",
   "GitHub not reachable.": "GitHub nicht erreichbar.",
@@ -342,8 +339,8 @@ export const de: Record<string, string> = {
   " (but search uses libretro – see below)": " (aber Suche nutzt libretro – s. u.)",
   Change: "Ändern",
   "{source} credentials – free at ": "{source}-Zugangsdaten – kostenlos unter ",
-  ". Requests go through the proxy proxy.cors.sh.":
-    ". Anfragen laufen über den Proxy proxy.cors.sh.",
+  ". Requests are proxied locally by the dev server; the key stays on this machine.":
+    ". Anfragen werden lokal vom Dev-Server weitergeleitet; der Key bleibt auf diesem Rechner.",
   "API key": "API-Key",
   Save: "Speichern",
   "Client ID": "Client-ID",
