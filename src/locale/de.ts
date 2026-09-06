@@ -313,7 +313,11 @@ export const de: Record<string, string> = {
   "Holographic card": "Holographische Karte",
   "Reset view": "Ansicht zurücksetzen",
   Close: "Schließen",
-  "Drag to rotate": "Ziehen zum Drehen",
+  Flip: "Umdrehen",
+  "Zoom in": "Vergrößern",
+  "Zoom out": "Verkleinern",
+  "Drag to rotate · flick to spin · wheel to zoom · F flips, R resets":
+    "Ziehen zum Drehen · Schwung zum Weiterdrehen · Mausrad zoomt · F dreht um, R setzt zurück",
 
   // ── DemoMode ─────────────────────────────────────────────────────────────
   "Demo mode": "Demo-Modus",
@@ -331,7 +335,10 @@ export const de: Record<string, string> = {
   Holographic: "Holografisch",
   Reset: "Zurücksetzen",
   "Close viewer": "Zurück",
-  "Drag to rotate · ← → for the next card": "Ziehen zum Drehen · ← → für die nächste Karte",
+  "Click to tear open": "Zum Aufreißen klicken",
+  RARE: "RAR",
+  "Drag to rotate · flick to spin · wheel to zoom · ← → for the next card":
+    "Ziehen zum Drehen · Schwung zum Weiterdrehen · Mausrad zoomt · ← → für die nächste Karte",
 
   // ── CoverSearchDialog ────────────────────────────────────────────────────
   "Cover {n} / {total}:": "Cover {n} / {total}:",
