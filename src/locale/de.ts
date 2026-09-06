@@ -181,9 +181,6 @@ export const de: Record<string, string> = {
   " card. The shape itself is not drawn on the cards.":
     " Karte deren Hauptbild. Die Form selbst wird auf den Karten nicht gezeichnet.",
   "Main image": "Hauptbild",
-  "This is the card's main image": "Dies ist das Hauptbild der Karte",
-  "Clipped by the main alpha mask from “All consoles” (if set there). Without a mark, the card's only image counts as the main image automatically.":
-    "Wird von der Haupt-Alpha-Maske aus „Alle Konsolen“ beschnitten (falls dort gesetzt). Ohne Markierung gilt das einzige Bild der Karte automatisch als Hauptbild.",
   Mask: "Maske",
   "Dissolve mask": "Maske auflösen",
   "{n} layer(s) in this mask.": "{n} Ebene(n) in dieser Maske.",

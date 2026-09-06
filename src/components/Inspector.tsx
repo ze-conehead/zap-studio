@@ -145,6 +145,8 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
 
   return (
     <Panel title={t("Properties")}>
+      {!isMainMask && <MainRoleControls patch={patch} />}
+
       {!fixedName && (
         <Field label={t("Name")}>
           <Input
@@ -200,7 +202,6 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         </Button>
       </div>
 
-      {!isMainMask && <MainRoleControls patch={patch} />}
       {!isMeta && !isMainMask && !isImageSel && <MaskControls patch={patch} />}
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
@@ -222,7 +223,7 @@ function MainRoleControls({ patch }: { patch: Patch }) {
   if (isGlobalTemplate) {
     if (selected.type !== "shape" && selected.type !== "image") return null;
     return (
-      <div className="flex flex-col gap-1.5 border-t pt-3">
+      <div className="flex flex-col gap-1.5">
         <Label>{t("Main alpha mask")}</Label>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <Checkbox
@@ -242,19 +243,13 @@ function MainRoleControls({ patch }: { patch: Patch }) {
 
   if (!isTemplate && selected.type === "image") {
     return (
-      <div className="flex flex-col gap-1.5 border-t pt-3">
-        <Label>{t("Main image")}</Label>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Checkbox
-            checked={!!selected.main}
-            onCheckedChange={(v) => patch({ main: !!v })}
-          />
-          {t("This is the card's main image")}
-        </label>
-        <p className="text-xs text-muted-foreground">
-          {t("Clipped by the main alpha mask from \u201cAll consoles\u201d (if set there). Without a mark, the card's only image counts as the main image automatically.")}
-        </p>
-      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={!!selected.main}
+          onCheckedChange={(v) => patch({ main: !!v })}
+        />
+        {t("Main image")}
+      </label>
     );
   }
 
