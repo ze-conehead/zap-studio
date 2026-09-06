@@ -9,7 +9,7 @@ import { downloadBlob } from "../export";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
-import { stickerSheetPdf } from "../pdf";
+import { loadIsoCoatedProfile, stickerSheetPdf } from "../pdf";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
@@ -50,6 +50,7 @@ export function CutSheetDialog({
   const [result, setResult] = useState<SheetResult | null>(null);
   const [pageIdx, setPageIdx] = useState(0);
   const [error, setError] = useState("");
+  const [icc, setIcc] = useState<Uint8Array | null>(null);
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
 
@@ -60,6 +61,7 @@ export function CutSheetDialog({
     setCards([]);
     setPageIdx(0);
     setError("");
+    setIcc(null);
     listGameDesigns().then((g) => {
       setGames(g);
       setPicked(new Set(g.map((x) => x.gameKey)));
@@ -74,6 +76,7 @@ export function CutSheetDialog({
     setPhase("rendering");
     setError("");
     try {
+      if (opts.target === "wmd") setIcc(await loadIsoCoatedProfile());
       const loaded = await loadSheetCards(keys);
       if (!loaded.length) throw new Error("empty");
       await ensureFontsLoaded();
@@ -135,6 +138,7 @@ export function CutSheetDialog({
         heightMM: pg.heightMM,
         bleedMM: pg.bleedMM,
         cutRects: pg.cutRects,
+        iccProfile: icc ?? undefined,
       });
       downloadBlob(blob, "sticker-sheet-wmd.pdf");
       return;
@@ -463,10 +467,17 @@ export function CutSheetDialog({
             <p className="text-xs text-muted-foreground">
               {wmd
                 ? t(
-                    "Cyan = the “kiss_cut” contour. The PDF is one sheet, {w}×{h} mm incl. a 2 mm outer bleed, CMYK image + magenta spot cut line — upload it as the print data. Order the sheet at this exact size.",
+                    "Cyan = the “kiss_cut” contour. The PDF is one sheet, {w}×{h} mm incl. a 2 mm outer bleed, RGB image + magenta spot cut line — upload it as the print data. Order the sheet at this exact size. {icc}",
                     {
                       w: result.pages[0].widthMM.toFixed(1),
                       h: result.pages[0].heightMM.toFixed(1),
+                      icc: icc
+                        ? t(
+                            "Output intent: ISO Coated v2 300% (ECI) — the ICC profile is embedded.",
+                          )
+                        : t(
+                            "Output intent: ISO Coated v2 300% (ECI), named only — wir-machen-druck converts the RGB image to it.",
+                          ),
                     },
                   )
                 : t(
