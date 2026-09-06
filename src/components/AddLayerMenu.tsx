@@ -5,6 +5,7 @@ import {
   Crop,
   Link2,
   Loader2,
+  PaintBucket,
   Pill,
   Plus,
   Square,
@@ -32,6 +33,8 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   fitImageToMask,
+  isBackground,
+  makeBackgroundLayer,
   makeImageLayer,
   makeMainMaskLayer,
   makeMetaBadgeLayer,
@@ -52,6 +55,8 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
   const t = useT();
   const { project, side } = state;
   const onBack = side === "back";
+  const faceLayers = onBack ? project.back?.layers ?? [] : project.layers;
+  const hasBg = faceLayers.some(isBackground);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
@@ -135,6 +140,15 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
           >
             <Type /> {t("Text")}
           </DropdownMenuItem>
+          {!hasBg && (
+            <DropdownMenuItem
+              onClick={() =>
+                dispatch({ type: "ADD_LAYER", layer: makeBackgroundLayer() })
+              }
+            >
+              <PaintBucket /> {t("Background")}
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel>{t("Image")}</DropdownMenuLabel>

@@ -52,17 +52,17 @@ UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
   auf der Spiel-Karte schreibgeschützt und landen im PNG-Export. Beim
   Bearbeiten einer Konsolen-Vorlage wird die globale Vorlage als Kontext
   eingeblendet. Vorlagen erscheinen nicht in der Projektliste.
-- **Kartenhintergrund**: einfarbig **oder** Farbverlauf (zwei Farben +
-  Richtung), dazu ein optionaler Körnungs-/Noise-Overlay (0–100 %,
-  Overlay-Blend). Wird in den PNG-Export übernommen.
-  - Jede **Konsolen-Vorlage** kann einen eigenen Hintergrund festlegen
-    (Checkbox „Eigenen Hintergrund für diese Vorlage"); die **globale
-    Vorlage** hat immer einen (kein Opt-in).
-  - Jede Karte wählt unter **Hintergrund-Quelle**: eigener Hintergrund,
-    „Von der Konsolen-Vorlage" oder „Von der globalen Vorlage". Nicht
-    gesetzte Quellen sind deaktiviert. **Standard ist „Von der globalen
-    Vorlage"** – neue Karten übernehmen deren Hintergrund, bis man ihn
-    umstellt.
+- **Hintergrund** ist eine eigene, unterste **Ebene** (Farbeimer-Symbol,
+  nicht verschiebbar). Standardmäßig hat ein Design **keinen** Hintergrund –
+  über „+ → Hintergrund" legt man einen an, er lässt sich aus-/einblenden,
+  bearbeiten und wieder löschen. Füllung: einfarbig **oder** Farbverlauf
+  (zwei Farben + Richtung) plus optionalen Körnungs-/Noise-Overlay
+  (0–100 %). Wird in den PNG-Export übernommen.
+  - In den Eigenschaften der Hintergrund-Ebene wählt eine **Spiel-Karte**
+    die **Hintergrund-Quelle**: eigener Hintergrund, „Von der
+    Konsolen-Vorlage" oder „Von der globalen Vorlage" (letztere beiden
+    deaktiviert, solange die Vorlage keine Hintergrund-Ebene hat). Migrierte
+    Alt-Designs behalten „Von der globalen Vorlage".
 - **Formen**: „+ Form" → Kapsel, Quadrat/Rechteck, Kreis. Jede Form hat
   dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
   optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck

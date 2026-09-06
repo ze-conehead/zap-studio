@@ -15,12 +15,8 @@ import {
 } from "react-konva";
 import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
-import {
-  gradientPoints,
-  gradientPointsBox,
-  noiseTile,
-  resolveBackground,
-} from "../background";
+import { gradientPoints, gradientPointsBox, noiseTile } from "../background";
+import { isBackground } from "../factory";
 import {
   CANVAS,
   CORNER_RADIUS_PX,
@@ -41,8 +37,8 @@ import {
 import { useImage } from "../hooks/useImage";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
-import { DEFAULT_BACKGROUND_SOURCE } from "../types";
 import type {
+  BackgroundLayer as TBackgroundLayer,
   CardBackground,
   ImageLayer as TImageLayer,
   Layer as TLayer,
@@ -95,19 +91,18 @@ export function withMainMask(
   return out;
 }
 
-// Which background actually paints for the current view.
-export function effectiveBackground(
-  project: Project,
-  consoleBg?: CardBackground,
-  globalBg?: CardBackground,
+// The fill a background layer actually paints. `inherit` (front game cards)
+// lets it pull the fill from the console / global template instead.
+export function effectiveBgFill(
+  bgLayer: TBackgroundLayer | undefined,
+  opts: { inherit: boolean; consoleBg?: CardBackground; globalBg?: CardBackground },
 ): CardBackground | null {
-  const own = resolveBackground(project);
-  if (project.isTemplate) return own.enabled ? own : null;
-
-  const src = project.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  if (src === "global" && globalBg?.enabled) return globalBg;
-  if (src === "console" && consoleBg?.enabled) return consoleBg;
-  return own;
+  if (!bgLayer || !bgLayer.visible) return null;
+  if (opts.inherit) {
+    if (bgLayer.source === "global") return opts.globalBg ?? null;
+    if (bgLayer.source === "console") return opts.consoleBg ?? null;
+  }
+  return bgLayer.fill;
 }
 
 export function EditorCanvas({
@@ -133,21 +128,23 @@ export function EditorCanvas({
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
   const badgeMeta = resolveBadgeMeta(project);
 
-  // The active face's own layer stack.
-  const layerList = back ? project.back?.layers ?? [] : project.layers;
+  // The active face's stack, split into the (pinned, bottom) background layer
+  // and everything else.
+  const faceLayers = back ? project.back?.layers ?? [] : project.layers;
+  const bgLayer = faceLayers.find(isBackground);
+  const layerList = faceLayers.filter((l) => !isBackground(l));
 
-  // The back is a plain face: its own background, no template overlay, no
-  // main alpha mask. The front splices in the global "main alpha mask" right
-  // above the card's main image so the existing mask pipeline clips it.
-  const bg = back
-    ? resolveBackground({
-        background: project.back?.background,
-        backgroundColor: project.back?.backgroundColor ?? "",
-      })
-    : effectiveBackground(project, consoleBg, globalBg);
+  // Front game cards may inherit the background fill from a template; the
+  // back and templates always use their own.
+  const bg = effectiveBgFill(bgLayer, {
+    inherit: !back && !project.isTemplate,
+    consoleBg,
+    globalBg,
+  });
+  // The back is a plain face — no template overlay, no main alpha mask.
   const renderLayers = back
     ? layerList
-    : withMainMask(project, project.layers, mainMask);
+    : withMainMask(project, layerList, mainMask);
   const overlayLayers = back ? [] : overlay;
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -230,7 +227,7 @@ export function EditorCanvas({
           }}
         >
           {bg && (
-            <Layer listening={false}>
+            <Layer listening={false} opacity={bgLayer?.opacity ?? 1}>
               <CardBackgroundNodes bg={bg} />
             </Layer>
           )}
@@ -496,6 +493,9 @@ export function LayerInner({
   // As a mask, the node paints only its alpha into its Konva layer and keeps
   // (destination-in) the clipped layers drawn before it.
   const gco = asMask ? ("destination-in" as const) : undefined;
+  // Background layers are painted separately as a full-canvas fill, never
+  // through the normal layer pipeline.
+  if (layer.type === "background") return null;
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;

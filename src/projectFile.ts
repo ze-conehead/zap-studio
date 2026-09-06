@@ -1,5 +1,5 @@
 import { t } from "./i18n";
-import { newProject, uid } from "./factory";
+import { migrateProject, newProject, uid } from "./factory";
 import type { Layer, Project } from "./types";
 
 const FORMAT = "credit-card-sticker-studio";
@@ -23,12 +23,12 @@ export function parseProject(json: string): Project {
   }
   const src = data.project;
   const base = newProject(src.name || t("Imported design"));
-  return {
+  return migrateProject({
     ...base,
     name: src.name || base.name,
     format: src.format ?? base.format,
-    backgroundColor: src.backgroundColor || base.backgroundColor,
-    background: src.background ?? base.background,
+    backgroundColor: src.backgroundColor,
+    background: src.background,
     backgroundSource: src.backgroundSource,
     layers: Array.isArray(src.layers) ? (src.layers as Layer[]).map(sanitizeLayer) : [],
     back: src.back
@@ -42,7 +42,7 @@ export function parseProject(json: string): Project {
       : undefined,
     id: uid(),
     updatedAt: Date.now(),
-  };
+  });
 }
 
 function sanitizeLayer(l: Layer): Layer {

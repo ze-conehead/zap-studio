@@ -4,7 +4,13 @@
 
 import { TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
-import { GLOBAL_TEMPLATE_ID, makeTextLayer, newProject, templateId } from "./factory";
+import {
+  GLOBAL_TEMPLATE_ID,
+  isBackground,
+  makeTextLayer,
+  newProject,
+  templateId,
+} from "./factory";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import type { CardBackground, Layer, Project } from "./types";
@@ -65,10 +71,17 @@ export async function drawPack(
   const picks: typeof pool = [];
   while (picks.length < size) picks.push(...shuffle(pool).slice(0, size - picks.length));
 
+  const bgFill = (p?: Project) => {
+    const bg = p?.layers.find(isBackground);
+    return bg?.visible ? bg.fill : undefined;
+  };
+  const overlayable = (p?: Project) =>
+    (p?.layers ?? []).filter((l) => !l.mainMask && !isBackground(l));
+
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
-  const globalBg = globalP?.background;
+  const globalBg = bgFill(globalP);
   const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
-  const globalLayers = (globalP?.layers ?? []).filter((l) => !l.mainMask);
+  const globalLayers = overlayable(globalP);
 
   const tplCache = new Map<string, Project | undefined>();
   const cards: DemoCard[] = [];
@@ -89,8 +102,8 @@ export async function drawPack(
       gameTitle: pick.game.title,
       project:
         saved ?? placeholderProject(gameKey, pick.console.name, pick.game.title),
-      overlay: [...(consoleP?.layers ?? []), ...globalLayers],
-      consoleBg: consoleP?.background,
+      overlay: [...overlayable(consoleP), ...globalLayers],
+      consoleBg: bgFill(consoleP),
       globalBg,
       mainMask,
       holo: false,

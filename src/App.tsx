@@ -12,6 +12,7 @@ import { ProjectsDialog } from "./components/ProjectsDialog";
 import { Toolbar } from "./components/Toolbar";
 import {
   GLOBAL_TEMPLATE_ID,
+  isBackground,
   makeTextLayer,
   newConsoleTemplate,
   newGlobalTemplate,
@@ -85,13 +86,21 @@ export default function App() {
       ]);
       if (!alive) return;
 
-      const globalBg = globalP?.background;
-      const consoleBg = consoleP?.background;
+      // A template's own (visible) background layer is what a card inherits
+      // when its background source is "console" / "global".
+      const bgFill = (p?: Project) => {
+        const bg = p?.layers.find(isBackground);
+        return bg?.visible ? bg.fill : undefined;
+      };
+      const globalBg = bgFill(globalP);
+      const consoleBg = bgFill(consoleP);
 
       // The global "main alpha mask" clips each card's main image; it never
-      // paints as an overlay layer itself.
+      // paints as an overlay layer itself. Background layers never overlay.
       const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
-      const globalLayers = (globalP?.layers ?? []).filter((l) => !l.mainMask);
+      const overlayable = (p?: Project) =>
+        (p?.layers ?? []).filter((l) => !l.mainMask && !isBackground(l));
+      const globalLayers = overlayable(globalP);
 
       let overlay: Layer[] = [];
       if (project.isGlobalTemplate) {
@@ -99,7 +108,7 @@ export default function App() {
       } else if (project.isTemplate) {
         overlay = globalLayers;
       } else {
-        overlay = [...(consoleP?.layers ?? []), ...globalLayers];
+        overlay = [...overlayable(consoleP), ...globalLayers];
       }
       setTemplates({
         overlay,
@@ -116,13 +125,9 @@ export default function App() {
   // Boot: restore last project or start a fresh one.
   useEffect(() => {
     (async () => {
-      // "All consoles" always has its own (enabled) background, and cards
-      // may reference it — make sure it exists and is on from the start.
-      const g = await loadProject(GLOBAL_TEMPLATE_ID);
-      if (!g) {
+      // Make sure the "All consoles" template exists (cards may reference it).
+      if (!(await loadProject(GLOBAL_TEMPLATE_ID))) {
         await saveProject(newGlobalTemplate());
-      } else if (g.background && !g.background.enabled) {
-        await saveProject({ ...g, background: { ...g.background, enabled: true } });
       }
 
       const id = lastProjectId();
@@ -200,10 +205,6 @@ export default function App() {
   const openGlobalTemplate = async () => {
     if (project?.id === GLOBAL_TEMPLATE_ID) return;
     const existing = await loadProject(GLOBAL_TEMPLATE_ID);
-    if (existing?.background && !existing.background.enabled) {
-      // "All consoles" always has its own background on.
-      existing.background = { ...existing.background, enabled: true };
-    }
     setProject(existing ?? newGlobalTemplate());
   };
 

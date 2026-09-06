@@ -11,7 +11,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
-import { resolveBackground } from "../background";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
 import {
   getCatalog,
@@ -40,8 +39,8 @@ import { FONTS } from "../fonts";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
-import { DEFAULT_BACKGROUND_SOURCE } from "../types";
 import type {
+  BackgroundLayer,
   BackgroundSource,
   CardBackground,
   ImageLayer,
@@ -99,7 +98,6 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
                 </>
               )}
             </p>
-            <TemplateBackgroundControls />
             {!global && state.project.consoleId && (
               <GamelistControls
                 consoleId={state.project.consoleId}
@@ -112,12 +110,22 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       );
     }
     return (
-      <Panel title={t("Card background")}>
-        <BackgroundSourceControl consoleBg={consoleBg} globalBg={globalBg} />
+      <Panel title={t("Properties")}>
         <p className="text-xs text-muted-foreground">
           {t("Select a layer to edit it.")}
         </p>
       </Panel>
+    );
+  }
+
+  if (selected.type === "background") {
+    return (
+      <BackgroundLayerProps
+        layer={selected}
+        patch={patch}
+        consoleBg={consoleBg}
+        globalBg={globalBg}
+      />
     );
   }
 
@@ -342,31 +350,87 @@ function MaskControls({ patch }: { patch: Patch }) {
   );
 }
 
-function BackgroundControls() {
-  const { state, dispatch } = useStore();
+// The pinned bottom "Background" layer: fill (or inherit from a template on
+// a game card) + opacity.
+function BackgroundLayerProps({
+  layer,
+  patch,
+  consoleBg,
+  globalBg,
+}: {
+  layer: BackgroundLayer;
+  patch: Patch;
+  consoleBg?: CardBackground;
+  globalBg?: CardBackground;
+}) {
+  const t = useT();
+  const { state } = useStore();
+  const isGameCard = !state.project.isTemplate && state.side !== "back";
+  const source = layer.source ?? "card";
   return (
-    <FillEditor
-      value={resolveBackground(state.project)}
-      onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
-    />
+    <Panel title={t("Background")}>
+      <Field label={t("Name")}>
+        <Input
+          value={layer.name}
+          onChange={(e) => patch({ name: e.target.value }, false)}
+          onBlur={(e) => patch({ name: e.target.value })}
+        />
+      </Field>
+      <SliderField
+        label={t("Opacity {n}%", { n: Math.round(layer.opacity * 100) })}
+        min={0}
+        max={1}
+        step={0.01}
+        value={layer.opacity}
+        onChange={(v, done) => patch({ opacity: v }, done)}
+      />
+      {isGameCard && (
+        <Field label={t("Background source")}>
+          <Select
+            value={source}
+            onValueChange={(v) => patch({ source: v as BackgroundSource })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="card">{t("Own background")}</SelectItem>
+              <SelectItem value="console" disabled={!consoleBg}>
+                {t("From the console template")}
+                {!consoleBg ? t(" (not set)") : ""}
+              </SelectItem>
+              <SelectItem value="global" disabled={!globalBg}>
+                {t("From the global template")}
+                {!globalBg ? t(" (not set)") : ""}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+      {isGameCard && source !== "card" ? (
+        <p className="text-xs text-muted-foreground">
+          {t("The background comes from the ")}
+          {source === "console" ? t("console template") : t("global template")}
+          {t(". Edit it there (click the console / “All consoles” in the tree).")}
+        </p>
+      ) : (
+        <FillEditor
+          value={layer.fill}
+          onChange={(fp, history) =>
+            patch({ fill: { ...layer.fill, ...fp } }, history)
+          }
+        />
+      )}
+    </Panel>
   );
 }
 
-// Shown while editing the back side with nothing selected: its background
-// plus the "remove back" action.
+// Shown while editing the back side with nothing selected.
 function BackFacePanel() {
   const t = useT();
-  const { state, dispatch } = useStore();
-  const back = state.project.back;
+  const { dispatch } = useStore();
   return (
-    <Panel title={t("Back background")}>
-      <FillEditor
-        value={resolveBackground({
-          background: back?.background,
-          backgroundColor: back?.backgroundColor ?? "",
-        })}
-        onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
-      />
+    <Panel title={t("Back")}>
       <p className="text-xs text-muted-foreground">{t("Select a layer to edit it.")}</p>
       <Button
         variant="outline"
@@ -448,100 +512,6 @@ const pxToMm = (pos: number, axis: "x" | "y") =>
   (pos - (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y)) / PX_PER_MM;
 const mmToPxGuide = (mm: number, axis: "x" | "y") =>
   mm * PX_PER_MM + (axis === "x" ? TRIM_RECT.x : TRIM_RECT.y);
-
-// Card: pick whose background paints, then edit the card's own background.
-function BackgroundSourceControl({
-  consoleBg,
-  globalBg,
-}: {
-  consoleBg?: CardBackground;
-  globalBg?: CardBackground;
-}) {
-  const t = useT();
-  const { state, dispatch } = useStore();
-  const src = state.project.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  const options: { value: BackgroundSource; label: string; disabled?: boolean }[] = [
-    { value: "card", label: t("Own background") },
-    { value: "console", label: t("From the console template"), disabled: !consoleBg?.enabled },
-    { value: "global", label: t("From the global template"), disabled: !globalBg?.enabled },
-  ];
-
-  return (
-    <>
-      <Field label={t("Background source")}>
-        <Select
-          value={src}
-          onValueChange={(v) => dispatch({ type: "SET_BG_SOURCE", source: v as BackgroundSource })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((o) => (
-              <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
-                {o.label}
-                {o.disabled && o.value !== "card" ? t(" (not set)") : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-
-      {src === "card" ? (
-        <BackgroundControls />
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {t("The background comes from the ")}
-          {src === "console" ? t("console template") : t("global template")}
-          {t(". Edit it there (click the console / \u201cAll consoles\u201d in the tree).")}
-        </p>
-      )}
-    </>
-  );
-}
-
-// Template background editor. The console template's background is opt-in;
-// the global template ("All consoles") always has its own background on.
-function TemplateBackgroundControls() {
-  const t = useT();
-  const { state, dispatch } = useStore();
-  const global = !!state.project.isGlobalTemplate;
-  const bg = resolveBackground(state.project);
-
-  // Older global templates may have been saved with the background off.
-  useEffect(() => {
-    if (global && !bg.enabled) {
-      dispatch({ type: "SET_BACKGROUND", patch: { enabled: true } });
-    }
-  }, [global, bg.enabled, dispatch]);
-
-  return (
-    <div className="flex flex-col gap-2 border-t pt-3">
-      {global ? (
-        <p className="text-xs font-medium text-muted-foreground">{t("Background")}</p>
-      ) : (
-        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <Checkbox
-            checked={!!bg.enabled}
-            onCheckedChange={(v) =>
-              dispatch({ type: "SET_BACKGROUND", patch: { enabled: !!v } })
-            }
-          />
-          {t("Own background for this template")}
-        </label>
-      )}
-      {(global || bg.enabled) && (
-        <FillEditor
-          value={bg}
-          onChange={(patch, history) => dispatch({ type: "SET_BACKGROUND", patch, history })}
-        />
-      )}
-      <p className="text-xs text-muted-foreground">
-        {t("Cards can choose in their properties whether to use this background.")}
-      </p>
-    </div>
-  );
-}
 
 // Console template: upload a gamelist.xml (EmulationStation format) whose
 // entries are matched by title and shown in the "Metadata" tab.

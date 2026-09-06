@@ -8,17 +8,10 @@ import {
   type ReactNode,
 } from "react";
 import { t } from "./i18n";
-import { resolveBackground } from "./background";
-import { makeBackFace, newProject } from "./factory";
+import { isBackground, makeBackFace, newProject } from "./factory";
 import { getFormat } from "./formats";
 import { saveProject } from "./persist";
-import type {
-  BackgroundSource,
-  CardBackground,
-  CardSide,
-  Layer,
-  Project,
-} from "./types";
+import type { CardSide, Layer, Project } from "./types";
 
 interface State {
   project: Project;
@@ -37,8 +30,6 @@ type Action =
   | { type: "SET_SIDE"; side: CardSide }
   | { type: "ADD_BACK" }
   | { type: "REMOVE_BACK" }
-  | { type: "SET_BACKGROUND"; patch: Partial<CardBackground>; history?: boolean }
-  | { type: "SET_BG_SOURCE"; source: BackgroundSource }
   | { type: "ADD_LAYER"; layer: Layer }
   | { type: "PATCH_LAYER"; id: string; patch: Partial<Layer>; history?: boolean }
   | {
@@ -121,40 +112,15 @@ function reducer(state: State, action: Action): State {
       };
     }
 
-    case "SET_BACKGROUND": {
-      if (side === "back") {
-        const cur = project.back ?? makeBackFace();
-        const bg = {
-          ...resolveBackground({
-            background: cur.background,
-            backgroundColor: cur.backgroundColor ?? "",
-          }),
-          ...action.patch,
-        };
-        const next = {
-          ...project,
-          back: { ...cur, background: bg, backgroundColor: bg.color },
-          updatedAt: Date.now(),
-        };
-        return action.history === false
-          ? { ...state, project: next, dirty: true }
-          : commit(state, next);
-      }
-      const bg = { ...resolveBackground(project), ...action.patch };
-      const next = { ...project, background: bg, backgroundColor: bg.color, updatedAt: Date.now() };
-      return action.history === false
-        ? { ...state, project: next, dirty: true }
-        : commit(state, next);
-    }
-
-    case "SET_BG_SOURCE":
-      return commit(state, {
-        ...project,
-        backgroundSource: action.source,
-        updatedAt: Date.now(),
-      });
-
     case "ADD_LAYER": {
+      // The background layer is pinned to index 0; one per face.
+      if (isBackground(action.layer)) {
+        if (layers.some(isBackground)) return state;
+        return {
+          ...commit(state, write(project, [action.layer, ...layers])),
+          selectedId: action.layer.id,
+        };
+      }
       // "main" / "mainMask" are single-slot roles — a new layer claiming one
       // clears it on the others.
       const cleared = layers.map((l) => ({
@@ -175,7 +141,12 @@ function reducer(state: State, action: Action): State {
         j === i ? ({ ...l, ...action.patch } as Layer) : l,
       );
       // Turning a layer into a mask auto-clips the layer directly below it.
-      if (action.patch.mask === true && i > 0 && !next[i - 1].mask) {
+      if (
+        action.patch.mask === true &&
+        i > 0 &&
+        !next[i - 1].mask &&
+        !isBackground(next[i - 1])
+      ) {
         next = next.map((l, j) =>
           j === i - 1 ? ({ ...l, clipped: true } as Layer) : l,
         );
@@ -216,7 +187,7 @@ function reducer(state: State, action: Action): State {
 
     case "DUPLICATE_LAYER": {
       const i = idx(action.id);
-      if (i < 0) return state;
+      if (i < 0 || isBackground(layers[i])) return state;
       const orig = layers[i];
       const copy = {
         ...orig,
@@ -231,10 +202,14 @@ function reducer(state: State, action: Action): State {
 
     case "SET_LAYER_ORDER": {
       const byId = new Map(layers.map((l) => [l.id, l]));
-      const next = action.order
+      let next = action.order
         .map((id) => byId.get(id))
         .filter((l): l is Layer => !!l);
       if (next.length !== layers.length) return state;
+      // The background layer stays pinned to the bottom.
+      if (next.some(isBackground) && !isBackground(next[0])) {
+        next = [...next.filter(isBackground), ...next.filter((l) => !isBackground(l))];
+      }
       const same = next.every((l, i) => l === layers[i]);
       return same ? state : commit(state, write(project, next));
     }

@@ -1,10 +1,13 @@
 import { t } from "./i18n";
-import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL } from "./background";
+import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL, resolveBackground } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
 import { getFormatId, isCard } from "./formats";
 import type {
   BackFace,
+  BackgroundLayer,
+  BackgroundSource,
+  CardBackground,
   ImageLayer,
   Layer,
   MetaBadgeLayer,
@@ -13,6 +16,7 @@ import type {
   ShapeLayer,
   TextLayer,
 } from "./types";
+import { DEFAULT_BACKGROUND_SOURCE } from "./types";
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -25,21 +29,16 @@ export function newProject(name = t("New sticker design")): Project {
     id: uid(),
     name,
     format: getFormatId(),
-    backgroundColor: DEFAULT_BACKGROUND.color,
-    background: { ...DEFAULT_BACKGROUND },
     layers: [],
     createdAt: now,
     updatedAt: now,
   };
 }
 
-// A fresh, empty back face (its own layer stack + background).
+// A fresh, empty back face (its own layer stack — no background until one
+// is added as a layer).
 export function makeBackFace(): BackFace {
-  return {
-    layers: [],
-    backgroundColor: DEFAULT_BACKGROUND.color,
-    background: { ...DEFAULT_BACKGROUND },
-  };
+  return { layers: [] };
 }
 
 // Templates are per format. The card keeps the original, unsuffixed ids so
@@ -48,19 +47,15 @@ const TPL_SUFFIX = isCard() ? "" : `--${getFormatId()}`;
 export const templateId = (consoleId: string) => `tpl-${consoleId}${TPL_SUFFIX}`;
 export const GLOBAL_TEMPLATE_ID = `tpl-global${TPL_SUFFIX}`;
 
-const TEMPLATE_BG = { ...DEFAULT_BACKGROUND, enabled: false };
-
 // The global template sits above every console: its layers are overlaid on
-// every game sticker, no matter the console. Its own background is always
-// active (it's the base layer for every card).
+// every game sticker, no matter the console. Starts with no background — add
+// one as a layer for a shared card background.
 export function newGlobalTemplate(): Project {
   const now = Date.now();
   return {
     id: GLOBAL_TEMPLATE_ID,
     name: t("Global template"),
     format: getFormatId(),
-    backgroundColor: DEFAULT_BACKGROUND.color,
-    background: { ...DEFAULT_BACKGROUND, enabled: true },
     layers: [],
     createdAt: now,
     updatedAt: now,
@@ -70,15 +65,13 @@ export function newGlobalTemplate(): Project {
 }
 
 // A console template is an ordinary project whose layers are overlaid on every
-// game sticker of that console. Background is opt-in.
+// game sticker of that console.
 export function newConsoleTemplate(consoleId: string, consoleName: string): Project {
   const now = Date.now();
   return {
     id: templateId(consoleId),
     name: t("{name} – template", { name: consoleName }),
     format: getFormatId(),
-    backgroundColor: "transparent",
-    background: { ...TEMPLATE_BG },
     layers: [],
     createdAt: now,
     updatedAt: now,
@@ -264,4 +257,52 @@ export function isShape(l: Layer): l is ShapeLayer {
 }
 export function isMetaBadge(l: Layer): l is MetaBadgeLayer {
   return l.type === "metabadge";
+}
+export function isBackground(l: Layer): l is BackgroundLayer {
+  return l.type === "background";
+}
+
+// The full-canvas background layer. Always layer 0 of a face's stack.
+export function makeBackgroundLayer(
+  fill?: CardBackground,
+  source: BackgroundSource = "card",
+): BackgroundLayer {
+  return {
+    ...base(t("Background")),
+    type: "background",
+    fill: fill ? { ...fill } : { ...DEFAULT_BACKGROUND },
+    source,
+  };
+}
+
+// Upgrades pre-layer projects: the old project.background / .backgroundColor
+// (and the same on `back`) become a BackgroundLayer at the bottom of the
+// stack. Idempotent — a face that already has a background layer is left
+// alone, and a disabled legacy background (console-template opt-out) adds
+// nothing.
+export function migrateProject(p: Project): Project {
+  const faceLayers = (
+    layers: Layer[],
+    legacy: Pick<Project, "background" | "backgroundColor">,
+    source: BackgroundSource,
+  ): Layer[] => {
+    if (layers.some(isBackground)) return layers;
+    if (legacy.background == null && legacy.backgroundColor == null) return layers;
+    const resolved = resolveBackground(legacy);
+    if (!resolved.enabled) return layers;
+    const { enabled: _e, ...fill } = resolved;
+    return [makeBackgroundLayer(fill, source), ...layers];
+  };
+
+  // Templates never inherit; a game card keeps its previous source default.
+  const frontSource = p.isTemplate
+    ? "card"
+    : p.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
+  const nextLayers = faceLayers(p.layers, p, frontSource);
+  const nextBack = p.back
+    ? { ...p.back, layers: faceLayers(p.back.layers, p.back, "card") }
+    : p.back;
+
+  if (nextLayers === p.layers && nextBack === p.back) return p;
+  return { ...p, layers: nextLayers, back: nextBack };
 }

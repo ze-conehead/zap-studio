@@ -1,4 +1,5 @@
 import { get, set, del, keys } from "idb-keyval";
+import { migrateProject } from "./factory";
 import { getFormatId } from "./formats";
 import type { Project, ProjectMeta } from "./types";
 
@@ -14,7 +15,8 @@ export async function saveProject(p: Project): Promise<void> {
 }
 
 export async function loadProject(id: string): Promise<Project | undefined> {
-  return (await get(KEY(id))) as Project | undefined;
+  const p = (await get(KEY(id))) as Project | undefined;
+  return p ? migrateProject(p) : undefined;
 }
 
 

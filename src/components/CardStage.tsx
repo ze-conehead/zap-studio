@@ -3,12 +3,13 @@ import { Group, Layer as KLayer, Stage } from "react-konva";
 import { CANVAS, TRIM_RECT } from "../card";
 import type { DemoCard } from "../demo";
 import type { GameMeta } from "../gamelist";
+import { isBackground } from "../factory";
 import { resolveBadgeMeta } from "../gamelist";
 import { segmentLayers } from "../masking";
 import type { Layer as TLayer } from "../types";
 import {
   CardBackgroundNodes,
-  effectiveBackground,
+  effectiveBgFill,
   LayerInner,
   withMainMask,
 } from "./EditorCanvas";
@@ -26,8 +27,14 @@ export function CardStage({
   stageRef?: React.Ref<Konva.Stage>;
 }) {
   const scale = width / TRIM_RECT.w;
-  const bg = effectiveBackground(card.project, card.consoleBg, card.globalBg);
-  const layers = withMainMask(card.project, card.project.layers, card.mainMask);
+  const bgLayer = card.project.layers.find(isBackground);
+  const content = card.project.layers.filter((l) => !isBackground(l));
+  const bg = effectiveBgFill(bgLayer, {
+    inherit: !card.project.isTemplate,
+    consoleBg: card.consoleBg,
+    globalBg: card.globalBg,
+  });
+  const layers = withMainMask(card.project, content, card.mainMask);
   const meta = resolveBadgeMeta(card.project);
 
   return (
@@ -40,7 +47,7 @@ export function CardStage({
       listening={false}
     >
       {bg && (
-        <KLayer listening={false}>
+        <KLayer listening={false} opacity={bgLayer?.opacity ?? 1}>
           <CardBackgroundNodes bg={bg} />
         </KLayer>
       )}

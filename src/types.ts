@@ -1,6 +1,6 @@
 import type { FormatId } from "./formats";
 
-export type LayerType = "image" | "text" | "shape" | "metabadge";
+export type LayerType = "image" | "text" | "shape" | "metabadge" | "background";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
 
@@ -16,10 +16,11 @@ export interface CardBackground {
   enabled?: boolean; // templates only: false => contributes no background
 }
 
-// On a game card: which background actually shows.
+// A background layer on a game card can inherit its fill from a template.
 export type BackgroundSource = "card" | "console" | "global";
 
-// New cards take the global template's background until changed.
+// Migrated background layers (from the old project.background field) keep
+// the previous default: inherit from the global template.
 export const DEFAULT_BACKGROUND_SOURCE: BackgroundSource = "global";
 
 export interface BaseLayer {
@@ -98,13 +99,28 @@ export interface MetaBadgeLayer extends BaseLayer {
   cornerRadius: number; // background chip
 }
 
-export type Layer = ImageLayer | TextLayer | ShapeLayer | MetaBadgeLayer;
+// Always layer 0 of a face's stack (pinned to the bottom, not reorderable).
+// Fills the whole canvas. `source` lets a game card inherit its fill from
+// the console / global template.
+export interface BackgroundLayer extends BaseLayer {
+  type: "background";
+  fill: CardBackground;
+  source?: BackgroundSource;
+}
+
+export type Layer =
+  | ImageLayer
+  | TextLayer
+  | ShapeLayer
+  | MetaBadgeLayer
+  | BackgroundLayer;
 
 // Which face of the card is being edited / shown.
 export type CardSide = "front" | "back";
 
-// The optional back of the card: its own layer stack + background. No
-// template overlay and no main alpha mask (front-only in this phase).
+// The optional back of the card: its own layer stack. No template overlay
+// and no main alpha mask (front-only). `background`/`backgroundColor` are
+// legacy — migrated into a BackgroundLayer.
 export interface BackFace {
   layers: Layer[];
   background?: CardBackground;
@@ -115,9 +131,9 @@ export interface Project {
   id: string;
   name: string;
   format?: FormatId; // sticker format; absent = "card"
-  backgroundColor: string; // legacy / primary colour mirror
-  background?: CardBackground;
-  backgroundSource?: BackgroundSource; // game cards only; default DEFAULT_BACKGROUND_SOURCE
+  backgroundColor?: string; // legacy — migrated into a BackgroundLayer
+  background?: CardBackground; // legacy — migrated into a BackgroundLayer
+  backgroundSource?: BackgroundSource; // legacy — migrated into a BackgroundLayer
   layers: Layer[]; // index 0 = bottom of the stack (front face)
   back?: BackFace; // present once the user adds a back side
   createdAt: number;

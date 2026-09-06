@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   Lock,
   LockOpen,
+  PaintBucket,
   Shapes,
   Trash2,
   Type,
@@ -16,7 +17,7 @@ import {
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isImage, isMetaBadge, isShape } from "../factory";
+import { isBackground, isImage, isMetaBadge, isShape } from "../factory";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import type { Layer } from "../types";
@@ -31,6 +32,7 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
       ? state.project.back?.layers ?? []
       : state.project.layers;
   const layers = [...faceLayers].reverse(); // top of stack first
+  const contentCount = faceLayers.filter((l) => !isBackground(l)).length;
 
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
         </div>
       </div>
 
-      {layers.length === 0 && (
+      {contentCount === 0 && (
         <p className="text-xs text-muted-foreground">
           {t("No layers yet. Add text, an image or a shape above.")}
         </p>
@@ -73,17 +75,20 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
       <ul className="flex flex-col gap-1">
         {layers.map((l) => {
           const active = l.id === state.selectedId;
-          const Icon = isImage(l)
-            ? ImageIcon
-            : isShape(l)
-              ? Shapes
-              : isMetaBadge(l)
-                ? Award
-                : Type;
+          const bg = isBackground(l);
+          const Icon = bg
+            ? PaintBucket
+            : isImage(l)
+              ? ImageIcon
+              : isShape(l)
+                ? Shapes
+                : isMetaBadge(l)
+                  ? Award
+                  : Type;
           return (
             <li
               key={l.id}
-              draggable
+              draggable={!bg}
               onDragStart={(e) => {
                 dragId.current = l.id;
                 setDragging(l.id);
@@ -91,7 +96,7 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
               }}
               onDragEnd={reset}
               onDragOver={(e) => {
-                if (!dragId.current || dragId.current === l.id) return;
+                if (!dragId.current || dragId.current === l.id || bg) return;
                 e.preventDefault();
                 const r = e.currentTarget.getBoundingClientRect();
                 setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
@@ -100,7 +105,7 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
                 e.preventDefault();
                 const src = dragId.current;
                 const r = e.currentTarget.getBoundingClientRect();
-                if (src) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+                if (src && !bg) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
                 reset();
               }}
               className={cn(
@@ -114,7 +119,11 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
                     : "border-t-2 border-t-primary"),
               )}
             >
-              <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
+              {bg ? (
+                <span className="size-3.5 shrink-0" />
+              ) : (
+                <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
+              )}
 
               <button
                 className="flex min-w-0 flex-1 items-center gap-1.5"
@@ -146,12 +155,14 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
               >
                 {l.locked ? <Lock /> : <LockOpen />}
               </LayerIcon>
-              <LayerIcon
-                title={t("Duplicate")}
-                onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
-              >
-                <Copy />
-              </LayerIcon>
+              {!bg && (
+                <LayerIcon
+                  title={t("Duplicate")}
+                  onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
+                >
+                  <Copy />
+                </LayerIcon>
+              )}
               <LayerIcon
                 title={t("Delete")}
                 className="hover:text-destructive"
