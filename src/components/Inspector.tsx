@@ -132,15 +132,21 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
     );
   }
 
+  // Meta badges are named after their fixed kind and can't be masked — the
+  // rename field and the alpha-mask controls don't apply to them.
+  const isMeta = isMetaBadge(selected);
+
   return (
     <Panel title={t("Properties")}>
-      <Field label={t("Name")}>
-        <Input
-          value={selected.name}
-          onChange={(e) => patch({ name: e.target.value }, false)}
-          onBlur={(e) => patch({ name: e.target.value })}
-        />
-      </Field>
+      {!isMeta && (
+        <Field label={t("Name")}>
+          <Input
+            value={selected.name}
+            onChange={(e) => patch({ name: e.target.value }, false)}
+            onBlur={(e) => patch({ name: e.target.value })}
+          />
+        </Field>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="X" value={round(selected.x)} onChange={(v) => patch({ x: v })} />
@@ -186,7 +192,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
       </div>
 
       <MainRoleControls patch={patch} />
-      <MaskControls patch={patch} />
+      {!isMeta && <MaskControls patch={patch} />}
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
