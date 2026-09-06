@@ -41,6 +41,10 @@ const CRED_LINK: Record<Exclude<CoverSource, "libretro">, string> = {
   igdb: "https://dev.twitch.tv/console/apps",
 };
 
+// How many covers to show per "page" — a fresh search starts here, "More"
+// reveals the next batch. Keeps the grid (and image loads) bounded.
+const PAGE = 12;
+
 export function CoverSearchDialog({
   open,
   onOpenChange,
@@ -57,6 +61,7 @@ export function CoverSearchDialog({
     | { status: "done"; results: CoverCandidate[] }
     | { status: "error"; message: string }
   >({ status: "loading" });
+  const [visible, setVisible] = useState(PAGE);
   const [query, setQuery] = useState(gameTitle);
   const [source, setSource] = useState<CoverSource>("sgdb");
   const [editing, setEditing] = useState(false);
@@ -72,6 +77,7 @@ export function CoverSearchDialog({
       if (!term) return;
       const id = ++runId.current;
       setState({ status: "loading" });
+      setVisible(PAGE);
       searchCovers(consoleName, term)
         .then((results) => {
           if (runId.current === id) setState({ status: "done", results });
@@ -125,7 +131,7 @@ export function CoverSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="flex h-[100dvh] w-screen max-h-none max-w-none flex-col gap-3 rounded-none border-0">
         <DialogHeader>
           <DialogTitle>
             {progress
@@ -242,6 +248,7 @@ export function CoverSearchDialog({
           )}
         </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto">
         {state.status === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> {t("Searching covers …")}
@@ -270,29 +277,39 @@ export function CoverSearchDialog({
         )}
 
         {state.status === "done" && state.results.length > 0 && (
-          <div className="grid grid-cols-4 gap-3">
-            {state.results.map((c) => (
-              <button
-                key={c.url}
-                type="button"
-                disabled={busy}
-                className="group flex flex-col items-center gap-1 rounded-md border p-1.5 text-left hover:border-primary disabled:opacity-50"
-                title={`${c.title} ${c.region}`.trim()}
-                onClick={() => onPick(c.url)}
-              >
-                <img
-                  src={c.thumb ?? c.url}
-                  alt={c.title}
-                  loading="lazy"
-                  className="aspect-[3/4] w-full rounded bg-muted object-contain"
-                />
-                <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">
-                  {c.region || c.title}
-                </span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+              {state.results.slice(0, visible).map((c) => (
+                <button
+                  key={c.url}
+                  type="button"
+                  disabled={busy}
+                  className="group flex flex-col items-center gap-1 rounded-md border p-1.5 text-left hover:border-primary disabled:opacity-50"
+                  title={`${c.title} ${c.region}`.trim()}
+                  onClick={() => onPick(c.url)}
+                >
+                  <img
+                    src={c.thumb ?? c.url}
+                    alt={c.title}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full rounded bg-muted object-contain"
+                  />
+                  <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">
+                    {c.region || c.title}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {state.results.length > visible && (
+              <div className="flex justify-center pt-4">
+                <Button variant="outline" onClick={() => setVisible((v) => v + PAGE)}>
+                  {t("More")} ({state.results.length - visible})
+                </Button>
+              </div>
+            )}
+          </>
         )}
+        </div>
 
         {(onSkip || busy) && (
           <div className="flex items-center justify-between border-t pt-3">

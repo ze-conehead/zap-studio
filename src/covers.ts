@@ -139,7 +139,7 @@ async function searchCoversSGDB(gameTitle: string): Promise<CoverCandidate[]> {
     grids = (await sgdbFetch<{ data?: SgdbGrid[] }>(base)).data ?? [];
   }
 
-  return grids.slice(0, 24).map((g) => ({
+  return grids.slice(0, 48).map((g) => ({
     title: game.name,
     region: `${g.width}×${g.height}${g.style ? ` · ${g.style}` : ""}`,
     url: proxied(g.url),
@@ -411,7 +411,7 @@ async function searchCoversLibretro(
     return a.core.length - b.core.length;
   });
 
-  return matches.slice(0, 16).map((m) => ({
+  return matches.slice(0, 48).map((m) => ({
     title: m.core,
     region: m.region,
     url: `https://raw.githubusercontent.com/libretro-thumbnails/${repo}/master/${m.path
