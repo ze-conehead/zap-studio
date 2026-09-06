@@ -366,8 +366,8 @@ export const de: Record<string, string> = {
   "Multiple cards": "Mehrere Karten",
   "Cut sheet for Cricut …": "Schneidebogen für Cricut …",
   "Cut sheet for Cricut": "Schneidebogen für Cricut",
-  "Packs the finished designs onto transparent PNG sheets at real size ({w} DPI is baked in). Print each sheet at 100 %, then let the Cricut Print then Cut every card.":
-    "Packt die fertigen Designs in Originalgröße auf transparente PNG-Bögen ({w} DPI fest eingebrannt). Jeden Bogen mit 100 % drucken, dann jede Karte vom Cricut per „Print then Cut“ schneiden lassen.",
+  "Packs the finished designs onto {w} DPI sheets at real size — each card printed full-bleed — plus a matching SVG that cuts each card at its rounded trim edge. Print at 100 %, then Print then Cut on the Cricut.":
+    "Packt die fertigen Designs in Originalgröße auf {w}-DPI-Bögen – jede Karte mit vollem Anschnitt gedruckt – plus ein passendes SVG, das jede Karte an der abgerundeten Schnittkante schneidet. Mit 100 % drucken, dann am Cricut „Print then Cut“.",
   Gap: "Abstand",
   "White background": "Weißer Hintergrund",
   "Select all": "Alle auswählen",
@@ -376,10 +376,13 @@ export const de: Record<string, string> = {
   "Back to selection": "Zurück zur Auswahl",
   "{cards} card(s) · {cols}×{rows} per sheet · {pages} sheet(s)":
     "{cards} Karte(n) · {cols}×{rows} pro Bogen · {pages} Bogen/Bögen",
-  "The .zip has the print PNG and a matching cut line (cut.svg – cyan above) that fit the Cricut print area ({w}×{h} mm). Print at 100 %. Upload both to Design Space, or upload just the PNG and pick “Complex” to auto-trace.":
-    "Die .zip enthält das Druck-PNG und eine passende Schnittlinie (cut.svg – oben cyan), beide passend zum Cricut-Druckbereich ({w}×{h} mm). Mit 100 % drucken. Beide in Design Space hochladen – oder nur das PNG und „Complex“ zum automatischen Nachzeichnen wählen.",
-  "print*.png = the sticker sheet (print at 100 % / actual size). cut*.svg = the matching cut line, one path per card at the trim edge. Cricut Design Space: upload the SVG (becomes the cut layer) and the PNG (Print then Cut image), place both at the same size so they line up, then Print then Cut. If you skip the SVG, upload just the PNG and choose “Complex” to auto-trace.":
-    "print*.png = der Sticker-Bogen (mit 100 % / Originalgröße drucken). cut*.svg = die passende Schnittlinie, ein Pfad pro Karte an der Schnittkante. Cricut Design Space: SVG hochladen (wird die Schnittebene) und das PNG (Print-then-Cut-Bild), beide auf dieselbe Größe setzen, damit sie deckungsgleich sind, dann Print then Cut. Ohne SVG: nur das PNG hochladen und „Complex“ zum automatischen Nachzeichnen wählen.",
+  "print at {w}×{h} mm": "Druck {w}×{h} mm",
+  "Cyan = the cut line (cut.svg). The .zip has the full-bleed print PNG and the matching SVG; the README lists the exact print size. Fits the Cricut print area ({w}×{h} mm). Print at 100 %.":
+    "Cyan = die Schnittlinie (cut.svg). Die .zip enthält das Druck-PNG mit vollem Anschnitt und das passende SVG; die README nennt die exakte Druckgröße. Passt in den Cricut-Druckbereich ({w}×{h} mm). Mit 100 % drucken.",
+  "PRINT SIZE — print at 100 % / actual size, never “fit to page”, so the cut line lines up:":
+    "DRUCKGRÖSSE – mit 100 % / Originalgröße drucken, niemals „an Seite anpassen“, damit die Schnittlinie passt:",
+  "print*.png = the sticker sheet, each card printed full-bleed. cut*.svg = the matching cut line, one rounded path per card at the trim edge. Cricut Design Space: upload the SVG (the cut layer) and the PNG (Print then Cut image) at the same size so they line up, then Print then Cut. Or upload just the PNG and choose “Complex” to auto-trace (it will follow the bleed edge, not the rounded trim).":
+    "print*.png = der Sticker-Bogen, jede Karte mit vollem Anschnitt gedruckt. cut*.svg = die passende Schnittlinie, ein abgerundeter Pfad pro Karte an der Schnittkante. Cricut Design Space: SVG (Schnittebene) und PNG (Print-then-Cut-Bild) in derselben Größe hochladen, damit sie deckungsgleich sind, dann Print then Cut. Oder nur das PNG hochladen und „Complex“ zum automatischen Nachzeichnen wählen (folgt der Anschnittkante, nicht der abgerundeten Schnittkante).",
   "Download .zip (print + cut)": ".zip herunterladen (Druck + Schnitt)",
   "A single card is larger than the Cricut print area for this format.":
     "Eine einzelne Karte ist größer als der Cricut-Druckbereich für dieses Format.",

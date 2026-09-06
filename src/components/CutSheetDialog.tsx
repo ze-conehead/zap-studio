@@ -124,6 +124,7 @@ export function CutSheetDialog({
     if (!result) return;
     const files: Record<string, Uint8Array> = {};
     const multi = result.pages.length > 1;
+    const sizeLines: string[] = [];
     result.pages.forEach((pg, i) => {
       const suffix = multi ? `_${i + 1}` : "";
       const b64 = pg.dataUrl.split(",")[1];
@@ -132,11 +133,25 @@ export function CutSheetDialog({
       for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
       files[`print${suffix}.png`] = bytes;
       files[`cut${suffix}.svg`] = strToU8(pg.cutSvg);
+      const w = pg.widthMM.toFixed(1);
+      const h = pg.heightMM.toFixed(1);
+      const wcm = (pg.widthMM / 10).toFixed(2);
+      const hcm = (pg.heightMM / 10).toFixed(2);
+      sizeLines.push(
+        `  print${suffix}.png / cut${suffix}.svg = ${w} x ${h} mm  (${wcm} x ${hcm} cm)`,
+      );
     });
     files["README.txt"] = strToU8(
       t(
-        "print*.png = the sticker sheet (print at 100 % / actual size). cut*.svg = the matching cut line, one path per card at the trim edge. Cricut Design Space: upload the SVG (becomes the cut layer) and the PNG (Print then Cut image), place both at the same size so they line up, then Print then Cut. If you skip the SVG, upload just the PNG and choose “Complex” to auto-trace.",
-      ),
+        "PRINT SIZE — print at 100 % / actual size, never “fit to page”, so the cut line lines up:",
+      ) +
+        "\n" +
+        sizeLines.join("\n") +
+        "\n\n" +
+        t(
+          "print*.png = the sticker sheet, each card printed full-bleed. cut*.svg = the matching cut line, one rounded path per card at the trim edge. Cricut Design Space: upload the SVG (the cut layer) and the PNG (Print then Cut image) at the same size so they line up, then Print then Cut. Or upload just the PNG and choose “Complex” to auto-trace (it will follow the bleed edge, not the rounded trim).",
+        ) +
+        "\n",
     );
     const zipped = zipSync(files, { level: 6 });
     downloadBlob(
@@ -182,7 +197,7 @@ export function CutSheetDialog({
           <>
             <p className="text-xs text-muted-foreground">
               {t(
-                "Packs the finished designs onto transparent PNG sheets at real size ({w} DPI is baked in). Print each sheet at 100 %, then let the Cricut Print then Cut every card.",
+                "Packs the finished designs onto {w} DPI sheets at real size — each card printed full-bleed — plus a matching SVG that cuts each card at its rounded trim edge. Print at 100 %, then Print then Cut on the Cricut.",
                 { w: "300" },
               )}
             </p>
@@ -305,6 +320,11 @@ export function CutSheetDialog({
                   rows: result.rows,
                   pages: result.pages.length,
                 })}
+                {" · "}
+                {t("print at {w}×{h} mm", {
+                  w: result.pages[pageIdx].widthMM.toFixed(1),
+                  h: result.pages[pageIdx].heightMM.toFixed(1),
+                })}
               </span>
               {result.pages.length > 1 && (
                 <span className="flex items-center gap-1">
@@ -335,7 +355,7 @@ export function CutSheetDialog({
                 backgroundSize: "16px 16px",
               }}
             >
-              <div className="relative max-h-[46vh] shadow-lg">
+              <div className="relative w-fit shadow-lg">
                 <img
                   src={result.pages[pageIdx].dataUrl}
                   alt=""
@@ -352,7 +372,7 @@ export function CutSheetDialog({
 
             <p className="text-xs text-muted-foreground">
               {t(
-                "The .zip has the print PNG and a matching cut line (cut.svg – cyan above) that fit the Cricut print area ({w}×{h} mm). Print at 100 %. Upload both to Design Space, or upload just the PNG and pick “Complex” to auto-trace.",
+                "Cyan = the cut line (cut.svg). The .zip has the full-bleed print PNG and the matching SVG; the README lists the exact print size. Fits the Cricut print area ({w}×{h} mm). Print at 100 %.",
                 { w: PRINT_W_MM, h: PRINT_H_MM },
               )}
             </p>

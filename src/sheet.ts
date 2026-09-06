@@ -1,14 +1,9 @@
-// "Cut sheet": several finished card designs packed onto one transparent
-// PNG at physical 300 DPI size, laid out so a Cricut Explore can Print then
-// Cut each rounded card. Paginated to the machine's printable area.
+// "Cut sheet": several finished card designs packed onto one PNG at physical
+// 300 DPI size — each card printed full-bleed (a rectangle), spaced apart —
+// plus a matching SVG whose rounded paths cut each card at its trim edge.
+// Paginated to the Cricut Explore Print-then-Cut area.
 
-import {
-  BLEED_PX,
-  CANVAS,
-  CORNER_RADIUS_PX,
-  PX_PER_MM,
-  TRIM_RECT,
-} from "./card";
+import { CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
 import { getGameProject } from "./gameIndex";
@@ -100,14 +95,12 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
 }
 
 export interface SheetOptions {
-  gapMM: number; // blank space between cards (blade clearance)
-  bleedMM: number; // colour kept past the rounded cut line
+  gapMM: number; // blank space between the full-bleed cards
   background: "transparent" | "white";
 }
 
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   gapMM: 3,
-  bleedMM: 1,
   background: "transparent",
 };
 
@@ -135,37 +128,18 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  const rad = Math.max(0, Math.min(r, w / 2, h / 2));
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rad);
-  ctx.arcTo(x + w, y + h, x, y + h, rad);
-  ctx.arcTo(x, y + h, x, y, rad);
-  ctx.arcTo(x, y, x + w, y, rad);
-  ctx.closePath();
-}
-
-// `cardImages` are full-canvas (trim + bleed) PNGs, one per card, in order.
+// `cardImages` are full-canvas (trim + full bleed) PNGs, one per card.
 export async function composeSheet(
   cardImages: string[],
   opts: SheetOptions,
 ): Promise<SheetResult> {
   if (!cardImages.length) throw new Error("no cards");
 
-  const bleed = Math.max(0, opts.bleedMM) * PX_PER_MM;
   const gap = Math.max(0, opts.gapMM) * PX_PER_MM;
-  // The cut shape: the trim rectangle grown by the kept bleed.
-  const cellW = TRIM_RECT.w + bleed * 2;
-  const cellH = TRIM_RECT.h + bleed * 2;
-  const radius = CORNER_RADIUS_PX + bleed;
+  // Each printed cell is the whole card canvas — trim plus the full bleed on
+  // every side, always visible.
+  const cellW = CANVAS.w;
+  const cellH = CANVAS.h;
 
   const printW = PRINT_W_MM * PX_PER_MM;
   const printH = PRINT_H_MM * PX_PER_MM;
@@ -206,23 +180,13 @@ export async function composeSheet(
     slice.forEach((img, i) => {
       const cx = (i % cols) * (cellW + gap);
       const cy = Math.floor(i / cols) * (cellH + gap);
-      // Cut line = the trim edge, inset by the bleed from the printed cell.
+      // Print: the full-bleed card, unclipped.
+      ctx.drawImage(img, cx, cy, cellW, cellH);
+      // Cut: the rounded trim edge inside the bleed.
       cutRects.push(
-        `<rect x="${mm(cx + bleed)}" y="${mm(cy + bleed)}" width="${trimWmm}" height="${trimHmm}" rx="${rMm}" ry="${rMm}"/>`,
+        `<rect x="${mm(cx + TRIM_RECT.x)}" y="${mm(cy + TRIM_RECT.y)}" ` +
+          `width="${trimWmm}" height="${trimHmm}" rx="${rMm}" ry="${rMm}"/>`,
       );
-      ctx.save();
-      roundedRect(ctx, cx, cy, cellW, cellH, radius);
-      ctx.clip();
-      // The source PNG is CANVAS (trim + BLEED_PX). Line its trim box up with
-      // the cell, so the cell shows `bleed` px of the design past the trim.
-      ctx.drawImage(
-        img,
-        cx - (BLEED_PX - bleed),
-        cy - (BLEED_PX - bleed),
-        CANVAS.w,
-        CANVAS.h,
-      );
-      ctx.restore();
     });
 
     const pageWmm = mm(pageW);
