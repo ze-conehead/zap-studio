@@ -310,11 +310,11 @@ function Shell({
           mainMask={mainMask}
           guides={guides}
         />
-        <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
+        <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />
           <LayerList mainMask={mainMask} />
           <Tabs defaultValue="props">
-            <TabsList className="mx-3 mt-3">
+            <TabsList className="mx-3 mt-3 flex w-auto">
               <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
               {showMeta && <TabsTrigger value="meta">{t("Metadata")}</TabsTrigger>}
             </TabsList>
