@@ -835,13 +835,23 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
   );
 }
 
+const META_BADGE_BLURB: Record<MetaBadgeLayer["kind"], string> = {
+  combo:
+    "Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.",
+  rating:
+    "Shows the star rating of the currently open game from its gamelist.xml. Best placed in a console or the global template.",
+  year:
+    "Shows the release year of the currently open game from its gamelist.xml. Best placed in a console or the global template.",
+  players:
+    "Shows the player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.",
+};
+
 function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch }) {
   const t = useT();
+  const kind = layer.kind ?? "combo";
   return (
     <>
-      <p className="text-xs text-muted-foreground">
-        {t("Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.")}
-      </p>
+      <p className="text-xs text-muted-foreground">{t(META_BADGE_BLURB[kind])}</p>
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField
@@ -861,30 +871,32 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label>{t("Content")}</Label>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={layer.showRating}
-            onCheckedChange={(v) => patch({ showRating: !!v })}
-          />
-          {t("Rating")}
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={layer.showYear}
-            onCheckedChange={(v) => patch({ showYear: !!v })}
-          />
-          {t("Release year")}
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={layer.showPlayers}
-            onCheckedChange={(v) => patch({ showPlayers: !!v })}
-          />
-          {t("Player count")}
-        </label>
-      </div>
+      {kind === "combo" && (
+        <div className="flex flex-col gap-1.5">
+          <Label>{t("Content")}</Label>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={layer.showRating}
+              onCheckedChange={(v) => patch({ showRating: !!v })}
+            />
+            {t("Rating")}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={layer.showYear}
+              onCheckedChange={(v) => patch({ showYear: !!v })}
+            />
+            {t("Release year")}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={layer.showPlayers}
+              onCheckedChange={(v) => patch({ showPlayers: !!v })}
+            />
+            {t("Player count")}
+          </label>
+        </div>
+      )}
 
       {layer.showPlayers && (
         <Field label={t("Players icon")}>
@@ -907,44 +919,14 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
 
       <div className="grid grid-cols-2 gap-2">
         <ColorField label={t("Text color")} value={layer.color} onChange={(v) => patch({ color: v })} />
-        <ColorField
-          label={t("Star color")}
-          value={layer.starColor}
-          onChange={(v) => patch({ starColor: v })}
-        />
-      </div>
-
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={layer.background}
-          onCheckedChange={(v) => patch({ background: !!v })}
-        />
-        {t("Background chip")}
-      </label>
-      {layer.background && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <ColorField
-              label={t("Background color")}
-              value={layer.backgroundColor}
-              onChange={(v) => patch({ backgroundColor: v })}
-            />
-            <NumberField
-              label={t("Corner radius")}
-              value={round(layer.cornerRadius)}
-              onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
-            />
-          </div>
-          <SliderField
-            label={t("Opacity {n}%", { n: Math.round(layer.backgroundOpacity * 100) })}
-            min={0}
-            max={1}
-            step={0.01}
-            value={layer.backgroundOpacity}
-            onChange={(v, done) => patch({ backgroundOpacity: v }, done)}
+        {(kind === "combo" || kind === "rating") && (
+          <ColorField
+            label={t("Star color")}
+            value={layer.starColor}
+            onChange={(v) => patch({ starColor: v })}
           />
-        </>
-      )}
+        )}
+      </div>
     </>
   );
 }

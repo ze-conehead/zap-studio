@@ -4,6 +4,10 @@ export type LayerType = "image" | "text" | "shape" | "metabadge" | "background";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
 
+// Which gamelist.xml field(s) a metadata badge shows. "combo" is the only
+// one whose pieces stay individually toggleable in the Inspector.
+export type MetaBadgeKind = "combo" | "rating" | "year" | "players";
+
 // How the player-count icon is chosen on a metadata badge.
 export type PlayersIconStyle = "auto" | "single" | "group" | "controller";
 
@@ -86,6 +90,7 @@ export interface ShapeLayer extends BaseLayer {
 // for. Usually placed once in a console (or the global) template.
 export interface MetaBadgeLayer extends BaseLayer {
   type: "metabadge";
+  kind: MetaBadgeKind;
   width: number;
   height: number;
   fontSize: number;
@@ -95,10 +100,6 @@ export interface MetaBadgeLayer extends BaseLayer {
   showYear: boolean;
   showPlayers: boolean;
   playersIcon: PlayersIconStyle;
-  background: boolean;
-  backgroundColor: string;
-  backgroundOpacity: number; // 0..1
-  cornerRadius: number; // background chip
 }
 
 // Always layer 0 of a face's stack (pinned to the bottom, not reorderable).

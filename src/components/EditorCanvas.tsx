@@ -739,17 +739,6 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
 
   return (
     <>
-      {layer.background && (
-        <Rect
-          x={-w / 2}
-          y={-h / 2}
-          width={w}
-          height={h}
-          cornerRadius={layer.cornerRadius}
-          fill={layer.backgroundColor}
-          opacity={layer.backgroundOpacity}
-        />
-      )}
       {segments.map((kind, i) => {
         const colX = -w / 2 + colW * i;
         if (kind === "year") {

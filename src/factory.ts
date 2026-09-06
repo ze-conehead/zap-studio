@@ -10,6 +10,7 @@ import type {
   CardBackground,
   ImageLayer,
   Layer,
+  MetaBadgeKind,
   MetaBadgeLayer,
   Project,
   ShapeKind,
@@ -17,6 +18,8 @@ import type {
   TextLayer,
 } from "./types";
 import { DEFAULT_BACKGROUND_SOURCE } from "./types";
+
+export type { MetaBadgeKind };
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -210,8 +213,6 @@ export function makeMainMaskLayer(): ShapeLayer {
 
 // Which pieces a newly-created metadata badge starts with — either all
 // three combined, or one standalone element placeable on its own.
-export type MetaBadgeKind = "combo" | "rating" | "year" | "players";
-
 const META_BADGE_PRESET: Record<
   MetaBadgeKind,
   { name: string; widthFactor: number; showRating: boolean; showYear: boolean; showPlayers: boolean }
@@ -230,6 +231,7 @@ export function makeMetaBadgeLayer(kind: MetaBadgeKind = "combo"): MetaBadgeLaye
   return {
     ...base(t(preset.name)),
     type: "metabadge",
+    kind,
     width: TRIM_RECT.w * preset.widthFactor,
     height: 46,
     fontSize: 20,
@@ -239,10 +241,6 @@ export function makeMetaBadgeLayer(kind: MetaBadgeKind = "combo"): MetaBadgeLaye
     showYear: preset.showYear,
     showPlayers: preset.showPlayers,
     playersIcon: "auto",
-    background: true,
-    backgroundColor: "#000000",
-    backgroundOpacity: 0.45,
-    cornerRadius: 12,
   };
 }
 

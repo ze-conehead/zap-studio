@@ -251,6 +251,12 @@ export const de: Record<string, string> = {
   "Stroke width": "Konturstärke",
   "Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
     "Zeigt Bewertung, Release-Jahr und Spieleranzahl des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
+  "Shows the star rating of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
+    "Zeigt die Sternebewertung des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
+  "Shows the release year of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
+    "Zeigt das Release-Jahr des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
+  "Shows the player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
+    "Zeigt die Spieleranzahl des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
   "Text size": "Textgröße",
   Content: "Inhalte",
   "Players icon": "Spieler-Icon",
@@ -260,8 +266,6 @@ export const de: Record<string, string> = {
   Controller: "Controller",
   "Text color": "Textfarbe",
   "Star color": "Sternfarbe",
-  "Background chip": "Hintergrund-Chip",
-  "Background color": "Hintergrundfarbe",
   Font: "Schriftart",
   "Size px": "Größe px",
   "Box width": "Box-Breite",
