@@ -250,43 +250,20 @@
     0 0 46px rgba(120, 140, 255, 0.2);
 }
 
-.card3d .edge {
+/* The card body. Straight edge bars can only cover the four sides, which
+   leaves the rounded corners hollow and makes the silhouette square the
+   moment the card is tilted. Stacking rounded slices through the depth
+   extrudes the *whole* outline instead, corners included. */
+.card3d .slice {
   position: absolute;
-  background: linear-gradient(180deg, #eef2f8, #a7b1c1 55%, #7d8798);
+  inset: 0;
+  border-radius: var(--radius-x, 5.889%) / var(--radius-y, 3.716%);
+  background: linear-gradient(104deg, #f6f8fc, #cdd4df 42%, #98a1b0);
   filter: brightness(var(--edge-l, 1));
-}
-.card3d .edge-l,
-.card3d .edge-r {
-  top: var(--radius);
-  height: calc(100% - 2 * var(--radius));
-  width: var(--thick);
-}
-.card3d .edge-l {
-  left: 0;
-  transform-origin: left center;
-  transform: rotateY(90deg);
-}
-.card3d .edge-r {
-  right: 0;
-  transform-origin: right center;
-  transform: rotateY(-90deg);
-}
-.card3d .edge-t,
-.card3d .edge-b {
-  left: var(--radius);
-  width: calc(100% - 2 * var(--radius));
-  height: var(--thick);
-  background: linear-gradient(90deg, #eef2f8, #a7b1c1 55%, #7d8798);
-}
-.card3d .edge-t {
-  top: 0;
-  transform-origin: center top;
-  transform: rotateX(-90deg);
-}
-.card3d .edge-b {
-  bottom: 0;
-  transform-origin: center bottom;
-  transform: rotateX(90deg);
+  /* +0.5 keeps every slice strictly between the two faces — landing exactly
+     on one of them would z-fight. */
+  transform: translateZ(calc((var(--i) + 0.5) * var(--thick) / -24));
+  pointer-events: none;
 }
 
 .card3d .face img,

@@ -15,6 +15,11 @@ import { previewCssVars } from "../formats";
 
 const START = { x: -12, y: -18 };
 
+// Depth slices that make up the card's body. Enough that the steps stay
+// sub-pixel at the deepest zoom, few enough to stay cheap to composite.
+const SLICE_COUNT = 24;
+const SLICES = Array.from({ length: SLICE_COUNT }, (_, i) => i);
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const reduced = () =>
   typeof matchMedia === "function" &&
@@ -192,7 +197,11 @@ export function Card3D({
 
   // ── pointer ──────────────────────────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent) => {
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // pointer already released — carry on, the move handler still works
+    }
     pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch.current.size === 2) {
       const [a, b] = [...pinch.current.values()];
@@ -304,10 +313,14 @@ export function Card3D({
         onWheel={onWheel}
       >
         {faces}
-        <div className="edge edge-l" />
-        <div className="edge edge-r" />
-        <div className="edge edge-t" />
-        <div className="edge edge-b" />
+        {/* The card's thickness. Four straight edge bars would leave the four
+            rounded corners hollow, so the silhouette went square as soon as
+            you tilted it. Instead the body is a stack of rounded slices
+            spread across the depth — every slice carries the same corner
+            radius as the faces, so the extrusion is round all the way. */}
+        {SLICES.map((i) => (
+          <div key={i} className="slice" style={{ ["--i" as string]: i }} />
+        ))}
       </div>
     </div>
   );
