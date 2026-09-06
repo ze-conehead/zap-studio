@@ -376,12 +376,11 @@ export const de: Record<string, string> = {
   "Back to selection": "Zurück zur Auswahl",
   "{cards} card(s) · {cols}×{rows} per sheet · {pages} sheet(s)":
     "{cards} Karte(n) · {cols}×{rows} pro Bogen · {pages} Bogen/Bögen",
-  "Each sheet fits the Cricut print area ({w}×{h} mm). Cricut Design Space: Upload the PNG → “Complex” → it traces a cut line per card → Print then Cut. Print at 100 % / actual size.":
-    "Jeder Bogen passt in den Cricut-Druckbereich ({w}×{h} mm). Cricut Design Space: PNG hochladen → „Complex“ → es zieht pro Karte eine Schnittlinie → Print then Cut. Mit 100 % / Originalgröße drucken.",
-  "One PNG per Cricut sheet. In Cricut Design Space: Upload → select the PNG → “Complex” → Continue → it traces a cut line around each card → “Print then Cut”. Print at 100 % (actual size).":
-    "Ein PNG pro Cricut-Bogen. In Cricut Design Space: Hochladen → PNG wählen → „Complex“ → Weiter → es zieht um jede Karte eine Schnittlinie → „Print then Cut“. Mit 100 % (Originalgröße) drucken.",
-  "Download PNG": "PNG herunterladen",
-  "Download .zip": ".zip herunterladen",
+  "The .zip has the print PNG and a matching cut line (cut.svg – cyan above) that fit the Cricut print area ({w}×{h} mm). Print at 100 %. Upload both to Design Space, or upload just the PNG and pick “Complex” to auto-trace.":
+    "Die .zip enthält das Druck-PNG und eine passende Schnittlinie (cut.svg – oben cyan), beide passend zum Cricut-Druckbereich ({w}×{h} mm). Mit 100 % drucken. Beide in Design Space hochladen – oder nur das PNG und „Complex“ zum automatischen Nachzeichnen wählen.",
+  "print*.png = the sticker sheet (print at 100 % / actual size). cut*.svg = the matching cut line, one path per card at the trim edge. Cricut Design Space: upload the SVG (becomes the cut layer) and the PNG (Print then Cut image), place both at the same size so they line up, then Print then Cut. If you skip the SVG, upload just the PNG and choose “Complex” to auto-trace.":
+    "print*.png = der Sticker-Bogen (mit 100 % / Originalgröße drucken). cut*.svg = die passende Schnittlinie, ein Pfad pro Karte an der Schnittkante. Cricut Design Space: SVG hochladen (wird die Schnittebene) und das PNG (Print-then-Cut-Bild), beide auf dieselbe Größe setzen, damit sie deckungsgleich sind, dann Print then Cut. Ohne SVG: nur das PNG hochladen und „Complex“ zum automatischen Nachzeichnen wählen.",
+  "Download .zip (print + cut)": ".zip herunterladen (Druck + Schnitt)",
   "A single card is larger than the Cricut print area for this format.":
     "Eine einzelne Karte ist größer als der Cricut-Druckbereich für dieses Format.",
   "None of the selected games has a saved design.":

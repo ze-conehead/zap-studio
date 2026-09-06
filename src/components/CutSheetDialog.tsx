@@ -5,7 +5,7 @@ import { zipSync, strToU8 } from "fflate";
 import { TRIM_RECT } from "../card";
 import type { DemoCard } from "../demo";
 import { packImageSources } from "../demo";
-import { downloadBlob, downloadDataUrl } from "../export";
+import { downloadBlob } from "../export";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
@@ -122,27 +122,26 @@ export function CutSheetDialog({
 
   const download = () => {
     if (!result) return;
-    if (result.pages.length === 1) {
-      downloadDataUrl(result.pages[0].dataUrl, "cricut-cut-sheet.png");
-      return;
-    }
     const files: Record<string, Uint8Array> = {};
+    const multi = result.pages.length > 1;
     result.pages.forEach((pg, i) => {
+      const suffix = multi ? `_${i + 1}` : "";
       const b64 = pg.dataUrl.split(",")[1];
       const bin = atob(b64);
       const bytes = new Uint8Array(bin.length);
       for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
-      files[`cut-sheet_${i + 1}.png`] = bytes;
+      files[`print${suffix}.png`] = bytes;
+      files[`cut${suffix}.svg`] = strToU8(pg.cutSvg);
     });
     files["README.txt"] = strToU8(
       t(
-        "One PNG per Cricut sheet. In Cricut Design Space: Upload → select the PNG → “Complex” → Continue → it traces a cut line around each card → “Print then Cut”. Print at 100 % (actual size).",
+        "print*.png = the sticker sheet (print at 100 % / actual size). cut*.svg = the matching cut line, one path per card at the trim edge. Cricut Design Space: upload the SVG (becomes the cut layer) and the PNG (Print then Cut image), place both at the same size so they line up, then Print then Cut. If you skip the SVG, upload just the PNG and choose “Complex” to auto-trace.",
       ),
     );
     const zipped = zipSync(files, { level: 6 });
     downloadBlob(
       new Blob([zipped], { type: "application/zip" }),
-      "cricut-cut-sheets.zip",
+      "cricut-cut-sheet.zip",
     );
   };
 
@@ -336,16 +335,24 @@ export function CutSheetDialog({
                 backgroundSize: "16px 16px",
               }}
             >
-              <img
-                src={result.pages[pageIdx].dataUrl}
-                alt=""
-                className="max-h-[46vh] w-auto shadow-lg"
-              />
+              <div className="relative max-h-[46vh] shadow-lg">
+                <img
+                  src={result.pages[pageIdx].dataUrl}
+                  alt=""
+                  className="block max-h-[46vh] w-auto"
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
+                  dangerouslySetInnerHTML={{
+                    __html: result.pages[pageIdx].cutSvg,
+                  }}
+                />
+              </div>
             </div>
 
             <p className="text-xs text-muted-foreground">
               {t(
-                "Each sheet fits the Cricut print area ({w}×{h} mm). Cricut Design Space: Upload the PNG → “Complex” → it traces a cut line per card → Print then Cut. Print at 100 % / actual size.",
+                "The .zip has the print PNG and a matching cut line (cut.svg – cyan above) that fit the Cricut print area ({w}×{h} mm). Print at 100 %. Upload both to Design Space, or upload just the PNG and pick “Complex” to auto-trace.",
                 { w: PRINT_W_MM, h: PRINT_H_MM },
               )}
             </p>
@@ -355,9 +362,7 @@ export function CutSheetDialog({
                 {t("Back to selection")}
               </Button>
               <Button size="sm" onClick={download}>
-                {result.pages.length > 1
-                  ? t("Download .zip")
-                  : t("Download PNG")}
+                {t("Download .zip (print + cut)")}
               </Button>
             </div>
           </>

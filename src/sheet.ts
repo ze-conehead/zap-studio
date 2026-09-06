@@ -113,6 +113,7 @@ export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
 
 export interface SheetPage {
   dataUrl: string;
+  cutSvg: string; // matching cut line: one rounded rect (trim edge) per card
   count: number; // cards on this page
   widthMM: number;
   heightMM: number;
@@ -179,12 +180,19 @@ export async function composeSheet(
   const imgs = await Promise.all(cardImages.map(loadImage));
   const pages: SheetPage[] = [];
 
+  // px → mm, 3 decimals.
+  const mm = (px: number) => +(px / PX_PER_MM).toFixed(3);
+  const trimWmm = mm(TRIM_RECT.w);
+  const trimHmm = mm(TRIM_RECT.h);
+  const rMm = mm(CORNER_RADIUS_PX);
+
   for (let p = 0; p < pageCount; p++) {
     const slice = imgs.slice(p * perPage, p * perPage + perPage);
     const pcols = Math.min(cols, slice.length);
     const prows = Math.ceil(slice.length / cols);
     const pageW = Math.round(pcols * cellW + (pcols - 1) * gap);
     const pageH = Math.round(prows * cellH + (prows - 1) * gap);
+    const cutRects: string[] = [];
 
     const canvas = document.createElement("canvas");
     canvas.width = pageW;
@@ -198,6 +206,10 @@ export async function composeSheet(
     slice.forEach((img, i) => {
       const cx = (i % cols) * (cellW + gap);
       const cy = Math.floor(i / cols) * (cellH + gap);
+      // Cut line = the trim edge, inset by the bleed from the printed cell.
+      cutRects.push(
+        `<rect x="${mm(cx + bleed)}" y="${mm(cy + bleed)}" width="${trimWmm}" height="${trimHmm}" rx="${rMm}" ry="${rMm}"/>`,
+      );
       ctx.save();
       roundedRect(ctx, cx, cy, cellW, cellH, radius);
       ctx.clip();
@@ -213,11 +225,20 @@ export async function composeSheet(
       ctx.restore();
     });
 
+    const pageWmm = mm(pageW);
+    const pageHmm = mm(pageH);
+    const cutSvg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWmm}mm" height="${pageHmm}mm" ` +
+      `viewBox="0 0 ${pageWmm} ${pageHmm}">` +
+      `<g fill="none" stroke="#22d3ee" stroke-width="0.2">${cutRects.join("")}</g>` +
+      `</svg>`;
+
     pages.push({
       dataUrl: canvas.toDataURL("image/png"),
+      cutSvg,
       count: slice.length,
-      widthMM: pageW / PX_PER_MM,
-      heightMM: pageH / PX_PER_MM,
+      widthMM: pageWmm,
+      heightMM: pageHmm,
     });
   }
 
