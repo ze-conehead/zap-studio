@@ -123,6 +123,10 @@ export interface SheetPage {
   dataUrl: string;
   cutSvg: string; // matching cut line: one rounded rect (trim edge) per card
   cutRects: CutRect[];
+  // Bounding box of the whole cut line, measured from the page's top-left.
+  // `xMM` / `yMM` are the margin to leave to the left of / above the cut line
+  // so it lines up with the image.
+  cutBox: { xMM: number; yMM: number; wMM: number; hMM: number };
   bleedMM: number; // outer sheet bleed (wir-machen-druck) / 0 for Cricut
   count: number; // cards on this page
   widthMM: number;
@@ -222,6 +226,17 @@ export async function composeSheet(
       });
     });
 
+    const cutMinX = Math.min(...cutRects.map((r) => r.xMM));
+    const cutMinY = Math.min(...cutRects.map((r) => r.yMM));
+    const cutMaxX = Math.max(...cutRects.map((r) => r.xMM + r.wMM));
+    const cutMaxY = Math.max(...cutRects.map((r) => r.yMM + r.hMM));
+    const cutBox = {
+      xMM: +cutMinX.toFixed(3),
+      yMM: +cutMinY.toFixed(3),
+      wMM: +(cutMaxX - cutMinX).toFixed(3),
+      hMM: +(cutMaxY - cutMinY).toFixed(3),
+    };
+
     const pageWmm = mm(pageW);
     const pageHmm = mm(pageH);
     const cutSvg =
@@ -240,6 +255,7 @@ export async function composeSheet(
       dataUrl: canvas.toDataURL("image/png"),
       cutSvg,
       cutRects,
+      cutBox,
       bleedMM: mm(outerBleed),
       count: slice.length,
       widthMM: pageWmm,

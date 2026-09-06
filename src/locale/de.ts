@@ -388,6 +388,18 @@ export const de: Record<string, string> = {
   "{cards} card(s) · {cols}×{rows} per sheet · {pages} sheet(s)":
     "{cards} Karte(n) · {cols}×{rows} pro Bogen · {pages} Bogen/Bögen",
   "print at {w}×{h} mm": "Druck {w}×{h} mm",
+  Sheet: "Bogen",
+  "Image (print PNG)": "Bild (Druck-PNG)",
+  "Cut line (cut SVG)": "Schnittlinie (Schnitt-SVG)",
+  "Cut line offset (left / top)": "Schnittlinien-Abstand (links / oben)",
+  "  image   print{s}.png : {w} x {h} mm  ({wc} x {hc} cm)":
+    "  Bild      print{s}.png : {w} x {h} mm  ({wc} x {hc} cm)",
+  "  cut     cut{s}.svg   : {w} x {h} mm  ({wc} x {hc} cm)":
+    "  Schnitt   cut{s}.svg   : {w} x {h} mm  ({wc} x {hc} cm)",
+  "  offset  cut line from the image's top-left corner: {l} mm left, {tp} mm top":
+    "  Abstand   Schnittlinie von der oberen linken Ecke des Bildes: {l} mm links, {tp} mm oben",
+  "If Design Space crops the SVG to the cut line, set the image size above, then move the cut layer so its top-left sits at the offset above (left / top) from the image's top-left.":
+    "Wenn Design Space das SVG auf die Schnittlinie zuschneidet: das Bild auf die obige Größe stellen, dann die Schnittebene so verschieben, dass ihre obere linke Ecke im obigen Abstand (links / oben) zur oberen linken Ecke des Bildes liegt.",
   "Cyan = the cut line (cut.svg). The .zip has the full-bleed print PNG and the matching SVG; the README lists the exact print size. Fits the Cricut print area ({w}×{h} mm). Print at 100 %.":
     "Cyan = die Schnittlinie (cut.svg). Die .zip enthält das Druck-PNG mit vollem Anschnitt und das passende SVG; die README nennt die exakte Druckgröße. Passt in den Cricut-Druckbereich ({w}×{h} mm). Mit 100 % drucken.",
   "PRINT SIZE — print at 100 % / actual size, never “fit to page”, so the cut line lines up:":

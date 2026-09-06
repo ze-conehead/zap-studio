@@ -142,7 +142,9 @@ export function CutSheetDialog({
 
     const files: Record<string, Uint8Array> = {};
     const multi = result.pages.length > 1;
-    const sizeLines: string[] = [];
+    const mm1 = (v: number) => v.toFixed(1);
+    const cm2 = (v: number) => (v / 10).toFixed(2);
+    const sizeBlocks: string[] = [];
     result.pages.forEach((pg, i) => {
       const suffix = multi ? `_${i + 1}` : "";
       const b64 = pg.dataUrl.split(",")[1];
@@ -151,12 +153,29 @@ export function CutSheetDialog({
       for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
       files[`print${suffix}.png`] = bytes;
       files[`cut${suffix}.svg`] = strToU8(pg.cutSvg);
-      const w = pg.widthMM.toFixed(1);
-      const h = pg.heightMM.toFixed(1);
-      const wcm = (pg.widthMM / 10).toFixed(2);
-      const hcm = (pg.heightMM / 10).toFixed(2);
-      sizeLines.push(
-        `  print${suffix}.png / cut${suffix}.svg = ${w} x ${h} mm  (${wcm} x ${hcm} cm)`,
+      const c = pg.cutBox;
+      sizeBlocks.push(
+        (multi ? `[${t("Sheet")} ${i + 1}]\n` : "") +
+          t("  image   print{s}.png : {w} x {h} mm  ({wc} x {hc} cm)", {
+            s: suffix,
+            w: mm1(pg.widthMM),
+            h: mm1(pg.heightMM),
+            wc: cm2(pg.widthMM),
+            hc: cm2(pg.heightMM),
+          }) +
+          "\n" +
+          t("  cut     cut{s}.svg   : {w} x {h} mm  ({wc} x {hc} cm)", {
+            s: suffix,
+            w: mm1(c.wMM),
+            h: mm1(c.hMM),
+            wc: cm2(c.wMM),
+            hc: cm2(c.hMM),
+          }) +
+          "\n" +
+          t(
+            "  offset  cut line from the image's top-left corner: {l} mm left, {tp} mm top",
+            { l: mm1(c.xMM), tp: mm1(c.yMM) },
+          ),
       );
     });
     files["README.txt"] = strToU8(
@@ -164,10 +183,14 @@ export function CutSheetDialog({
         "PRINT SIZE — print at 100 % / actual size, never “fit to page”, so the cut line lines up:",
       ) +
         "\n" +
-        sizeLines.join("\n") +
+        sizeBlocks.join("\n\n") +
         "\n\n" +
         t(
           "print*.png = the sticker sheet, each card printed full-bleed. cut*.svg = the matching cut line, one rounded path per card at the trim edge. Cricut Design Space: upload the SVG (the cut layer) and the PNG (Print then Cut image) at the same size so they line up, then Print then Cut. Or upload just the PNG and choose “Complex” to auto-trace (it will follow the bleed edge, not the rounded trim).",
+        ) +
+        "\n\n" +
+        t(
+          "If Design Space crops the SVG to the cut line, set the image size above, then move the cut layer so its top-left sits at the offset above (left / top) from the image's top-left.",
         ) +
         "\n",
     );
@@ -414,6 +437,28 @@ export function CutSheetDialog({
                 />
               </div>
             </div>
+
+            {!wmd && (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md border bg-muted/30 p-2.5 text-xs">
+                <dt className="text-muted-foreground">{t("Image (print PNG)")}</dt>
+                <dd className="font-mono">
+                  {result.pages[pageIdx].widthMM.toFixed(1)} ×{" "}
+                  {result.pages[pageIdx].heightMM.toFixed(1)} mm
+                </dd>
+                <dt className="text-muted-foreground">{t("Cut line (cut SVG)")}</dt>
+                <dd className="font-mono">
+                  {result.pages[pageIdx].cutBox.wMM.toFixed(1)} ×{" "}
+                  {result.pages[pageIdx].cutBox.hMM.toFixed(1)} mm
+                </dd>
+                <dt className="text-muted-foreground">
+                  {t("Cut line offset (left / top)")}
+                </dt>
+                <dd className="font-mono">
+                  {result.pages[pageIdx].cutBox.xMM.toFixed(1)} /{" "}
+                  {result.pages[pageIdx].cutBox.yMM.toFixed(1)} mm
+                </dd>
+              </dl>
+            )}
 
             <p className="text-xs text-muted-foreground">
               {wmd
