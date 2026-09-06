@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLang, useT } from "../i18n";
 import { unlinkProject } from "../gameIndex";
 import { deleteProject, listProjects, loadProject } from "../persist";
@@ -41,7 +40,7 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
             {t("No saved designs yet.")}
           </p>
         ) : (
-          <ScrollArea className="max-h-[60vh] pr-3">
+          <div className="max-h-[60vh] overflow-y-auto pr-3">
             <ul className="flex flex-col gap-1.5">
               {items.map((p) => (
                 <li key={p.id} className="flex items-stretch gap-1.5">
@@ -82,7 +81,7 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
                 </li>
               ))}
             </ul>
-          </ScrollArea>
+          </div>
         )}
       </DialogContent>
     </Dialog>
