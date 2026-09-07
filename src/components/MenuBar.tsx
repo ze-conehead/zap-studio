@@ -118,7 +118,15 @@ export function MenuBar({
 
   // A nested list rendered inline behind a "›" header, so no extra Radix
   // sub-menu primitive is needed.
-  const Sub = ({ label, value, children }: { label: string; value: string; children: React.ReactNode }) => {
+  const Sub = ({
+    label,
+    value,
+    children,
+  }: {
+    label: string;
+    value?: string;
+    children: React.ReactNode;
+  }) => {
     const [openSub, setOpenSub] = useState(false);
     return (
       <>
@@ -151,15 +159,18 @@ export function MenuBar({
         <DropdownMenuItem onClick={file.saveJson}>{t("Save as JSON")}</DropdownMenuItem>
         <DropdownMenuItem onClick={file.openJson}>{t("Load JSON …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>{t("Export")}</DropdownMenuLabel>
-        {EXPORT_MODES.map((m) => (
-          <DropdownMenuItem key={m} onClick={() => void file.runExport(m)}>
-            {exportLabel(m)}
+        <Sub label={t("Export")}>
+          <DropdownMenuLabel>{t("This card")}</DropdownMenuLabel>
+          {EXPORT_MODES.map((m) => (
+            <DropdownMenuItem key={m} onClick={() => void file.runExport(m)}>
+              {exportLabel(m)}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
+          <DropdownMenuItem onClick={onOpenCutSheet}>
+            {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
           </DropdownMenuItem>
-        ))}
-        <DropdownMenuItem onClick={onOpenCutSheet}>
-          {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
-        </DropdownMenuItem>
+        </Sub>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
