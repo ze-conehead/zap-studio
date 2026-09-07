@@ -72,6 +72,20 @@ export const de: Record<string, string> = {
   English: "Englisch",
   German: "Deutsch",
 
+  // ── Themes ───────────────────────────────────────────────────────────────
+  Theme: "Design",
+  "Accent colour": "Akzentfarbe",
+  Lime: "Limette",
+  Emerald: "Smaragd",
+  Cyan: "Cyan",
+  Cobalt: "Kobalt",
+  Violet: "Violett",
+  Magenta: "Magenta",
+  Crimson: "Karmesin",
+  Ember: "Glut",
+  Gold: "Gold",
+  Graphite: "Graphit",
+
   // ── Export labels ────────────────────────────────────────────────────────
   "PNG – final size ({w} × {h} mm)": "PNG – Endformat ({w} × {h} mm)",
   "PNG – with {n} mm bleed": "PNG – mit {n} mm Beschnitt",

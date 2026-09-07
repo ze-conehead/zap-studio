@@ -9,6 +9,7 @@ import {
   ListPlus,
   MoveHorizontal,
   MoveVertical,
+  Palette,
   Redo2,
   Ruler,
   Shapes,
@@ -43,6 +44,7 @@ import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
+import { accentColor, setTheme, THEME_IDS, THEMES, useTheme } from "../theme";
 import type { GuideApi } from "../App";
 import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
@@ -72,6 +74,7 @@ export function Toolbar({
   const { state, dispatch } = useStore();
   const t = useT();
   const [lang, setLang] = useLang();
+  const theme = useTheme();
   const { project, side, past, future, showBleed } = state;
   const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
@@ -258,6 +261,35 @@ export function Toolbar({
                 disabled={id === getFormatId()}
               >
                 {t(FORMATS[id].name)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" title={t("Theme")}>
+              <Palette />
+              <span
+                className="size-3 rounded-full ring-1 ring-white/25"
+                style={{ background: accentColor(theme) }}
+              />
+              {t(theme.name)}
+              <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{t("Accent colour")}</DropdownMenuLabel>
+            {THEME_IDS.map((id) => (
+              <DropdownMenuItem
+                key={id}
+                onClick={() => setTheme(id)}
+                disabled={id === theme.id}
+              >
+                <span
+                  className="size-3.5 rounded-full ring-1 ring-white/25"
+                  style={{ background: accentColor(THEMES[id]) }}
+                />
+                {t(THEMES[id].name)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

@@ -40,6 +40,7 @@ import {
 import { useImage } from "../hooks/useImage";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
+import { useAccent } from "../theme";
 import type {
   BackgroundLayer as TBackgroundLayer,
   CardBackground,
@@ -188,7 +189,7 @@ export function EditorCanvas({
 
   return (
     <div
-      className="canvas-checker grid flex-1 place-items-center overflow-auto bg-[#161617] p-6"
+      className="canvas-checker grid flex-1 place-items-center overflow-auto p-6"
       ref={wrapRef}
       // Swallow file drops that miss a face so the browser doesn't open them.
       onDragOver={(e) => {
@@ -264,6 +265,7 @@ function FaceStage({
 }) {
   const t = useT();
   const { state, dispatch } = useStore();
+  const accent = useAccent();
   const { project, selectedId } = state;
   const back = side === "back";
 
@@ -552,9 +554,9 @@ function FaceStage({
               rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
               anchorSize={10}
               anchorCornerRadius={5}
-              borderStroke="#d4d4d8"
-              anchorStroke="#d4d4d8"
-              anchorFill="#f4f4f5"
+              borderStroke={accent}
+              anchorStroke={accent}
+              anchorFill={accent}
               boundBoxFunc={(oldBox, newBox) =>
                 newBox.width < 8 || newBox.height < 8 ? oldBox : newBox
               }
