@@ -12,6 +12,7 @@ import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { MenuBar } from "./components/MenuBar";
 import { OverviewDialog } from "./components/OverviewDialog";
+import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -308,6 +309,7 @@ function Shell({
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
   const [overview, setOverview] = useState(false);
+  const [dataSafety, setDataSafety] = useState(false);
   const t = useT();
   const bar = {
     canvas,
@@ -321,6 +323,7 @@ function Shell({
     onOpenBaseImport: () => setBaseImport(true),
     onOpenQuickImport: () => setQuickImport(true),
     onOpenOverview: () => setOverview(true),
+    onOpenDataSafety: () => setDataSafety(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -373,6 +376,7 @@ function Shell({
         activeGameKey={activeGameKey}
         onPick={onPickGame}
       />
+      <DataSafetyDialog open={dataSafety} onOpenChange={setDataSafety} />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <QuickImportDialog

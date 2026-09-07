@@ -92,6 +92,38 @@ export const de: Record<string, string> = {
   System: "System",
   Monospace: "Monospace",
 
+  // ── Data safety (automatic backups + trash) ──────────────────────────────
+  "Data safety": "Datensicherheit",
+  "Data safety \u2026": "Datensicherheit \u2026",
+  "Back up your work": "Sichere deine Arbeit",
+  "Everything you design lives in this browser's local database. Clearing the browser's site data deletes it. Point the app at a folder and it keeps a rolling set of backup .zip files there for you.":
+    "Alles, was du gestaltest, liegt in der lokalen Datenbank dieses Browsers. Wenn du die Websitedaten l\u00f6schst, ist es weg. W\u00e4hle einen Ordner, dann legt die App dort automatisch rotierende Backup-.zip-Dateien ab.",
+  "Automatic backup": "Automatisches Backup",
+  "This browser can't write to a folder (needs the File System Access API — Chrome, Edge or Opera). Use File ▸ Save backup (.zip) regularly instead.":
+    "Dieser Browser kann nicht in einen Ordner schreiben (ben\u00f6tigt die File System Access API \u2013 Chrome, Edge oder Opera). Nutze stattdessen regelm\u00e4\u00dfig Datei \u25b8 Backup (.zip) speichern.",
+  "No folder selected yet.": "Noch kein Ordner gew\u00e4hlt.",
+  "Choose folder \u2026": "Ordner w\u00e4hlen \u2026",
+  "Change folder \u2026": "Ordner \u00e4ndern \u2026",
+  Forget: "Vergessen",
+  "The browser needs your permission again for this folder — click \u201cBack up now\u201d.":
+    "Der Browser braucht erneut deine Freigabe f\u00fcr diesen Ordner \u2013 klicke auf \u201eJetzt sichern\u201c.",
+  "Back up automatically": "Automatisch sichern",
+  "at most every": "h\u00f6chstens alle",
+  min: "Min.",
+  keep: "behalte",
+  files: "Dateien",
+  "Last backup: {when}": "Letztes Backup: {when}",
+  "No backup written yet.": "Noch kein Backup geschrieben.",
+  "\u2014 over {n} days ago": "\u2014 vor \u00fcber {n} Tagen",
+  "Back up now": "Jetzt sichern",
+  Trash: "Papierkorb",
+  "Empty trash": "Papierkorb leeren",
+  "Permanently delete everything in the trash?":
+    "Alles im Papierkorb endg\u00fcltig l\u00f6schen?",
+  "Nothing deleted. Deleted designs stay here for {n} days.":
+    "Nichts gel\u00f6scht. Gel\u00f6schte Designs bleiben {n} Tage hier.",
+  Restore: "Wiederherstellen",
+
   // ── Overview ("All cards") ───────────────────────────────────────────────
   "All cards": "Gesamtansicht",
   "Filter by game or console \u2026": "Nach Spiel oder Konsole filtern \u2026",

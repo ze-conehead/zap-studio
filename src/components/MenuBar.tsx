@@ -6,7 +6,7 @@
 // open menus" behaviour is wired up by hand via `openMenu`.
 
 import { useState } from "react";
-import { Check, ChevronRight } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
 import { getCoverSource, setCoverSource, type CoverSource } from "../covers";
 import { EXPORT_MODES, exportLabel } from "../export";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
@@ -46,6 +47,7 @@ interface Props {
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
   onOpenOverview: () => void;
+  onOpenDataSafety: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -62,6 +64,7 @@ export function MenuBar({
   onOpenBaseImport,
   onOpenQuickImport,
   onOpenOverview,
+  onOpenDataSafety,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -73,6 +76,9 @@ export function MenuBar({
   const [open, setOpen] = useState<MenuId | null>(null);
   const file = useFileActions(canvas);
   const coverSource = getCoverSource();
+  const backup = useBackupStatus();
+  // `backup.lastAt` is what makes this re-evaluate after a run.
+  const backupStale = backup.lastAt >= 0 && isStale();
 
   // Once one menu is open, hovering a sibling switches to it.
   const hover = (id: MenuId) => () => {
@@ -183,6 +189,10 @@ export function MenuBar({
           {t("Save backup (.zip)")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={file.openZip}>{t("Load backup …")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenDataSafety}>
+          {t("Data safety …")}
+          {backupStale && <AlertTriangle className="ml-auto size-4 text-amber-400" />}
+        </DropdownMenuItem>
       </Menu>
 
       <Menu id="edit" label={t("Edit")}>
@@ -323,8 +333,27 @@ export function MenuBar({
         </Sub>
       </Menu>
 
+      <div className="ml-auto" />
+
+      {backupStale && (
+        <button
+          onClick={onOpenDataSafety}
+          title={
+            lastBackupAt()
+              ? t("Last backup: {when}", {
+                  when: new Date(lastBackupAt()).toLocaleString(),
+                })
+              : t("No backup written yet.")
+          }
+          className="flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] text-amber-400 hover:bg-accent"
+        >
+          <AlertTriangle className="size-3.5" />
+          {t("Back up your work")}
+        </button>
+      )}
+
       {file.busy && (
-        <span className="ml-auto rounded bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground">
+        <span className="rounded bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground">
           {file.busy}
         </span>
       )}
