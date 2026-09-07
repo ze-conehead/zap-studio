@@ -8,6 +8,7 @@ import {
   isConfigured,
   resolveLibretroRepo,
   searchCovers,
+  searchLogos,
   setCoverSource,
   setIgdbCreds,
   setSgdbKey,
@@ -30,6 +31,9 @@ interface Props {
   progress?: { index: number; total: number };
   onSkip?: () => void;
   busy?: boolean;
+  // "logo" searches SteamGridDB's logo set (transparent wordmarks) instead of
+  // box art. Only SteamGridDB has those, so the source picker is hidden.
+  kind?: "cover" | "logo";
 }
 
 const SOURCE_LABEL: Record<Exclude<CoverSource, "libretro">, string> = {
@@ -54,6 +58,7 @@ export function CoverSearchDialog({
   progress,
   onSkip,
   busy = false,
+  kind = "cover",
 }: Props) {
   const t = useT();
   const [state, setState] = useState<
@@ -78,7 +83,7 @@ export function CoverSearchDialog({
       const id = ++runId.current;
       setState({ status: "loading" });
       setVisible(PAGE);
-      searchCovers(consoleName, term)
+      (kind === "logo" ? searchLogos(term) : searchCovers(consoleName, term))
         .then((results) => {
           if (runId.current === id) setState({ status: "done", results });
         })
@@ -86,7 +91,7 @@ export function CoverSearchDialog({
           if (runId.current === id) setState({ status: "error", message: e.message });
         });
     },
-    [consoleName],
+    [consoleName, kind],
   );
 
   // Auto-search when the dialog opens or the target game changes (sweep mode).
@@ -108,9 +113,10 @@ export function CoverSearchDialog({
     setIgSecret(c.clientSecret);
   }, [open]);
 
-  const src = source as Exclude<CoverSource, "libretro">;
+  const logoMode = kind === "logo";
+  const src = logoMode ? "sgdb" : (source as Exclude<CoverSource, "libretro">);
   const configured = isConfigured(src);
-  const active = effectiveSource();
+  const active = logoMode ? "sgdb" : effectiveSource();
   const supported = active !== "libretro" || !!resolveLibretroRepo(consoleName);
   const term = query.trim() || gameTitle;
   const search = () => runSearch(term);
@@ -136,7 +142,7 @@ export function CoverSearchDialog({
           <DialogTitle>
             {progress
               ? t("Cover {n} / {total}:", { n: progress.index + 1, total: progress.total }) + " "
-              : t("Cover for") + " "}
+              : (logoMode ? t("Logo for") : t("Cover for")) + " "}
             “{gameTitle}”
             {progress && (
               <span className="ml-1 text-sm font-normal text-muted-foreground">
@@ -159,7 +165,7 @@ export function CoverSearchDialog({
         </div>
 
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
-          <div className="flex gap-1">
+          <div className={cn("flex gap-1", logoMode && "hidden")}>
             {(["sgdb", "igdb"] as const).map((s) => (
               <button
                 key={s}
@@ -242,7 +248,9 @@ export function CoverSearchDialog({
                 </div>
               )}
               <span className="text-muted-foreground">
-                {t("Without credentials: libretro-thumbnails (retro / emulated consoles only).")}
+                {logoMode
+                  ? t("Logos come from SteamGridDB only — an API key is required.")
+                  : t("Without credentials: libretro-thumbnails (retro / emulated consoles only).")}
               </span>
             </div>
           )}
@@ -251,7 +259,8 @@ export function CoverSearchDialog({
         <div className="min-h-0 flex-1 overflow-y-auto">
         {state.status === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> {t("Searching covers …")}
+            <Loader2 className="size-4 animate-spin" />{" "}
+            {logoMode ? t("Searching logos …") : t("Searching covers …")}
           </div>
         )}
 
@@ -272,7 +281,9 @@ export function CoverSearchDialog({
 
         {state.status === "done" && supported && state.results.length === 0 && (
           <p className="py-6 text-sm text-muted-foreground">
-            {t("No covers found for \u201c{title}\u201d.", { title: term })}
+            {logoMode
+              ? t("No logos found for \u201c{title}\u201d.", { title: term })
+              : t("No covers found for \u201c{title}\u201d.", { title: term })}
           </p>
         )}
 
@@ -292,7 +303,12 @@ export function CoverSearchDialog({
                     src={c.thumb ?? c.url}
                     alt={c.title}
                     loading="lazy"
-                    className="aspect-[3/4] w-full rounded bg-muted object-contain"
+                    className={cn(
+                      "w-full rounded object-contain",
+                      logoMode
+                        ? "canvas-checker aspect-[3/2] p-2"
+                        : "aspect-[3/4] bg-muted",
+                    )}
                   />
                   <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">
                     {c.region || c.title}

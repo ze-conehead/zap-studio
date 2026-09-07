@@ -72,6 +72,23 @@ export const de: Record<string, string> = {
   English: "Englisch",
   German: "Deutsch",
 
+  // ── Menu bar ─────────────────────────────────────────────────────────────
+  "Sticker Studio": "Sticker Studio",
+  File: "Datei",
+  Edit: "Bearbeiten",
+  View: "Ansicht",
+  Settings: "Einstellungen",
+  "New card": "Neu",
+  "Open project \u2026": "Projekt \u00f6ffnen \u2026",
+  "Load JSON \u2026": "JSON laden \u2026",
+  "Base set \u2026": "Basis-Set \u2026",
+  "Duplicate layer": "Ebene duplizieren",
+  "Delete layer": "Ebene l\u00f6schen",
+  "Interface font": "Schriftart der Oberfl\u00e4che",
+  "Cover source": "Cover-Quelle",
+  System: "System",
+  Monospace: "Monospace",
+
   // ── Themes ───────────────────────────────────────────────────────────────
   Theme: "Design",
   "Accent colour": "Akzentfarbe",
@@ -353,6 +370,31 @@ export const de: Record<string, string> = {
   RARE: "RAR",
   "Drag to rotate · flick to spin · wheel to zoom · ← → for the next card":
     "Ziehen zum Drehen · Schwung zum Weiterdrehen · Mausrad zoomt · ← → für die nächste Karte",
+
+  // ── Logo layer ───────────────────────────────────────────────────────────
+  Logo: "Logo",
+  "Find logo (SteamGridDB) \u2026": "Logo suchen (SteamGridDB) \u2026",
+  "Logo for": "Logo f\u00fcr",
+  "Searching logos \u2026": "Logos werden gesucht \u2026",
+  "No logos found for \u201c{title}\u201d.":
+    "Keine Logos f\u00fcr \u201e{title}\u201c gefunden.",
+  "Logos come from SteamGridDB only \u2014 an API key is required.":
+    "Logos gibt es nur bei SteamGridDB \u2013 daf\u00fcr wird ein API-Key ben\u00f6tigt.",
+
+  // ── Image adjustment (greyscale / threshold) ─────────────────────────────
+  "Colour reduction": "Farbreduktion",
+  Original: "Original",
+  Greyscale: "Graustufen",
+  Threshold: "Schwellenwert",
+  "Threshold {n}": "Schwellenwert {n}",
+  "Brightness {n}": "Helligkeit {n}",
+  "Contrast {n}": "Kontrast {n}",
+  Invert: "Invertieren",
+  "Silhouette (one colour, rest transparent)":
+    "Silhouette (eine Farbe, Rest transparent)",
+  Colour: "Farbe",
+  White: "Wei\u00df",
+  Black: "Schwarz",
 
   // ── CoverSearchDialog ────────────────────────────────────────────────────
   "Cover {n} / {total}:": "Cover {n} / {total}:",

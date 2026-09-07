@@ -120,6 +120,87 @@ export const THEMES: Record<ThemeId, Theme> = {
 export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 export const DEFAULT_THEME: ThemeId = "lime";
 
+// ── interface font ─────────────────────────────────────────────────────────
+// Separate from the card fonts in src/fonts.ts: this one only styles the
+// app's own chrome. The web faces are the ones index.html already loads.
+
+export interface UiFont {
+  id: string;
+  name: string; // English i18n key
+  stack: string;
+}
+
+export const UI_FONTS: UiFont[] = [
+  {
+    id: "system",
+    name: "System",
+    stack:
+      'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  },
+  { id: "montserrat", name: "Montserrat", stack: '"Montserrat", system-ui, sans-serif' },
+  { id: "oswald", name: "Oswald", stack: '"Oswald", system-ui, sans-serif' },
+  { id: "bebas", name: "Bebas Neue", stack: '"Bebas Neue", system-ui, sans-serif' },
+  { id: "georgia", name: "Georgia", stack: 'Georgia, "Times New Roman", serif' },
+  { id: "mono", name: "Monospace", stack: 'ui-monospace, "Courier New", monospace' },
+  {
+    id: "arcade",
+    name: "Press Start 2P",
+    stack: '"Press Start 2P", ui-monospace, monospace',
+  },
+];
+
+export const DEFAULT_UI_FONT = "system";
+const FONT_KEY = "stickerstudio:uiFont";
+
+function loadFont(): string {
+  try {
+    const raw = localStorage.getItem(FONT_KEY);
+    if (raw && UI_FONTS.some((f) => f.id === raw)) return raw;
+  } catch {
+    /* storage unavailable */
+  }
+  return DEFAULT_UI_FONT;
+}
+
+let currentFont = loadFont();
+
+export const getUiFontId = () => currentFont;
+export const getUiFont = () =>
+  UI_FONTS.find((f) => f.id === currentFont) ?? UI_FONTS[0];
+
+function applyFont(): void {
+  try {
+    // "Press Start 2P" is enormous per character — scale the whole UI down a
+    // notch so the existing layout still fits.
+    const f = getUiFont();
+    document.documentElement.style.setProperty("--ui-font", f.stack);
+    document.documentElement.style.setProperty(
+      "--ui-font-scale",
+      f.id === "arcade" ? "0.82" : f.id === "bebas" ? "1.08" : "1",
+    );
+  } catch {
+    /* no document (tests) */
+  }
+}
+
+export function setUiFont(id: string): void {
+  if (id === currentFont || !UI_FONTS.some((f) => f.id === id)) return;
+  currentFont = id;
+  try {
+    localStorage.setItem(FONT_KEY, id);
+  } catch {
+    /* storage unavailable */
+  }
+  applyFont();
+  for (const fn of listeners) fn();
+}
+
+/** Re-renders the component whenever the interface font changes. */
+export function useUiFont(): UiFont {
+  const id = useSyncExternalStore(subscribe, getUiFontId, () => DEFAULT_UI_FONT);
+  return UI_FONTS.find((f) => f.id === id) ?? UI_FONTS[0];
+}
+
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const okl = (l: number, c: number, h: number, alpha = 1) => {
   const base = `${clamp01(l).toFixed(3)} ${Math.max(0, c).toFixed(4)} ${h}`;
@@ -218,6 +299,7 @@ function apply(): void {
 }
 
 apply();
+applyFont();
 
 export function getThemeId(): ThemeId {
   return current;

@@ -46,11 +46,8 @@ import { useLang, useT } from "../i18n";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import { accentColor, setTheme, THEME_IDS, THEMES, useTheme } from "../theme";
 import type { GuideApi } from "../App";
-import { BaseImportDialog } from "./BaseImportDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
-import { CutSheetDialog } from "./CutSheetDialog";
 import type { CanvasHandle } from "./EditorCanvas";
-import { QuickImportDialog } from "./QuickImportDialog";
 
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
@@ -60,6 +57,10 @@ interface Props {
   onOpenPreview: () => void;
   onOpenDemo: () => void;
   onImportJson: (file: File) => void;
+  // Owned by the Shell so the menu bar can open the same dialogs.
+  onOpenCutSheet: () => void;
+  onOpenBaseImport: () => void;
+  onOpenQuickImport: () => void;
 }
 
 export function Toolbar({
@@ -70,6 +71,9 @@ export function Toolbar({
   onOpenPreview,
   onOpenDemo,
   onImportJson,
+  onOpenCutSheet,
+  onOpenBaseImport,
+  onOpenQuickImport,
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
@@ -80,9 +84,6 @@ export function Toolbar({
   const zipRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
-  const [baseImportOpen, setBaseImportOpen] = useState(false);
-  const [quickImportOpen, setQuickImportOpen] = useState(false);
-  const [cutSheetOpen, setCutSheetOpen] = useState(false);
 
 
   const saveBackup = async () => {
@@ -330,7 +331,7 @@ export function Toolbar({
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => setCutSheetOpen(true)}>
+            <DropdownMenuItem onClick={() => onOpenCutSheet()}>
               {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -353,7 +354,7 @@ export function Toolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setBaseImportOpen(true)}
+          onClick={() => onOpenBaseImport()}
           title={t("Import consoles & games from the base list (base_game_list.csv)")}
         >
           <ListPlus /> {t("Base set")}
@@ -361,7 +362,7 @@ export function Toolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setQuickImportOpen(true)}
+          onClick={() => onOpenQuickImport()}
           title={t("Enter image URLs for every game without an image in a table")}
         >
           <Import /> Quick Import
@@ -407,16 +408,8 @@ export function Toolbar({
         <CoverSweepDialog open={coverSweepOpen} onOpenChange={setCoverSweepOpen} />
       )}
 
-      <BaseImportDialog open={baseImportOpen} onOpenChange={setBaseImportOpen} />
 
-      <CutSheetDialog open={cutSheetOpen} onOpenChange={setCutSheetOpen} />
 
-      <QuickImportDialog
-        open={quickImportOpen}
-        onOpenChange={setQuickImportOpen}
-        currentGameKey={project.gameKey}
-        onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
-      />
     </header>
   );
 }

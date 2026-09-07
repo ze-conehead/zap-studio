@@ -1,4 +1,5 @@
 import type { FormatId } from "./formats";
+import type { ImageAdjust } from "./imageAdjust";
 
 export type LayerType = "image" | "text" | "shape" | "metabadge" | "background";
 
@@ -56,6 +57,8 @@ export interface ImageLayer extends BaseLayer {
   width: number; // unscaled display size
   height: number;
   cornerRadius: number;
+  logo?: boolean; // inserted as the game's logo (SteamGridDB "logos")
+  adjust?: ImageAdjust; // greyscale / threshold, see src/imageAdjust.ts
 }
 
 export interface TextLayer extends BaseLayer {

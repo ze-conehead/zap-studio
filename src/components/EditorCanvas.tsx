@@ -38,6 +38,7 @@ import {
   subscribeGamelists,
 } from "../gamelist";
 import { useImage } from "../hooks/useImage";
+import { useAdjustedImage } from "../imageAdjust";
 import { segmentLayers } from "../masking";
 import { useStore } from "../store";
 import { useAccent } from "../theme";
@@ -1092,7 +1093,8 @@ function ReadOnlyLayer({ layer, meta }: { layer: TLayer; meta?: GameMeta }) {
 }
 
 function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
-  const img = useImage(layer.src);
+  // The adjusted copy is an offscreen canvas; Konva takes either.
+  const img = useAdjustedImage(useImage(layer.src), layer.adjust);
   return (
     <KImage
       image={img}

@@ -10,7 +10,11 @@ import { FaceControl } from "./components/FaceControl";
 import { LayerList } from "./components/LayerList";
 import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
+import { MenuBar } from "./components/MenuBar";
 import { Toolbar } from "./components/Toolbar";
+import { BaseImportDialog } from "./components/BaseImportDialog";
+import { CutSheetDialog } from "./components/CutSheetDialog";
+import { QuickImportDialog } from "./components/QuickImportDialog";
 import {
   GLOBAL_TEMPLATE_ID,
   isBackground,
@@ -24,7 +28,7 @@ import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { getFormatId } from "./formats";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
-import { StoreProvider } from "./store";
+import { StoreProvider, useStore } from "./store";
 import { t, useT } from "./i18n";
 import type { CardBackground, Layer, Project } from "./types";
 
@@ -294,21 +298,31 @@ function Shell({
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
 }) {
+  const { dispatch } = useStore();
   const canvas = useRef<CanvasHandle | null>(null);
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
+  // Dialogs the menu bar and the toolbar both open.
+  const [cutSheet, setCutSheet] = useState(false);
+  const [baseImport, setBaseImport] = useState(false);
+  const [quickImport, setQuickImport] = useState(false);
   const t = useT();
+  const bar = {
+    canvas,
+    guides,
+    onNewProject,
+    onOpenProjects,
+    onOpenPreview: () => setPreview(true),
+    onOpenDemo: () => setDemo(true),
+    onImportJson,
+    onOpenCutSheet: () => setCutSheet(true),
+    onOpenBaseImport: () => setBaseImport(true),
+    onOpenQuickImport: () => setQuickImport(true),
+  };
   return (
     <div className="flex h-full flex-col">
-      <Toolbar
-        canvas={canvas}
-        guides={guides}
-        onNewProject={onNewProject}
-        onOpenProjects={onOpenProjects}
-        onOpenPreview={() => setPreview(true)}
-        onOpenDemo={() => setDemo(true)}
-        onImportJson={onImportJson}
-      />
+      <MenuBar {...bar} />
+      <Toolbar {...bar} />
       <div className="flex min-h-0 flex-1">
         <GameTree
           activeGameKey={activeGameKey}
@@ -349,6 +363,15 @@ function Shell({
 
       {preview && <CardPreview canvas={canvas} onClose={() => setPreview(false)} />}
       {demo && <DemoMode onClose={() => setDemo(false)} />}
+
+      <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
+      <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
+      <QuickImportDialog
+        open={quickImport}
+        onOpenChange={setQuickImport}
+        currentGameKey={activeGameKey}
+        onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
+      />
     </div>
   );
 }

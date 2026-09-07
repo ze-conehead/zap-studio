@@ -147,6 +147,43 @@ async function searchCoversSGDB(gameTitle: string): Promise<CoverCandidate[]> {
   }));
 }
 
+// SteamGridDB "logos": the game's wordmark/logo on transparency. Only this
+// source has them — IGDB and libretro-thumbnails ship box art only.
+interface SgdbLogo {
+  url: string;
+  thumb?: string;
+  width: number;
+  height: number;
+  style?: string;
+}
+
+export async function searchLogos(gameTitle: string): Promise<CoverCandidate[]> {
+  const title = gameTitle.trim();
+  if (!title) return [];
+  const found = await sgdbFetch<{ data?: SgdbGame[] }>(
+    `/search/autocomplete/${encodeURIComponent(title)}`,
+  );
+  const games = found.data ?? [];
+  if (!games.length) return [];
+
+  const q = normalizeTitle(title);
+  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
+
+  const logos =
+    (
+      await sgdbFetch<{ data?: SgdbLogo[] }>(
+        `/logos/game/${game.id}?nsfw=false&humor=false`,
+      )
+    ).data ?? [];
+
+  return logos.slice(0, 48).map((l) => ({
+    title: game.name,
+    region: `${l.width}\u00d7${l.height}${l.style ? ` \u00b7 ${l.style}` : ""}`,
+    url: proxied(l.url),
+    thumb: l.thumb ? proxied(l.thumb) : undefined,
+  }));
+}
+
 // ── IGDB ───────────────────────────────────────────────────────────────────
 
 async function igdbToken(): Promise<string> {

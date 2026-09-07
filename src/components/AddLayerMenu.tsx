@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Circle,
   Crop,
+  ImageIcon,
   Link2,
   Loader2,
   PaintBucket,
@@ -45,6 +46,7 @@ import {
 import { useT } from "../i18n";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { useStore } from "../store";
+import { CoverSearchDialog } from "./CoverSearchDialog";
 import type { Layer, ShapeKind } from "../types";
 
 // The single "+" entry point for adding a layer, shown in the Layers panel.
@@ -61,6 +63,7 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
+  const [logoOpen, setLogoOpen] = useState(false);
 
   // Fresh image on a game card front: the first image is the card's main
   // image and gets sized to cover the global alpha mask. The back has no
@@ -81,6 +84,24 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
       setBusy(true);
       const img = await fileToLayerSource(file);
       addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A logo is an ordinary image layer flagged `logo` — never the card's main
+  // image, and it keeps its aspect ratio rather than filling the mask.
+  const addLogoFromUrl = async (value: string) => {
+    try {
+      setBusy(true);
+      const img = await urlToLayerSource(value);
+      dispatch({
+        type: "ADD_LAYER",
+        layer: { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
+      });
+      setLogoOpen(false);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -160,6 +181,12 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
+          <DropdownMenuLabel>{t("Logo")}</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => setLogoOpen(true)}>
+            <ImageIcon /> {t("Find logo (SteamGridDB) …")}
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
           <DropdownMenuLabel>{t("Shape")}</DropdownMenuLabel>
           {shapes.map(([kind, label, Icon]) => (
             <DropdownMenuItem
@@ -232,6 +259,16 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CoverSearchDialog
+        open={logoOpen}
+        onOpenChange={setLogoOpen}
+        kind="logo"
+        consoleName={project.consoleName ?? ""}
+        gameTitle={project.name}
+        busy={busy}
+        onPick={(u) => void addLogoFromUrl(u)}
+      />
 
       <input
         ref={fileRef}
