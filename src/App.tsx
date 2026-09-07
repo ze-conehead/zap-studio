@@ -11,6 +11,7 @@ import { LayerList } from "./components/LayerList";
 import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { MenuBar } from "./components/MenuBar";
+import { OverviewDialog } from "./components/OverviewDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -306,6 +307,7 @@ function Shell({
   const [cutSheet, setCutSheet] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
+  const [overview, setOverview] = useState(false);
   const t = useT();
   const bar = {
     canvas,
@@ -318,6 +320,7 @@ function Shell({
     onOpenCutSheet: () => setCutSheet(true),
     onOpenBaseImport: () => setBaseImport(true),
     onOpenQuickImport: () => setQuickImport(true),
+    onOpenOverview: () => setOverview(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -364,6 +367,12 @@ function Shell({
       {preview && <CardPreview canvas={canvas} onClose={() => setPreview(false)} />}
       {demo && <DemoMode onClose={() => setDemo(false)} />}
 
+      <OverviewDialog
+        open={overview}
+        onOpenChange={setOverview}
+        activeGameKey={activeGameKey}
+        onPick={onPickGame}
+      />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <QuickImportDialog

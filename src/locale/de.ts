@@ -92,6 +92,18 @@ export const de: Record<string, string> = {
   System: "System",
   Monospace: "Monospace",
 
+  // ── Overview ("All cards") ───────────────────────────────────────────────
+  "All cards": "Gesamtansicht",
+  "Filter by game or console \u2026": "Nach Spiel oder Konsole filtern \u2026",
+  "Only cards with a design": "Nur Karten mit Design",
+  Size: "Gr\u00f6\u00dfe",
+  "{shown} of {total} card(s) \u00b7 {designed} designed":
+    "{shown} von {total} Karte(n) \u00b7 {designed} mit Design",
+  "no design": "kein Design",
+  "Rendering {done} / {total} \u2026": "Rendere {done} / {total} \u2026",
+  "Click a card to open it in the editor.":
+    "Karte anklicken, um sie im Editor zu \u00f6ffnen.",
+
   // ── Themes ───────────────────────────────────────────────────────────────
   Theme: "Design",
   "Accent colour": "Akzentfarbe",

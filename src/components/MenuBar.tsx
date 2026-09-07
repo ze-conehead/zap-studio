@@ -45,6 +45,7 @@ interface Props {
   onOpenCutSheet: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
+  onOpenOverview: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -60,6 +61,7 @@ export function MenuBar({
   onOpenCutSheet,
   onOpenBaseImport,
   onOpenQuickImport,
+  onOpenOverview,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -247,6 +249,7 @@ export function MenuBar({
           </>
         )}
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenOverview}>{t("All cards")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenPreview}>{t("3D preview")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenDemo}>{t("Demo mode")}</DropdownMenuItem>
       </Menu>

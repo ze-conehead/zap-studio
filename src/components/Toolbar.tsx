@@ -2,6 +2,7 @@ import {
   Box,
   FilePlus2,
   FolderOpen,
+  LayoutGrid,
   MoveHorizontal,
   MoveVertical,
   Redo2,
@@ -30,6 +31,7 @@ interface Props {
   onOpenProjects: () => void;
   onOpenPreview: () => void;
   onOpenDemo: () => void;
+  onOpenOverview: () => void;
 }
 
 export function Toolbar({
@@ -38,6 +40,7 @@ export function Toolbar({
   onOpenProjects,
   onOpenPreview,
   onOpenDemo,
+  onOpenOverview,
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
@@ -119,6 +122,9 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <Button variant="outline" size="sm" onClick={onOpenOverview}>
+          <LayoutGrid /> {t("All cards")}
+        </Button>
         <Button variant="outline" size="sm" onClick={onOpenDemo}>
           <Sparkles /> Demo
         </Button>
