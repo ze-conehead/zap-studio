@@ -198,6 +198,46 @@ export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
 
 // "All consoles": the shared alpha frame every card's main image is
 // clipped to. Starts as a rounded rectangle covering most of the trim area.
+// A placement frame for logos, living in the global template beside the main
+// alpha mask. Unlike the mask it never draws — it only says where an inserted
+// logo goes and how big it may be.
+export function makeLogoSlotLayer(): ShapeLayer {
+  return {
+    ...base(t("Logo slot")),
+    type: "shape",
+    shape: "rect",
+    width: TRIM_RECT.w * 0.76,
+    height: TRIM_RECT.h * 0.16,
+    cornerRadius: 0,
+    fill: { ...DEFAULT_SHAPE_FILL },
+    stroke: "#000000",
+    strokeWidth: 0,
+    logoSlot: true,
+  };
+}
+
+// Sizes a logo to sit inside `slot` — contained, so the whole wordmark stays
+// visible, where the main image covers its mask instead.
+export function fitImageToSlot(
+  layer: ImageLayer,
+  slot: Layer | undefined,
+): ImageLayer {
+  if (!slot) return layer;
+  if (slot.type !== "shape" && slot.type !== "image") return layer;
+  const sw = Math.abs(slot.width * slot.scaleX);
+  const sh = Math.abs(slot.height * slot.scaleY);
+  if (!sw || !sh || !layer.width || !layer.height) return layer;
+  const s = Math.min(sw / layer.width, sh / layer.height);
+  return {
+    ...layer,
+    x: slot.x,
+    y: slot.y,
+    rotation: slot.rotation,
+    width: layer.width * s,
+    height: layer.height * s,
+  };
+}
+
 export function makeMainMaskLayer(): ShapeLayer {
   return {
     ...base(t("Main alpha mask")),

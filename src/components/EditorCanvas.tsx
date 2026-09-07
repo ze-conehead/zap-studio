@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -126,6 +127,7 @@ export function EditorCanvas({
   consoleBg,
   globalBg,
   mainMask,
+  logoSlot,
   guides,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
@@ -133,6 +135,7 @@ export function EditorCanvas({
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   mainMask?: TLayer;
+  logoSlot?: TLayer;
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
@@ -210,6 +213,7 @@ export function EditorCanvas({
           consoleBg={consoleBg}
           globalBg={globalBg}
           mainMask={mainMask}
+          logoSlot={logoSlot}
           guides={guides}
           badgeMeta={badgeMeta}
           showBleed={showBleed}
@@ -244,6 +248,7 @@ function FaceStage({
   consoleBg,
   globalBg,
   mainMask,
+  logoSlot,
   guides,
   badgeMeta,
   showBleed,
@@ -258,6 +263,7 @@ function FaceStage({
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   mainMask?: TLayer;
+  logoSlot?: TLayer;
   guides: GuideApi;
   badgeMeta?: GameMeta;
   showBleed: boolean;
@@ -273,6 +279,9 @@ function FaceStage({
   const faceLayers = back ? project.back?.layers ?? [] : project.layers;
   const bgLayer = faceLayers.find(isBackground);
   const layerList = faceLayers.filter((l) => !isBackground(l));
+  // On "All consoles" the slot is one of this face's own layers; on a card it
+  // arrives from the global template via the prop.
+  const slotOutline = project.isGlobalTemplate ? undefined : logoSlot;
 
   // Front game cards may inherit the background fill from a template; a card
   // or console template with no background layer at all falls back to the
@@ -284,9 +293,11 @@ function FaceStage({
     globalBg,
   });
   // The back is a plain face — no template overlay, no main alpha mask.
-  const renderLayers = back
-    ? layerList
-    : withMainMask(project, layerList, mainMask);
+  // The slot is editable where it lives ("All consoles") and invisible
+  // everywhere else — cards see it only as the outline below.
+  const renderLayers = (
+    back ? layerList : withMainMask(project, layerList, mainMask)
+  ).filter((l) => !l.logoSlot || project.isGlobalTemplate);
   const overlayLayers = back ? [] : overlay;
 
   const stageRef = useRef<Konva.Stage>(null);
@@ -366,17 +377,41 @@ function FaceStage({
   const guidesEditable =
     !back && !!project.isGlobalTemplate && !guides.state.locked;
 
-  // Dragged layers snap to the guides while snapping is on and guides are
-  // visible. Tolerance is a fixed on-screen distance (≈ 7 px).
+  // What a dragged layer can snap to: the user's guides (when those are
+  // shown), the trim box, and every other visible layer's edges and centre.
+  // Tolerance is a fixed on-screen distance (≈ 7 px).
   const gs = guides.state;
-  const snapLines: SnapLines | undefined =
-    gs.on && gs.snap && gs.items.length > 0
-      ? {
-          xs: gs.items.filter((g) => g.axis === "x").map((g) => g.pos),
-          ys: gs.items.filter((g) => g.axis === "y").map((g) => g.pos),
-          tol: 7 / scale,
-        }
-      : undefined;
+  const snapLines: SnapLines | undefined = useMemo(() => {
+    if (!gs.snap) return undefined;
+
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const smartX: number[] = [];
+    const smartY: number[] = [];
+
+    if (gs.on) {
+      for (const g of gs.items) (g.axis === "x" ? xs : ys).push(g.pos);
+    }
+
+    // The card itself — its edges and its middle.
+    smartX.push(TRIM_RECT.x, TRIM_RECT.x + TRIM_RECT.w / 2, TRIM_RECT.x + TRIM_RECT.w);
+    smartY.push(TRIM_RECT.y, TRIM_RECT.y + TRIM_RECT.h / 2, TRIM_RECT.y + TRIM_RECT.h);
+
+    // Every other layer on this face, from its unrotated box. Rotated layers
+    // are skipped — their bounding box would snap to something invisible.
+    for (const l of layerList) {
+      if (l.id === selectedId || !l.visible || l.rotation) continue;
+      const w = layerBoxSize(l);
+      if (!w) continue;
+      const hw = (w.w * Math.abs(l.scaleX)) / 2;
+      const hh = (w.h * Math.abs(l.scaleY)) / 2;
+      smartX.push(l.x - hw, l.x, l.x + hw);
+      smartY.push(l.y - hh, l.y, l.y + hh);
+    }
+
+    return { xs, ys, smartX, smartY, tol: 7 / scale };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gs.snap, gs.on, gs.items, layerList, selectedId, scale]);
 
   // Which guides the dragged layer is snapped to right now — highlighted so
   // it's clear what it's aligning to. Only updates when the set changes.
@@ -386,7 +421,15 @@ function FaceStage({
       const eq = (a?: number[], b?: number[]) =>
         !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
       if (!hit) return prev === null ? prev : null;
-      if (prev && eq(prev.xs, hit.xs) && eq(prev.ys, hit.ys)) return prev;
+      if (
+        prev &&
+        eq(prev.xs, hit.xs) &&
+        eq(prev.ys, hit.ys) &&
+        eq(prev.smartX, hit.smartX) &&
+        eq(prev.smartY, hit.smartY)
+      ) {
+        return prev;
+      }
       return hit;
     });
   }, []);
@@ -529,6 +572,27 @@ function FaceStage({
             {!back && !project.isGlobalTemplate && mainMask && (
               <MainMaskOutline mask={mainMask} />
             )}
+            {!back && slotOutline && (
+              <MainMaskOutline mask={slotOutline} colour="#38bdf8" />
+            )}
+            {snapHit?.smartX.map((x) => (
+              <Line
+                key={`sx${x}`}
+                points={[x, 0, x, CANVAS.h]}
+                stroke="#f59e0b"
+                strokeWidth={1}
+                listening={false}
+              />
+            ))}
+            {snapHit?.smartY.map((y) => (
+              <Line
+                key={`sy${y}`}
+                points={[0, y, CANVAS.w, y]}
+                stroke="#f59e0b"
+                strokeWidth={1}
+                listening={false}
+              />
+            ))}
           </Layer>
 
           {guides.state.on && guides.state.items.length > 0 && (
@@ -588,15 +652,20 @@ interface GroupSnapshot {
 // Guide positions (canvas px) a dragged layer can snap to, plus how close
 // (canvas px) counts as "near".
 interface SnapLines {
-  xs: number[];
+  xs: number[]; // the user's guides
   ys: number[];
+  smartX: number[]; // the card box and the other layers
+  smartY: number[];
   tol: number;
 }
 
-// Which guide positions a dragged layer is currently snapped to.
+// Which positions a dragged layer is currently snapped to, split by source:
+// `xs`/`ys` highlight an existing guide, `smartX`/`smartY` get a line drawn.
 interface SnapHit {
   xs: number[];
   ys: number[];
+  smartX: number[];
+  smartY: number[];
 }
 
 // While dragging, nudge `node` so its nearest edge or centre lines up with a
@@ -607,31 +676,54 @@ function snapNodeToGuides(node: Konva.Node, lines: SnapLines): SnapHit {
   const anchorsX = [box.x, box.x + box.width / 2, box.x + box.width];
   const anchorsY = [box.y, box.y + box.height / 2, box.y + box.height];
 
-  const nearest = (anchors: number[], guides: number[], tol: number) => {
+  // Nearest candidate across both sets; `smart` says which set won, so the
+  // caller knows whether to highlight a guide or draw an alignment line.
+  const nearest = (
+    anchors: number[],
+    guides: number[],
+    smart: number[],
+    tol: number,
+  ) => {
     let delta = 0;
     let best = tol + 1;
     let hit: number | null = null;
-    for (const a of anchors) {
-      for (const g of guides) {
-        const d = g - a;
-        if (Math.abs(d) < best) {
-          best = Math.abs(d);
-          delta = d;
-          hit = g;
+    let fromSmart = false;
+    const scan = (list: number[], isSmart: boolean) => {
+      for (const a of anchors) {
+        for (const g of list) {
+          const d = g - a;
+          if (Math.abs(d) < best) {
+            best = Math.abs(d);
+            delta = d;
+            hit = g;
+            fromSmart = isSmart;
+          }
         }
       }
-    }
-    return best <= tol ? { delta, hit } : { delta: 0, hit: null };
+    };
+    // Explicit guides win ties — they were placed on purpose.
+    scan(guides, false);
+    scan(smart, true);
+    return best <= tol ? { delta, hit, fromSmart } : { delta: 0, hit: null, fromSmart: false };
   };
 
-  const rx = nearest(anchorsX, lines.xs, lines.tol);
-  const ry = nearest(anchorsY, lines.ys, lines.tol);
+  const rx = nearest(anchorsX, lines.xs, lines.smartX, lines.tol);
+  const ry = nearest(anchorsY, lines.ys, lines.smartY, lines.tol);
   node.x(node.x() + rx.delta);
   node.y(node.y() + ry.delta);
   return {
-    xs: rx.hit != null ? [rx.hit] : [],
-    ys: ry.hit != null ? [ry.hit] : [],
+    xs: !rx.fromSmart && rx.hit != null ? [rx.hit] : [],
+    ys: !ry.fromSmart && ry.hit != null ? [ry.hit] : [],
+    smartX: rx.fromSmart && rx.hit != null ? [rx.hit] : [],
+    smartY: ry.fromSmart && ry.hit != null ? [ry.hit] : [],
   };
+}
+
+// The box a layer occupies before its own scale/rotation, for snap anchors.
+function layerBoxSize(l: TLayer): { w: number; h: number } | null {
+  if (l.type === "text") return null; // height depends on wrapping
+  if ("width" in l && "height" in l) return { w: l.width, h: l.height };
+  return null;
 }
 
 function LayerNode({
@@ -1109,16 +1201,60 @@ function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
   );
 }
 
+// Largest size at or below `layer.fontSize` whose wrapped text still fits
+// `lines` lines. Measured with an off-stage Konva.Text so it matches exactly
+// what gets drawn — including the font's real metrics.
+const MIN_AUTO_FIT = 6;
+function fitFontSize(layer: TTextLayer, lines: number): number {
+  const probe = new Konva.Text({
+    text: layer.text,
+    width: layer.width,
+    fontFamily: layer.fontFamily,
+    fontStyle: fontStyleString(layer),
+    lineHeight: layer.lineHeight,
+    letterSpacing: layer.letterSpacing,
+    align: layer.align,
+  });
+  for (let size = Math.round(layer.fontSize); size >= MIN_AUTO_FIT; size--) {
+    probe.fontSize(size);
+    // +0.5 absorbs the sub-pixel rounding in Konva's line metrics.
+    if (probe.height() <= size * layer.lineHeight * lines + 0.5) return size;
+  }
+  return MIN_AUTO_FIT;
+}
+
 function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
   const ref = useRef<Konva.Text>(null);
   const [h, setH] = useState(0);
+
+  // Recomputed only when something that affects the measurement changes.
+  const fontSize = useMemo(
+    () =>
+      layer.autoFit
+        ? fitFontSize(layer, Math.max(1, layer.autoFitLines ?? 2))
+        : layer.fontSize,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      layer.autoFit,
+      layer.autoFitLines,
+      layer.text,
+      layer.width,
+      layer.fontFamily,
+      layer.fontSize,
+      layer.bold,
+      layer.italic,
+      layer.lineHeight,
+      layer.letterSpacing,
+      layer.align,
+    ],
+  );
 
   useLayoutEffect(() => {
     if (ref.current) setH(ref.current.height());
   }, [
     layer.text,
     layer.fontFamily,
-    layer.fontSize,
+    fontSize,
     layer.bold,
     layer.italic,
     layer.width,
@@ -1135,7 +1271,7 @@ function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
       align={layer.align}
       fontFamily={layer.fontFamily}
       fontStyle={fontStyleString(layer)}
-      fontSize={layer.fontSize}
+      fontSize={fontSize}
       lineHeight={layer.lineHeight}
       letterSpacing={layer.letterSpacing}
       fill={gco ? "#000" : layer.fill}
@@ -1260,12 +1396,18 @@ function RoundedCardOutline() {
 // reference on console templates and game cards (it's an editable shape only
 // on the global template). Never painted into an export (sits in a guide
 // layer) and not interactive.
-function MainMaskOutline({ mask }: { mask: TLayer }) {
+function MainMaskOutline({
+  mask,
+  colour = "#a78bfa",
+}: {
+  mask: TLayer;
+  colour?: string;
+}) {
   if (mask.type !== "shape") return null;
   const w = mask.width;
   const h = mask.height;
   const line = {
-    stroke: "#a78bfa",
+    stroke: colour,
     strokeWidth: 1.5,
     dash: [7, 5] as number[],
     listening: false as const,

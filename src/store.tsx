@@ -151,6 +151,7 @@ function reducer(state: State, action: Action): State {
         ...l,
         ...(added.main ? { main: false } : null),
         ...(added.mainMask ? { mainMask: false } : null),
+        ...(added.logoSlot ? { logoSlot: false } : null),
       }));
       return {
         ...commit(state, write(project, [...cleared, added])),
@@ -188,6 +189,11 @@ function reducer(state: State, action: Action): State {
       if (action.patch.mainMask === true) {
         next = next.map((l, j) =>
           j === i ? l : ({ ...l, mainMask: false } as Layer),
+        );
+      }
+      if (action.patch.logoSlot === true) {
+        next = next.map((l, j) =>
+          j === i ? l : ({ ...l, logoSlot: false } as Layer),
         );
       }
       const p = write(project, next);

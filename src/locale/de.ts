@@ -554,6 +554,14 @@ export const de: Record<string, string> = {
   "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
 
   // ── Logo sweep ───────────────────────────────────────────────────────────
+  "Logo slot": "Logo-Platzhalter",
+  "Shrink to fit": "Automatisch verkleinern",
+  "max.": "max.",
+  "line(s)": "Zeile(n)",
+  "\u201cSize px\u201d is the largest it may get \u2014 long titles shrink to fit the box width.":
+    "\u201eGr\u00f6\u00dfe px\u201c ist das Maximum \u2013 lange Titel werden verkleinert, bis sie in die Boxbreite passen.",
+  "Snap to guides, the card edges and other layers":
+    "An Hilfslinien, Kartenr\u00e4ndern und anderen Ebenen einrasten",
   "Find logos": "Logos suchen",
   "Logo {n} / {total}:": "Logo {n} / {total}:",
   "Click a logo to insert it \u2013 then it moves to the next card.":

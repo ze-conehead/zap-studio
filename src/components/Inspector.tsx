@@ -142,13 +142,14 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   // width/height (ShapeProps), so no group-scaling "Size %".
   const isMeta = isMetaBadge(selected);
   const isMainMask = !!selected.mainMask;
+  const isLogoSlot = !!selected.logoSlot;
   const isShapeSel = isShape(selected);
   const isImageSel = isImage(selected);
-  const fixedName = isMeta || isMainMask || (isImageSel && !!selected.main);
+  const fixedName = isMeta || isMainMask || isLogoSlot || (isImageSel && !!selected.main);
 
   return (
     <Panel title={t("Properties")}>
-      {!isMainMask && <MainRoleControls patch={patch} />}
+      {!isMainMask && !isLogoSlot && <MainRoleControls patch={patch} />}
 
       {!fixedName && (
         <Field label={t("Name")}>
@@ -205,7 +206,9 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         </Button>
       </div>
 
-      {!isMeta && !isMainMask && !isImageSel && <MaskControls patch={patch} />}
+      {!isMeta && !isMainMask && !isLogoSlot && !isImageSel && (
+        <MaskControls patch={patch} />
+      )}
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
@@ -1160,6 +1163,39 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
           onChange={(v) => patch({ letterSpacing: v })}
         />
       </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={!!layer.autoFit}
+            onCheckedChange={(v) => patch({ autoFit: !!v })}
+          />
+          {t("Shrink to fit")}
+        </label>
+        {layer.autoFit && (
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {t("max.")}
+            <input
+              type="number"
+              min={1}
+              max={8}
+              className="h-7 w-14 rounded border bg-transparent px-2"
+              value={layer.autoFitLines ?? 2}
+              onChange={(e) =>
+                patch({
+                  autoFitLines: Math.min(8, Math.max(1, Number(e.target.value) || 2)),
+                })
+              }
+            />
+            {t("line(s)")}
+          </label>
+        )}
+      </div>
+      {layer.autoFit && (
+        <p className="text-xs text-muted-foreground">
+          {t("“Size px” is the largest it may get — long titles shrink to fit the box width.")}
+        </p>
+      )}
 
       <div className="flex gap-1.5">
         <IconToggle active={layer.bold} onClick={() => patch({ bold: !layer.bold })}>

@@ -46,7 +46,7 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
     return bg?.visible ? bg.fill : undefined;
   };
   const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter((l) => !l.mainMask && !isBackground(l));
+    (p?.layers ?? []).filter((l) => !l.mainMask && !l.logoSlot && !isBackground(l));
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalBg = bgFill(globalP);

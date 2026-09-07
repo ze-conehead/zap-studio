@@ -4,12 +4,12 @@
 // design if it doesn't exist yet) — the bulk version of "Find cover".
 
 import { getCatalog, gameKeyOf } from "./data/catalog";
-import { fitImageToMask, makeImageLayer, newProject } from "./factory";
+import { fitImageToMask, fitImageToSlot, makeImageLayer, newProject } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { t } from "./i18n";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
-import { loadMainMask } from "./templates";
+import { loadMainMask, loadLogoSlot } from "./templates";
 import type { ImageLayer } from "./types";
 
 export interface QuickImportRow {
@@ -106,10 +106,10 @@ export async function findGamesWithoutLogo(
 // left at its own aspect ratio rather than fitted to the mask.
 export async function insertLogo(row: QuickImportRow, url: string): Promise<void> {
   const img = await urlToLayerSource(url);
-  const layer: ImageLayer = {
-    ...makeImageLayer({ ...img, name: t("Logo") }),
-    logo: true,
-  };
+  const layer: ImageLayer = fitImageToSlot(
+    { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
+    await loadLogoSlot(),
+  );
   const pid = getGameProject(row.gameKey);
   const existing = pid ? await loadProject(pid) : undefined;
   if (existing) {

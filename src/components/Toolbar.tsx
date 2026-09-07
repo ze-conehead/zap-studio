@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { useStore } from "../store";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
@@ -87,21 +86,13 @@ export function Toolbar({
           />
           {t("Guides")}
         </label>
-        {guides.state.items.length > 0 && (
-          <label
-            className={cn(
-              "flex items-center gap-1.5",
-              !guides.state.on && "opacity-40",
-            )}
-          >
-            <Checkbox
-              checked={guides.state.snap}
-              disabled={!guides.state.on}
-              onCheckedChange={(v) => guides.setSnap(!!v)}
-            />
-            {t("Snap")}
-          </label>
-        )}
+        <label className="flex items-center gap-1.5" title={t("Snap to guides, the card edges and other layers")}>
+          <Checkbox
+            checked={guides.state.snap}
+            onCheckedChange={(v) => guides.setSnap(!!v)}
+          />
+          {t("Snap")}
+        </label>
         {project.isGlobalTemplate && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

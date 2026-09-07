@@ -40,6 +40,7 @@ interface Templates {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   mainMask?: Layer; // "All consoles" alpha frame for the card's main image
+  logoSlot?: Layer; // "All consoles" placement frame for logos
 }
 
 export interface GuideApi {
@@ -117,8 +118,9 @@ export default function App() {
       // The global "main alpha mask" clips each card's main image; it never
       // paints as an overlay layer itself. Background layers never overlay.
       const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
+      const logoSlot = globalP?.layers.find((l) => l.logoSlot);
       const overlayable = (p?: Project) =>
-        (p?.layers ?? []).filter((l) => !l.mainMask && !isBackground(l));
+        (p?.layers ?? []).filter((l) => !l.mainMask && !l.logoSlot && !isBackground(l));
       const globalLayers = overlayable(globalP);
 
       let overlay: Layer[] = [];
@@ -136,6 +138,7 @@ export default function App() {
         // Editable in place on "All consoles"; a reference outline everywhere
         // else (console templates + game cards).
         mainMask: project.isGlobalTemplate ? undefined : mainMask,
+        logoSlot: project.isGlobalTemplate ? undefined : logoSlot,
       });
     })();
     return () => {
@@ -246,6 +249,7 @@ export default function App() {
         consoleBg={templates.consoleBg}
         globalBg={templates.globalBg}
         mainMask={templates.mainMask}
+        logoSlot={templates.logoSlot}
         guides={guideApi}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
@@ -273,6 +277,7 @@ function Shell({
   consoleBg,
   globalBg,
   mainMask,
+  logoSlot,
   guides,
   activeGameKey,
   activeConsoleId,
@@ -289,6 +294,7 @@ function Shell({
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   mainMask?: Layer;
+  logoSlot?: Layer;
   guides: GuideApi;
   activeGameKey?: string;
   activeConsoleId?: string;
@@ -373,6 +379,7 @@ function Shell({
           consoleBg={consoleBg}
           globalBg={globalBg}
           mainMask={mainMask}
+          logoSlot={logoSlot}
           guides={guides}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">

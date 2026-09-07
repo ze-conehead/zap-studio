@@ -47,6 +47,7 @@ export interface BaseLayer {
   groupTransform?: boolean; // mask only: moving/scaling it also moves its clipped layers
   main?: boolean; // game card: the card's main image, clipped by the global main mask
   mainMask?: boolean; // "All consoles" only: the shared alpha frame for every card's main image
+  logoSlot?: boolean; // "All consoles" only: where an inserted logo is placed. Never drawn.
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -75,6 +76,10 @@ export interface TextLayer extends BaseLayer {
   stroke: string;
   strokeWidth: number;
   width: number; // wrap width in px
+  // Shrink the font until the wrapped text fits `autoFitLines` lines, so a
+  // long game title doesn't overflow the card. `fontSize` stays the ceiling.
+  autoFit?: boolean;
+  autoFitLines?: number;
 }
 
 export interface ShapeLayer extends BaseLayer {

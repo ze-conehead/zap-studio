@@ -34,9 +34,11 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   fitImageToMask,
+  fitImageToSlot,
   isBackground,
   makeBackgroundLayer,
   makeImageLayer,
+  makeLogoSlotLayer,
   makeMainMaskLayer,
   makeMetaBadgeLayer,
   makeShapeLayer,
@@ -46,6 +48,7 @@ import {
 import { useT } from "../i18n";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { useStore } from "../store";
+import { loadLogoSlot } from "../templates";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import type { Layer, ShapeKind } from "../types";
 
@@ -97,10 +100,11 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
     try {
       setBusy(true);
       const img = await urlToLayerSource(value);
-      dispatch({
-        type: "ADD_LAYER",
-        layer: { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
-      });
+      const layer = fitImageToSlot(
+        { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
+        await loadLogoSlot(),
+      );
+      dispatch({ type: "ADD_LAYER", layer });
       setLogoOpen(false);
     } catch (e) {
       alert((e as Error).message);
@@ -231,6 +235,13 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
                 }
               >
                 <Crop /> {t("Main alpha mask")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({ type: "ADD_LAYER", layer: makeLogoSlotLayer() })
+                }
+              >
+                <ImageIcon /> {t("Logo slot")}
               </DropdownMenuItem>
             </>
           )}
