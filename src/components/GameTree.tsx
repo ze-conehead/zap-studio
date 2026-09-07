@@ -79,7 +79,7 @@ interface Props {
   onOpenGlobal: () => void;
 }
 
-type SweepScope = { consoleId?: string; consoleName?: string };
+type SweepScope = { consoleId?: string; consoleName?: string; kind?: "cover" | "logo" };
 
 interface MenuState {
   x: number;
@@ -153,6 +153,7 @@ export function GameTree({
 
   const sweepMenuItems = (scope: SweepScope): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setSweep(scope) },
+    { label: t("Find logos"), onSelect: () => setSweep({ ...scope, kind: "logo" }) },
     { label: t("Insert cover by URL"), onSelect: () => setQuick(scope) },
   ];
 
@@ -463,6 +464,7 @@ export function GameTree({
           onOpenChange={(o) => !o && setSweep(null)}
           consoleId={sweep.consoleId}
           consoleName={sweep.consoleName}
+          kind={sweep.kind}
           excludeGameKey={currentGameKey}
         />
       )}

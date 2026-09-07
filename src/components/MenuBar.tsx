@@ -111,6 +111,13 @@ export function MenuBar({
     </DropdownMenu>
   );
 
+  // The shortcut hint on the right of a row.
+  const Key = ({ k }: { k: string }) => (
+    <span className="ml-auto pl-6 text-[11px] tabular-nums text-muted-foreground">
+      {k}
+    </span>
+  );
+
   // A checkable row — Radix' checkbox item isn't wired up in this project.
   const Toggle = ({
     checked,
@@ -173,7 +180,10 @@ export function MenuBar({
           </span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onNewProject}>{t("New card")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onNewProject}>
+          {t("New card")}
+          <Key k="⌘N" />
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenProjects}>{t("Open design …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Design file")}</DropdownMenuLabel>
@@ -229,12 +239,14 @@ export function MenuBar({
           }
         >
           {t("Duplicate layer")}
+          <Key k="⌘D" />
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={!selectedId}
           onClick={() => selectedId && dispatch({ type: "DELETE_LAYER", id: selectedId })}
         >
           {t("Delete layer")}
+          <Key k="⌫" />
         </DropdownMenuItem>
       </Menu>
 
@@ -244,9 +256,11 @@ export function MenuBar({
           onSelect={() => dispatch({ type: "TOGGLE", key: "showBleed" })}
         >
           {t("Bleed")}
+          <Key k="B" />
         </Toggle>
         <Toggle checked={guides.state.on} onSelect={() => guides.toggle()}>
           {t("Guides")}
+          <Key k="G" />
         </Toggle>
         <Toggle
           checked={guides.state.snap}
@@ -273,7 +287,10 @@ export function MenuBar({
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenOverview}>{t("All cards")}</DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenPreview}>{t("3D preview")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenPreview}>
+          {t("3D preview")}
+          <Key k="P" />
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenDemo}>{t("Demo mode")}</DropdownMenuItem>
       </Menu>
 

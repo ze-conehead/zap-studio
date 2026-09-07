@@ -313,6 +313,31 @@ function Shell({
   const [dataSafety, setDataSafety] = useState(false);
   const [workspaces, setWorkspaces] = useState(false);
   const t = useT();
+  // View-level shortcuts. The layer ones live in the store, which owns the
+  // selection; these need the guides API and the Shell's dialogs.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable) return;
+      const mod = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
+      if (mod && key === "n") {
+        e.preventDefault();
+        onNewProject();
+      } else if (mod) {
+        return; // leave every other modifier combo to the browser
+      } else if (key === "b") {
+        dispatch({ type: "TOGGLE", key: "showBleed" });
+      } else if (key === "g") {
+        guides.toggle();
+      } else if (key === "p") {
+        setPreview(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dispatch, guides, onNewProject]);
+
   const bar = {
     canvas,
     guides,

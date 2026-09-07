@@ -141,7 +141,9 @@ export function CoverSearchDialog({
         <DialogHeader>
           <DialogTitle>
             {progress
-              ? t("Cover {n} / {total}:", { n: progress.index + 1, total: progress.total }) + " "
+              ? (logoMode
+                  ? t("Logo {n} / {total}:", { n: progress.index + 1, total: progress.total })
+                  : t("Cover {n} / {total}:", { n: progress.index + 1, total: progress.total })) + " "
               : (logoMode ? t("Logo for") : t("Cover for")) + " "}
             “{gameTitle}”
             {progress && (
@@ -335,7 +337,9 @@ export function CoverSearchDialog({
                   <Loader2 className="size-3.5 animate-spin" /> {t("inserting …")}
                 </span>
               ) : (
-                t("Click a cover to insert it – then it moves to the next card.")
+                logoMode
+                  ? t("Click a logo to insert it – then it moves to the next card.")
+                  : t("Click a cover to insert it – then it moves to the next card.")
               )}
             </span>
             {onSkip && (

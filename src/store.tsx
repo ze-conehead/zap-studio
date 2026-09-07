@@ -342,28 +342,96 @@ export function StoreProvider({
     };
   }, []);
 
-  // Keyboard shortcuts.
+  // Keyboard shortcuts for the selected layer. View-level keys (bleed,
+  // guides, new card) live in the Shell, which owns those.
+  const latest = useRef(state);
+  latest.current = state;
+
   useEffect(() => {
+    const NUDGE = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as const;
+
+    // The layer of whichever face is active, if it isn't locked.
+    const selected = () => {
+      const st = latest.current;
+      if (!st.selectedId) return null;
+      const ls = st.side === "back" ? st.project.back?.layers ?? [] : st.project.layers;
+      const l = ls.find((x) => x.id === st.selectedId);
+      return l && !l.locked ? l : null;
+    };
+
+    const reorder = (dir: 1 | -1) => {
+      const st = latest.current;
+      const ls = st.side === "back" ? st.project.back?.layers ?? [] : st.project.layers;
+      const i = ls.findIndex((l) => l.id === st.selectedId);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= ls.length) return;
+      // The background layer stays pinned to the bottom.
+      if (isBackground(ls[i]) || isBackground(ls[j])) return;
+      const order = ls.map((l) => l.id);
+      [order[i], order[j]] = [order[j], order[i]];
+      dispatch({ type: "SET_LAYER_ORDER", order });
+    };
+
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable) return;
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      const id = latest.current.selectedId;
+      const key = e.key.toLowerCase();
+
+      if (mod && key === "z" && !e.shiftKey) {
         e.preventDefault();
         dispatch({ type: "UNDO" });
-      } else if (mod && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+      } else if (mod && (key === "y" || (e.shiftKey && key === "z"))) {
         e.preventDefault();
         dispatch({ type: "REDO" });
-      } else if ((e.key === "Delete" || e.key === "Backspace") && state.selectedId) {
+      } else if (mod && key === "d" && id) {
         e.preventDefault();
-        dispatch({ type: "DELETE_LAYER", id: state.selectedId });
+        dispatch({ type: "DUPLICATE_LAYER", id });
+      } else if (mod && (e.key === "]" || e.key === "[")) {
+        e.preventDefault();
+        reorder(e.key === "]" ? 1 : -1);
+      } else if (e.key in NUDGE) {
+        const layer = selected();
+        if (!layer) return;
+        e.preventDefault();
+        const [dx, dy] = NUDGE[e.key as keyof typeof NUDGE];
+        const step = e.shiftKey ? 10 : 1;
+        // history:false while the key is held — the keyup below closes the
+        // run, so holding an arrow is one undo step, not fifty.
+        dispatch({
+          type: "PATCH_LAYER",
+          id: layer.id,
+          patch: { x: layer.x + dx * step, y: layer.y + dy * step },
+          history: false,
+        });
+      } else if ((e.key === "Delete" || e.key === "Backspace") && id) {
+        e.preventDefault();
+        dispatch({ type: "DELETE_LAYER", id });
       } else if (e.key === "Escape") {
         dispatch({ type: "SELECT", id: null });
       }
     };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!(e.key in NUDGE)) return;
+      const layer = selected();
+      if (layer) {
+        dispatch({
+          type: "PATCH_LAYER",
+          id: layer.id,
+          patch: { x: layer.x, y: layer.y },
+        });
+      }
+    };
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [state.selectedId]);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
 
   const selected = useMemo(() => {
     const ls =

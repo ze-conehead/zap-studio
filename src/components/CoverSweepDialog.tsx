@@ -1,27 +1,38 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { findGamesWithoutImage, insertCover, type QuickImportRow } from "../quickImport";
+import {
+  findGamesWithoutImage,
+  findGamesWithoutLogo,
+  insertCover,
+  insertLogo,
+  type QuickImportRow,
+} from "../quickImport";
 import { useT } from "../i18n";
 import { Button } from "./ui/button";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 // "Find cover" for many cards at once: walks every card that has no image
-// yet, one cover-search dialog at a time. Picking a cover inserts it into
-// that game's design (on disk) and jumps to the next card. Scoped to one
-// console with `consoleId`; `excludeGameKey` skips the open design.
+// yet, one search dialog at a time. Picking one inserts it into that game's
+// design (on disk) and jumps to the next card. Scoped to one console with
+// `consoleId`; `excludeGameKey` skips the open design.
+//
+// `kind: "logo"` runs the same sweep against SteamGridDB's logos, over the
+// cards that have no logo layer yet.
 export function CoverSweepDialog({
   open,
   onOpenChange,
   consoleId,
   consoleName,
   excludeGameKey,
+  kind = "cover",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   consoleId?: string;
   consoleName?: string;
   excludeGameKey?: string;
+  kind?: "cover" | "logo";
 }) {
   const t = useT();
   const [phase, setPhase] = useState<"loading" | "run" | "done">("loading");
@@ -37,7 +48,8 @@ export function CoverSweepDialog({
     setInserted(0);
     setBusy(false);
     let cancelled = false;
-    findGamesWithoutImage({ consoleId, excludeGameKey }).then((rows) => {
+    const find = kind === "logo" ? findGamesWithoutLogo : findGamesWithoutImage;
+    find({ consoleId, excludeGameKey }).then((rows) => {
       if (cancelled) return;
       setQueue(rows);
       setPhase(rows.length ? "run" : "done");
@@ -45,7 +57,7 @@ export function CoverSweepDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, consoleId, excludeGameKey]);
+  }, [open, consoleId, excludeGameKey, kind]);
 
   const advance = () => {
     if (idx + 1 >= queue.length) setPhase("done");
@@ -58,7 +70,7 @@ export function CoverSweepDialog({
     if (!current || busy) return;
     setBusy(true);
     try {
-      await insertCover(current, url);
+      await (kind === "logo" ? insertLogo(current, url) : insertCover(current, url));
       setInserted((n) => n + 1);
       advance();
     } catch (e) {
@@ -75,6 +87,7 @@ export function CoverSweepDialog({
         onOpenChange={onOpenChange}
         consoleName={current.consoleName}
         gameTitle={current.gameTitle}
+        kind={kind}
         progress={{ index: idx, total: queue.length }}
         busy={busy}
         onPick={onPick}
@@ -88,22 +101,33 @@ export function CoverSweepDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {consoleName
-              ? t("Find covers – {name}", { name: consoleName })
-              : t("Find covers – all cards")}
+            {kind === "logo"
+              ? consoleName
+                ? t("Find logos – {name}", { name: consoleName })
+                : t("Find logos – all cards")
+              : consoleName
+                ? t("Find covers – {name}", { name: consoleName })
+                : t("Find covers – all cards")}
           </DialogTitle>
         </DialogHeader>
         {phase === "loading" ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> {t("Looking for cards without an image …")}
+            <Loader2 className="size-4 animate-spin" />{" "}
+            {kind === "logo"
+              ? t("Looking for cards without a logo …")
+              : t("Looking for cards without an image …")}
           </div>
         ) : (
           <div className="flex flex-col gap-3 py-2">
             <p className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="size-4 text-emerald-500" />
               {inserted > 0
-                ? t("{n} cover(s) inserted.", { n: inserted })
-                : t("Every card already has an image.")}
+                ? kind === "logo"
+                  ? t("{n} logo(s) inserted.", { n: inserted })
+                  : t("{n} cover(s) inserted.", { n: inserted })
+                : kind === "logo"
+                  ? t("Every card already has a logo.")
+                  : t("Every card already has an image.")}
             </p>
             <Button onClick={() => onOpenChange(false)}>{t("Close")}</Button>
           </div>

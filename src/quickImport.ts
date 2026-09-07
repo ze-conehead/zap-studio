@@ -26,6 +26,9 @@ export interface QuickImportResult extends QuickImportRow {
 const hasImageLayer = (layers: { type: string }[]) =>
   layers.some((l) => l.type === "image");
 
+const hasLogoLayer = (layers: { type: string; logo?: boolean }[]) =>
+  layers.some((l) => l.type === "image" && l.logo);
+
 // gameKeys whose linked sticker design has at least one image layer.
 // (Reads IndexedDB, so it can lag the live editor by one autosave — callers
 // that care about the currently-open design should overlay its state.)
@@ -63,6 +66,66 @@ export async function findGamesWithoutImage(
     }
   }
   return rows;
+}
+
+// gameKeys whose design already carries a logo layer.
+export async function loadLogoedGameKeys(): Promise<Set<string>> {
+  const projects = await loadAllProjects();
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const out = new Set<string>();
+  for (const c of getCatalog()) {
+    for (const g of c.games) {
+      const gameKey = gameKeyOf(c, g);
+      const pid = getGameProject(gameKey);
+      const proj = pid ? byId.get(pid) : undefined;
+      if (proj && hasLogoLayer(proj.layers)) out.add(gameKey);
+    }
+  }
+  return out;
+}
+
+export async function findGamesWithoutLogo(
+  opts: { consoleId?: string; excludeGameKey?: string } = {},
+): Promise<QuickImportRow[]> {
+  const logoed = await loadLogoedGameKeys();
+  const rows: QuickImportRow[] = [];
+  for (const c of getCatalog()) {
+    if (opts.consoleId && c.id !== opts.consoleId) continue;
+    for (const g of c.games) {
+      const gameKey = gameKeyOf(c, g);
+      if (gameKey === opts.excludeGameKey) continue;
+      if (!logoed.has(gameKey)) {
+        rows.push({ gameKey, consoleName: c.name, gameTitle: g.title });
+      }
+    }
+  }
+  return rows;
+}
+
+// Adds `url` as a logo layer on `row`'s design — never the main image, and
+// left at its own aspect ratio rather than fitted to the mask.
+export async function insertLogo(row: QuickImportRow, url: string): Promise<void> {
+  const img = await urlToLayerSource(url);
+  const layer: ImageLayer = {
+    ...makeImageLayer({ ...img, name: t("Logo") }),
+    logo: true,
+  };
+  const pid = getGameProject(row.gameKey);
+  const existing = pid ? await loadProject(pid) : undefined;
+  if (existing) {
+    await saveProject({
+      ...existing,
+      layers: [...existing.layers, layer],
+      updatedAt: Date.now(),
+    });
+  } else {
+    const p = newProject(row.gameTitle);
+    p.gameKey = row.gameKey;
+    p.consoleName = row.consoleName;
+    p.layers = [layer];
+    linkGameProject(row.gameKey, p.id);
+    await saveProject(p);
+  }
 }
 
 interface ApplyOptions {
