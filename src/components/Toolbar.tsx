@@ -1,14 +1,11 @@
 import {
   Box,
-  ChevronDown,
   FilePlus2,
   FolderOpen,
-  Languages,
   MoveHorizontal,
   MoveVertical,
   Redo2,
   Ruler,
-  Shapes,
   Sparkles,
   Undo2,
 } from "lucide-react";
@@ -24,8 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useStore } from "../store";
-import { useLang, useT } from "../i18n";
-import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
+import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 
 interface Props {
@@ -34,7 +30,6 @@ interface Props {
   onOpenProjects: () => void;
   onOpenPreview: () => void;
   onOpenDemo: () => void;
-  // Owned by the Shell so the menu bar can open the same dialogs.
 }
 
 export function Toolbar({
@@ -46,7 +41,6 @@ export function Toolbar({
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
-  const [lang, setLang] = useLang();
   const { project, past, future, showBleed } = state;
 
 
@@ -125,40 +119,6 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" title={t("Format")}>
-              <Shapes /> {t(getFormat().name)}
-              <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {FORMAT_IDS.map((id) => (
-              <DropdownMenuItem
-                key={id}
-                onClick={() => setFormat(id)}
-                disabled={id === getFormatId()}
-              >
-                {t(FORMATS[id].name)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" title={t("Language")}>
-              <Languages /> {lang.toUpperCase()}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setLang("en")} disabled={lang === "en"}>
-              English
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLang("de")} disabled={lang === "de"}>
-              Deutsch
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
         <Button variant="outline" size="sm" onClick={onOpenDemo}>
           <Sparkles /> Demo
         </Button>
