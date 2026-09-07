@@ -66,7 +66,7 @@ export function listWorkspaces(): Workspace[] {
 }
 
 // Named lazily so the i18n module isn't pulled into this one.
-let defaultLabel = "Main workspace";
+let defaultLabel = "Main project";
 export const setDefaultWorkspaceName = (s: string) => (defaultLabel = s);
 const defaultName = () => defaultLabel;
 

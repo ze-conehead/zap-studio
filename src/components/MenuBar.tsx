@@ -163,17 +163,20 @@ export function MenuBar({
       </span>
 
       <Menu id="file" label={t("File")}>
-        <DropdownMenuItem onClick={onNewProject}>{t("New card")}</DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenProjects}>{t("Open project …")}</DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenWorkspaces}>
+          {t("New project …")}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenWorkspaces} className="justify-between">
-          <span>{t("Workspaces …")}</span>
+          <span>{t("Switch project …")}</span>
           <span className="max-w-32 truncate text-muted-foreground">
             {getWorkspace().name}
           </span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>{t("Project file")}</DropdownMenuLabel>
+        <DropdownMenuItem onClick={onNewProject}>{t("New card")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenProjects}>{t("Open design …")}</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t("Design file")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={file.saveJson}>{t("Save as JSON")}</DropdownMenuItem>
         <DropdownMenuItem onClick={file.openJson}>{t("Load JSON …")}</DropdownMenuItem>
         <DropdownMenuSeparator />

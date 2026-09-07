@@ -1,5 +1,8 @@
-// Workspaces: independent libraries of consoles, cards and templates. A new
-// one starts completely empty unless you ask for the example consoles.
+// Projects: independent libraries of consoles, cards and templates. A new one
+// starts completely empty unless you ask for the example consoles.
+//
+// Called "workspace" throughout the source because `Project` is already the
+// type of a single card design — only the labels say "project".
 
 import { del, keys } from "idb-keyval";
 import { Check, Layers, Plus, Trash2 } from "lucide-react";
@@ -43,7 +46,7 @@ export function WorkspaceDialog({
   }, [open]);
 
   const create = () => {
-    const ws = createWorkspace(name || t("New workspace"), seeded);
+    const ws = createWorkspace(name || t("New project"), seeded);
     switchWorkspace(ws.id); // reloads
   };
 
@@ -64,7 +67,7 @@ export function WorkspaceDialog({
   };
 
   const rename = (ws: Workspace) => {
-    const next = prompt(t("Workspace name"), ws.name);
+    const next = prompt(t("Project name"), ws.name);
     if (next === null) return;
     renameWorkspace(ws.id, next);
     setList(listWorkspaces());
@@ -74,12 +77,12 @@ export function WorkspaceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[88vh] max-w-lg flex-col gap-4">
         <DialogHeader>
-          <DialogTitle>{t("Workspaces")}</DialogTitle>
+          <DialogTitle>{t("Projects")}</DialogTitle>
         </DialogHeader>
 
         <p className="text-xs text-muted-foreground">
           {t(
-            "A workspace is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.",
+            "A project is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.",
           )}
         </p>
 
@@ -96,7 +99,7 @@ export function WorkspaceDialog({
                 className="flex-1 truncate text-left hover:underline disabled:no-underline"
                 disabled={ws.id === active}
                 onClick={() => switchWorkspace(ws.id)}
-                title={ws.id === active ? undefined : t("Switch to this workspace")}
+                title={ws.id === active ? undefined : t("Switch to this project")}
               >
                 {ws.name}
                 {!ws.seeded && (
@@ -119,7 +122,7 @@ export function WorkspaceDialog({
                     size="sm"
                     variant="ghost"
                     className="h-7"
-                    title={t("Delete workspace")}
+                    title={t("Delete project")}
                     onClick={() => void remove(ws)}
                   >
                     <Trash2 />
@@ -133,7 +136,7 @@ export function WorkspaceDialog({
         <section className="flex flex-col gap-2.5 rounded-md border p-3">
           <Label>
             <Layers className="mr-1 inline size-4" />
-            {t("New workspace")}
+            {t("New project")}
           </Label>
           <Input
             autoFocus

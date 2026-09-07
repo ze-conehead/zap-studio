@@ -78,8 +78,7 @@ export const de: Record<string, string> = {
   Edit: "Bearbeiten",
   View: "Ansicht",
   Settings: "Einstellungen",
-  "New card": "Neu",
-  "Open project \u2026": "Projekt \u00f6ffnen \u2026",
+  "New card": "Neue Karte",
   "Load JSON \u2026": "JSON laden \u2026",
   "Base set \u2026": "Basis-Set \u2026",
   "Load backup \u2026": "Backup laden \u2026",
@@ -92,19 +91,22 @@ export const de: Record<string, string> = {
   System: "System",
   Monospace: "Monospace",
 
-  // ── Workspaces ───────────────────────────────────────────────────────────
-  Workspaces: "Arbeitsbereiche",
-  "Workspaces \u2026": "Arbeitsbereiche \u2026",
-  "Main workspace": "Hauptbereich",
-  "A workspace is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.":
-    "Ein Arbeitsbereich ist eine eigene Sammlung: eigene Konsolen, Karten, Vorlagen und Hilfslinien. Nichts wird geteilt \u2013 ein neuer f\u00e4ngt also bei null an.",
-  "Switch to this workspace": "Zu diesem Arbeitsbereich wechseln",
+  // ── Projects (whole libraries; a single card design is a "Design") ───────
+  "New project \u2026": "Neues Projekt \u2026",
+  "Switch project \u2026": "Projekt wechseln \u2026",
+  "Open design \u2026": "Design \u00f6ffnen \u2026",
+  Designs: "Designs",
+  "Design file": "Design-Datei",
+  "Main project": "Hauptprojekt",
+  "A project is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.":
+    "Ein Projekt ist eine eigene Sammlung: eigene Konsolen, Karten, Vorlagen und Hilfslinien. Nichts wird geteilt \u2013 ein neues f\u00e4ngt also bei null an.",
+  "Switch to this project": "Zu diesem Projekt wechseln",
   "(empty start)": "(leer gestartet)",
-  "Delete workspace": "Arbeitsbereich l\u00f6schen",
+  "Delete project": "Projekt l\u00f6schen",
   "Delete \u201c{name}\u201d with all its consoles, cards and templates? This cannot be undone.":
     "\u201e{name}\u201c mit allen Konsolen, Karten und Vorlagen l\u00f6schen? Das l\u00e4sst sich nicht r\u00fcckg\u00e4ngig machen.",
-  "Workspace name": "Name des Arbeitsbereichs",
-  "New workspace": "Neuer Arbeitsbereich",
+  "Project name": "Projektname",
+  "New project": "Neues Projekt",
   "Name, e.g. \u201cMega Drive collection\u201d": "Name, z. B. \u201eMega-Drive-Sammlung\u201c",
   "Start with the example consoles": "Mit den Beispiel-Konsolen starten",
   "Starts with the five built-in consoles and their games.":

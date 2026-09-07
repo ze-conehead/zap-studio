@@ -132,7 +132,7 @@ export function Toolbar({
           <Box /> {t("3D preview")}
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenProjects}>
-          <FolderOpen /> {t("Projects")}
+          <FolderOpen /> {t("Designs")}
         </Button>
         <Button variant="outline" size="sm" onClick={onNewProject}>
           <FilePlus2 /> {t("New")}

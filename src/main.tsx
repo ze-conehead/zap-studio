@@ -10,7 +10,7 @@ import { purgeOldTrash } from "./persist";
 import { t } from "./i18n";
 import { setDefaultWorkspaceName } from "./workspace";
 
-setDefaultWorkspaceName(t("Main workspace"));
+setDefaultWorkspaceName(t("Main project"));
 startAutoBackup();
 void purgeOldTrash();
 
