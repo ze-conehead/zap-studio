@@ -12,6 +12,7 @@ export interface Workspace {
   name: string;
   createdAt: number;
   seeded: boolean; // false => starts with an empty catalogue
+  format?: string; // FormatId it was created with — shown in the list
 }
 
 const LIST_KEY = "stickerstudio:workspaces";
@@ -98,15 +99,29 @@ export const wsIdbPrefix = () => (active === DEFAULT_WS ? "" : `ws:${active}:`);
 const newId = () =>
   (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).slice(0, 8);
 
-export function createWorkspace(name: string, seeded = false): Workspace {
+export function createWorkspace(
+  name: string,
+  seeded = false,
+  format?: string,
+): Workspace {
   const ws: Workspace = {
     id: newId(),
-    name: name.trim() || "Workspace",
+    name: name.trim() || "Project",
     createdAt: Date.now(),
     seeded,
+    format,
   };
   writeList([...readList(), ws]);
+  // src/formats.ts reads this key through wsSuffix(), so seeding it here is
+  // all it takes for the new project to open in the chosen format.
+  if (format) ls.set(`stickerstudio:format--w${ws.id}`, format);
   return ws;
+}
+
+/** Keeps the record in step when the format is changed from the menu. */
+export function setWorkspaceFormat(format: string): void {
+  if (active === DEFAULT_WS) return; // the original has no stored record
+  writeList(readList().map((w) => (w.id === active ? { ...w, format } : w)));
 }
 
 export function renameWorkspace(id: string, name: string): void {

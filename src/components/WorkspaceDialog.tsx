@@ -7,6 +7,7 @@
 import { del, keys } from "idb-keyval";
 import { Check, Layers, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FORMAT_IDS, FORMATS, getFormatId, type FormatId } from "../formats";
 import { useT } from "../i18n";
 import {
   createWorkspace,
@@ -24,6 +25,13 @@ import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 export function WorkspaceDialog({
   open,
@@ -37,16 +45,18 @@ export function WorkspaceDialog({
   const [list, setList] = useState<Workspace[]>([]);
   const [name, setName] = useState("");
   const [seeded, setSeeded] = useState(false);
+  const [format, setFormat] = useState<FormatId>(getFormatId());
 
   useEffect(() => {
     if (!open) return;
     setList(listWorkspaces());
     setName("");
     setSeeded(false);
+    setFormat(getFormatId());
   }, [open]);
 
   const create = () => {
-    const ws = createWorkspace(name || t("New project"), seeded);
+    const ws = createWorkspace(name || t("New project"), seeded, format);
     switchWorkspace(ws.id); // reloads
   };
 
@@ -102,11 +112,12 @@ export function WorkspaceDialog({
                 title={ws.id === active ? undefined : t("Switch to this project")}
               >
                 {ws.name}
-                {!ws.seeded && (
-                  <span className="ml-1.5 text-[11px] text-muted-foreground">
-                    {t("(empty start)")}
-                  </span>
-                )}
+                <span className="ml-1.5 text-[11px] text-muted-foreground">
+                  {ws.format && FORMATS[ws.format as FormatId]
+                    ? t(FORMATS[ws.format as FormatId].name)
+                    : ""}
+                  {!ws.seeded && ` ${t("(empty start)")}`}
+                </span>
               </button>
               {ws.id !== DEFAULT_WS && (
                 <>
@@ -145,6 +156,24 @@ export function WorkspaceDialog({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && create()}
           />
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-sm text-muted-foreground">
+              {t("Format")}
+            </span>
+            <Select value={format} onValueChange={(v) => setFormat(v as FormatId)}>
+              <SelectTrigger className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMAT_IDS.map((id) => (
+                  <SelectItem key={id} value={id}>
+                    {t(FORMATS[id].name)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={seeded} onCheckedChange={(v) => setSeeded(!!v)} />
             {t("Start with the example consoles")}

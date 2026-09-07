@@ -1,7 +1,10 @@
-// Sticker formats. One is active for the whole workspace at a time; the
-// choice lives in localStorage and is read once at module load. Switching
-// persists the choice and reloads the page (like a backup restore) so the
+// Sticker formats. One is active at a time, per project: the key below is
+// namespaced by workspace, so every project remembers its own format and
+// switching project brings it along. The choice is read once at module load;
+// switching persists it and reloads the page (like a backup restore) so the
 // geometry constants in src/card.ts can stay plain module-level consts.
+
+import { wsSuffix } from "./workspace";
 
 export type FormatId =
   | "card"
@@ -95,7 +98,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
 
 export const FORMAT_IDS = Object.keys(FORMATS) as FormatId[];
 
-const KEY = "stickerstudio:format";
+const KEY = `stickerstudio:format${wsSuffix()}`;
 
 export function getFormatId(): FormatId {
   try {

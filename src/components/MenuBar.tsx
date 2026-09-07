@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
 import { getCoverSource, setCoverSource, type CoverSource } from "../covers";
-import { getWorkspace } from "../workspace";
+import { getWorkspace, setWorkspaceFormat } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import { useLang, useT } from "../i18n";
@@ -311,7 +311,10 @@ export function MenuBar({
             <DropdownMenuItem
               key={id}
               disabled={id === getFormatId()}
-              onClick={() => setFormat(id)}
+              onClick={() => {
+                setWorkspaceFormat(id);
+                setFormat(id); // reloads
+              }}
             >
               {t(FORMATS[id].name)}
             </DropdownMenuItem>
