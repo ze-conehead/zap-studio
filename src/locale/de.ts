@@ -92,6 +92,27 @@ export const de: Record<string, string> = {
   System: "System",
   Monospace: "Monospace",
 
+  // ── Workspaces ───────────────────────────────────────────────────────────
+  Workspaces: "Arbeitsbereiche",
+  "Workspaces \u2026": "Arbeitsbereiche \u2026",
+  "Main workspace": "Hauptbereich",
+  "A workspace is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.":
+    "Ein Arbeitsbereich ist eine eigene Sammlung: eigene Konsolen, Karten, Vorlagen und Hilfslinien. Nichts wird geteilt \u2013 ein neuer f\u00e4ngt also bei null an.",
+  "Switch to this workspace": "Zu diesem Arbeitsbereich wechseln",
+  "(empty start)": "(leer gestartet)",
+  "Delete workspace": "Arbeitsbereich l\u00f6schen",
+  "Delete \u201c{name}\u201d with all its consoles, cards and templates? This cannot be undone.":
+    "\u201e{name}\u201c mit allen Konsolen, Karten und Vorlagen l\u00f6schen? Das l\u00e4sst sich nicht r\u00fcckg\u00e4ngig machen.",
+  "Workspace name": "Name des Arbeitsbereichs",
+  "New workspace": "Neuer Arbeitsbereich",
+  "Name, e.g. \u201cMega Drive collection\u201d": "Name, z. B. \u201eMega-Drive-Sammlung\u201c",
+  "Start with the example consoles": "Mit den Beispiel-Konsolen starten",
+  "Starts with the five built-in consoles and their games.":
+    "Startet mit den f\u00fcnf mitgelieferten Konsolen und ihren Spielen.",
+  "Starts empty — no consoles, no cards. Add your own in the tree.":
+    "Startet leer \u2013 keine Konsolen, keine Karten. Eigene im Baum anlegen.",
+  "Create and switch": "Anlegen und wechseln",
+
   // ── Data safety (automatic backups + trash) ──────────────────────────────
   "Data safety": "Datensicherheit",
   "Data safety \u2026": "Datensicherheit \u2026",
@@ -219,6 +240,9 @@ export const de: Record<string, string> = {
   "Show games": "Spiele anzeigen",
   Add: "Hinzufügen",
   "Add game": "Spiel hinzufügen",
+  "Add console": "Konsole hinzuf\u00fcgen",
+  "Console name:": "Name der Konsole:",
+  "That console already exists.": "Diese Konsole gibt es bereits.",
   Rename: "Umbenennen",
   Remove: "Entfernen",
   Collapse: "Zuklappen",

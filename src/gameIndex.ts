@@ -2,12 +2,13 @@
 // holds its sticker, so picking a game in the tree reopens the same design.
 
 import { getFormatId, isCard } from "./formats";
+import { wsSuffix } from "./workspace";
 
 // One index per format; the card keeps the original key so existing links
 // are untouched.
-const KEY = isCard()
-  ? "stickerstudio:gameIndex"
-  : `stickerstudio:gameIndex:${getFormatId()}`;
+const KEY =
+  (isCard() ? "stickerstudio:gameIndex" : `stickerstudio:gameIndex:${getFormatId()}`) +
+  wsSuffix();
 
 type Index = Record<string, string>;
 

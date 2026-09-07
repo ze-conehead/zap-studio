@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
 import { getCoverSource, setCoverSource, type CoverSource } from "../covers";
+import { getWorkspace } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import { useLang, useT } from "../i18n";
@@ -48,6 +49,7 @@ interface Props {
   onOpenQuickImport: () => void;
   onOpenOverview: () => void;
   onOpenDataSafety: () => void;
+  onOpenWorkspaces: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -65,6 +67,7 @@ export function MenuBar({
   onOpenQuickImport,
   onOpenOverview,
   onOpenDataSafety,
+  onOpenWorkspaces,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -162,6 +165,13 @@ export function MenuBar({
       <Menu id="file" label={t("File")}>
         <DropdownMenuItem onClick={onNewProject}>{t("New card")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenProjects}>{t("Open project …")}</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenWorkspaces} className="justify-between">
+          <span>{t("Workspaces …")}</span>
+          <span className="max-w-32 truncate text-muted-foreground">
+            {getWorkspace().name}
+          </span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Project file")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={file.saveJson}>{t("Save as JSON")}</DropdownMenuItem>

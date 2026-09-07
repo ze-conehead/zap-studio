@@ -3,6 +3,7 @@ import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL, resolveBackground } from "./bac
 import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
 import { getFormatId, isCard } from "./formats";
+import { wsSuffix } from "./workspace";
 import type {
   BackFace,
   BackgroundLayer,
@@ -44,9 +45,10 @@ export function makeBackFace(): BackFace {
   return { layers: [] };
 }
 
-// Templates are per format. The card keeps the original, unsuffixed ids so
-// existing data is untouched; other formats get a "--<format>" suffix.
-const TPL_SUFFIX = isCard() ? "" : `--${getFormatId()}`;
+// Templates are per format and per workspace. The card in the original
+// workspace keeps the unsuffixed ids so existing data is untouched; anything
+// else gets a "--<format>" / "--w<workspace>" suffix.
+const TPL_SUFFIX = (isCard() ? "" : `--${getFormatId()}`) + wsSuffix();
 export const templateId = (consoleId: string) => `tpl-${consoleId}${TPL_SUFFIX}`;
 export const GLOBAL_TEMPLATE_ID = `tpl-global${TPL_SUFFIX}`;
 

@@ -7,7 +7,10 @@ import "./index.css";
 import "./theme";
 import { startAutoBackup } from "./autobackup";
 import { purgeOldTrash } from "./persist";
+import { t } from "./i18n";
+import { setDefaultWorkspaceName } from "./workspace";
 
+setDefaultWorkspaceName(t("Main workspace"));
 startAutoBackup();
 void purgeOldTrash();
 

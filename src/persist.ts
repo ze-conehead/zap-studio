@@ -1,14 +1,20 @@
 import { get, set, del, keys } from "idb-keyval";
 import { migrateProject } from "./factory";
 import { linkGameProject } from "./gameIndex";
+import { wsIdbPrefix, wsSuffix } from "./workspace";
 import { getFormatId } from "./formats";
 import type { Project, ProjectMeta } from "./types";
 
 // Projects (with embedded image data URLs) live in IndexedDB so large
 // uploads don't blow the localStorage quota.
 
-const KEY = (id: string) => `project:${id}`;
-const LAST = "lastProjectId";
+// Namespaced per workspace — see src/workspace.ts. The original workspace
+// keeps the bare `project:` / `lastProjectId` keys.
+const NS = wsIdbPrefix();
+const PROJECT_PREFIX = `${NS}project:`;
+const TRASH_PREFIX = `${NS}trash:`;
+const KEY = (id: string) => `${PROJECT_PREFIX}${id}`;
+const LAST = `lastProjectId${wsSuffix()}`;
 
 export async function saveProject(p: Project): Promise<void> {
   await set(KEY(p.id), p);
@@ -26,7 +32,7 @@ export async function loadProject(id: string): Promise<Project | undefined> {
 // costs a click to undo rather than the whole design. Entries older than
 // TRASH_DAYS are purged on boot.
 
-const TRASH = (id: string) => `trash:${id}`;
+const TRASH = (id: string) => `${TRASH_PREFIX}${id}`;
 export const TRASH_DAYS = 30;
 
 export interface TrashEntry {
@@ -45,7 +51,7 @@ export async function listTrash(): Promise<TrashEntry[]> {
   const ks = (await keys()) as string[];
   const out: TrashEntry[] = [];
   for (const k of ks) {
-    if (typeof k !== "string" || !k.startsWith("trash:")) continue;
+    if (typeof k !== "string" || !k.startsWith(TRASH_PREFIX)) continue;
     const e = (await get(k)) as TrashEntry | undefined;
     if (e?.project) out.push(e);
   }
@@ -70,7 +76,7 @@ export async function emptyTrash(): Promise<number> {
   const ks = (await keys()) as string[];
   let n = 0;
   for (const k of ks) {
-    if (typeof k === "string" && k.startsWith("trash:")) {
+    if (typeof k === "string" && k.startsWith(TRASH_PREFIX)) {
       await del(k);
       n++;
     }
@@ -83,7 +89,7 @@ export async function purgeOldTrash(): Promise<void> {
   const cutoff = Date.now() - TRASH_DAYS * 86_400_000;
   const ks = (await keys()) as string[];
   for (const k of ks) {
-    if (typeof k !== "string" || !k.startsWith("trash:")) continue;
+    if (typeof k !== "string" || !k.startsWith(TRASH_PREFIX)) continue;
     const e = (await get(k)) as TrashEntry | undefined;
     if (!e || e.deletedAt < cutoff) await del(k);
   }
@@ -95,7 +101,7 @@ export function lastProjectId(): string | null {
 
 export async function listProjects(): Promise<ProjectMeta[]> {
   const ks = (await keys()) as string[];
-  const ids = ks.filter((k) => typeof k === "string" && k.startsWith("project:"));
+  const ids = ks.filter((k) => typeof k === "string" && k.startsWith(PROJECT_PREFIX));
   const metas: ProjectMeta[] = [];
   const fmt = getFormatId();
   for (const k of ids) {
@@ -112,7 +118,7 @@ export async function loadAllProjects(): Promise<Project[]> {
   const ks = (await keys()) as string[];
   const out: Project[] = [];
   for (const k of ks) {
-    if (typeof k === "string" && k.startsWith("project:")) {
+    if (typeof k === "string" && k.startsWith(PROJECT_PREFIX)) {
       const p = (await get(k)) as Project | undefined;
       if (p) out.push(p);
     }

@@ -1,5 +1,8 @@
 // User guide lines. Global: the same set shows on every card, and the
-// on/off state is remembered. Stored in localStorage (small, per-browser).
+// on/off state is remembered. Stored in localStorage (small, per-browser),
+// namespaced per workspace.
+
+import { wsSuffix } from "./workspace";
 
 export interface Guide {
   id: string;
@@ -14,7 +17,7 @@ export interface GuidesState {
   items: Guide[];
 }
 
-const KEY = "stickerstudio:guides";
+const KEY = `stickerstudio:guides${wsSuffix()}`;
 
 export function loadGuides(): GuidesState {
   try {

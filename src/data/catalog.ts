@@ -5,6 +5,8 @@
 // seed list can still evolve.
 // Game and console names are trademarks of their owners.
 
+import { isSeededWorkspace, wsSuffix } from "../workspace";
+
 export interface CatalogGame {
   id: string;
   title: string;
@@ -72,6 +74,10 @@ const SEED_CATALOG: CatalogConsole[] = [
   ]),
 ];
 
+// A workspace that opted out of the examples starts from nothing; the user
+// adds their own consoles in the tree.
+const SEED = isSeededWorkspace() ? SEED_CATALOG : [];
+
 // ── Persisted overlay ───────────────────────────────────────────────────────
 
 export interface CatalogOverlay {
@@ -100,7 +106,7 @@ function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
   };
 }
 
-const OVERLAY_KEY = "stickerstudio:catalogOverlay";
+const OVERLAY_KEY = `stickerstudio:catalogOverlay${wsSuffix()}`;
 
 // The tree reads the catalogue outside React state, so it needs to know when
 // a game is added/removed without a reload — same pub/sub shape as gamelist.
@@ -151,7 +157,7 @@ export function replaceCatalogOverlay(raw: string): void {
 
 // ── Public catalogue (seed + overlay merged) ────────────────────────────────
 
-const SEED_IDS = new Set(SEED_CATALOG.map((c) => c.id));
+const SEED_IDS = new Set(SEED.map((c) => c.id));
 
 export function getCatalog(): CatalogConsole[] {
   const { added, removed, consoleNames, gameTitles, consoles } = loadCatalogOverlay();
@@ -160,7 +166,7 @@ export function getCatalog(): CatalogConsole[] {
     title: gameTitles[`${cId}/${g.id}`] ?? g.title,
   });
 
-  const seed = SEED_CATALOG.map((c) => {
+  const seed = SEED.map((c) => {
     const hidden = new Set(removed[c.id] ?? []);
     return {
       id: c.id,
@@ -238,7 +244,7 @@ export function addGame(consoleId: string, rawTitle: string): CatalogGame | unde
   if (!title) return undefined;
 
   const overlay = loadCatalogOverlay();
-  const seed = SEED_CATALOG.find((c) => c.id === consoleId);
+  const seed = SEED.find((c) => c.id === consoleId);
   const custom = overlay.consoles.find((c) => c.id === consoleId);
   if (!seed && !custom) return undefined;
 
@@ -317,7 +323,7 @@ export function renameGame(
     return true;
   }
 
-  const seed = SEED_CATALOG.find((c) => c.id === consoleId)?.games.find(
+  const seed = SEED.find((c) => c.id === consoleId)?.games.find(
     (g) => g.id === gameId,
   );
   if (!seed) return false;
@@ -341,7 +347,7 @@ export function renameConsole(consoleId: string, rawName: string): boolean {
     return true;
   }
 
-  const seed = SEED_CATALOG.find((c) => c.id === consoleId);
+  const seed = SEED.find((c) => c.id === consoleId);
   if (!seed) return false;
   if (name === seed.name) delete overlay.consoleNames[consoleId];
   else overlay.consoleNames[consoleId] = name;

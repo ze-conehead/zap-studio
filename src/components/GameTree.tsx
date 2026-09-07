@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import {
   addGame,
   gameKeyOf,
+  addConsole,
   getCatalog,
   getCatalogVersion,
   isCustomConsole,
@@ -143,6 +144,12 @@ export function GameTree({
     { label: t("Find cover"), onSelect: () => setGameCover(row) },
     { label: t("Insert cover by URL"), onSelect: () => promptCoverUrl(row) },
   ];
+
+  const addConsolePrompt = () => {
+    const name = window.prompt(t("Console name:"))?.trim();
+    if (!name) return;
+    if (!addConsole(name)) alert(t("That console already exists."));
+  };
 
   const sweepMenuItems = (scope: SweepScope): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setSweep(scope) },
@@ -268,6 +275,13 @@ export function GameTree({
           <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
             {countText(shownGames, totalGames)}
           </span>
+        </button>
+        <button
+          className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          title={t("Add console")}
+          onClick={addConsolePrompt}
+        >
+          <Plus className="size-4" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

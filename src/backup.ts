@@ -2,6 +2,7 @@ import { t } from "./i18n";
 import { set } from "idb-keyval";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { loadAllProjects } from "./persist";
+import { wsIdbPrefix, wsSuffix } from "./workspace";
 import type { Project } from "./types";
 
 // Full backup: every project + every template + the global settings
@@ -9,9 +10,10 @@ import type { Project } from "./types";
 // and deduplicated.
 
 const BACKUP_FORMAT = "credit-card-sticker-studio-backup";
-const GUIDES_KEY = "stickerstudio:guides";
+// A backup covers the active workspace only — its projects and its settings.
+const GUIDES_KEY = `stickerstudio:guides${wsSuffix()}`;
 const GAME_INDEX_KEY = "stickerstudio:gameIndex";
-const CATALOG_OVERLAY_KEY = "stickerstudio:catalogOverlay";
+const CATALOG_OVERLAY_KEY = `stickerstudio:catalogOverlay${wsSuffix()}`;
 
 const MIME_EXT: Record<string, string> = {
   "image/png": "png",
@@ -117,7 +119,10 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   const gameIndexes: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith(GAME_INDEX_KEY)) {
+    // `endsWith("")` matches everything, so the original workspace has to
+    // exclude the other workspaces' suffixed keys explicitly.
+    const mine = wsSuffix() ? k?.endsWith(wsSuffix()) : !k?.includes("--w");
+    if (k && k.startsWith(GAME_INDEX_KEY) && mine) {
       gameIndexes[k] = localStorage.getItem(k) ?? "";
     }
   }
@@ -184,7 +189,7 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
     if (!/^(projects|templates)\/.+\.json$/.test(path)) continue;
     const proj = resolve(JSON.parse(strFromU8(entries[path])) as Project);
     if (!proj.id) continue;
-    await set(`project:${proj.id}`, proj);
+    await set(`${wsIdbPrefix()}project:${proj.id}`, proj);
     if (proj.isTemplate) nt++;
     else np++;
   }
