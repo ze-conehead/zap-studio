@@ -3,12 +3,9 @@ import {
   ChevronDown,
   FilePlus2,
   FolderOpen,
-  Import,
   Languages,
-  ListPlus,
   MoveHorizontal,
   MoveVertical,
-  Palette,
   Redo2,
   Ruler,
   Shapes,
@@ -23,7 +20,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +28,6 @@ import { cn } from "@/lib/utils";
 import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
-import { accentColor, setTheme, THEME_IDS, THEMES, useTheme } from "../theme";
 import type { GuideApi } from "../App";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 
@@ -43,8 +38,6 @@ interface Props {
   onOpenPreview: () => void;
   onOpenDemo: () => void;
   // Owned by the Shell so the menu bar can open the same dialogs.
-  onOpenBaseImport: () => void;
-  onOpenQuickImport: () => void;
 }
 
 export function Toolbar({
@@ -53,13 +46,10 @@ export function Toolbar({
   onOpenProjects,
   onOpenPreview,
   onOpenDemo,
-  onOpenBaseImport,
-  onOpenQuickImport,
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
   const [lang, setLang] = useLang();
-  const theme = useTheme();
   const { project, past, future, showBleed } = state;
   const [coverSweepOpen, setCoverSweepOpen] = useState(false);
 
@@ -187,35 +177,6 @@ export function Toolbar({
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" title={t("Theme")}>
-              <Palette />
-              <span
-                className="size-3 rounded-full ring-1 ring-white/25"
-                style={{ background: accentColor(theme) }}
-              />
-              {t(theme.name)}
-              <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{t("Accent colour")}</DropdownMenuLabel>
-            {THEME_IDS.map((id) => (
-              <DropdownMenuItem
-                key={id}
-                onClick={() => setTheme(id)}
-                disabled={id === theme.id}
-              >
-                <span
-                  className="size-3.5 rounded-full ring-1 ring-white/25"
-                  style={{ background: accentColor(THEMES[id]) }}
-                />
-                {t(THEMES[id].name)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" title={t("Language")}>
               <Languages /> {lang.toUpperCase()}
             </Button>
@@ -234,22 +195,6 @@ export function Toolbar({
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenPreview}>
           <Box /> {t("3D preview")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onOpenBaseImport()}
-          title={t("Import consoles & games from the base list (base_game_list.csv)")}
-        >
-          <ListPlus /> {t("Base set")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onOpenQuickImport()}
-          title={t("Enter image URLs for every game without an image in a table")}
-        >
-          <Import /> Quick Import
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenProjects}>
           <FolderOpen /> {t("Projects")}
