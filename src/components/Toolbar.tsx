@@ -12,8 +12,6 @@ import {
   Sparkles,
   Undo2,
 } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -29,7 +27,6 @@ import { useStore } from "../store";
 import { useLang, useT } from "../i18n";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import type { GuideApi } from "../App";
-import { CoverSweepDialog } from "./CoverSweepDialog";
 
 interface Props {
   guides: GuideApi;
@@ -51,7 +48,6 @@ export function Toolbar({
   const t = useT();
   const [lang, setLang] = useLang();
   const { project, past, future, showBleed } = state;
-  const [coverSweepOpen, setCoverSweepOpen] = useState(false);
 
 
 
@@ -60,33 +56,6 @@ export function Toolbar({
 
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-sidebar px-3.5 py-2">
-      <div className="flex items-center gap-2">
-        {project.isTemplate && (
-          <Badge>{project.isGlobalTemplate ? t("Global") : t("Template")}</Badge>
-        )}
-        <span
-          className="text-xs text-muted-foreground"
-          title={state.dirty ? t("unsaved") : t("saved")}
-        >
-          {state.dirty ? "●" : "○"}
-        </span>
-      </div>
-
-      {project.isGlobalTemplate && (
-        <>
-          <Separator orientation="vertical" className="h-6" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCoverSweepOpen(true)}
-          >
-            {t("Find covers")}
-          </Button>
-        </>
-      )}
-
-      <Separator orientation="vertical" className="h-6" />
-
       <div className="flex items-center gap-1">
         <IconBtn
           label={t("Undo (⌘Z)")}
@@ -204,9 +173,6 @@ export function Toolbar({
         </Button>
       </div>
 
-      {project.isGlobalTemplate && (
-        <CoverSweepDialog open={coverSweepOpen} onOpenChange={setCoverSweepOpen} />
-      )}
 
 
 
