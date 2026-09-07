@@ -14,6 +14,7 @@ import { MenuBar } from "./components/MenuBar";
 import { OverviewDialog } from "./components/OverviewDialog";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
+import { PreflightDialog } from "./components/PreflightDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -318,6 +319,7 @@ function Shell({
   const [overview, setOverview] = useState(false);
   const [dataSafety, setDataSafety] = useState(false);
   const [workspaces, setWorkspaces] = useState(false);
+  const [preflight, setPreflight] = useState(false);
   const t = useT();
   // View-level shortcuts. The layer ones live in the store, which owns the
   // selection; these need the guides API and the Shell's dialogs.
@@ -358,6 +360,7 @@ function Shell({
     onOpenOverview: () => setOverview(true),
     onOpenDataSafety: () => setDataSafety(true),
     onOpenWorkspaces: () => setWorkspaces(true),
+    onOpenPreflight: () => setPreflight(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -413,6 +416,12 @@ function Shell({
       />
       <DataSafetyDialog open={dataSafety} onOpenChange={setDataSafety} />
       <WorkspaceDialog open={workspaces} onOpenChange={setWorkspaces} />
+      <PreflightDialog
+        open={preflight}
+        onOpenChange={setPreflight}
+        overlay={overlay}
+        onPick={onPickGame}
+      />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <QuickImportDialog

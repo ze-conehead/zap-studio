@@ -50,6 +50,7 @@ interface Props {
   onOpenOverview: () => void;
   onOpenDataSafety: () => void;
   onOpenWorkspaces: () => void;
+  onOpenPreflight: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -68,6 +69,7 @@ export function MenuBar({
   onOpenOverview,
   onOpenDataSafety,
   onOpenWorkspaces,
+  onOpenPreflight,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -190,6 +192,9 @@ export function MenuBar({
         <DropdownMenuItem onClick={file.saveJson}>{t("Save as JSON")}</DropdownMenuItem>
         <DropdownMenuItem onClick={file.openJson}>{t("Load JSON …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenPreflight}>
+          {t("Preflight check …")}
+        </DropdownMenuItem>
         <Sub label={t("Export")}>
           <DropdownMenuLabel>{t("This card")}</DropdownMenuLabel>
           {EXPORT_MODES.map((m) => (

@@ -553,6 +553,27 @@ export const de: Record<string, string> = {
     "Keins der ausgewählten Spiele hat ein gespeichertes Design.",
   "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
 
+  // ── Preflight ────────────────────────────────────────────────────────────
+  "Preflight check": "Druckvorstufen-Pr\u00fcfung",
+  "Preflight check \u2026": "Druckvorstufen-Pr\u00fcfung \u2026",
+  "Checks resolution ({dpi} dpi or better), text size (at least {pt} pt) and distance to the cut line ({safe} mm clear).":
+    "Pr\u00fcft Aufl\u00f6sung (mindestens {dpi} dpi), Schriftgr\u00f6\u00dfe (mindestens {pt} pt) und Abstand zur Schnittlinie ({safe} mm frei).",
+  "Checking \u2026": "Wird gepr\u00fcft \u2026",
+  "Nothing to fix — ready to print.": "Nichts zu beanstanden \u2013 druckfertig.",
+  "{n} problem(s)": "{n} Problem(e)",
+  "{n} warning(s)": "{n} Warnung(en)",
+  "on {n} cards": "auf {n} Karten",
+  Open: "\u00d6ffnen",
+  "Only {dpi} dpi at this size — {good} dpi or more prints cleanly.":
+    "Nur {dpi} dpi in dieser Gr\u00f6\u00dfe \u2013 ab {good} dpi wird es sauber.",
+  "Text is {pt} pt — under {small} pt it gets hard to read in print.":
+    "Text ist {pt} pt \u2013 unter {small} pt wird es im Druck schwer lesbar.",
+  "Sticks {mm} mm past the cut line — that part gets trimmed off.":
+    "Ragt {mm} mm \u00fcber die Schnittlinie \u2013 dieser Teil wird abgeschnitten.",
+  "Only {mm} mm from the cut line — keep {safe} mm clear so a drifting cut can't clip it.":
+    "Nur {mm} mm von der Schnittlinie \u2013 lass {safe} mm frei, damit ein versetzter Schnitt nichts abschneidet.",
+  "This card has no layers yet.": "Diese Karte hat noch keine Ebenen.",
+
   // ── Logo sweep ───────────────────────────────────────────────────────────
   "Logo slot": "Logo-Platzhalter",
   "Shrink to fit": "Automatisch verkleinern",

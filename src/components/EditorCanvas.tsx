@@ -55,6 +55,7 @@ import type {
   ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
 } from "../types";
+import { renderedFontSize } from "../textFit";
 import { fontStyleString } from "../textUtil";
 
 export interface CanvasHandle {
@@ -1201,38 +1202,13 @@ function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
   );
 }
 
-// Largest size at or below `layer.fontSize` whose wrapped text still fits
-// `lines` lines. Measured with an off-stage Konva.Text so it matches exactly
-// what gets drawn — including the font's real metrics.
-const MIN_AUTO_FIT = 6;
-function fitFontSize(layer: TTextLayer, lines: number): number {
-  const probe = new Konva.Text({
-    text: layer.text,
-    width: layer.width,
-    fontFamily: layer.fontFamily,
-    fontStyle: fontStyleString(layer),
-    lineHeight: layer.lineHeight,
-    letterSpacing: layer.letterSpacing,
-    align: layer.align,
-  });
-  for (let size = Math.round(layer.fontSize); size >= MIN_AUTO_FIT; size--) {
-    probe.fontSize(size);
-    // +0.5 absorbs the sub-pixel rounding in Konva's line metrics.
-    if (probe.height() <= size * layer.lineHeight * lines + 0.5) return size;
-  }
-  return MIN_AUTO_FIT;
-}
-
 function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
   const ref = useRef<Konva.Text>(null);
   const [h, setH] = useState(0);
 
   // Recomputed only when something that affects the measurement changes.
   const fontSize = useMemo(
-    () =>
-      layer.autoFit
-        ? fitFontSize(layer, Math.max(1, layer.autoFitLines ?? 2))
-        : layer.fontSize,
+    () => renderedFontSize(layer),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       layer.autoFit,
