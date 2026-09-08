@@ -4,6 +4,7 @@
 // draws the layer.
 
 import Konva from "konva";
+import { DEFAULT_FLOW_HEIGHT } from "./textFlow";
 import { fontStyleString } from "./textUtil";
 import type { TextLayer } from "./types";
 
@@ -36,14 +37,19 @@ export function fitFontSize(layer: TextLayer, lines: number): number {
   return MIN_AUTO_FIT;
 }
 
-/** The size the layer actually draws at — auto-fit applied if it is on. */
+/**
+ * The size the layer actually draws at — auto-fit applied if it is on.
+ * Auto-fit measures plain wrapping, so a flowing frame (src/textFlow.ts)
+ * keeps its set size.
+ */
 export const renderedFontSize = (layer: TextLayer): number =>
-  layer.autoFit
+  layer.autoFit && !layer.flow
     ? fitFontSize(layer, Math.max(1, layer.autoFitLines ?? 2))
     : layer.fontSize;
 
 /** Height of the wrapped text at its rendered size, in canvas px. */
 export function textHeight(layer: TextLayer): number {
+  if (layer.flow) return layer.height ?? DEFAULT_FLOW_HEIGHT;
   const probe = probeFor(layer);
   probe.fontSize(renderedFontSize(layer));
   return probe.height();

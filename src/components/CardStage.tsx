@@ -43,6 +43,8 @@ export function CardStage({
     card.masks,
   );
   const overlay = resolveConditions(card.overlay, meta);
+  // What a flowing text frame breaks around (src/textFlow.ts).
+  const obstacles = [...(card.masks ?? []), ...content.filter((l) => l.alphaMask)];
 
   return (
     <Stage
@@ -62,16 +64,19 @@ export function CardStage({
       {segmentLayers(layers).map((seg, i) => (
         <KLayer key={`seg-${i}`} listening={false}>
           {seg.kind === "plain"
-            ? seg.layers.map((l) => <StaticLayer key={l.id} layer={l} meta={meta} />)
+            ? seg.layers.map((l) => (
+                <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
+              ))
             : [
                 ...seg.clipped.map((l) => (
-                  <StaticLayer key={l.id} layer={l} meta={meta} />
+                  <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
                 )),
                 <StaticLayer
                   key={seg.mask.id}
                   layer={seg.mask}
                   asMask={seg.clipped.length > 0}
                   meta={meta}
+                  obstacles={obstacles}
                 />,
               ]}
         </KLayer>
@@ -80,7 +85,7 @@ export function CardStage({
       {overlay.length > 0 && (
         <KLayer listening={false}>
           {overlay.map((l) => (
-            <StaticLayer key={l.id} layer={l} meta={meta} />
+            <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
           ))}
         </KLayer>
       )}
@@ -92,10 +97,12 @@ function StaticLayer({
   layer,
   asMask = false,
   meta,
+  obstacles,
 }: {
   layer: TLayer;
   asMask?: boolean;
   meta?: GameMeta;
+  obstacles?: TLayer[];
 }) {
   if (!layer.visible) return null;
   return (
@@ -108,7 +115,7 @@ function StaticLayer({
       opacity={layer.opacity}
       listening={false}
     >
-      <LayerInner layer={layer} asMask={asMask} meta={meta} />
+      <LayerInner layer={layer} asMask={asMask} meta={meta} obstacles={obstacles} />
     </Group>
   );
 }

@@ -682,4 +682,10 @@ export const de: Record<string, string> = {
     "Der Standardfall: wird gezeichnet, wenn kein anderer Fall zutrifft.",
   "Drawn when {field} is \u201c{value}\u201d \u2014 this layer's name is the value.":
     "Wird gezeichnet, wenn {field} \u201e{value}\u201c ist \u2013 der Name dieser Ebene ist der Wert.",
+  // \u2500\u2500 Flowing text frames \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  "Flow around alpha masks": "Um Alphamasken umbrechen",
+  "The text becomes a frame: lines break around the alpha mask frames instead of running under the images. Drag its handles to resize the frame.":
+    "Der Text wird zum Rahmen: Die Zeilen brechen um die Alphamasken herum, statt unter den Bildern zu verschwinden. Zieh an den Anfassern, um den Rahmen zu \u00e4ndern.",
+  "Frame height": "Rahmenh\u00f6he",
+  Clearance: "Abstand",
 };

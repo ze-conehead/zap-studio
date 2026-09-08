@@ -43,6 +43,11 @@ import { useAdjustedImage } from "../imageAdjust";
 import { hiddenCaseIds, resolveConditions } from "../conditions";
 import { COND_PREVIEW } from "../export";
 import { segmentLayers } from "../masking";
+import {
+  DEFAULT_FLOW_HEIGHT,
+  flowLayout,
+  obstacleBoxes,
+} from "../textFlow";
 import { resolveMask } from "../templates";
 import { useStore } from "../store";
 import { useAccent } from "../theme";
@@ -302,6 +307,13 @@ function FaceStage({
   // Condition layers pick which of their cases is live for this game. The
   // selected layer is kept whatever the metadata says, so a case that isn't
   // the live branch can still be worked on.
+  // What a flowing text frame breaks around: the alpha mask frames this face
+  // can see — its own while a template is open, the templates' on a card.
+  const obstacles = [
+    ...layerList.filter((l) => l.alphaMask),
+    ...masks.filter((m) => !layerList.some((l) => l.id === m.id)),
+  ];
+
   const hiddenCases = hiddenCaseIds(layerList, badgeMeta);
   const preview = active && selectedId && hiddenCases.has(selectedId) ? selectedId : null;
   const cases = resolveConditions(layerList, badgeMeta, preview);
@@ -531,6 +543,7 @@ function FaceStage({
                   layer={layer}
                   asMask={asMask}
                   previewOnly={layer.id === preview}
+                  obstacles={obstacles}
                   selected={active && layer.id === selectedId}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
@@ -571,7 +584,12 @@ function FaceStage({
             <Layer listening={false}>
               {overlayLayers.map((layer) =>
                 layer.visible ? (
-                  <ReadOnlyLayer key={layer.id} layer={layer} meta={badgeMeta} />
+                  <ReadOnlyLayer
+                    key={layer.id}
+                    layer={layer}
+                    meta={badgeMeta}
+                    obstacles={obstacles}
+                  />
                 ) : null,
               )}
             </Layer>
@@ -589,6 +607,11 @@ function FaceStage({
               masks.map((m) => (
                 <MainMaskOutline key={m.id} mask={m} colour="#a78bfa" />
               ))}
+            {renderLayers.map((l) =>
+              l.type === "text" && l.flow && l.visible ? (
+                <TextFrameOutline key={`frame-${l.id}`} layer={l} />
+              ) : null,
+            )}
             {snapHit?.smartX.map((x) => (
               <Line
                 key={`sx${x}`}
@@ -747,6 +770,7 @@ function LayerNode({
   previewOnly = false,
   groupChildren,
   meta,
+  obstacles,
   snapLines,
   onSnap,
   register,
@@ -762,6 +786,7 @@ function LayerNode({
   previewOnly?: boolean;
   groupChildren?: TLayer[];
   meta?: GameMeta;
+  obstacles?: TLayer[];
   snapLines?: SnapLines;
   onSnap?: (hit: SnapHit | null) => void;
   register: (n: Konva.Node | null) => void;
@@ -875,7 +900,28 @@ function LayerNode({
           const n = ref.current!;
           // Shapes bake the resize into width/height and keep scale at 1, so
           // a rounded corner stays a true constant radius instead of being
-          // stretched by a non-uniform node scale.
+          // stretched by a non-uniform node scale. A text frame does the
+          // same, so dragging its handles reflows the text at its own size
+          // rather than blowing the type up.
+          if (layer.type === "text" && layer.flow) {
+            const sx = n.scaleX();
+            const sy = n.scaleY();
+            n.scaleX(1);
+            n.scaleY(1);
+            onChange(
+              {
+                x: n.x(),
+                y: n.y(),
+                rotation: n.rotation(),
+                scaleX: 1,
+                scaleY: 1,
+                width: Math.max(24, layer.width * sx),
+                height: Math.max(24, (layer.height ?? DEFAULT_FLOW_HEIGHT) * sy),
+              },
+              true,
+            );
+            return;
+          }
           if (layer.type === "shape") {
             const sx = n.scaleX();
             const sy = n.scaleY();
@@ -910,7 +956,12 @@ function LayerNode({
 
   return (
     <Group {...common}>
-      <LayerInner layer={layer} asMask={asMask} meta={meta} />
+      <LayerInner
+        layer={layer}
+        asMask={asMask}
+        meta={meta}
+        obstacles={obstacles}
+      />
     </Group>
   );
 }
@@ -919,10 +970,12 @@ export function LayerInner({
   layer,
   asMask = false,
   meta,
+  obstacles,
 }: {
   layer: TLayer;
   asMask?: boolean;
   meta?: GameMeta;
+  obstacles?: TLayer[];
 }) {
   // As a mask, the node paints only its alpha into its Konva layer and keeps
   // (destination-in) the clipped layers drawn before it.
@@ -936,7 +989,7 @@ export function LayerInner({
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
-  return <TextInner layer={layer} gco={gco} />;
+  return <TextInner layer={layer} gco={gco} obstacles={obstacles} />;
 }
 
 type Gco = "destination-in" | undefined;
@@ -1189,7 +1242,15 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
 }
 
 // Console-template layer shown on a game card: visible, never interactive.
-function ReadOnlyLayer({ layer, meta }: { layer: TLayer; meta?: GameMeta }) {
+function ReadOnlyLayer({
+  layer,
+  meta,
+  obstacles,
+}: {
+  layer: TLayer;
+  meta?: GameMeta;
+  obstacles?: TLayer[];
+}) {
   const common = {
     x: layer.x,
     y: layer.y,
@@ -1201,7 +1262,7 @@ function ReadOnlyLayer({ layer, meta }: { layer: TLayer; meta?: GameMeta }) {
   };
   return (
     <Group {...common}>
-      <LayerInner layer={layer} meta={meta} />
+      <LayerInner layer={layer} meta={meta} obstacles={obstacles} />
     </Group>
   );
 }
@@ -1223,7 +1284,15 @@ function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
   );
 }
 
-function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
+function TextInner({
+  layer,
+  gco,
+  obstacles = [],
+}: {
+  layer: TTextLayer;
+  gco?: Gco;
+  obstacles?: TLayer[];
+}) {
   const ref = useRef<Konva.Text>(null);
   const [h, setH] = useState(0);
 
@@ -1260,6 +1329,10 @@ function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
     layer.align,
   ]);
 
+  if (layer.flow) {
+    return <FlowText layer={layer} gco={gco} obstacles={obstacles} fontSize={fontSize} />;
+  }
+
   return (
     <Text
       ref={ref}
@@ -1280,6 +1353,83 @@ function TextInner({ layer, gco }: { layer: TTextLayer; gco?: Gco }) {
       offsetY={h / 2}
       listening
     />
+  );
+}
+
+// A text frame: every line broken into the gaps the alpha mask frames leave
+// free, so the text sits beside the images instead of under them. The empty
+// Rect gives the frame its size, so the transformer grabs the whole box even
+// where the text is short.
+function FlowText({
+  layer,
+  gco,
+  obstacles,
+  fontSize,
+}: {
+  layer: TTextLayer;
+  gco?: Gco;
+  obstacles: TLayer[];
+  fontSize: number;
+}) {
+  const W = layer.width;
+  const H = layer.height ?? DEFAULT_FLOW_HEIGHT;
+  // Obstacle geometry is the only part of `obstacles` that matters here.
+  const key = obstacles
+    .map((o) =>
+      "width" in o
+        ? `${o.id}:${o.x},${o.y},${o.width},${o.height},${o.rotation},${o.scaleX},${o.scaleY},${o.visible}`
+        : o.id,
+    )
+    .join("|");
+  const pieces = useMemo(
+    () => flowLayout(layer, fontSize, obstacleBoxes(layer, obstacles)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      key,
+      layer.text,
+      layer.width,
+      layer.height,
+      layer.flowGap,
+      layer.x,
+      layer.y,
+      layer.rotation,
+      layer.scaleX,
+      layer.scaleY,
+      layer.fontFamily,
+      layer.bold,
+      layer.italic,
+      layer.lineHeight,
+      layer.letterSpacing,
+      fontSize,
+    ],
+  );
+
+  return (
+    <Group offsetX={W / 2} offsetY={H / 2}>
+      <Rect width={W} height={H} listening={false} />
+      {pieces.map((p, i) => (
+        <Text
+          key={i}
+          x={p.x}
+          y={p.y}
+          width={p.w}
+          text={p.text}
+          wrap="none"
+          align={layer.align}
+          fontFamily={layer.fontFamily}
+          fontStyle={fontStyleString(layer)}
+          fontSize={fontSize}
+          lineHeight={layer.lineHeight}
+          letterSpacing={layer.letterSpacing}
+          fill={gco ? "#000" : layer.fill}
+          stroke={!gco && layer.strokeWidth > 0 ? layer.stroke : undefined}
+          strokeWidth={gco ? 0 : layer.strokeWidth}
+          fillAfterStrokeEnabled
+          globalCompositeOperation={gco}
+          listening={false}
+        />
+      ))}
+    </Group>
   );
 }
 
@@ -1393,6 +1543,33 @@ function RoundedCardOutline() {
 // reference on console templates and game cards (it's an editable shape only
 // on the global template). Never painted into an export (sits in a guide
 // layer) and not interactive.
+// The bounds of a flowing text frame — an editor guide, never exported.
+function TextFrameOutline({ layer }: { layer: TTextLayer }) {
+  const w = layer.width;
+  const h = layer.height ?? DEFAULT_FLOW_HEIGHT;
+  return (
+    <Group
+      x={layer.x}
+      y={layer.y}
+      rotation={layer.rotation}
+      scaleX={layer.scaleX}
+      scaleY={layer.scaleY}
+      listening={false}
+    >
+      <Rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        stroke="#34d399"
+        strokeWidth={1.5}
+        dash={[7, 5]}
+        listening={false}
+      />
+    </Group>
+  );
+}
+
 function MainMaskOutline({
   mask,
   colour = "#a78bfa",

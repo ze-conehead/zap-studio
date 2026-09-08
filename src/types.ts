@@ -112,6 +112,11 @@ export interface TextLayer extends BaseLayer {
   // long game title doesn't overflow the card. `fontSize` stays the ceiling.
   autoFit?: boolean;
   autoFitLines?: number;
+  // A text frame: the text is laid out inside `width` × `height` and broken
+  // around the alpha mask frames rather than running under them.
+  flow?: boolean;
+  height?: number; // frame height, flow only
+  flowGap?: number; // clearance kept around each frame, in canvas px
 }
 
 export interface ShapeLayer extends BaseLayer {

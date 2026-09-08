@@ -58,6 +58,7 @@ import {
 } from "../conditions";
 import { FONTS } from "../fonts";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../imageAdjust";
+import { DEFAULT_FLOW_GAP, DEFAULT_FLOW_HEIGHT } from "../textFlow";
 import type { MaskOption } from "../templates";
 import {
   clearGamelist,
@@ -1378,15 +1379,53 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
         />
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={!!layer.flow}
+            onCheckedChange={(v) =>
+              patch({
+                flow: !!v,
+                height: layer.height ?? DEFAULT_FLOW_HEIGHT,
+                ...(v ? { autoFit: false } : null),
+              })
+            }
+          />
+          {t("Flow around alpha masks")}
+        </label>
+        {layer.flow ? (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "The text becomes a frame: lines break around the alpha mask frames instead of running under the images. Drag its handles to resize the frame.",
+              )}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <NumberField
+                label={t("Frame height")}
+                value={round(layer.height ?? DEFAULT_FLOW_HEIGHT)}
+                onChange={(v) => patch({ height: Math.max(24, v) })}
+              />
+              <NumberField
+                label={t("Clearance")}
+                value={round(layer.flowGap ?? DEFAULT_FLOW_GAP)}
+                onChange={(v) => patch({ flowGap: Math.max(0, v) })}
+              />
+            </div>
+          </>
+        ) : null}
+      </div>
+
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <label className="flex items-center gap-2 text-sm">
           <Checkbox
-            checked={!!layer.autoFit}
+            disabled={!!layer.flow}
+            checked={!!layer.autoFit && !layer.flow}
             onCheckedChange={(v) => patch({ autoFit: !!v })}
           />
           {t("Shrink to fit")}
         </label>
-        {layer.autoFit && (
+        {layer.autoFit && !layer.flow && (
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {t("max.")}
             <input
