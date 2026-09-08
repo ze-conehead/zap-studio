@@ -40,7 +40,7 @@ export function OverviewDialog({
   const [done, setDone] = useState(0); // how many have been captured
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [onlyDesigned, setOnlyDesigned] = useState(false);
+  const [onlyDesigned, setOnlyDesigned] = useState(true);
   const [size, setSize] = useState(150); // thumbnail width in px
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
