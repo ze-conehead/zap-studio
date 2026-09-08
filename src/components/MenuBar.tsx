@@ -52,6 +52,7 @@ interface Props {
   onOpenWorkspaces: () => void;
   onOpenPreflight: () => void;
   onOpenTemplates: () => void;
+  onOpenApiKeys: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -72,6 +73,7 @@ export function MenuBar({
   onOpenWorkspaces,
   onOpenPreflight,
   onOpenTemplates,
+  onOpenApiKeys,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -375,6 +377,11 @@ export function MenuBar({
             </DropdownMenuItem>
           ))}
         </Sub>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenApiKeys}>
+          {t("API keys …")}
+        </DropdownMenuItem>
       </Menu>
 
       <div className="ml-auto" />

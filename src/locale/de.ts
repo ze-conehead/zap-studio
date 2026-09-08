@@ -630,6 +630,19 @@ export const de: Record<string, string> = {
   Cancel: "Abbrechen",
   Continue: "Weiter",
 
+  // \u2500\u2500 ApiKeysDialog \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  "API keys": "API-Schl\u00fcssel",
+  "API keys \u2026": "API-Schl\u00fcssel \u2026",
+  "Keys for the cover-art search. They are stored on this machine only and go through the local dev server to the service \u2014 nowhere else.":
+    "Schl\u00fcssel f\u00fcr die Cover-Suche. Sie werden nur auf diesem Rechner gespeichert und gehen \u00fcber den lokalen Dev-Server an den Dienst \u2013 sonst nirgendwohin.",
+  "Use for cover search": "F\u00fcr Cover-Suche verwenden",
+  "No key for {source} yet \u2014 the search falls back to libretro-thumbnails (retro / emulated consoles only).":
+    "Noch kein Schl\u00fcssel f\u00fcr {source} \u2013 die Suche nutzt ersatzweise libretro-thumbnails (nur Retro-/Emulations-Konsolen).",
+  "SteamGridDB API key": "SteamGridDB-API-Schl\u00fcssel",
+  "IGDB (Twitch) credentials": "IGDB-(Twitch-)Zugangsdaten",
+  "get a key": "Schl\u00fcssel anlegen",
+  "Saved.": "Gespeichert.",
+
   // ── QuickImportDialog ────────────────────────────────────────────────────
   "Games without an image. Enter one image URL each and click “Done” – the images are loaded and added as a layer to each design.":
     "Spiele ohne Bild. Trage je eine Bild-URL ein und klick „Fertig“ – die Bilder werden geladen und als Ebene ins jeweilige Design gelegt.",

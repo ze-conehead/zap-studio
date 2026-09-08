@@ -16,6 +16,7 @@ import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
 import { TemplateDialog } from "./components/TemplateDialog";
+import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -325,6 +326,7 @@ function Shell({
   const [workspaces, setWorkspaces] = useState(false);
   const [preflight, setPreflight] = useState(false);
   const [templates, setTemplates] = useState(false);
+  const [apiKeys, setApiKeys] = useState(false);
   const t = useT();
   // View-level shortcuts. The layer ones live in the store, which owns the
   // selection; these need the guides API and the Shell's dialogs.
@@ -367,6 +369,7 @@ function Shell({
     onOpenWorkspaces: () => setWorkspaces(true),
     onOpenPreflight: () => setPreflight(true),
     onOpenTemplates: () => setTemplates(true),
+    onOpenApiKeys: () => setApiKeys(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -434,6 +437,7 @@ function Shell({
         onPick={onPickGame}
       />
       <TemplateDialog open={templates} onOpenChange={setTemplates} />
+      <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <QuickImportDialog
