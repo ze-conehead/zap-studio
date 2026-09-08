@@ -136,7 +136,7 @@ export function fitImageToMask(
   layer: ImageLayer,
   mask: Layer | undefined,
 ): ImageLayer {
-  if (!layer.main || !mask) return layer;
+  if (!mask) return layer;
   if (mask.type !== "shape" && mask.type !== "image") return layer;
   const mw = Math.abs(mask.width * mask.scaleX);
   const mh = Math.abs(mask.height * mask.scaleY);
@@ -235,6 +235,26 @@ export function fitImageToSlot(
     rotation: slot.rotation,
     width: layer.width * s,
     height: layer.height * s,
+  };
+}
+
+// A screenshot frame. Several may exist side by side; each one clips the
+// card image that carries the same number. Stacked down the card by default
+// so three of them don't land on top of each other.
+export function makeShotMaskLayer(index: number): ShapeLayer {
+  const h = TRIM_RECT.h * 0.17;
+  return {
+    ...base(t("Screenshot {n}", { n: index })),
+    type: "shape",
+    shape: "rect",
+    width: TRIM_RECT.w * 0.82,
+    height: h,
+    y: TRIM_RECT.y + TRIM_RECT.h * 0.45 + (index - 1) * (h + TRIM_RECT.h * 0.02),
+    cornerRadius: 12,
+    fill: { ...DEFAULT_SHAPE_FILL },
+    stroke: "#000000",
+    strokeWidth: 0,
+    shotMask: index,
   };
 }
 

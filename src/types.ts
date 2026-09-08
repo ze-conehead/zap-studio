@@ -48,6 +48,9 @@ export interface BaseLayer {
   main?: boolean; // game card: the card's main image, clipped by the global main mask
   mainMask?: boolean; // "All consoles" only: the shared alpha frame for every card's main image
   logoSlot?: boolean; // "All consoles" only: where an inserted logo is placed. Never drawn.
+  // A screenshot frame (1-based). Lives in the global or a console template
+  // and clips the card image carrying the same `shot` number.
+  shotMask?: number;
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -59,6 +62,7 @@ export interface ImageLayer extends BaseLayer {
   height: number;
   cornerRadius: number;
   logo?: boolean; // inserted as the game's logo (SteamGridDB "logos")
+  shot?: number; // fills the screenshot frame with this number
   adjust?: ImageAdjust; // greyscale / threshold, see src/imageAdjust.ts
 }
 

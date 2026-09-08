@@ -72,26 +72,53 @@ export function withMainMask(
   project: Project,
   layers: TLayer[],
   mainMask: TLayer | undefined,
+  shotMasks: TLayer[] = [],
 ): TLayer[] {
-  if (!mainMask || project.isTemplate) return layers;
+  if (project.isTemplate) return layers;
+  let out = layers;
 
-  let idx = layers.findIndex((l) => l.type === "image" && l.main && l.visible);
-  if (idx < 0) {
-    const imgs = layers.filter((l) => l.type === "image" && l.visible);
-    if (imgs.length === 1) idx = layers.indexOf(imgs[0]);
+  // Slot 0: the cover. Falls back to the only image on the card when nothing
+  // is explicitly marked as the main image.
+  if (mainMask) {
+    let idx = out.findIndex((l) => l.type === "image" && l.main && l.visible);
+    if (idx < 0) {
+      const imgs = out.filter((l) => l.type === "image" && l.visible && !l.shot);
+      if (imgs.length === 1) idx = out.indexOf(imgs[0]);
+    }
+    out = clipWith(out, idx, mainMask, t("Main alpha mask"));
   }
+
+  // One frame per screenshot, each clipping the image that carries its number.
+  for (const m of shotMasks) {
+    const idx = out.findIndex(
+      (l) => l.type === "image" && l.shot === m.shotMask && l.visible,
+    );
+    out = clipWith(out, idx, m, m.name);
+  }
+  return out;
+}
+
+// Marks `layers[idx]` clipped and slips a locked stencil copy of `mask` in
+// directly above it. A no-op when there's nothing to clip.
+function clipWith(
+  layers: TLayer[],
+  idx: number,
+  mask: TLayer,
+  name: string,
+): TLayer[] {
   if (idx < 0) return layers;
   if (layers[idx].mask || layers[idx].clipped) return layers;
-
   const stencil: TLayer = {
-    ...mainMask,
-    id: `__mainmask__${mainMask.id}`,
-    name: t("Main alpha mask"),
+    ...mask,
+    id: `__mask__${mask.id}`,
+    name,
     mask: true,
     clipped: false,
     groupTransform: false,
     main: false,
     mainMask: false,
+    shotMask: undefined,
+    logoSlot: false,
     locked: true,
     visible: true,
   };
@@ -129,6 +156,7 @@ export function EditorCanvas({
   globalBg,
   mainMask,
   logoSlot,
+  shotMasks = [],
   guides,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
@@ -137,6 +165,7 @@ export function EditorCanvas({
   globalBg?: CardBackground;
   mainMask?: TLayer;
   logoSlot?: TLayer;
+  shotMasks?: TLayer[];
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
@@ -215,6 +244,7 @@ export function EditorCanvas({
           globalBg={globalBg}
           mainMask={mainMask}
           logoSlot={logoSlot}
+          shotMasks={shotMasks}
           guides={guides}
           badgeMeta={badgeMeta}
           showBleed={showBleed}
@@ -250,6 +280,7 @@ function FaceStage({
   globalBg,
   mainMask,
   logoSlot,
+  shotMasks = [],
   guides,
   badgeMeta,
   showBleed,
@@ -265,6 +296,7 @@ function FaceStage({
   globalBg?: CardBackground;
   mainMask?: TLayer;
   logoSlot?: TLayer;
+  shotMasks?: TLayer[];
   guides: GuideApi;
   badgeMeta?: GameMeta;
   showBleed: boolean;
@@ -297,7 +329,7 @@ function FaceStage({
   // The slot is editable where it lives ("All consoles") and invisible
   // everywhere else — cards see it only as the outline below.
   const renderLayers = (
-    back ? layerList : withMainMask(project, layerList, mainMask)
+    back ? layerList : withMainMask(project, layerList, mainMask, shotMasks)
   ).filter((l) => !l.logoSlot || project.isGlobalTemplate);
   const overlayLayers = back ? [] : overlay;
 
@@ -576,6 +608,11 @@ function FaceStage({
             {!back && slotOutline && (
               <MainMaskOutline mask={slotOutline} colour="#38bdf8" />
             )}
+            {!back &&
+              !project.isTemplate &&
+              shotMasks.map((m) => (
+                <MainMaskOutline key={m.id} mask={m} colour="#f472b6" />
+              ))}
             {snapHit?.smartX.map((x) => (
               <Line
                 key={`sx${x}`}

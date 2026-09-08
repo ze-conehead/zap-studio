@@ -142,7 +142,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   // width/height (ShapeProps), so no group-scaling "Size %".
   const isMeta = isMetaBadge(selected);
   const isMainMask = !!selected.mainMask;
-  const isLogoSlot = !!selected.logoSlot;
+  const isLogoSlot = !!selected.logoSlot || !!selected.shotMask;
   const isShapeSel = isShape(selected);
   const isImageSel = isImage(selected);
   const fixedName = isMeta || isMainMask || isLogoSlot || (isImageSel && !!selected.main);

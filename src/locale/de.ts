@@ -553,6 +553,18 @@ export const de: Record<string, string> = {
     "Keins der ausgewählten Spiele hat ein gespeichertes Design.",
   "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
 
+  // ── Screenshot frames ────────────────────────────────────────────────────
+  "Screenshot {n}": "Screenshot {n}",
+  "Screenshot frame {n}": "Screenshot-Maske {n}",
+  "Screenshot {n} for": "Screenshot {n} f\u00fcr",
+  "Screenshot {n} / {total}:": "Screenshot {n} / {total}:",
+  "Cover ({n} of {total})": "Cover ({n} von {total})",
+  "Searching screenshots \u2026": "Screenshots werden gesucht \u2026",
+  "No screenshots found for \u201c{title}\u201d.":
+    "Keine Screenshots f\u00fcr \u201e{title}\u201c gefunden.",
+  "Find cover and {n} screenshot(s)": "Cover und {n} Screenshot(s) suchen",
+  Screenshot: "Screenshot",
+
   // ── Preflight ────────────────────────────────────────────────────────────
   "Preflight check": "Druckvorstufen-Pr\u00fcfung",
   "Preflight check \u2026": "Druckvorstufen-Pr\u00fcfung \u2026",

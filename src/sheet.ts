@@ -8,6 +8,7 @@ import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
 import { getGameProject } from "./gameIndex";
 import { loadAllProjects, loadProject } from "./persist";
+import { mergeShotMasks, shotMasksOf } from "./templates";
 import type { DemoCard } from "./demo";
 import type { Project } from "./types";
 
@@ -46,11 +47,14 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
     return bg?.visible ? bg.fill : undefined;
   };
   const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter((l) => !l.mainMask && !l.logoSlot && !isBackground(l));
+    (p?.layers ?? []).filter(
+      (l) => !l.mainMask && !l.logoSlot && !l.shotMask && !isBackground(l),
+    );
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalBg = bgFill(globalP);
   const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
+  const globalShots = shotMasksOf(globalP);
   const globalLayers = overlayable(globalP);
 
   const meta = new Map<
@@ -88,6 +92,7 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       consoleBg: bgFill(consoleP),
       globalBg,
       mainMask,
+      shotMasks: mergeShotMasks(globalShots, shotMasksOf(consoleP)),
       holo: false,
     });
   }

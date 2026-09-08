@@ -40,6 +40,7 @@ import {
   makeImageLayer,
   makeLogoSlotLayer,
   makeMainMaskLayer,
+  makeShotMaskLayer,
   makeMetaBadgeLayer,
   makeShapeLayer,
   makeTextLayer,
@@ -62,6 +63,9 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
   const onBack = side === "back";
   const faceLayers = onBack ? project.back?.layers ?? [] : project.layers;
   const hasBg = faceLayers.some(isBackground);
+  // Screenshot frames are numbered; the menu offers the next free number.
+  const nextShot =
+    faceLayers.reduce((n, l) => Math.max(n, l.shotMask ?? 0), 0) + 1;
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
@@ -223,6 +227,19 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
                   <Icon /> {t(label)}
                 </DropdownMenuItem>
               ))}
+            </>
+          )}
+
+          {!onBack && project.isTemplate && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({ type: "ADD_LAYER", layer: makeShotMaskLayer(nextShot) })
+                }
+              >
+                <Crop /> {t("Screenshot frame {n}", { n: nextShot })}
+              </DropdownMenuItem>
             </>
           )}
 

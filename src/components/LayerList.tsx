@@ -24,7 +24,13 @@ import type { Layer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
 import { CoverButton } from "./CoverButton";
 
-export function LayerList({ mainMask }: { mainMask?: Layer }) {
+export function LayerList({
+  mainMask,
+  shotMasks,
+}: {
+  mainMask?: Layer;
+  shotMasks?: Layer[];
+}) {
   const t = useT();
   const { state, dispatch } = useStore();
   const faceLayers =
@@ -61,7 +67,7 @@ export function LayerList({ mainMask }: { mainMask?: Layer }) {
           {t("Layers")}
         </h2>
         <div className="flex items-center gap-1">
-          <CoverButton mainMask={mainMask} />
+          <CoverButton mainMask={mainMask} shotMasks={shotMasks} />
           <AddLayerMenu mainMask={mainMask} />
         </div>
       </div>

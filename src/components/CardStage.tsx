@@ -35,7 +35,7 @@ export function CardStage({
     consoleBg: card.consoleBg,
     globalBg: card.globalBg,
   });
-  const layers = withMainMask(card.project, content, card.mainMask);
+  const layers = withMainMask(card.project, content, card.mainMask, card.shotMasks);
   const meta = resolveBadgeMeta(card.project);
 
   return (

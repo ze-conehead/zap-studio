@@ -13,6 +13,7 @@ import {
 } from "./factory";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
+import { mergeShotMasks, shotMasksOf } from "./templates";
 import type { CardBackground, Layer, Project } from "./types";
 
 export const PACK_SIZE = 12;
@@ -27,6 +28,7 @@ export interface DemoCard {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   mainMask?: Layer;
+  shotMasks?: Layer[];
   holo: boolean;
   image?: string; // filled in once the card has been rendered
 }
@@ -76,11 +78,14 @@ export async function drawPack(
     return bg?.visible ? bg.fill : undefined;
   };
   const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter((l) => !l.mainMask && !l.logoSlot && !isBackground(l));
+    (p?.layers ?? []).filter(
+      (l) => !l.mainMask && !l.logoSlot && !l.shotMask && !isBackground(l),
+    );
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalBg = bgFill(globalP);
   const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
+  const globalShots = shotMasksOf(globalP);
   const globalLayers = overlayable(globalP);
 
   const tplCache = new Map<string, Project | undefined>();
@@ -106,6 +111,7 @@ export async function drawPack(
       consoleBg: bgFill(consoleP),
       globalBg,
       mainMask,
+      shotMasks: mergeShotMasks(globalShots, shotMasksOf(consoleP)),
       holo: false,
     });
   }

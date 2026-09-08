@@ -9,6 +9,7 @@ import {
   resolveLibretroRepo,
   searchCovers,
   searchLogos,
+  searchScreenshots,
   setCoverSource,
   setIgdbCreds,
   setSgdbKey,
@@ -33,7 +34,9 @@ interface Props {
   busy?: boolean;
   // "logo" searches SteamGridDB's logo set (transparent wordmarks) instead of
   // box art. Only SteamGridDB has those, so the source picker is hidden.
-  kind?: "cover" | "logo";
+  kind?: "cover" | "logo" | "screenshot";
+  /** Screenshot mode: which frame is being filled, for the heading. */
+  shotIndex?: number;
 }
 
 const SOURCE_LABEL: Record<Exclude<CoverSource, "libretro">, string> = {
@@ -59,6 +62,7 @@ export function CoverSearchDialog({
   onSkip,
   busy = false,
   kind = "cover",
+  shotIndex,
 }: Props) {
   const t = useT();
   const [state, setState] = useState<
@@ -83,7 +87,11 @@ export function CoverSearchDialog({
       const id = ++runId.current;
       setState({ status: "loading" });
       setVisible(PAGE);
-      (kind === "logo" ? searchLogos(term) : searchCovers(consoleName, term))
+      (kind === "logo"
+        ? searchLogos(term)
+        : kind === "screenshot"
+          ? searchScreenshots(consoleName, term)
+          : searchCovers(consoleName, term))
         .then((results) => {
           if (runId.current === id) setState({ status: "done", results });
         })
@@ -114,6 +122,7 @@ export function CoverSearchDialog({
   }, [open]);
 
   const logoMode = kind === "logo";
+  const shotMode = kind === "screenshot";
   const src = logoMode ? "sgdb" : (source as Exclude<CoverSource, "libretro">);
   const configured = isConfigured(src);
   const active = logoMode ? "sgdb" : effectiveSource();
@@ -143,8 +152,20 @@ export function CoverSearchDialog({
             {progress
               ? (logoMode
                   ? t("Logo {n} / {total}:", { n: progress.index + 1, total: progress.total })
-                  : t("Cover {n} / {total}:", { n: progress.index + 1, total: progress.total })) + " "
-              : (logoMode ? t("Logo for") : t("Cover for")) + " "}
+                  : shotMode
+                    ? t("Screenshot {n} / {total}:", {
+                        n: shotIndex ?? progress.index,
+                        total: progress.total - 1,
+                      })
+                    : t("Cover ({n} of {total})", {
+                        n: progress.index + 1,
+                        total: progress.total,
+                      }) + ":") + " "
+              : (logoMode
+                  ? t("Logo for")
+                  : shotMode
+                    ? t("Screenshot {n} for", { n: shotIndex ?? 1 })
+                    : t("Cover for")) + " "}
             “{gameTitle}”
             {progress && (
               <span className="ml-1 text-sm font-normal text-muted-foreground">
@@ -262,7 +283,11 @@ export function CoverSearchDialog({
         {state.status === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />{" "}
-            {logoMode ? t("Searching logos …") : t("Searching covers …")}
+            {logoMode
+              ? t("Searching logos …")
+              : shotMode
+                ? t("Searching screenshots …")
+                : t("Searching covers …")}
           </div>
         )}
 
@@ -285,7 +310,9 @@ export function CoverSearchDialog({
           <p className="py-6 text-sm text-muted-foreground">
             {logoMode
               ? t("No logos found for \u201c{title}\u201d.", { title: term })
-              : t("No covers found for \u201c{title}\u201d.", { title: term })}
+              : shotMode
+                ? t("No screenshots found for \u201c{title}\u201d.", { title: term })
+                : t("No covers found for \u201c{title}\u201d.", { title: term })}
           </p>
         )}
 
@@ -309,7 +336,9 @@ export function CoverSearchDialog({
                       "w-full rounded object-contain",
                       logoMode
                         ? "canvas-checker aspect-[3/2] p-2"
-                        : "aspect-[3/4] bg-muted",
+                        : shotMode
+                          ? "aspect-[4/3] bg-muted"
+                          : "aspect-[3/4] bg-muted",
                     )}
                   />
                   <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">

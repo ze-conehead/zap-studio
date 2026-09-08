@@ -184,6 +184,28 @@ export async function searchLogos(gameTitle: string): Promise<CoverCandidate[]> 
   }));
 }
 
+// SteamGridDB has no gameplay shots, but its "heroes" are wide in-game
+// banners — the closest thing it offers, and a good fit for a landscape frame.
+async function searchShotsSGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const found = await sgdbFetch<{ data?: SgdbGame[] }>(
+    `/search/autocomplete/${encodeURIComponent(gameTitle)}`,
+  );
+  const games = found.data ?? [];
+  if (!games.length) return [];
+  const q = normalizeTitle(gameTitle);
+  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
+
+  const heroes =
+    (await sgdbFetch<{ data?: SgdbLogo[] }>(`/heroes/game/${game.id}?nsfw=false`))
+      .data ?? [];
+  return heroes.slice(0, 48).map((h) => ({
+    title: game.name,
+    region: `${h.width}\u00d7${h.height}${h.style ? ` \u00b7 ${h.style}` : ""}`,
+    url: proxied(h.url),
+    thumb: h.thumb ? proxied(h.thumb) : undefined,
+  }));
+}
+
 // ── IGDB ───────────────────────────────────────────────────────────────────
 
 async function igdbToken(): Promise<string> {
@@ -229,6 +251,7 @@ interface IgdbGame {
   name: string;
   cover?: { image_id: string };
   artworks?: { image_id: string }[];
+  screenshots?: { image_id: string }[];
 }
 
 async function igdbQuery(body: string): Promise<IgdbGame[]> {
@@ -272,6 +295,38 @@ async function searchCoversIGDB(gameTitle: string): Promise<CoverCandidate[]> {
       region: "Cover",
       url: igdbImg(game.cover.image_id, "1080p"),
       thumb: igdbImg(game.cover.image_id, "cover_big"),
+    });
+  }
+  for (const a of game.artworks ?? []) {
+    if (!a.image_id) continue;
+    out.push({
+      title: game.name,
+      region: "Artwork",
+      url: igdbImg(a.image_id, "1080p"),
+      thumb: igdbImg(a.image_id, "screenshot_med"),
+    });
+  }
+  return out;
+}
+
+// IGDB is the only source with real gameplay screenshots.
+async function searchShotsIGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const escaped = gameTitle.replace(/"/g, '\\"');
+  const games = await igdbQuery(
+    `search "${escaped}"; fields name, screenshots.image_id, artworks.image_id; limit 8;`,
+  );
+  if (!games.length) return [];
+  const q = normalizeTitle(gameTitle);
+  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
+
+  const out: CoverCandidate[] = [];
+  for (const sc of game.screenshots ?? []) {
+    if (!sc.image_id) continue;
+    out.push({
+      title: game.name,
+      region: t("Screenshot"),
+      url: igdbImg(sc.image_id, "1080p"),
+      thumb: igdbImg(sc.image_id, "screenshot_med"),
     });
   }
   for (const a of game.artworks ?? []) {
@@ -419,9 +474,13 @@ function splitBoxartName(filename: string): { core: string; region: string } {
 async function searchCoversLibretro(
   consoleName: string,
   gameTitle: string,
+  folder: "Named_Boxarts" | "shots" = "Named_Boxarts",
 ): Promise<CoverCandidate[]> {
   const repo = resolveLibretroRepo(consoleName);
   if (!repo) return [];
+  // "shots" spans both in-game snaps and title screens.
+  const folders =
+    folder === "shots" ? ["Named_Snaps/", "Named_Titles/"] : ["Named_Boxarts/"];
 
   const tree = await loadTree(repo);
   const query = normalizeTitle(gameTitle);
@@ -430,8 +489,9 @@ async function searchCoversLibretro(
   const seenSha = new Set<string>();
   const matches: { path: string; core: string; region: string; exact: boolean }[] = [];
   for (const entry of tree) {
-    if (!entry.path.startsWith("Named_Boxarts/")) continue;
-    const filename = entry.path.slice("Named_Boxarts/".length);
+    const dir = folders.find((f) => entry.path.startsWith(f));
+    if (!dir) continue;
+    const filename = entry.path.slice(dir.length);
     const { core, region } = splitBoxartName(filename);
     const normCore = normalizeTitle(core);
     const isMatch = normCore === query || normCore.includes(query) || query.includes(normCore);
@@ -470,4 +530,21 @@ export async function searchCovers(
   if (src === "sgdb") return searchCoversSGDB(title);
   if (src === "igdb") return searchCoversIGDB(title);
   return searchCoversLibretro(consoleName, title);
+}
+
+/**
+ * In-game imagery for a screenshot frame. Every source can supply something:
+ * IGDB has real screenshots, SteamGridDB has wide "hero" banners, and
+ * libretro-thumbnails ships snaps and title screens.
+ */
+export async function searchScreenshots(
+  consoleName: string,
+  gameTitle: string,
+): Promise<CoverCandidate[]> {
+  const title = gameTitle.trim();
+  if (!title) return [];
+  const src = effectiveSource();
+  if (src === "sgdb") return searchShotsSGDB(title);
+  if (src === "igdb") return searchShotsIGDB(title);
+  return searchCoversLibretro(consoleName, title, "shots");
 }
