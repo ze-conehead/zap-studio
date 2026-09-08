@@ -259,9 +259,6 @@ async function igdbToken(): Promise<string> {
 interface IgdbGame {
   id: number;
   name: string;
-  cover?: { image_id: string };
-  artworks?: { image_id: string }[];
-  screenshots?: { image_id: string }[];
 }
 
 // A row from the /screenshots or /artworks endpoint.
@@ -299,87 +296,79 @@ const igdbQuery = (body: string) => igdbFetch<IgdbGame[]>("games", body);
 const igdbImg = (id: string, size: string) =>
   `https://images.igdb.com/igdb/image/upload/t_${size}/${id}.jpg`;
 
-async function searchCoversIGDB(gameTitle: string): Promise<CoverCandidate[]> {
+// Every IGDB game entry worth pulling images from for `gameTitle`: each
+// search hit whose name matches (retro titles get split into regional /
+// remaster / collection entries), falling back to the top few hits. More
+// entries → more images, so the picker's "More" button has something to
+// page through.
+async function igdbGamesFor(gameTitle: string): Promise<Map<number, string>> {
   const escaped = gameTitle.replace(/"/g, '\\"');
-  const games = await igdbQuery(
-    `search "${escaped}"; fields name, cover.image_id, artworks.image_id; limit 8;`,
-  );
-  if (!games.length) return [];
-
-  const q = normalizeTitle(gameTitle);
-  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
-
-  const out: CoverCandidate[] = [];
-  if (game.cover?.image_id) {
-    out.push({
-      title: game.name,
-      region: "Cover",
-      url: igdbImg(game.cover.image_id, "1080p"),
-      thumb: igdbImg(game.cover.image_id, "cover_big"),
-    });
-  }
-  for (const a of game.artworks ?? []) {
-    if (!a.image_id) continue;
-    out.push({
-      title: game.name,
-      region: "Artwork",
-      url: igdbImg(a.image_id, "1080p"),
-      thumb: igdbImg(a.image_id, "screenshot_med"),
-    });
-  }
-  return out;
-}
-
-// IGDB is the only source with real gameplay screenshots. They live on a
-// dedicated /screenshots endpoint — the nested `screenshots.image_id`
-// expander on /games caps at ten per game, so a game with 30 shots only
-// yields ten. Querying the endpoint directly, across every search hit whose
-// name matches (retro titles are often split into regional / remaster
-// entries), returns the whole set.
-async function searchShotsIGDB(gameTitle: string): Promise<CoverCandidate[]> {
-  const escaped = gameTitle.replace(/"/g, '\\"');
-  const games = await igdbQuery(`search "${escaped}"; fields id, name; limit 20;`);
-  if (!games.length) return [];
-
+  const games = await igdbQuery(`search "${escaped}"; fields id, name; limit 25;`);
   const q = normalizeTitle(gameTitle);
   let picked = games.filter((g) => {
     const n = normalizeTitle(g.name);
     return n === q || n.includes(q) || q.includes(n);
   });
   if (!picked.length) picked = games.slice(0, 3);
-  const ids = picked.map((g) => g.id).join(",");
-  const nameById = new Map(picked.map((g) => [g.id, g.name]));
+  return new Map(picked.map((g) => [g.id, g.name]));
+}
 
-  const [shots, art] = await Promise.all([
-    igdbFetch<IgdbImage[]>(
-      "screenshots",
-      `fields image_id, width, height, game; where game = (${ids}); limit 100;`,
-    ),
-    igdbFetch<IgdbImage[]>(
-      "artworks",
-      `fields image_id, width, height, game; where game = (${ids}); limit 40;`,
-    ),
-  ]);
+// Rows from an IGDB image endpoint (covers / artworks / screenshots) for a
+// set of games — deduped by image id against `seen`, tagged with pixel size.
+async function igdbImagesFor(
+  endpoint: "covers" | "artworks" | "screenshots",
+  games: Map<number, string>,
+  label: string,
+  thumbSize: string,
+  fallbackTitle: string,
+  seen: Set<string>,
+): Promise<CoverCandidate[]> {
+  if (!games.size) return [];
+  const ids = [...games.keys()].join(",");
+  const rows = await igdbFetch<IgdbImage[]>(
+    endpoint,
+    `fields image_id, width, height, game; where game = (${ids}); limit 50;`,
+  );
+  const out: CoverCandidate[] = [];
+  for (const i of rows) {
+    if (!i.image_id || seen.has(i.image_id)) continue;
+    seen.add(i.image_id);
+    out.push({
+      title: games.get(i.game) ?? fallbackTitle,
+      region: i.width && i.height ? `${label} · ${i.width}×${i.height}` : label,
+      url: igdbImg(i.image_id, "1080p"),
+      thumb: igdbImg(i.image_id, thumbSize),
+    });
+  }
+  return out;
+}
 
+// Box art: the official cover of every matching game entry, plus each one's
+// promotional artworks. Both come from their own endpoints, so there is no
+// ten-per-game expander cap.
+async function searchCoversIGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const games = await igdbGamesFor(gameTitle);
+  if (!games.size) return [];
   const seen = new Set<string>();
-  const toCand =
-    (label: string) =>
-    (i: IgdbImage): CoverCandidate | null => {
-      if (!i.image_id || seen.has(i.image_id)) return null;
-      seen.add(i.image_id);
-      return {
-        title: nameById.get(i.game) ?? gameTitle,
-        region:
-          i.width && i.height ? `${label} · ${i.width}×${i.height}` : label,
-        url: igdbImg(i.image_id, "1080p"),
-        thumb: igdbImg(i.image_id, "screenshot_med"),
-      };
-    };
+  const [covers, art] = await Promise.all([
+    igdbImagesFor("covers", games, "Cover", "cover_big", gameTitle, seen),
+    igdbImagesFor("artworks", games, "Artwork", "screenshot_med", gameTitle, seen),
+  ]);
+  return [...covers, ...art];
+}
 
-  return [
-    ...shots.map(toCand(t("Screenshot"))),
-    ...art.map(toCand("Artwork")),
-  ].filter((c): c is CoverCandidate => c !== null);
+// IGDB is the only source with real gameplay screenshots. They live on a
+// dedicated /screenshots endpoint — the nested `screenshots.image_id`
+// expander on /games caps at ten per game.
+async function searchShotsIGDB(gameTitle: string): Promise<CoverCandidate[]> {
+  const games = await igdbGamesFor(gameTitle);
+  if (!games.size) return [];
+  const seen = new Set<string>();
+  const [shots, art] = await Promise.all([
+    igdbImagesFor("screenshots", games, t("Screenshot"), "screenshot_med", gameTitle, seen),
+    igdbImagesFor("artworks", games, "Artwork", "screenshot_med", gameTitle, seen),
+  ]);
+  return [...shots, ...art];
 }
 
 // ── libretro-thumbnails ────────────────────────────────────────────────────
