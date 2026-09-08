@@ -248,18 +248,28 @@ async function igdbToken(): Promise<string> {
 }
 
 interface IgdbGame {
+  id: number;
   name: string;
   cover?: { image_id: string };
   artworks?: { image_id: string }[];
   screenshots?: { image_id: string }[];
 }
 
-async function igdbQuery(body: string): Promise<IgdbGame[]> {
+// A row from the /screenshots or /artworks endpoint.
+interface IgdbImage {
+  image_id: string;
+  width?: number;
+  height?: number;
+  game: number;
+}
+
+// Any IGDB v4 endpoint (games, screenshots, artworks …) with an Apicalypse body.
+async function igdbFetch<T>(endpoint: string, body: string): Promise<T> {
   const token = await igdbToken();
   const { clientId } = getIgdbCreds();
   let res: Response;
   try {
-    res = await fetch(`${IGDB_API}/games`, {
+    res = await fetch(`${IGDB_API}/${endpoint}`, {
       method: "POST",
       headers: { "Client-ID": clientId, Authorization: `Bearer ${token}` },
       body,
@@ -272,8 +282,10 @@ async function igdbQuery(body: string): Promise<IgdbGame[]> {
     throw new Error(t("IGDB token expired – please search again."));
   }
   if (!res.ok) throw new Error(t("IGDB error (HTTP {status}).", { status: res.status }));
-  return res.json() as Promise<IgdbGame[]>;
+  return res.json() as Promise<T>;
 }
+
+const igdbQuery = (body: string) => igdbFetch<IgdbGame[]>("games", body);
 
 const igdbImg = (id: string, size: string) =>
   `https://images.igdb.com/igdb/image/upload/t_${size}/${id}.jpg`;
@@ -309,36 +321,56 @@ async function searchCoversIGDB(gameTitle: string): Promise<CoverCandidate[]> {
   return out;
 }
 
-// IGDB is the only source with real gameplay screenshots.
+// IGDB is the only source with real gameplay screenshots. They live on a
+// dedicated /screenshots endpoint — the nested `screenshots.image_id`
+// expander on /games caps at ten per game, so a game with 30 shots only
+// yields ten. Querying the endpoint directly, across every search hit whose
+// name matches (retro titles are often split into regional / remaster
+// entries), returns the whole set.
 async function searchShotsIGDB(gameTitle: string): Promise<CoverCandidate[]> {
   const escaped = gameTitle.replace(/"/g, '\\"');
-  const games = await igdbQuery(
-    `search "${escaped}"; fields name, screenshots.image_id, artworks.image_id; limit 8;`,
-  );
+  const games = await igdbQuery(`search "${escaped}"; fields id, name; limit 20;`);
   if (!games.length) return [];
-  const q = normalizeTitle(gameTitle);
-  const game = games.find((g) => normalizeTitle(g.name) === q) ?? games[0];
 
-  const out: CoverCandidate[] = [];
-  for (const sc of game.screenshots ?? []) {
-    if (!sc.image_id) continue;
-    out.push({
-      title: game.name,
-      region: t("Screenshot"),
-      url: igdbImg(sc.image_id, "1080p"),
-      thumb: igdbImg(sc.image_id, "screenshot_med"),
-    });
-  }
-  for (const a of game.artworks ?? []) {
-    if (!a.image_id) continue;
-    out.push({
-      title: game.name,
-      region: "Artwork",
-      url: igdbImg(a.image_id, "1080p"),
-      thumb: igdbImg(a.image_id, "screenshot_med"),
-    });
-  }
-  return out;
+  const q = normalizeTitle(gameTitle);
+  let picked = games.filter((g) => {
+    const n = normalizeTitle(g.name);
+    return n === q || n.includes(q) || q.includes(n);
+  });
+  if (!picked.length) picked = games.slice(0, 3);
+  const ids = picked.map((g) => g.id).join(",");
+  const nameById = new Map(picked.map((g) => [g.id, g.name]));
+
+  const [shots, art] = await Promise.all([
+    igdbFetch<IgdbImage[]>(
+      "screenshots",
+      `fields image_id, width, height, game; where game = (${ids}); limit 100;`,
+    ),
+    igdbFetch<IgdbImage[]>(
+      "artworks",
+      `fields image_id, width, height, game; where game = (${ids}); limit 40;`,
+    ),
+  ]);
+
+  const seen = new Set<string>();
+  const toCand =
+    (label: string) =>
+    (i: IgdbImage): CoverCandidate | null => {
+      if (!i.image_id || seen.has(i.image_id)) return null;
+      seen.add(i.image_id);
+      return {
+        title: nameById.get(i.game) ?? gameTitle,
+        region:
+          i.width && i.height ? `${label} · ${i.width}×${i.height}` : label,
+        url: igdbImg(i.image_id, "1080p"),
+        thumb: igdbImg(i.image_id, "screenshot_med"),
+      };
+    };
+
+  return [
+    ...shots.map(toCand(t("Screenshot"))),
+    ...art.map(toCand("Artwork")),
+  ].filter((c): c is CoverCandidate => c !== null);
 }
 
 // ── libretro-thumbnails ────────────────────────────────────────────────────
