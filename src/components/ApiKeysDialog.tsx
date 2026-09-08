@@ -6,6 +6,7 @@
 import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+  coverSourceLabel,
   getCoverSource,
   getIgdbCreds,
   getSgdbKey,
@@ -22,11 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-const SOURCES: [CoverSource, string][] = [
-  ["sgdb", "SteamGridDB"],
-  ["igdb", "IGDB"],
-  ["libretro", "libretro-thumbnails"],
-];
+const SOURCES: CoverSource[] = ["sgdb", "igdb", "igdb-shots", "libretro"];
 
 export function ApiKeysDialog({
   open,
@@ -79,7 +76,7 @@ export function ApiKeysDialog({
         <div className="flex flex-col gap-1.5">
           <Label>{t("Use for cover search")}</Label>
           <div className="flex flex-wrap gap-1">
-            {SOURCES.map(([s, label]) => (
+            {SOURCES.map((s) => (
               <button
                 key={s}
                 type="button"
@@ -94,7 +91,7 @@ export function ApiKeysDialog({
                     : "text-muted-foreground hover:bg-accent",
                 )}
               >
-                {label}
+                {coverSourceLabel(s)}
               </button>
             ))}
           </div>

@@ -19,7 +19,16 @@ export interface CoverCandidate {
   thumb?: string; // smaller preview, CORS-fetchable
 }
 
-export type CoverSource = "sgdb" | "igdb" | "libretro";
+// "igdb-shots" is IGDB again, but the cover picker pulls gameplay
+// screenshots from it instead of box art — see searchCovers().
+export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro";
+
+export function coverSourceLabel(s: CoverSource): string {
+  if (s === "sgdb") return "SteamGridDB";
+  if (s === "igdb") return "IGDB";
+  if (s === "igdb-shots") return "IGDB (Screenshots)";
+  return "libretro-thumbnails";
+}
 
 // Same-origin paths handled by the Vite cover-art proxy (vite.config.ts).
 const SGDB_API = "/api/sgdb";
@@ -69,7 +78,7 @@ export function setIgdbCreds(clientId: string, clientSecret: string) {
 
 export function isConfigured(s: CoverSource): boolean {
   if (s === "sgdb") return !!getSgdbKey();
-  if (s === "igdb") {
+  if (s === "igdb" || s === "igdb-shots") {
     const c = getIgdbCreds();
     return !!c.clientId && !!c.clientSecret;
   }
@@ -78,7 +87,7 @@ export function isConfigured(s: CoverSource): boolean {
 
 export function getCoverSource(): CoverSource {
   const v = ls.get(SOURCE_KEY);
-  return v === "igdb" || v === "libretro" ? v : "sgdb";
+  return v === "igdb" || v === "igdb-shots" || v === "libretro" ? v : "sgdb";
 }
 export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
 
@@ -561,6 +570,7 @@ export async function searchCovers(
   const src = effectiveSource();
   if (src === "sgdb") return searchCoversSGDB(title);
   if (src === "igdb") return searchCoversIGDB(title);
+  if (src === "igdb-shots") return searchShotsIGDB(title);
   return searchCoversLibretro(consoleName, title);
 }
 
@@ -577,6 +587,6 @@ export async function searchScreenshots(
   if (!title) return [];
   const src = effectiveSource();
   if (src === "sgdb") return searchShotsSGDB(title);
-  if (src === "igdb") return searchShotsIGDB(title);
+  if (src === "igdb" || src === "igdb-shots") return searchShotsIGDB(title);
   return searchCoversLibretro(consoleName, title, "shots");
 }

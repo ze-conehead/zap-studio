@@ -1,6 +1,7 @@
 import { Loader2, RotateCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  coverSourceLabel,
   effectiveSource,
   getCoverSource,
   getIgdbCreds,
@@ -39,13 +40,16 @@ interface Props {
   shotIndex?: number;
 }
 
-const SOURCE_LABEL: Record<Exclude<CoverSource, "libretro">, string> = {
-  sgdb: "SteamGridDB",
-  igdb: "IGDB",
-};
-const CRED_LINK: Record<Exclude<CoverSource, "libretro">, string> = {
+type KeyedSource = Exclude<CoverSource, "libretro">;
+
+// The sources that appear as buttons in the picker, in order. "igdb-shots"
+// is IGDB reused for gameplay screenshots instead of box art.
+const PICKABLE: readonly KeyedSource[] = ["sgdb", "igdb", "igdb-shots"];
+
+const CRED_LINK: Record<KeyedSource, string> = {
   sgdb: "https://www.steamgriddb.com/profile/preferences/api",
   igdb: "https://dev.twitch.tv/console/apps",
+  "igdb-shots": "https://dev.twitch.tv/console/apps",
 };
 
 // How many covers to show per "page" — a fresh search starts here, "More"
@@ -123,7 +127,7 @@ export function CoverSearchDialog({
 
   const logoMode = kind === "logo";
   const shotMode = kind === "screenshot";
-  const src = logoMode ? "sgdb" : (source as Exclude<CoverSource, "libretro">);
+  const src: KeyedSource = logoMode ? "sgdb" : (source as KeyedSource);
   const configured = isConfigured(src);
   const active = logoMode ? "sgdb" : effectiveSource();
   const supported = active !== "libretro" || !!resolveLibretroRepo(consoleName);
@@ -188,8 +192,8 @@ export function CoverSearchDialog({
         </div>
 
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
-          <div className={cn("flex gap-1", logoMode && "hidden")}>
-            {(["sgdb", "igdb"] as const).map((s) => (
+          <div className={cn("flex flex-wrap gap-1", logoMode && "hidden")}>
+            {PICKABLE.map((s) => (
               <button
                 key={s}
                 type="button"
@@ -201,7 +205,7 @@ export function CoverSearchDialog({
                     : "text-muted-foreground hover:bg-accent",
                 )}
               >
-                {SOURCE_LABEL[s]}
+                {coverSourceLabel(s)}
               </button>
             ))}
           </div>
@@ -224,7 +228,9 @@ export function CoverSearchDialog({
           ) : (
             <div className="flex flex-col gap-1.5">
               <span className="text-muted-foreground">
-                {t("{source} credentials – free at ", { source: SOURCE_LABEL[src] })}
+                {t("{source} credentials – free at ", {
+                  source: src === "sgdb" ? "SteamGridDB" : "IGDB",
+                })}
                 <a
                   href={CRED_LINK[src]}
                   target="_blank"

@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
-import { getCoverSource, setCoverSource, type CoverSource } from "../covers";
+import {
+  coverSourceLabel,
+  getCoverSource,
+  setCoverSource,
+  type CoverSource,
+} from "../covers";
 import { getWorkspace, setWorkspaceFormat } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
@@ -371,13 +376,13 @@ export function MenuBar({
           </DropdownMenuItem>
         </Sub>
 
-        <Sub label={t("Cover source")} value={coverSource.toUpperCase()}>
-          {(["sgdb", "igdb", "libretro"] as CoverSource[]).map((s) => (
+        <Sub label={t("Cover source")} value={coverSourceLabel(coverSource)}>
+          {(["sgdb", "igdb", "igdb-shots", "libretro"] as CoverSource[]).map((s) => (
             <DropdownMenuItem
               key={s}
               onSelect={(e) => (e.preventDefault(), setCoverSource(s))}
             >
-              {s === "sgdb" ? "SteamGridDB" : s === "igdb" ? "IGDB" : "libretro-thumbnails"}
+              {coverSourceLabel(s)}
               <Check className={cn("ml-auto size-4", s !== coverSource && "opacity-0")} />
             </DropdownMenuItem>
           ))}
