@@ -51,6 +51,7 @@ interface Props {
   onOpenDataSafety: () => void;
   onOpenWorkspaces: () => void;
   onOpenPreflight: () => void;
+  onOpenTemplates: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -70,6 +71,7 @@ export function MenuBar({
   onOpenDataSafety,
   onOpenWorkspaces,
   onOpenPreflight,
+  onOpenTemplates,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -207,6 +209,10 @@ export function MenuBar({
             {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
           </DropdownMenuItem>
         </Sub>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenTemplates}>
+          {t("Templates …")}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
