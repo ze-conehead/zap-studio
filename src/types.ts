@@ -1,13 +1,31 @@
 import type { FormatId } from "./formats";
 import type { ImageAdjust } from "./imageAdjust";
 
-export type LayerType = "image" | "text" | "shape" | "metabadge" | "background";
+export type LayerType =
+  | "image"
+  | "text"
+  | "shape"
+  | "metabadge"
+  | "background"
+  | "condition";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
 
 // Which gamelist.xml field(s) a metadata badge shows. "combo" is the only
 // one whose pieces stay individually toggleable in the Inspector.
 export type MetaBadgeKind = "combo" | "rating" | "year" | "players";
+
+// Which gamelist.xml field a Condition layer switches on. "year" and
+// "rating" are the formatted forms a card shows (2001, 4.6), not the raw
+// releasedate / 0..1 rating.
+export type ConditionField =
+  | "genre"
+  | "developer"
+  | "publisher"
+  | "players"
+  | "year"
+  | "rating"
+  | "name";
 
 // How the player-count icon is chosen on a metadata badge.
 export type PlayersIconStyle = "auto" | "single" | "group" | "controller";
@@ -56,6 +74,9 @@ export interface BaseLayer {
   mainMask?: boolean;
   /** @deprecated migrated to `alphaMask`. */
   shotMask?: number;
+  // Belongs to the condition layer with this id: the layer is one of its
+  // cases, and its `name` is the metadata value it stands for.
+  condId?: string;
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -121,6 +142,15 @@ export interface MetaBadgeLayer extends BaseLayer {
   playersIcon: PlayersIconStyle;
 }
 
+// A metadata switch. Draws nothing itself: it names a gamelist.xml field,
+// and the layers pointing at it by `condId` are its cases. A case whose
+// name matches the field's value for the open game is drawn; with no match
+// the case named "Default" stands in.
+export interface ConditionLayer extends BaseLayer {
+  type: "condition";
+  field: ConditionField;
+}
+
 // Always layer 0 of a face's stack (pinned to the bottom, not reorderable).
 // Fills the whole canvas. `source` lets a game card inherit its fill from
 // the console / global template.
@@ -135,7 +165,8 @@ export type Layer =
   | TextLayer
   | ShapeLayer
   | MetaBadgeLayer
-  | BackgroundLayer;
+  | BackgroundLayer
+  | ConditionLayer;
 
 // Which face of the card is being edited / shown.
 export type CardSide = "front" | "back";

@@ -3,6 +3,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Check,
   CornerDownRight,
   Crop,
   Italic,
@@ -39,17 +40,42 @@ import {
   getCatalogVersion,
   subscribeCatalog,
 } from "../data/catalog";
-import { isImage, isMetaBadge, isShape, isText, metaBadgeKind } from "../factory";
+import {
+  isCondition,
+  isImage,
+  isMetaBadge,
+  isShape,
+  isText,
+  metaBadgeKind,
+} from "../factory";
+import {
+  activeCases,
+  casesOf,
+  CONDITION_FIELDS,
+  fieldLabel,
+  isDefaultCase,
+  metaValue,
+} from "../conditions";
 import { FONTS } from "../fonts";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../imageAdjust";
 import type { MaskOption } from "../templates";
-import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
+import {
+  clearGamelist,
+  getGamelistVersion,
+  loadGamelist,
+  parseGamelistXml,
+  resolveBadgeMeta,
+  saveGamelist,
+  subscribeGamelists,
+} from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
 import type {
   BackgroundLayer,
   BackgroundSource,
   CardBackground,
+  ConditionField,
+  ConditionLayer,
   ImageLayer,
   Layer,
   MetaBadgeLayer,
@@ -126,6 +152,10 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
     );
   }
 
+  if (isCondition(selected)) {
+    return <ConditionProps layer={selected} patch={patch} />;
+  }
+
   if (selected.type === "background") {
     return (
       <BackgroundLayerProps
@@ -152,6 +182,7 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
   return (
     <Panel title={t("Properties")}>
       <MaskRoleControls patch={patch} masks={masks} />
+      <ConditionMembership patch={patch} />
 
       {!fixedName && (
         <Field label={t("Name")}>
@@ -219,6 +250,160 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
     </Panel>
   );
 }
+
+// A condition draws nothing: it names a gamelist.xml field, and the layers
+// assigned to it are its cases. Shows which case the open game selects.
+function ConditionProps({
+  layer,
+  patch,
+}: {
+  layer: ConditionLayer;
+  patch: Patch;
+}) {
+  const t = useT();
+  const { state, dispatch } = useStore();
+  useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
+  const faceLayers = faceOf(state);
+  const meta = resolveBadgeMeta(state.project);
+  const value = metaValue(meta, layer.field);
+  const cases = casesOf(faceLayers, layer);
+  const live = new Set(activeCases(faceLayers, layer, meta).map((l) => l.id));
+
+  return (
+    <Panel title={t("Condition")}>
+      <p className="text-xs text-muted-foreground">
+        {t(
+          "Draws nothing on its own. The layers under it are its cases: the case whose name matches the field's value is drawn, and with no match the one named “Default”.",
+        )}
+      </p>
+
+      <Field label={t("Name")}>
+        <Input
+          value={layer.name}
+          onChange={(e) => patch({ name: e.target.value }, false)}
+          onBlur={(e) => patch({ name: e.target.value })}
+        />
+      </Field>
+
+      <Field label={t("Metadata field")}>
+        <Select
+          value={layer.field}
+          onValueChange={(v) => patch({ field: v as ConditionField })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CONDITION_FIELDS.map((f) => (
+              <SelectItem key={f} value={f}>
+                {fieldLabel(f)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      <Field label={t("Value on this card")}>
+        <p className="rounded-md border bg-muted/40 px-2 py-1.5 text-sm">
+          {value || (
+            <span className="text-muted-foreground">
+              {t("nothing in the gamelist — the “Default” case is used")}
+            </span>
+          )}
+        </p>
+      </Field>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>{t("Cases ({n})", { n: cases.length })}</Label>
+        {cases.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "No cases yet. Add a layer while this one is selected — it joins the condition, and its name is the value it stands for.",
+            )}
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {[...cases].reverse().map((c) => (
+              <li
+                key={c.id}
+                className={cn(
+                  "flex items-center gap-1.5 rounded px-1.5 py-1 text-sm",
+                  live.has(c.id) ? "bg-accent" : "text-muted-foreground",
+                )}
+              >
+                <button
+                  className="min-w-0 flex-1 truncate text-left"
+                  onClick={() => dispatch({ type: "SELECT", id: c.id })}
+                >
+                  {c.name}
+                </button>
+                {isDefaultCase(c) && (
+                  <span className="shrink-0 text-[10px] uppercase tracking-wider">
+                    {t("fallback")}
+                  </span>
+                )}
+                {live.has(c.id) && (
+                  <Check className="size-3.5 shrink-0 text-primary" />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+// Which condition (if any) the selected layer is a case of. The layer's own
+// name is the value it matches, so there is nothing else to fill in.
+function ConditionMembership({ patch }: { patch: Patch }) {
+  const t = useT();
+  const { state, selected } = useStore();
+  if (!selected || isCondition(selected) || selected.type === "background") {
+    return null;
+  }
+  const conditions = faceOf(state).filter(isCondition);
+  if (!conditions.length) return null;
+  const host = conditions.find((c) => c.id === selected.condId);
+
+  return (
+    <Field label={t("Shown by condition")}>
+      <Select
+        value={selected.condId ?? "none"}
+        onValueChange={(v) => patch({ condId: v === "none" ? undefined : v })}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">{t("Always shown")}</SelectItem>
+          {conditions.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.name}
+              <span className="ml-1.5 text-xs text-muted-foreground">
+                {fieldLabel(c.field)}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {host && (
+        <p className="text-xs text-muted-foreground">
+          {isDefaultCase(selected)
+            ? t("The fallback: drawn when no other case matches.")
+            : t("Drawn when {field} is “{value}” — this layer's name is the value.", {
+                field: fieldLabel(host.field),
+                value: selected.name,
+              })}
+        </p>
+      )}
+    </Field>
+  );
+}
+
+// The layer stack of whichever face is being edited.
+const faceOf = (state: { side: string; project: { layers: Layer[]; back?: { layers: Layer[] } } }): Layer[] =>
+  state.side === "back" ? state.project.back?.layers ?? [] : state.project.layers;
 
 // The card's main image is always clipped by the global main mask.
 // In a template: mark this layer as an alpha mask. On a card: pick which of

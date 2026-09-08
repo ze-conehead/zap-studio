@@ -9,6 +9,8 @@ import type {
   BackgroundLayer,
   BackgroundSource,
   CardBackground,
+  ConditionField,
+  ConditionLayer,
   ImageLayer,
   Layer,
   MetaBadgeKind,
@@ -320,6 +322,14 @@ export function metaBadgeKind(l: MetaBadgeLayer): MetaBadgeKind {
 }
 export function isBackground(l: Layer): l is BackgroundLayer {
   return l.type === "background";
+}
+export function isCondition(l: Layer): l is ConditionLayer {
+  return l.type === "condition";
+}
+
+// A metadata switch. Draws nothing — see src/conditions.ts.
+export function makeConditionLayer(field: ConditionField = "genre"): ConditionLayer {
+  return { ...base(t("Condition")), type: "condition", field };
 }
 
 // The full-canvas background layer. Always layer 0 of a face's stack.

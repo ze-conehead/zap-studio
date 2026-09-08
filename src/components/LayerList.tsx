@@ -5,6 +5,7 @@ import {
   Crop,
   Eye,
   EyeOff,
+  GitBranch,
   GripVertical,
   Image as ImageIcon,
   Lock,
@@ -14,10 +15,16 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isBackground, isImage, isMetaBadge, isShape } from "../factory";
+import { activeCases } from "../conditions";
+import { isBackground, isCondition, isImage, isMetaBadge, isShape } from "../factory";
+import {
+  getGamelistVersion,
+  resolveBadgeMeta,
+  subscribeGamelists,
+} from "../gamelist";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { AddLayerMenu } from "./AddLayerMenu";
@@ -33,6 +40,18 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
       : state.project.layers;
   const layers = [...faceLayers].reverse(); // top of stack first
   const contentCount = faceLayers.filter((l) => !isBackground(l)).length;
+
+  // Which condition cases are live for the game this card is for — the rest
+  // are dimmed, so it's clear at a glance which branch prints.
+  useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
+  const meta = resolveBadgeMeta(state.project);
+  const live = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of faceLayers.filter(isCondition)) {
+      for (const l of activeCases(faceLayers, c, meta)) ids.add(l.id);
+    }
+    return ids;
+  }, [faceLayers, meta]);
 
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -78,13 +97,18 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
           const bg = isBackground(l);
           const Icon = bg
             ? PaintBucket
-            : isImage(l)
-              ? ImageIcon
-              : isShape(l)
-                ? Shapes
-                : isMetaBadge(l)
-                  ? Award
-                  : Type;
+            : isCondition(l)
+              ? GitBranch
+              : isImage(l)
+                ? ImageIcon
+                : isShape(l)
+                  ? Shapes
+                  : isMetaBadge(l)
+                    ? Award
+                    : Type;
+          // A case that the metadata doesn't select still prints nothing —
+          // dim it, but keep it clickable so it can be edited.
+          const dimmed = !!l.condId && !live.has(l.id);
           return (
             <li
               key={l.id}
@@ -112,6 +136,8 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
                 "flex items-center gap-0.5 rounded-md border bg-card px-1 py-1 text-sm",
                 active ? "border-primary bg-accent" : "hover:bg-accent/50",
                 l.clipped && "ml-3 border-l-2 border-l-primary/50",
+                l.condId && "ml-3 border-l-2 border-l-amber-500/60",
+                dimmed && "opacity-50",
                 dragging === l.id && "opacity-40",
                 over?.id === l.id &&
                   (over.after
@@ -131,6 +157,9 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
               >
                 {l.clipped && (
                   <CornerDownRight className="size-3.5 shrink-0 text-primary" />
+                )}
+                {l.condId && (
+                  <CornerDownRight className="size-3.5 shrink-0 text-amber-500" />
                 )}
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                 <span

@@ -3,6 +3,7 @@ import { Group, Layer as KLayer, Stage } from "react-konva";
 import { CANVAS, TRIM_RECT } from "../card";
 import type { DemoCard } from "../demo";
 import type { GameMeta } from "../gamelist";
+import { resolveConditions } from "../conditions";
 import { isBackground } from "../factory";
 import { resolveBadgeMeta } from "../gamelist";
 import { segmentLayers } from "../masking";
@@ -35,8 +36,13 @@ export function CardStage({
     consoleBg: card.consoleBg,
     globalBg: card.globalBg,
   });
-  const layers = withMasks(card.project, content, card.masks);
   const meta = resolveBadgeMeta(card.project);
+  const layers = withMasks(
+    card.project,
+    resolveConditions(content, meta),
+    card.masks,
+  );
+  const overlay = resolveConditions(card.overlay, meta);
 
   return (
     <Stage
@@ -71,9 +77,9 @@ export function CardStage({
         </KLayer>
       ))}
 
-      {card.overlay.length > 0 && (
+      {overlay.length > 0 && (
         <KLayer listening={false}>
-          {card.overlay.map((l) => (
+          {overlay.map((l) => (
             <StaticLayer key={l.id} layer={l} meta={meta} />
           ))}
         </KLayer>

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { t } from "./i18n";
-import { isBackground, makeBackFace, newProject } from "./factory";
+import { isBackground, isCondition, makeBackFace, newProject } from "./factory";
 import { getFormat } from "./formats";
 import { saveProject } from "./persist";
 import type { CardSide, Layer, Project } from "./types";
@@ -152,6 +152,30 @@ function reducer(state: State, action: Action): State {
         ...(added.main ? { main: false } : null),
         ...(added.logoSlot ? { logoSlot: false } : null),
       }));
+      // Adding a layer while a condition (or one of its cases) is selected
+      // makes the new layer another case, dropped in right below the
+      // condition so the group stays together in the layer list.
+      const host = cleared.find((l) => l.id === state.selectedId);
+      const condId =
+        added.condId ??
+        (host ? (isCondition(host) ? host.id : host.condId) : undefined);
+      if (condId && !isCondition(added) && !isBackground(added)) {
+        const at = cleared.findIndex((l) => l.id === condId);
+        if (at >= 0) {
+          const joined = { ...added, condId } as Layer;
+          return {
+            ...commit(
+              state,
+              write(project, [
+                ...cleared.slice(0, at),
+                joined,
+                ...cleared.slice(at),
+              ]),
+            ),
+            selectedId: joined.id,
+          };
+        }
+      }
       return {
         ...commit(state, write(project, [...cleared, added])),
         selectedId: added.id,
@@ -204,7 +228,16 @@ function reducer(state: State, action: Action): State {
     }
 
     case "DELETE_LAYER": {
-      const next = layers.filter((l) => l.id !== action.id);
+      // Deleting a condition releases its cases rather than orphaning them —
+      // an orphan would point at nothing and never be drawn again.
+      const gone = layers.find((l) => l.id === action.id);
+      const next = layers
+        .filter((l) => l.id !== action.id)
+        .map((l) =>
+          gone && isCondition(gone) && l.condId === gone.id
+            ? ({ ...l, condId: undefined } as Layer)
+            : l,
+        );
       return {
         ...commit(state, write(project, next)),
         selectedId: state.selectedId === action.id ? null : state.selectedId,

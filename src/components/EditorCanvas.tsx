@@ -40,6 +40,8 @@ import {
 } from "../gamelist";
 import { useImage } from "../hooks/useImage";
 import { useAdjustedImage } from "../imageAdjust";
+import { hiddenCaseIds, resolveConditions } from "../conditions";
+import { COND_PREVIEW } from "../export";
 import { segmentLayers } from "../masking";
 import { resolveMask } from "../templates";
 import { useStore } from "../store";
@@ -297,10 +299,16 @@ function FaceStage({
   // The back is a plain face — no template overlay, no main alpha mask.
   // The slot is editable where it lives ("All consoles") and invisible
   // everywhere else — cards see it only as the outline below.
+  // Condition layers pick which of their cases is live for this game. The
+  // selected layer is kept whatever the metadata says, so a case that isn't
+  // the live branch can still be worked on.
+  const hiddenCases = hiddenCaseIds(layerList, badgeMeta);
+  const preview = active && selectedId && hiddenCases.has(selectedId) ? selectedId : null;
+  const cases = resolveConditions(layerList, badgeMeta, preview);
   const renderLayers = (
-    back ? layerList : withMasks(project, layerList, masks)
+    back ? cases : withMasks(project, cases, masks)
   ).filter((l: TLayer) => !l.logoSlot || project.isGlobalTemplate);
-  const overlayLayers = back ? [] : overlay;
+  const overlayLayers = back ? [] : resolveConditions(overlay, badgeMeta);
 
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -522,6 +530,7 @@ function FaceStage({
                   key={layer.id}
                   layer={layer}
                   asMask={asMask}
+                  previewOnly={layer.id === preview}
                   selected={active && layer.id === selectedId}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
@@ -735,6 +744,7 @@ function LayerNode({
   layer,
   asMask = false,
   selected = false,
+  previewOnly = false,
   groupChildren,
   meta,
   snapLines,
@@ -747,6 +757,9 @@ function LayerNode({
   layer: TLayer;
   asMask?: boolean;
   selected?: boolean;
+  // A condition case the metadata doesn't select: drawn so it can be
+  // edited, named so exports leave it out.
+  previewOnly?: boolean;
   groupChildren?: TLayer[];
   meta?: GameMeta;
   snapLines?: SnapLines;
@@ -827,6 +840,7 @@ function LayerNode({
 
   const common = {
     ref,
+    name: previewOnly ? COND_PREVIEW : undefined,
     x: layer.x,
     y: layer.y,
     rotation: layer.rotation,
@@ -916,6 +930,9 @@ export function LayerInner({
   // Background layers are painted separately as a full-canvas fill, never
   // through the normal layer pipeline.
   if (layer.type === "background") return null;
+  // A condition is a switch, not a graphic — resolveConditions() drops it
+  // before rendering, and this keeps a stray one invisible.
+  if (layer.type === "condition") return null;
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;

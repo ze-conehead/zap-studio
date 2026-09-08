@@ -6,7 +6,9 @@
 // is one problem that shows up on every card, not twenty problems.
 
 import { PX_PER_MM, TRIM_RECT } from "./card";
+import { resolveConditions } from "./conditions";
 import { isBackground } from "./factory";
+import { resolveBadgeMeta } from "./gamelist";
 import { t } from "./i18n";
 import { loadOverviewCards, type OverviewCard } from "./overview";
 import { renderedFontSize, textHeight } from "./textFit";
@@ -189,7 +191,15 @@ export function checkCards(cards: Card[]): Finding[] {
       continue;
     }
 
-    for (const l of [...card.project.layers, ...card.overlay]) {
+    // Cases the metadata doesn't select never print on this card, so they
+    // aren't checked here — another card that does select them will.
+    const meta = resolveBadgeMeta(card.project);
+    const live = [
+      ...resolveConditions(card.project.layers, meta),
+      ...resolveConditions(card.overlay, meta),
+    ];
+
+    for (const l of live) {
       for (const f of checkLayer(l)) {
         const key = `${f.code}:${l.id}`;
         const hit = byKey.get(key);

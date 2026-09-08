@@ -663,4 +663,23 @@ export const de: Record<string, string> = {
   "That file isn't valid JSON.": "Diese Datei ist kein g\u00fcltiges JSON.",
   "Not a template file.": "Keine Vorlagen-Datei.",
   "The template is empty.": "Die Vorlage ist leer.",
+  // \u2500\u2500 Condition layers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  Condition: "Bedingung",
+  Title: "Titel",
+  "Metadata field": "Metadaten-Feld",
+  "Value on this card": "Wert auf dieser Karte",
+  "nothing in the gamelist \u2014 the \u201cDefault\u201d case is used":
+    "nichts in der gamelist \u2013 es greift der Fall \u201eDefault\u201c",
+  "Draws nothing on its own. The layers under it are its cases: the case whose name matches the field's value is drawn, and with no match the one named \u201cDefault\u201d.":
+    "Zeichnet selbst nichts. Die Ebenen darunter sind seine F\u00e4lle: Gezeichnet wird der Fall, dessen Name dem Wert des Feldes entspricht \u2013 trifft keiner zu, der Fall namens \u201eDefault\u201c.",
+  "Cases ({n})": "F\u00e4lle ({n})",
+  "No cases yet. Add a layer while this one is selected \u2014 it joins the condition, and its name is the value it stands for.":
+    "Noch keine F\u00e4lle. F\u00fcge eine Ebene hinzu, w\u00e4hrend diese ausgew\u00e4hlt ist \u2013 sie geh\u00f6rt dann zur Bedingung, und ihr Name ist der Wert, f\u00fcr den sie steht.",
+  fallback: "Standard",
+  "Shown by condition": "Anzeige \u00fcber Bedingung",
+  "Always shown": "Immer anzeigen",
+  "The fallback: drawn when no other case matches.":
+    "Der Standardfall: wird gezeichnet, wenn kein anderer Fall zutrifft.",
+  "Drawn when {field} is \u201c{value}\u201d \u2014 this layer's name is the value.":
+    "Wird gezeichnet, wenn {field} \u201e{value}\u201c ist \u2013 der Name dieser Ebene ist der Wert.",
 };

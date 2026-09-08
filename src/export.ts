@@ -27,6 +27,9 @@ export function exportLabel(mode: ExportMode): string {
   return t("PNG – bleed + crop marks");
 }
 
+// Konva node name for a condition case shown only as an editing preview.
+export const COND_PREVIEW = "cond-preview";
+
 interface ExportOpts {
   stage: Konva.Stage;
   stageWidth: number; // on-screen width the stage is currently drawn at
@@ -45,6 +48,11 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
   const transformers = stage.find("Transformer");
   const trWasVisible = transformers.map((n) => n.visible());
   transformers.forEach((n) => n.visible(false));
+  // A condition case the metadata doesn't select is drawn in the editor
+  // while it is selected, so it can be worked on — but it never prints.
+  const previews = stage.find(`.${COND_PREVIEW}`);
+  const pvWasVisible = previews.map((n) => n.visible());
+  previews.forEach((n) => n.visible(false));
   stage.draw();
 
   const pixelRatio = CANVAS.w / stageWidth;
@@ -53,6 +61,7 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
 
   guideLayers.forEach((l, i) => l.visible(wasVisible[i]));
   transformers.forEach((n, i) => n.visible(trWasVisible[i]));
+  previews.forEach((n, i) => n.visible(pvWasVisible[i]));
   stage.draw();
 
   if (mode === "bleed") return full.toDataURL("image/png");

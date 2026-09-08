@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Circle,
   Crop,
+  GitBranch,
   ImageIcon,
   Link2,
   Loader2,
@@ -36,6 +37,7 @@ import {
   fitImageToSlot,
   isBackground,
   makeBackgroundLayer,
+  makeConditionLayer,
   makeImageLayer,
   makeAlphaMaskLayer,
   makeLogoSlotLayer,
@@ -203,6 +205,13 @@ export function AddLayerMenu() {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({ type: "ADD_LAYER", layer: makeConditionLayer() })
+                }
+              >
+                <GitBranch /> {t("Condition")}
+              </DropdownMenuItem>
               {badges.map(([kind, label, Icon]) => (
                 <DropdownMenuItem
                   key={kind}
