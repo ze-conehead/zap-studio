@@ -242,14 +242,17 @@ export function fitImageToSlot(
 // card image that carries the same number. Stacked down the card by default
 // so three of them don't land on top of each other.
 export function makeShotMaskLayer(index: number): ShapeLayer {
-  const h = TRIM_RECT.h * 0.17;
+  // 4:3 by default — a screenshot dropped into a letterbox frame would lose
+  // most of its height to the cover-fit. Three of these stack inside the trim.
+  const w = TRIM_RECT.w * 0.42;
+  const h = w * 0.75;
   return {
     ...base(t("Screenshot {n}", { n: index })),
     type: "shape",
     shape: "rect",
-    width: TRIM_RECT.w * 0.82,
+    width: w,
     height: h,
-    y: TRIM_RECT.y + TRIM_RECT.h * 0.45 + (index - 1) * (h + TRIM_RECT.h * 0.02),
+    y: TRIM_RECT.y + TRIM_RECT.h * 0.38 + (index - 1) * (h + TRIM_RECT.h * 0.012),
     cornerRadius: 12,
     fill: { ...DEFAULT_SHAPE_FILL },
     stroke: "#000000",
