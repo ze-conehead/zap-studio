@@ -56,7 +56,7 @@ interface Props {
   onImportJson: (file: File) => void;
 }
 
-type MenuId = "file" | "edit" | "view" | "settings";
+type MenuId = "file" | "edit" | "view" | "extra" | "settings";
 
 export function MenuBar({
   canvas,
@@ -304,7 +304,12 @@ export function MenuBar({
           {t("3D preview")}
           <Key k="P" />
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenDemo}>{t("Demo mode")}</DropdownMenuItem>
+      </Menu>
+
+      <Menu id="extra" label={t("Extra")}>
+        <DropdownMenuItem onClick={onOpenDemo}>
+          {t("Demo mode (card packs)")}
+        </DropdownMenuItem>
       </Menu>
 
       <Menu id="settings" label={t("Settings")}>

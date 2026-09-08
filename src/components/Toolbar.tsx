@@ -1,13 +1,10 @@
 import {
   Box,
-  FilePlus2,
-  FolderOpen,
   LayoutGrid,
   MoveHorizontal,
   MoveVertical,
   Redo2,
   Ruler,
-  Sparkles,
   Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,19 +23,13 @@ import type { GuideApi } from "../App";
 
 interface Props {
   guides: GuideApi;
-  onNewProject: () => void;
-  onOpenProjects: () => void;
   onOpenPreview: () => void;
-  onOpenDemo: () => void;
   onOpenOverview: () => void;
 }
 
 export function Toolbar({
   guides,
-  onNewProject,
-  onOpenProjects,
   onOpenPreview,
-  onOpenDemo,
   onOpenOverview,
 }: Props) {
   const { state, dispatch } = useStore();
@@ -112,27 +103,17 @@ export function Toolbar({
         )}
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="outline" size="sm" onClick={onOpenOverview}>
-          <LayoutGrid /> {t("All cards")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={onOpenDemo}>
-          <Sparkles /> Demo
-        </Button>
-        <Button variant="outline" size="sm" onClick={onOpenPreview}>
-          <Box /> {t("3D preview")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={onOpenProjects}>
-          <FolderOpen /> {t("Designs")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={onNewProject}>
-          <FilePlus2 /> {t("New")}
-        </Button>
+      {/* Centred on the whole bar, independent of the controls on the left. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="pointer-events-auto flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={onOpenPreview}>
+            <Box /> {t("Preview")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={onOpenOverview}>
+            <LayoutGrid /> {t("Preview all")}
+          </Button>
+        </div>
       </div>
-
-
-
-
     </header>
   );
 }
