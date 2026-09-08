@@ -29,7 +29,7 @@ import { gradientFill, noiseTile } from "../background";
 import { isBackground, makeImageLayer } from "../factory";
 import { fileToLayerSource } from "../image";
 import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../card";
-import { t, useT } from "../i18n";
+import { useT } from "../i18n";
 import type { GameMeta } from "../gamelist";
 import {
   getGamelistVersion,
@@ -41,6 +41,7 @@ import {
 import { useImage } from "../hooks/useImage";
 import { useAdjustedImage } from "../imageAdjust";
 import { segmentLayers } from "../masking";
+import { resolveMask } from "../templates";
 import { useStore } from "../store";
 import { useAccent } from "../theme";
 import type {
@@ -64,66 +65,39 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
-// Splices the global "main alpha mask" in as a real mask layer directly
-// above the card's main image, so segmentLayers()/destination-in clips it
-// like any other mask. Only for game cards, and only when the main image
-// isn't already part of a card mask.
-export function withMainMask(
+// Splices each alpha mask in as a real mask layer directly above the image
+// that points at it, so segmentLayers()/destination-in clips it like any
+// other mask. Only for game cards.
+export function withMasks(
   project: Project,
   layers: TLayer[],
-  mainMask: TLayer | undefined,
-  shotMasks: TLayer[] = [],
+  masks: TLayer[] = [],
 ): TLayer[] {
-  if (project.isTemplate) return layers;
-  let out = layers;
-
-  // Slot 0: the cover. Falls back to the only image on the card when nothing
-  // is explicitly marked as the main image.
-  if (mainMask) {
-    let idx = out.findIndex((l) => l.type === "image" && l.main && l.visible);
-    if (idx < 0) {
-      const imgs = out.filter((l) => l.type === "image" && l.visible && !l.shot);
-      if (imgs.length === 1) idx = out.indexOf(imgs[0]);
+  if (project.isTemplate || !masks.length) return layers;
+  const out: TLayer[] = [];
+  for (const l of layers) {
+    const m = resolveMask(l, masks);
+    // A layer already wired into a hand-made mask group is left alone.
+    if (!m || !l.visible || l.mask || l.clipped) {
+      out.push(l);
+      continue;
     }
-    out = clipWith(out, idx, mainMask, t("Main alpha mask"));
+    out.push({ ...l, clipped: true });
+    out.push({
+      ...m,
+      id: `__mask__${m.id}__${l.id}`,
+      mask: true,
+      clipped: false,
+      groupTransform: false,
+      main: false,
+      alphaMask: false,
+      mainMask: undefined,
+      shotMask: undefined,
+      logoSlot: false,
+      locked: true,
+      visible: true,
+    } as TLayer);
   }
-
-  // One frame per screenshot, each clipping the image that carries its number.
-  for (const m of shotMasks) {
-    const idx = out.findIndex(
-      (l) => l.type === "image" && l.shot === m.shotMask && l.visible,
-    );
-    out = clipWith(out, idx, m, m.name);
-  }
-  return out;
-}
-
-// Marks `layers[idx]` clipped and slips a locked stencil copy of `mask` in
-// directly above it. A no-op when there's nothing to clip.
-function clipWith(
-  layers: TLayer[],
-  idx: number,
-  mask: TLayer,
-  name: string,
-): TLayer[] {
-  if (idx < 0) return layers;
-  if (layers[idx].mask || layers[idx].clipped) return layers;
-  const stencil: TLayer = {
-    ...mask,
-    id: `__mask__${mask.id}`,
-    name,
-    mask: true,
-    clipped: false,
-    groupTransform: false,
-    main: false,
-    mainMask: false,
-    shotMask: undefined,
-    logoSlot: false,
-    locked: true,
-    visible: true,
-  };
-  const out = layers.map((l, i) => (i === idx ? { ...l, clipped: true } : l));
-  out.splice(idx + 1, 0, stencil);
   return out;
 }
 
@@ -154,18 +128,16 @@ export function EditorCanvas({
   overlay = [],
   consoleBg,
   globalBg,
-  mainMask,
+  masks = [],
   logoSlot,
-  shotMasks = [],
   guides,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: TLayer;
+  masks?: TLayer[];
   logoSlot?: TLayer;
-  shotMasks?: TLayer[];
   guides: GuideApi;
 }) {
   const { state, dispatch } = useStore();
@@ -242,9 +214,8 @@ export function EditorCanvas({
           overlay={overlay}
           consoleBg={consoleBg}
           globalBg={globalBg}
-          mainMask={mainMask}
+          masks={masks}
           logoSlot={logoSlot}
-          shotMasks={shotMasks}
           guides={guides}
           badgeMeta={badgeMeta}
           showBleed={showBleed}
@@ -278,9 +249,8 @@ function FaceStage({
   overlay = [],
   consoleBg,
   globalBg,
-  mainMask,
+  masks = [],
   logoSlot,
-  shotMasks = [],
   guides,
   badgeMeta,
   showBleed,
@@ -294,9 +264,8 @@ function FaceStage({
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: TLayer;
+  masks?: TLayer[];
   logoSlot?: TLayer;
-  shotMasks?: TLayer[];
   guides: GuideApi;
   badgeMeta?: GameMeta;
   showBleed: boolean;
@@ -329,8 +298,8 @@ function FaceStage({
   // The slot is editable where it lives ("All consoles") and invisible
   // everywhere else — cards see it only as the outline below.
   const renderLayers = (
-    back ? layerList : withMainMask(project, layerList, mainMask, shotMasks)
-  ).filter((l) => !l.logoSlot || project.isGlobalTemplate);
+    back ? layerList : withMasks(project, layerList, masks)
+  ).filter((l: TLayer) => !l.logoSlot || project.isGlobalTemplate);
   const overlayLayers = back ? [] : overlay;
 
   const stageRef = useRef<Konva.Stage>(null);
@@ -602,16 +571,14 @@ function FaceStage({
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} />
             <PanelGuides />
-            {!back && !project.isGlobalTemplate && mainMask && (
-              <MainMaskOutline mask={mainMask} />
-            )}
+
             {!back && slotOutline && (
               <MainMaskOutline mask={slotOutline} colour="#38bdf8" />
             )}
             {!back &&
               !project.isTemplate &&
-              shotMasks.map((m) => (
-                <MainMaskOutline key={m.id} mask={m} colour="#f472b6" />
+              masks.map((m) => (
+                <MainMaskOutline key={m.id} mask={m} colour="#a78bfa" />
               ))}
             {snapHit?.smartX.map((x) => (
               <Line
@@ -1405,7 +1372,7 @@ function RoundedCardOutline() {
   );
 }
 
-// The shared "Main alpha mask" from "All consoles", drawn as an outline for
+// An alpha mask from a template, drawn as an outline for
 // reference on console templates and game cards (it's an editable shape only
 // on the global template). Never painted into an export (sits in a guide
 // layer) and not interactive.

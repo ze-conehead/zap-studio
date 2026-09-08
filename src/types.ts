@@ -45,11 +45,16 @@ export interface BaseLayer {
   mask?: boolean; // this layer's alpha clips the clipped layers directly below it
   clipped?: boolean; // this layer is clipped by the mask layer directly above it
   groupTransform?: boolean; // mask only: moving/scaling it also moves its clipped layers
-  main?: boolean; // game card: the card's main image, clipped by the global main mask
-  mainMask?: boolean; // "All consoles" only: the shared alpha frame for every card's main image
+  // An alpha frame. Lives in the global or a console template; a card image
+  // pointing at it by id is clipped to its alpha and fitted to its box. The
+  // frame itself is never drawn on a card.
+  alphaMask?: boolean;
+  /** @deprecated an image with this set resolves to the first alpha mask. */
+  main?: boolean;
   logoSlot?: boolean; // "All consoles" only: where an inserted logo is placed. Never drawn.
-  // A screenshot frame (1-based). Lives in the global or a console template
-  // and clips the card image carrying the same `shot` number.
+  /** @deprecated migrated to `alphaMask` — still read so old projects open. */
+  mainMask?: boolean;
+  /** @deprecated migrated to `alphaMask`. */
   shotMask?: number;
 }
 
@@ -62,7 +67,9 @@ export interface ImageLayer extends BaseLayer {
   height: number;
   cornerRadius: number;
   logo?: boolean; // inserted as the game's logo (SteamGridDB "logos")
-  shot?: number; // fills the screenshot frame with this number
+  maskId?: string; // id of the alpha mask this image fills
+  /** @deprecated resolved to the nth alpha mask. */
+  shot?: number;
   adjust?: ImageAdjust; // greyscale / threshold, see src/imageAdjust.ts
 }
 

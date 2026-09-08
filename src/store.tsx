@@ -141,8 +141,8 @@ function reducer(state: State, action: Action): State {
           selectedId: action.layer.id,
         };
       }
-      // "main" / "mainMask" are single-slot roles — a new layer claiming one
-      // clears it on the others. The main image is always labelled "Main image".
+      // "main" is a single-slot legacy role — a new layer claiming it clears
+      // it on the others. The main image is always labelled "Main image".
       const added =
         action.layer.type === "image" && action.layer.main
           ? { ...action.layer, name: t("Main image") }
@@ -150,7 +150,6 @@ function reducer(state: State, action: Action): State {
       const cleared = layers.map((l) => ({
         ...l,
         ...(added.main ? { main: false } : null),
-        ...(added.mainMask ? { mainMask: false } : null),
         ...(added.logoSlot ? { logoSlot: false } : null),
       }));
       return {
@@ -185,11 +184,6 @@ function reducer(state: State, action: Action): State {
       // Single-slot roles: clear the previous holder.
       if (action.patch.main === true) {
         next = next.map((l, j) => (j === i ? l : ({ ...l, main: false } as Layer)));
-      }
-      if (action.patch.mainMask === true) {
-        next = next.map((l, j) =>
-          j === i ? l : ({ ...l, mainMask: false } as Layer),
-        );
       }
       if (action.patch.logoSlot === true) {
         next = next.map((l, j) =>

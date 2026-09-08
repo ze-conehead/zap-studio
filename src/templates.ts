@@ -2,28 +2,50 @@ import { GLOBAL_TEMPLATE_ID } from "./factory";
 import { loadProject } from "./persist";
 import type { Layer, Project } from "./types";
 
-/** Screenshot frames of one project, lowest number first. */
-export function shotMasksOf(p: Project | undefined): Layer[] {
-  return (p?.layers ?? [])
-    .filter((l) => l.shotMask && l.visible)
-    .sort((a, b) => (a.shotMask ?? 0) - (b.shotMask ?? 0));
+/** An alpha mask plus where it came from, for the card's mask picker. */
+export interface MaskOption {
+  layer: Layer;
+  source: "global" | "console";
+}
+
+const isAlphaMask = (l: Layer) => !!(l.alphaMask || l.mainMask || l.shotMask);
+
+/** The alpha masks of one project, in layer order. */
+export function alphaMasksOf(p: Project | undefined): Layer[] {
+  return (p?.layers ?? []).filter((l) => isAlphaMask(l) && l.visible);
 }
 
 /**
- * The screenshot frames a card sees: the global template's, overridden per
- * number by the console's own, so a console can place them differently.
+ * Every frame a card can point at: the global template's first — so the
+ * historical "the global mask clips the cover" stays true — then the
+ * console's own.
  */
-export function mergeShotMasks(global: Layer[], own: Layer[]): Layer[] {
-  const by = new Map<number, Layer>();
-  for (const l of global) by.set(l.shotMask!, l);
-  for (const l of own) by.set(l.shotMask!, l);
-  return [...by.values()].sort((a, b) => (a.shotMask ?? 0) - (b.shotMask ?? 0));
+export function maskOptions(
+  globalP: Project | undefined,
+  consoleP: Project | undefined,
+): MaskOption[] {
+  return [
+    ...alphaMasksOf(globalP).map((layer) => ({ layer, source: "global" as const })),
+    ...alphaMasksOf(consoleP).map((layer) => ({ layer, source: "console" as const })),
+  ];
 }
 
-// The "All consoles" main alpha mask layer, if one is set.
+/**
+ * Which frame an image fills. `maskId` is what the picker writes; the two
+ * fallbacks keep projects made before the frames were unified working.
+ */
+export function resolveMask(l: Layer, masks: Layer[]): Layer | undefined {
+  if (l.type !== "image" || !masks.length) return undefined;
+  if (l.maskId) return masks.find((m) => m.id === l.maskId);
+  if (l.main) return masks[0];
+  if (l.shot) return masks[l.shot - 1];
+  return undefined;
+}
+
+// The first alpha mask a card sees — what a freshly picked cover goes into.
 export async function loadMainMask(): Promise<Layer | undefined> {
   const g = await loadProject(GLOBAL_TEMPLATE_ID);
-  return g?.layers.find((l) => l.mainMask && l.visible);
+  return alphaMasksOf(g)[0];
 }
 
 // The "All consoles" logo placement frame, if one is set.

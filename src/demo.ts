@@ -13,7 +13,7 @@ import {
 } from "./factory";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
-import { mergeShotMasks, shotMasksOf } from "./templates";
+import { alphaMasksOf } from "./templates";
 import type { CardBackground, Layer, Project } from "./types";
 
 export const PACK_SIZE = 12;
@@ -27,8 +27,7 @@ export interface DemoCard {
   overlay: Layer[]; // console + global template layers
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: Layer;
-  shotMasks?: Layer[];
+  masks?: Layer[]; // alpha frames from the global + console templates
   holo: boolean;
   image?: string; // filled in once the card has been rendered
 }
@@ -79,13 +78,12 @@ export async function drawPack(
   };
   const overlayable = (p?: Project) =>
     (p?.layers ?? []).filter(
-      (l) => !l.mainMask && !l.logoSlot && !l.shotMask && !isBackground(l),
+      (l) => !l.alphaMask && !l.logoSlot && !isBackground(l),
     );
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalBg = bgFill(globalP);
-  const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
-  const globalShots = shotMasksOf(globalP);
+  const globalMasks = alphaMasksOf(globalP);
   const globalLayers = overlayable(globalP);
 
   const tplCache = new Map<string, Project | undefined>();
@@ -110,8 +108,7 @@ export async function drawPack(
       overlay: [...overlayable(consoleP), ...globalLayers],
       consoleBg: bgFill(consoleP),
       globalBg,
-      mainMask,
-      shotMasks: mergeShotMasks(globalShots, shotMasksOf(consoleP)),
+      masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       holo: false,
     });
   }
@@ -127,7 +124,7 @@ export async function drawPack(
 export function packImageSources(cards: DemoCard[]): string[] {
   const out = new Set<string>();
   for (const c of cards) {
-    for (const l of [...c.project.layers, ...c.overlay, ...(c.mainMask ? [c.mainMask] : [])]) {
+    for (const l of [...c.project.layers, ...c.overlay, ...(c.masks ?? [])]) {
       if (l.type === "image" && l.src) out.add(l.src);
     }
   }

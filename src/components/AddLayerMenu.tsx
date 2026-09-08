@@ -33,14 +33,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  fitImageToMask,
   fitImageToSlot,
   isBackground,
   makeBackgroundLayer,
   makeImageLayer,
+  makeAlphaMaskLayer,
   makeLogoSlotLayer,
-  makeMainMaskLayer,
-  makeShotMaskLayer,
   makeMetaBadgeLayer,
   makeShapeLayer,
   makeTextLayer,
@@ -51,39 +49,30 @@ import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { useStore } from "../store";
 import { loadLogoSlot } from "../templates";
 import { CoverSearchDialog } from "./CoverSearchDialog";
-import type { Layer, ShapeKind } from "../types";
+import type { ShapeKind } from "../types";
 
 // The single "+" entry point for adding a layer, shown in the Layers panel.
 // Owns everything that used to live in the toolbar's Text / Image / Shape
 // controls.
-export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
+export function AddLayerMenu() {
   const { state, dispatch } = useStore();
   const t = useT();
   const { project, side } = state;
   const onBack = side === "back";
   const faceLayers = onBack ? project.back?.layers ?? [] : project.layers;
   const hasBg = faceLayers.some(isBackground);
-  // Screenshot frames are numbered; the menu offers the next free number.
-  const nextShot =
-    faceLayers.reduce((n, l) => Math.max(n, l.shotMask ?? 0), 0) + 1;
+  // Frames get a running number so several don't land on top of each other.
+  const nextMask = faceLayers.filter((l) => l.alphaMask).length + 1;
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [logoOpen, setLogoOpen] = useState(false);
 
-  // Fresh image on a game card front: the first image is the card's main
-  // image and gets sized to cover the global alpha mask. The back has no
-  // "main image" role and no mask.
+  // A freshly added image goes in as-is; which alpha mask it fills (if any)
+  // is picked in the Inspector, or set for you by the cover flow.
   const addImageLayer = (img: Parameters<typeof makeImageLayer>[0]) => {
-    if (onBack) {
-      dispatch({ type: "ADD_LAYER", layer: makeImageLayer(img) });
-      return;
-    }
-    const firstImage = !project.layers.some((l) => l.type === "image");
-    let layer = makeImageLayer(img);
-    if (firstImage && !project.isTemplate) layer = { ...layer, main: true };
-    dispatch({ type: "ADD_LAYER", layer: fitImageToMask(layer, mainMask) });
+    dispatch({ type: "ADD_LAYER", layer: makeImageLayer(img) });
   };
 
   const addImageFromFile = async (file: File) => {
@@ -235,10 +224,10 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
-                  dispatch({ type: "ADD_LAYER", layer: makeShotMaskLayer(nextShot) })
+                  dispatch({ type: "ADD_LAYER", layer: makeAlphaMaskLayer(nextMask) })
                 }
               >
-                <Crop /> {t("Screenshot frame {n}", { n: nextShot })}
+                <Crop /> {t("Alpha mask")}
               </DropdownMenuItem>
             </>
           )}
@@ -246,13 +235,6 @@ export function AddLayerMenu({ mainMask }: { mainMask?: Layer }) {
           {!onBack && project.isGlobalTemplate && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  dispatch({ type: "ADD_LAYER", layer: makeMainMaskLayer() })
-                }
-              >
-                <Crop /> {t("Main alpha mask")}
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
                   dispatch({ type: "ADD_LAYER", layer: makeLogoSlotLayer() })

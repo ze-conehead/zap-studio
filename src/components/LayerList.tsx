@@ -20,17 +20,11 @@ import { cn } from "@/lib/utils";
 import { isBackground, isImage, isMetaBadge, isShape } from "../factory";
 import { useT } from "../i18n";
 import { useStore } from "../store";
-import type { Layer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
 import { CoverButton } from "./CoverButton";
+import type { MaskOption } from "../templates";
 
-export function LayerList({
-  mainMask,
-  shotMasks,
-}: {
-  mainMask?: Layer;
-  shotMasks?: Layer[];
-}) {
+export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
   const t = useT();
   const { state, dispatch } = useStore();
   const faceLayers =
@@ -67,8 +61,8 @@ export function LayerList({
           {t("Layers")}
         </h2>
         <div className="flex items-center gap-1">
-          <CoverButton mainMask={mainMask} shotMasks={shotMasks} />
-          <AddLayerMenu mainMask={mainMask} />
+          <CoverButton masks={masks.map((m) => m.layer)} />
+          <AddLayerMenu />
         </div>
       </div>
 
@@ -79,22 +73,6 @@ export function LayerList({
       )}
 
       <ul className="flex flex-col gap-1">
-        {mainMask &&
-          !state.project.isGlobalTemplate &&
-          state.side !== "back" && (
-            <li
-              className="flex items-center gap-1.5 rounded-md border border-dashed bg-card px-1 py-1 text-sm text-muted-foreground"
-              title={t("Editable only in “All consoles”")}
-            >
-              <span className="size-3.5 shrink-0" />
-              <Crop className="size-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">
-                {t("Main alpha mask")}
-              </span>
-              <Lock className="mr-1 size-3.5 shrink-0 opacity-60" />
-            </li>
-          )}
-
         {layers.map((l) => {
           const active = l.id === state.selectedId;
           const bg = isBackground(l);

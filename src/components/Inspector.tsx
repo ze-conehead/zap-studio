@@ -42,6 +42,7 @@ import {
 import { isImage, isMetaBadge, isShape, isText, metaBadgeKind } from "../factory";
 import { FONTS } from "../fonts";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../imageAdjust";
+import type { MaskOption } from "../templates";
 import { clearGamelist, loadGamelist, parseGamelistXml, saveGamelist } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
@@ -62,10 +63,11 @@ type Patch = (p: Partial<Layer>, history?: boolean) => void;
 interface InspectorProps {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  masks?: MaskOption[];
   guides: GuideApi;
 }
 
-export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
+export function Inspector({ consoleBg, globalBg, masks = [], guides }: InspectorProps) {
   const t = useT();
   const { state, selected, dispatch } = useStore();
 
@@ -141,15 +143,15 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   // content, not per-card masks, so no mask controls. Shapes resize via
   // width/height (ShapeProps), so no group-scaling "Size %".
   const isMeta = isMetaBadge(selected);
-  const isMainMask = !!selected.mainMask;
-  const isLogoSlot = !!selected.logoSlot || !!selected.shotMask;
+  const isMask = !!selected.alphaMask;
+  const isLogoSlot = !!selected.logoSlot;
   const isShapeSel = isShape(selected);
   const isImageSel = isImage(selected);
-  const fixedName = isMeta || isMainMask || isLogoSlot || (isImageSel && !!selected.main);
+  const fixedName = isMeta || isLogoSlot;
 
   return (
     <Panel title={t("Properties")}>
-      {!isMainMask && !isLogoSlot && <MainRoleControls patch={patch} />}
+      <MaskRoleControls patch={patch} masks={masks} />
 
       {!fixedName && (
         <Field label={t("Name")}>
@@ -206,7 +208,7 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
         </Button>
       </div>
 
-      {!isMeta && !isMainMask && !isLogoSlot && !isImageSel && (
+      {!isMeta && !isMask && !isLogoSlot && !isImageSel && (
         <MaskControls patch={patch} />
       )}
 
@@ -218,48 +220,75 @@ export function Inspector({ consoleBg, globalBg, guides }: InspectorProps) {
   );
 }
 
-// "Main image" (per game card) and "Main alpha mask" (on "All consoles").
 // The card's main image is always clipped by the global main mask.
-function MainRoleControls({ patch }: { patch: Patch }) {
+// In a template: mark this layer as an alpha mask. On a card: pick which of
+// the available masks an image is clipped to.
+function MaskRoleControls({
+  patch,
+  masks,
+}: {
+  patch: Patch;
+  masks: MaskOption[];
+}) {
   const t = useT();
   const { state, selected } = useStore();
   if (!selected || state.side === "back") return null;
-  const { isTemplate, isGlobalTemplate } = state.project;
+  const { isTemplate } = state.project;
 
-  if (isGlobalTemplate) {
+  if (isTemplate) {
     if (selected.type !== "shape" && selected.type !== "image") return null;
     return (
       <div className="flex flex-col gap-1.5">
-        <Label>{t("Main alpha mask")}</Label>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <label className="flex items-center gap-2 text-sm">
           <Checkbox
-            checked={!!selected.mainMask}
-            onCheckedChange={(v) => patch({ mainMask: !!v })}
+            checked={!!selected.alphaMask}
+            onCheckedChange={(v) => patch({ alphaMask: !!v })}
           />
-          {t("Use as shared alpha mask")}
+          {t("Alpha mask")}
         </label>
         <p className="text-xs text-muted-foreground">
-          {t("This layer's alpha channel clips the main image on ")}
-          <strong>{t("every")}</strong>
-          {t(" card. The shape itself is not drawn on the cards.")}
+          {t(
+            "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.",
+          )}
         </p>
       </div>
     );
   }
 
-  if (!isTemplate && selected.type === "image") {
-    return (
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={!!selected.main}
-          onCheckedChange={(v) => patch({ main: !!v })}
-        />
-        {t("Main image")}
-      </label>
-    );
-  }
+  if (selected.type !== "image") return null;
 
-  return null;
+  const value = selected.maskId ?? (selected.main && masks[0] ? masks[0].layer.id : "");
+  return (
+    <Field label={t("Alpha mask")}>
+      {masks.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {t("No alpha masks yet — add one in a console template or “All consoles”.")}
+        </p>
+      ) : (
+        <Select
+          value={value || "none"}
+          onValueChange={(v) =>
+            patch({ maskId: v === "none" ? undefined : v, main: false })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">{t("None")}</SelectItem>
+            {masks.map((m) => (
+              <SelectItem key={m.layer.id} value={m.layer.id}>
+                {m.layer.name}
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  {m.source === "global" ? t("global") : t("console")}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </Field>
+  );
 }
 
 function MaskControls({ patch }: { patch: Patch }) {

@@ -73,7 +73,7 @@ interface Props {
   activeGameKey?: string;
   activeConsoleId?: string;
   activeGlobal: boolean;
-  mainMask?: Layer;
+  masks?: Layer[];
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
   onOpenGlobal: () => void;
@@ -91,7 +91,7 @@ export function GameTree({
   activeGameKey,
   activeConsoleId,
   activeGlobal,
-  mainMask,
+  masks = [],
   onPickGame,
   onOpenConsole,
   onOpenGlobal,
@@ -123,8 +123,11 @@ export function GameTree({
         dispatch({
           type: "ADD_LAYER",
           layer: fitImageToMask(
-            { ...makeImageLayer({ ...img, name: t("Main image") }), main: true },
-            mainMask,
+            {
+              ...makeImageLayer({ ...img, name: t("Main image") }),
+              maskId: masks[0]?.id,
+            },
+            masks[0],
           ),
         });
       } else {

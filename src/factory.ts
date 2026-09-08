@@ -131,7 +131,7 @@ export function makeImageLayer(opts: {
 // Sizes a freshly-inserted main image so it fully covers the global main
 // alpha mask's box (fills width *and* height, aspect ratio kept, overflow
 // gets cropped by the mask). No-op unless the layer is the main image and a
-// mask exists. `mask` is the "All consoles" mainMask layer.
+// mask exists. `mask` is the alpha mask the image was dropped into.
 export function fitImageToMask(
   layer: ImageLayer,
   mask: Layer | undefined,
@@ -238,16 +238,17 @@ export function fitImageToSlot(
   };
 }
 
-// A screenshot frame. Several may exist side by side; each one clips the
-// card image that carries the same number. Stacked down the card by default
-// so three of them don't land on top of each other.
-export function makeShotMaskLayer(index: number): ShapeLayer {
-  // 4:3 by default — a screenshot dropped into a letterbox frame would lose
-  // most of its height to the cover-fit. Three of these stack inside the trim.
+// An alpha mask: a frame in the global or a console template. A card image
+// pointing at it is clipped to its alpha and fitted to its box; the frame
+// itself is never drawn on a card. `index` only shapes the default name and
+// where it lands, so several don't stack on top of each other.
+export function makeAlphaMaskLayer(index: number): ShapeLayer {
+  // 4:3 by default — a screenshot cover-fitted into a letterbox frame would
+  // lose most of its height.
   const w = TRIM_RECT.w * 0.42;
   const h = w * 0.75;
   return {
-    ...base(t("Screenshot {n}", { n: index })),
+    ...base(t("Alpha mask {n}", { n: index })),
     type: "shape",
     shape: "rect",
     width: w,
@@ -257,22 +258,7 @@ export function makeShotMaskLayer(index: number): ShapeLayer {
     fill: { ...DEFAULT_SHAPE_FILL },
     stroke: "#000000",
     strokeWidth: 0,
-    shotMask: index,
-  };
-}
-
-export function makeMainMaskLayer(): ShapeLayer {
-  return {
-    ...base(t("Main alpha mask")),
-    type: "shape",
-    shape: "rect",
-    width: TRIM_RECT.w * 0.9,
-    height: TRIM_RECT.h * 0.62,
-    cornerRadius: 40,
-    fill: { ...DEFAULT_SHAPE_FILL },
-    stroke: "#000000",
-    strokeWidth: 0,
-    mainMask: true,
+    alphaMask: true,
   };
 }
 
@@ -368,13 +354,24 @@ export function migrateProject(p: Project): Project {
     return [makeBackgroundLayer(fill, source), ...layers];
   };
 
+  // "Main alpha mask" and the numbered screenshot frames became one kind of
+  // frame; the flags are rewritten here so old projects keep working.
+  const toAlphaMask = (layers: Layer[]): Layer[] => {
+    if (!layers.some((l) => l.mainMask || l.shotMask)) return layers;
+    return layers.map((l) =>
+      l.mainMask || l.shotMask
+        ? { ...l, alphaMask: true, mainMask: undefined, shotMask: undefined }
+        : l,
+    );
+  };
+
   // Templates never inherit; a game card keeps its previous source default.
   const frontSource = p.isTemplate
     ? "card"
     : p.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  const nextLayers = faceLayers(p.layers, p, frontSource);
+  const nextLayers = toAlphaMask(faceLayers(p.layers, p, frontSource));
   const nextBack = p.back
-    ? { ...p.back, layers: faceLayers(p.back.layers, p.back, "card") }
+    ? { ...p.back, layers: toAlphaMask(faceLayers(p.back.layers, p.back, "card")) }
     : p.back;
 
   if (nextLayers === p.layers && nextBack === p.back) return p;

@@ -85,7 +85,12 @@ function bounds(l: Layer): { x1: number; y1: number; x2: number; y2: number } | 
 
 // A layer that is meant to run past the trim edge, so the edge checks skip it.
 const bleedsOnPurpose = (l: Layer) =>
-  isBackground(l) || !!l.mainMask || !!l.logoSlot || !!l.main || !!l.mask;
+  isBackground(l) ||
+  !!l.alphaMask ||
+  !!l.logoSlot ||
+  !!l.main ||
+  !!l.mask ||
+  (l.type === "image" && !!l.maskId);
 
 function checkLayer(l: Layer): { code: FindingCode; severity: Severity; message: string }[] {
   if (!l.visible) return [];

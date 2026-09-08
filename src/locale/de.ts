@@ -553,9 +553,16 @@ export const de: Record<string, string> = {
     "Keins der ausgewählten Spiele hat ein gespeichertes Design.",
   "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
 
-  // ── Screenshot frames ────────────────────────────────────────────────────
+  // ── Alpha masks ──────────────────────────────────────────────────────────
+  "Alpha mask {n}": "Alpha-Maske {n}",
+  "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.":
+    "Karten k\u00f6nnen ein Bild in diesen Rahmen legen: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Gr\u00f6\u00dfe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
+  "No alpha masks yet — add one in a console template or \u201cAll consoles\u201d.":
+    "Noch keine Alpha-Masken \u2013 leg eine in einer Konsolen-Vorlage oder in \u201eAlle Konsolen\u201c an.",
+  None: "Keine",
+  global: "global",
+  console: "Konsole",
   "Screenshot {n}": "Screenshot {n}",
-  "Screenshot frame {n}": "Screenshot-Maske {n}",
   "Screenshot {n} for": "Screenshot {n} f\u00fcr",
   "Screenshot {n} / {total}:": "Screenshot {n} / {total}:",
   "Cover ({n} of {total})": "Cover ({n} von {total})",

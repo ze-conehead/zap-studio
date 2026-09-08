@@ -29,7 +29,7 @@ import {
 } from "./factory";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
-import { mergeShotMasks, shotMasksOf } from "./templates";
+import { maskOptions, type MaskOption } from "./templates";
 import { getFormatId } from "./formats";
 import { lastProjectId, loadProject, saveProject } from "./persist";
 import { parseProject } from "./projectFile";
@@ -41,9 +41,8 @@ interface Templates {
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: Layer; // "All consoles" alpha frame for the card's main image
   logoSlot?: Layer; // "All consoles" placement frame for logos
-  shotMasks: Layer[]; // screenshot frames, global merged with the console's
+  masks: MaskOption[]; // alpha frames from the global + console templates
 }
 
 export interface GuideApi {
@@ -58,7 +57,7 @@ export interface GuideApi {
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
-  const [templates, setTemplates] = useState<Templates>({ overlay: [], shotMasks: [] });
+  const [templates, setTemplates] = useState<Templates>({ overlay: [], masks: [] });
   const [showProjects, setShowProjects] = useState(false);
 
   // Global guide lines: same set on every card, on/off remembered.
@@ -120,15 +119,13 @@ export default function App() {
 
       // The global "main alpha mask" clips each card's main image; it never
       // paints as an overlay layer itself. Background layers never overlay.
-      const mainMask = globalP?.layers.find((l) => l.mainMask && l.visible);
       const logoSlot = globalP?.layers.find((l) => l.logoSlot);
-      // A console may re-place any of the global screenshot frames.
-      const shotMasks = project.isGlobalTemplate
-        ? []
-        : mergeShotMasks(shotMasksOf(globalP), shotMasksOf(consoleP));
+      // A card can point at any frame from the global template or its own
+      // console; the template that owns one edits it in place instead.
+      const masks = project.isTemplate ? [] : maskOptions(globalP, consoleP);
       const overlayable = (p?: Project) =>
         (p?.layers ?? []).filter(
-          (l) => !l.mainMask && !l.logoSlot && !l.shotMask && !isBackground(l),
+          (l) => !l.alphaMask && !l.logoSlot && !isBackground(l),
         );
       const globalLayers = overlayable(globalP);
 
@@ -144,11 +141,8 @@ export default function App() {
         overlay,
         consoleBg,
         globalBg,
-        // Editable in place on "All consoles"; a reference outline everywhere
-        // else (console templates + game cards).
-        mainMask: project.isGlobalTemplate ? undefined : mainMask,
         logoSlot: project.isGlobalTemplate ? undefined : logoSlot,
-        shotMasks,
+        masks,
       });
     })();
     return () => {
@@ -258,9 +252,8 @@ export default function App() {
         overlay={templates.overlay}
         consoleBg={templates.consoleBg}
         globalBg={templates.globalBg}
-        mainMask={templates.mainMask}
         logoSlot={templates.logoSlot}
-        shotMasks={templates.shotMasks}
+        masks={templates.masks}
         guides={guideApi}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
@@ -287,9 +280,8 @@ function Shell({
   overlay,
   consoleBg,
   globalBg,
-  mainMask,
   logoSlot,
-  shotMasks,
+  masks,
   guides,
   activeGameKey,
   activeConsoleId,
@@ -305,9 +297,8 @@ function Shell({
   overlay: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
-  mainMask?: Layer;
   logoSlot?: Layer;
-  shotMasks: Layer[];
+  masks: MaskOption[];
   guides: GuideApi;
   activeGameKey?: string;
   activeConsoleId?: string;
@@ -383,7 +374,7 @@ function Shell({
           activeGameKey={activeGameKey}
           activeConsoleId={activeConsoleId}
           activeGlobal={activeGlobal}
-          mainMask={mainMask}
+          masks={masks.map((m) => m.layer)}
           onPickGame={onPickGame}
           onOpenConsole={onOpenConsole}
           onOpenGlobal={onOpenGlobal}
@@ -393,21 +384,25 @@ function Shell({
           overlay={overlay}
           consoleBg={consoleBg}
           globalBg={globalBg}
-          mainMask={mainMask}
+          masks={masks.map((m) => m.layer)}
           logoSlot={logoSlot}
-          shotMasks={shotMasks}
           guides={guides}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />
-          <LayerList mainMask={mainMask} shotMasks={shotMasks} />
+          <LayerList masks={masks} />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3 flex w-auto">
               <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
               {showMeta && <TabsTrigger value="meta">{t("Metadata")}</TabsTrigger>}
             </TabsList>
             <TabsContent value="props" className="mt-0">
-              <Inspector consoleBg={consoleBg} globalBg={globalBg} guides={guides} />
+              <Inspector
+                consoleBg={consoleBg}
+                globalBg={globalBg}
+                masks={masks}
+                guides={guides}
+              />
             </TabsContent>
             {showMeta && (
               <TabsContent value="meta" className="mt-0">

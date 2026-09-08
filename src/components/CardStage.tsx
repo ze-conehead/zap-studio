@@ -11,7 +11,7 @@ import {
   CardBackgroundNodes,
   effectiveBgFill,
   LayerInner,
-  withMainMask,
+  withMasks,
 } from "./EditorCanvas";
 
 // A non-interactive copy of the editor's card rendering, used to capture a
@@ -35,7 +35,7 @@ export function CardStage({
     consoleBg: card.consoleBg,
     globalBg: card.globalBg,
   });
-  const layers = withMainMask(card.project, content, card.mainMask, card.shotMasks);
+  const layers = withMasks(card.project, content, card.masks);
   const meta = resolveBadgeMeta(card.project);
 
   return (
