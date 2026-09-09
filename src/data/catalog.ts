@@ -5,7 +5,9 @@
 // seed list can still evolve.
 // Game and console names are trademarks of their owners.
 
-import { isSeededWorkspace, wsSuffix } from "../workspace";
+import { DEFAULT_WS, getWorkspaceId, isSeededWorkspace, wsSuffix } from "../workspace";
+import { exampleSeed, toMeta } from "./baseGameList";
+import type { GameMeta } from "../gamelist";
 
 export interface CatalogGame {
   id: string;
@@ -74,9 +76,11 @@ const SEED_CATALOG: CatalogConsole[] = [
   ]),
 ];
 
-// A workspace that opted out of the examples starts from nothing; the user
-// adds their own consoles in the tree.
-const SEED = isSeededWorkspace() ? SEED_CATALOG : [];
+// The hard-coded example catalogue only backs the original workspace. A new
+// "example" project gets its consoles written into its own overlay instead
+// (buildExampleCatalog), so they are fully editable and carry metadata.
+const SEED =
+  isSeededWorkspace() && getWorkspaceId() === DEFAULT_WS ? SEED_CATALOG : [];
 
 // ── Persisted overlay ───────────────────────────────────────────────────────
 
@@ -95,6 +99,59 @@ const EMPTY_OVERLAY: CatalogOverlay = {
   gameTitles: {},
   consoles: [],
 };
+
+/**
+ * The catalogue overlay + gamelist entries for a fresh "example" project:
+ * NES / SNES / Neo Geo / PlayStation / Nintendo 64 with their top `n` games
+ * (1–20) and full metadata, straight from base_game_list.csv. Written into a
+ * new workspace's storage by createWorkspace().
+ */
+export function buildExampleCatalog(n: number): {
+  overlay: CatalogOverlay;
+  gamelists: { consoleId: string; entries: (Partial<Omit<GameMeta, "name">> & { name: string })[] }[];
+} {
+  const consoles: CatalogConsole[] = [];
+  const gamelists: { consoleId: string; entries: (Partial<Omit<GameMeta, "name">> & { name: string })[] }[] =
+    [];
+  for (const bc of exampleSeed(n)) {
+    const consoleId = slug(bc.name);
+    consoles.push({
+      id: consoleId,
+      name: bc.name,
+      games: bc.games.map((g) => ({ id: slug(g.game), title: g.game })),
+    });
+    gamelists.push({
+      consoleId,
+      entries: bc.games.map((g) => ({ name: g.game, ...toMeta(g) })),
+    });
+  }
+  return { overlay: { ...EMPTY_OVERLAY, consoles }, gamelists };
+}
+
+/**
+ * Writes the example catalogue into another workspace's storage, keyed by
+ * its id. Called by createWorkspace() right before the switch reloads, so
+ * the new project opens already populated.
+ */
+export function seedWorkspace(workspaceId: string, exampleGames: number): void {
+  if (!workspaceId || exampleGames < 1) return;
+  const suffix = `--w${workspaceId}`;
+  const { overlay, gamelists } = buildExampleCatalog(exampleGames);
+  try {
+    localStorage.setItem(
+      `stickerstudio:catalogOverlay${suffix}`,
+      JSON.stringify(overlay),
+    );
+    for (const gl of gamelists) {
+      localStorage.setItem(
+        `stickerstudio:gamelist:${gl.consoleId}${suffix}`,
+        JSON.stringify(gl.entries),
+      );
+    }
+  } catch {
+    /* storage full / unavailable */
+  }
+}
 
 function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
   return {

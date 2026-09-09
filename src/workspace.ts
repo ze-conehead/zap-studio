@@ -101,20 +101,20 @@ const newId = () =>
 
 export function createWorkspace(
   name: string,
-  seeded = false,
-  format?: string,
+  opts: { seeded?: boolean; format?: string } = {},
 ): Workspace {
   const ws: Workspace = {
     id: newId(),
     name: name.trim() || "Project",
     createdAt: Date.now(),
-    seeded,
-    format,
+    seeded: !!opts.seeded,
+    format: opts.format,
   };
   writeList([...readList(), ws]);
   // src/formats.ts reads this key through wsSuffix(), so seeding it here is
-  // all it takes for the new project to open in the chosen format.
-  if (format) ls.set(`stickerstudio:format--w${ws.id}`, format);
+  // all it takes for the new project to open in the chosen format. The
+  // example catalogue itself is written by seedWorkspace() in the dialog.
+  if (opts.format) ls.set(`stickerstudio:format--w${ws.id}`, opts.format);
   return ws;
 }
 

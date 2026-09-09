@@ -88,6 +88,33 @@ export function baseConsoles(): BaseConsole[] {
   return cache;
 }
 
+// The consoles a new "example" project is seeded with — names exactly as
+// they appear in base_game_list.csv, rows there already ranked best-first.
+export const EXAMPLE_CONSOLES = [
+  "NES",
+  "SNES",
+  "Neo Geo",
+  "PlayStation",
+  "Nintendo 64",
+] as const;
+
+export const EXAMPLE_GAMES_DEFAULT = 5;
+export const EXAMPLE_GAMES_MIN = 1;
+export const EXAMPLE_GAMES_MAX = 20;
+
+/** The example consoles with their top `n` games (1–20). */
+export function exampleSeed(n: number): BaseConsole[] {
+  const count = Math.max(
+    EXAMPLE_GAMES_MIN,
+    Math.min(EXAMPLE_GAMES_MAX, Math.round(n)),
+  );
+  const byName = new Map(baseConsoles().map((c) => [c.name, c]));
+  return EXAMPLE_CONSOLES.flatMap((name) => {
+    const c = byName.get(name);
+    return c ? [{ name: c.name, games: c.games.slice(0, count) }] : [];
+  });
+}
+
 // A CSV row -> gamelist.xml entry patch (no name; the caller adds it).
 export function toMeta(g: BaseGame): Partial<Omit<GameMeta, "name">> {
   const year = /^\d{4}$/.test(g.year) ? g.year : undefined;

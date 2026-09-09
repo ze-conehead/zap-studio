@@ -112,12 +112,13 @@ export const de: Record<string, string> = {
   "Project name": "Projektname",
   "New project": "Neues Projekt",
   "Name, e.g. \u201cMega Drive collection\u201d": "Name, z. B. \u201eMega-Drive-Sammlung\u201c",
-  "Start with the example consoles": "Mit den Beispiel-Konsolen starten",
-  "Starts with the five built-in consoles and their games.":
-    "Startet mit den f\u00fcnf mitgelieferten Konsolen und ihren Spielen.",
+  "Example consoles": "Beispiel-Konsolen",
+  "Games per console": "Spiele pro Konsole",
+  "{consoles} \u2014 top {n} games each, with metadata from base_game_list.csv.":
+    "{consoles} \u2013 je die besten {n} Spiele, mit Metadaten aus base_game_list.csv.",
   "Starts empty — no consoles, no cards. Add your own in the tree.":
     "Startet leer \u2013 keine Konsolen, keine Karten. Eigene im Baum anlegen.",
-  "Create and switch": "Anlegen und wechseln",
+  Create: "Erstellen",
 
   // ── Data safety (automatic backups + trash) ──────────────────────────────
   "Data safety": "Datensicherheit",

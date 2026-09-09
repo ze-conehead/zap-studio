@@ -5,8 +5,15 @@
 // type of a single card design — only the labels say "project".
 
 import { del, keys } from "idb-keyval";
-import { Check, Layers, Plus, Trash2 } from "lucide-react";
+import { Check, Layers, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { seedWorkspace } from "../data/catalog";
+import {
+  EXAMPLE_CONSOLES,
+  EXAMPLE_GAMES_DEFAULT,
+  EXAMPLE_GAMES_MAX,
+  EXAMPLE_GAMES_MIN,
+} from "../data/baseGameList";
 import { FORMAT_IDS, FORMATS, getFormatId, type FormatId } from "../formats";
 import { useT } from "../i18n";
 import {
@@ -25,6 +32,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Slider } from "./ui/slider";
 import {
   Select,
   SelectContent,
@@ -44,19 +52,25 @@ export function WorkspaceDialog({
   const active = getWorkspaceId();
   const [list, setList] = useState<Workspace[]>([]);
   const [name, setName] = useState("");
-  const [seeded, setSeeded] = useState(false);
+  const [example, setExample] = useState(false);
+  const [games, setGames] = useState(EXAMPLE_GAMES_DEFAULT);
   const [format, setFormat] = useState<FormatId>(getFormatId());
 
   useEffect(() => {
     if (!open) return;
     setList(listWorkspaces());
     setName("");
-    setSeeded(false);
+    setExample(false);
+    setGames(EXAMPLE_GAMES_DEFAULT);
     setFormat(getFormatId());
   }, [open]);
 
   const create = () => {
-    const ws = createWorkspace(name || t("New project"), seeded, format);
+    const ws = createWorkspace(name || t("New project"), {
+      seeded: example,
+      format,
+    });
+    if (example) seedWorkspace(ws.id, games);
     switchWorkspace(ws.id); // reloads
   };
 
@@ -175,22 +189,43 @@ export function WorkspaceDialog({
           </div>
 
           <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={seeded} onCheckedChange={(v) => setSeeded(!!v)} />
-            {t("Start with the example consoles")}
+            <Checkbox checked={example} onCheckedChange={(v) => setExample(!!v)} />
+            {t("Example consoles")}
           </label>
-          <p className="text-xs text-muted-foreground">
-            {seeded
-              ? t("Starts with the five built-in consoles and their games.")
-              : t("Starts empty — no consoles, no cards. Add your own in the tree.")}
-          </p>
-          <Button size="sm" className="self-start" onClick={create}>
-            <Plus /> {t("Create and switch")}
-          </Button>
+
+          {example ? (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{t("Games per console")}</span>
+                <span className="tabular-nums text-foreground">{games}</span>
+              </div>
+              <Slider
+                min={EXAMPLE_GAMES_MIN}
+                max={EXAMPLE_GAMES_MAX}
+                step={1}
+                value={[games]}
+                onValueChange={([v]) => setGames(v)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("{consoles} — top {n} games each, with metadata from base_game_list.csv.", {
+                  consoles: EXAMPLE_CONSOLES.join(", "),
+                  n: games,
+                })}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {t("Starts empty — no consoles, no cards. Add your own in the tree.")}
+            </p>
+          )}
         </section>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             {t("Close")}
+          </Button>
+          <Button size="sm" onClick={create}>
+            {t("Create")}
           </Button>
         </div>
       </DialogContent>

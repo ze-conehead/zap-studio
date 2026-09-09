@@ -3,6 +3,7 @@
 
 import { t } from "./i18n";
 import { findGame } from "./data/catalog";
+import { wsSuffix } from "./workspace";
 import type { Project } from "./types";
 
 export interface GameMeta {
@@ -18,7 +19,10 @@ export interface GameMeta {
   rating?: string; // "0".."1"
 }
 
-const KEY = (consoleId: string) => `stickerstudio:gamelist:${consoleId}`;
+// Namespaced per workspace ("" suffix for the original), so a project's
+// metadata stays with that project. `seedWorkspace` writes the same shape.
+const KEY = (consoleId: string) =>
+  `stickerstudio:gamelist:${consoleId}${wsSuffix()}`;
 
 // gamelist.xml lives outside React state (plain localStorage), but layers
 // like MetaBadge need to redraw the instant a list is uploaded/removed —
