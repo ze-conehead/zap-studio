@@ -609,13 +609,13 @@ export const de: Record<string, string> = {
     "An Hilfslinien, Kartenr\u00e4ndern und anderen Ebenen einrasten",
   "Find logos": "Logos suchen",
   "Logo {n} / {total}:": "Logo {n} / {total}:",
-  "Click a logo to insert it \u2013 then it moves to the next card.":
-    "Logo anklicken zum Einf\u00fcgen \u2013 dann geht es zur n\u00e4chsten Karte.",
-  "Find logos \u2013 {name}": "Logos suchen \u2013 {name}",
-  "Find logos \u2013 all cards": "Logos suchen \u2013 alle Karten",
-  "Looking for cards without a logo \u2026": "Karten ohne Logo werden gesucht \u2026",
-  "{n} logo(s) inserted.": "{n} Logo(s) eingef\u00fcgt.",
-  "Every card already has a logo.": "Alle Karten haben bereits ein Logo.",
+  "Click a logo to insert it \u2013 then it moves to the next console.":
+    "Logo anklicken zum Einf\u00fcgen \u2013 dann geht es zur n\u00e4chsten Konsole.",
+  "Find logos \u2013 every console": "Logos suchen \u2013 jede Konsole",
+  "Looking for consoles without a logo \u2026":
+    "Konsolen ohne Logo werden gesucht \u2026",
+  "{n} console logo(s) inserted.": "{n} Konsolen-Logo(s) eingef\u00fcgt.",
+  "Every console already has a logo.": "Jede Konsole hat bereits ein Logo.",
 
   // ── CoverSweepDialog ─────────────────────────────────────────────────────
   "Find covers – all cards": "Cover suchen – alle Karten",

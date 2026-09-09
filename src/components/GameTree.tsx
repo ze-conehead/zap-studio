@@ -47,6 +47,7 @@ import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
+import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import { QuickImportDialog } from "./QuickImportDialog";
@@ -79,7 +80,7 @@ interface Props {
   onOpenGlobal: () => void;
 }
 
-type SweepScope = { consoleId?: string; consoleName?: string; kind?: "cover" | "logo" };
+type SweepScope = { consoleId?: string; consoleName?: string };
 
 interface MenuState {
   x: number;
@@ -112,6 +113,7 @@ export function GameTree({
   // Cover actions from the right-click menus.
   const [sweep, setSweep] = useState<SweepScope | null>(null);
   const [quick, setQuick] = useState<SweepScope | null>(null);
+  const [consoleLogos, setConsoleLogos] = useState(false);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
 
   // Add a cover to a single game: straight into the live editor when that
@@ -154,10 +156,17 @@ export function GameTree({
     if (!addConsole(name)) alert(t("That console already exists."));
   };
 
+  // Per-console / per-game sweep: covers only. Logos are a global-template
+  // job now — one per console, see the global context menu below.
   const sweepMenuItems = (scope: SweepScope): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setSweep(scope) },
-    { label: t("Find logos"), onSelect: () => setSweep({ ...scope, kind: "logo" }) },
     { label: t("Insert cover by URL"), onSelect: () => setQuick(scope) },
+  ];
+
+  const globalMenuItems = (): ContextMenuItem[] => [
+    { label: t("Find cover"), onSelect: () => setSweep({}) },
+    { label: t("Find logos"), onSelect: () => setConsoleLogos(true) },
+    { label: t("Insert cover by URL"), onSelect: () => setQuick({}) },
   ];
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
@@ -271,7 +280,7 @@ export function GameTree({
           onClick={onOpenGlobal}
           onContextMenu={(e) => {
             e.preventDefault();
-            setMenu({ x: e.clientX, y: e.clientY, items: sweepMenuItems({}) });
+            setMenu({ x: e.clientX, y: e.clientY, items: globalMenuItems() });
           }}
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
@@ -467,8 +476,14 @@ export function GameTree({
           onOpenChange={(o) => !o && setSweep(null)}
           consoleId={sweep.consoleId}
           consoleName={sweep.consoleName}
-          kind={sweep.kind}
           excludeGameKey={currentGameKey}
+        />
+      )}
+
+      {consoleLogos && (
+        <ConsoleLogoDialog
+          open
+          onOpenChange={(o) => !o && setConsoleLogos(false)}
         />
       )}
 

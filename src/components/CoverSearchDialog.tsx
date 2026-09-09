@@ -373,7 +373,7 @@ export function CoverSearchDialog({
                 </span>
               ) : (
                 logoMode
-                  ? t("Click a logo to insert it – then it moves to the next card.")
+                  ? t("Click a logo to insert it – then it moves to the next console.")
                   : t("Click a cover to insert it – then it moves to the next card.")
               )}
             </span>
