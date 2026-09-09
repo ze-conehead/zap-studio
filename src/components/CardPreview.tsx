@@ -61,11 +61,15 @@ function CardBrowserPreview({
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
   const card3d = useRef<Card3DHandle>(null);
-  const offStage = useRef<Konva.Stage | null>(null);
-  // Stable so React never re-runs it — the one CardStage below stays mounted
-  // and only its `card` prop changes as you step.
-  const setOffStage = useCallback((s: Konva.Stage | null) => {
-    offStage.current = s;
+  const offFront = useRef<Konva.Stage | null>(null);
+  const offBack = useRef<Konva.Stage | null>(null);
+  // Stable so React never re-runs them — the CardStages below stay mounted
+  // and only their `card` prop changes as you step.
+  const setOffFront = useCallback((s: Konva.Stage | null) => {
+    offFront.current = s;
+  }, []);
+  const setOffBack = useCallback((s: Konva.Stage | null) => {
+    offBack.current = s;
   }, []);
 
   // Load the catalogue once, then pick the starting card.
@@ -99,56 +103,62 @@ function CardBrowserPreview({
     () => cards?.findIndex((c) => c.key === activeGameKey) ?? -1,
     [cards, activeGameKey],
   );
-  // The open design is captured off the live editor stage so unsaved edits
-  // show; every other card is rendered off-screen.
+  // The open design's front is captured off the live editor stage so unsaved
+  // edits show; every other face is rendered off-screen through CardStage.
   const showingLive = current != null && idx === activeIdx && activeIdx >= 0;
-  const hasBack = showingLive && !!state.project.back;
+  // The back face to show: the card's own, else the console template's, else
+  // the global one's — resolved in overview.ts.
+  const backFace = current?.card.back;
+  const hasBack = !!backFace;
 
   const step = (delta: number) => {
     if (total > 1) setIdx((i) => (i + delta + total) % total);
   };
 
-  // Render the current card to a PNG.
+  // Render the current card's faces to PNGs.
   useEffect(() => {
     if (!current) return;
     let alive = true;
     setImg(null);
     setBackImg(null);
     setErr(null);
+    const fail = (e: unknown) => alive && setErr((e as Error).message);
 
+    // Front of the open design → straight off the live editor stage.
     if (showingLive) {
       const w = canvas.current?.getStageWidth() ?? 0;
       const front = canvas.current?.getStage("front");
-      if (!front || !w) {
+      if (front && w) {
+        exportPng({ stage: front, stageWidth: w, mode: "trim" })
+          .then((d) => alive && setImg(d))
+          .catch(fail);
+      } else {
         setErr(t("No card to show."));
-        return;
       }
-      const fail = (e: unknown) => alive && setErr((e as Error).message);
-      exportPng({ stage: front, stageWidth: w, mode: "trim" })
-        .then((d) => alive && setImg(d))
-        .catch(fail);
-      if (state.project.back) {
-        const b = canvas.current?.getStage("back");
-        if (b) {
-          exportPng({ stage: b, stageWidth: w, mode: "trim" })
-            .then((d) => alive && setBackImg(d))
-            .catch(fail);
-        }
-      }
-      return () => {
-        alive = false;
-      };
     }
 
+    // Stepped fronts and every back → off-screen CardStage capture.
     void (async () => {
-      await Promise.all(packImageSources([current.card]).map(preloadImage));
+      const srcs = [
+        ...packImageSources([current.card]),
+        ...(current.card.back?.layers ?? [])
+          .filter((l): l is Extract<typeof l, { type: "image" }> => l.type === "image")
+          .map((l) => l.src)
+          .filter(Boolean),
+      ];
+      await Promise.all(srcs.map(preloadImage));
       if (!alive) return;
       // Two frames: one for Konva to mount, one for it to paint.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           if (!alive) return;
-          if (offStage.current) setImg(captureTrim(offStage.current, RENDER_W));
-          else setErr(t("No card to show."));
+          if (!showingLive) {
+            if (offFront.current) setImg(captureTrim(offFront.current, RENDER_W));
+            else setErr(t("No card to show."));
+          }
+          if (current.card.back && offBack.current) {
+            setBackImg(captureTrim(offBack.current, RENDER_W));
+          }
         }),
       );
     })();
@@ -181,14 +191,24 @@ function CardBrowserPreview({
 
   return (
     <div className="preview3d-backdrop" onPointerDown={onClose}>
-      {/* Off-screen render target for a stepped card — kept mounted, only
-          its `card` prop changes, so there is no remount race on the ref. */}
-      {current && !showingLive && (
+      {/* Off-screen render targets — kept mounted, only the `card` prop
+          changes, so there is no remount race on the refs. */}
+      {current && (
         <div
           aria-hidden
           style={{ position: "fixed", left: -20000, top: 0, opacity: 0 }}
         >
-          <CardStage card={current.card} width={RENDER_W} stageRef={setOffStage} />
+          {!showingLive && (
+            <CardStage card={current.card} width={RENDER_W} stageRef={setOffFront} />
+          )}
+          {backFace && (
+            <CardStage
+              card={current.card}
+              width={RENDER_W}
+              face="back"
+              stageRef={setOffBack}
+            />
+          )}
         </div>
       )}
 

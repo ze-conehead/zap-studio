@@ -33,6 +33,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
   const globalBg = bgFill(globalP);
   const globalMasks = alphaMasksOf(globalP);
   const globalLayers = overlayable(globalP);
+  const globalBack = globalP?.back;
 
   const tplCache = new Map<string, Project | undefined>();
   const out: OverviewCard[] = [];
@@ -44,6 +45,9 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
     const consoleP = tplCache.get(c.id);
     const overlay = [...overlayable(consoleP), ...globalLayers];
     const consoleBg = bgFill(consoleP);
+    // A game with no back of its own borrows the console template's, then
+    // the global one's.
+    const inheritedBack = consoleP?.back ?? globalBack;
 
     for (const g of c.games) {
       const key = gameKeyOf(c, g);
@@ -67,6 +71,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
           consoleBg,
           globalBg,
           masks: [...globalMasks, ...alphaMasksOf(consoleP)],
+          back: saved?.back ?? inheritedBack,
           holo: false,
         },
       });

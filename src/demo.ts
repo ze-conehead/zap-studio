@@ -14,7 +14,7 @@ import {
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
-import type { CardBackground, Layer, Project } from "./types";
+import type { BackFace, CardBackground, Layer, Project } from "./types";
 
 export const PACK_SIZE = 12;
 export const HOLO_CHANCE = 0.1;
@@ -28,6 +28,9 @@ export interface DemoCard {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   masks?: Layer[]; // alpha frames from the global + console templates
+  // The back face to show: the card's own, else the console template's, else
+  // the global template's (src/overview.ts resolves the fallback).
+  back?: BackFace;
   holo: boolean;
   image?: string; // filled in once the card has been rendered
 }

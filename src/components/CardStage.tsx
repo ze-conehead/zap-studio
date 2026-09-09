@@ -16,33 +16,39 @@ import {
 } from "./EditorCanvas";
 
 // A non-interactive copy of the editor's card rendering, used to capture a
-// finished card as a PNG (demo packs). Same pipeline as the editor, so
-// masks, templates and the main alpha mask all come out identical.
+// finished card as a PNG (demo packs, the 3D preview). Same pipeline as the
+// editor, so masks, templates and the main alpha mask all come out
+// identical. `face: "back"` renders the resolved back face (`card.back`) — a
+// plain face: its own background plus its conditioned layers, no template
+// overlay or alpha masks, exactly like the editor's back.
 export function CardStage({
   card,
   width,
+  face = "front",
   stageRef,
 }: {
   card: DemoCard;
   width: number; // rendered width of the trimmed card
+  face?: "front" | "back";
   stageRef?: React.Ref<Konva.Stage>;
 }) {
   const scale = width / TRIM_RECT.w;
-  const bgLayer = card.project.layers.find(isBackground);
-  const content = card.project.layers.filter((l) => !isBackground(l));
+  const back = face === "back";
+  const faceLayers = back ? card.back?.layers ?? [] : card.project.layers;
+  const bgLayer = faceLayers.find(isBackground);
+  const content = faceLayers.filter((l) => !isBackground(l));
   const bg = effectiveBgFill(bgLayer, {
-    inherit: !card.project.isTemplate,
-    fallback: card.project.isGlobalTemplate ? undefined : card.globalBg,
+    inherit: !back && !card.project.isTemplate,
+    fallback: back || card.project.isGlobalTemplate ? undefined : card.globalBg,
     consoleBg: card.consoleBg,
     globalBg: card.globalBg,
   });
   const meta = resolveBadgeMeta(card.project);
-  const layers = withMasks(
-    card.project,
-    resolveConditions(content, meta),
-    card.masks,
-  );
-  const overlay = resolveConditions(card.overlay, meta);
+  const resolved = resolveConditions(content, meta);
+  const layers = back
+    ? resolved
+    : withMasks(card.project, resolved, card.masks);
+  const overlay = back ? [] : resolveConditions(card.overlay, meta);
   // What a flowing text frame breaks around (src/textFlow.ts).
   const obstacles = [...(card.masks ?? []), ...content.filter((l) => l.alphaMask)];
 
