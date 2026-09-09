@@ -8,7 +8,10 @@ export interface MaskOption {
   source: "global" | "console";
 }
 
-const isAlphaMask = (l: Layer) => !!(l.alphaMask || l.mainMask || l.shotMask);
+// Only a shape can be an alpha frame — its box is the frame. Migration
+// strips the flag off anything else, this is the backstop.
+const isAlphaMask = (l: Layer) =>
+  l.type === "shape" && !!(l.alphaMask || l.mainMask || l.shotMask);
 
 /** The alpha masks of one project, in layer order. */
 export function alphaMasksOf(p: Project | undefined): Layer[] {

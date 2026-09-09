@@ -422,7 +422,9 @@ function MaskRoleControls({
   const { isTemplate } = state.project;
 
   if (isTemplate) {
-    if (selected.type !== "shape" && selected.type !== "image") return null;
+    // Only a shape can be an alpha mask — its geometry is the frame. An
+    // image would clip cards to its own pixels, which is never what's wanted.
+    if (selected.type !== "shape") return null;
     return (
       <div className="flex flex-col gap-1.5">
         <label className="flex items-center gap-2 text-sm">

@@ -365,14 +365,26 @@ export function migrateProject(p: Project): Project {
   };
 
   // "Main alpha mask" and the numbered screenshot frames became one kind of
-  // frame; the flags are rewritten here so old projects keep working.
+  // frame; the flags are rewritten here so old projects keep working. Only a
+  // shape can be an alpha frame, so the flag is cleared off anything else —
+  // images could carry it while the UI still offered them the checkbox.
   const toAlphaMask = (layers: Layer[]): Layer[] => {
-    if (!layers.some((l) => l.mainMask || l.shotMask)) return layers;
-    return layers.map((l) =>
-      l.mainMask || l.shotMask
-        ? { ...l, alphaMask: true, mainMask: undefined, shotMask: undefined }
-        : l,
+    const stale = layers.some(
+      (l) =>
+        l.mainMask ||
+        l.shotMask ||
+        ((l.alphaMask || l.mainMask || l.shotMask) && l.type !== "shape"),
     );
+    if (!stale) return layers;
+    return layers.map((l) => {
+      if (l.type !== "shape") {
+        if (!l.alphaMask && !l.mainMask && !l.shotMask) return l;
+        return { ...l, alphaMask: undefined, mainMask: undefined, shotMask: undefined };
+      }
+      return l.mainMask || l.shotMask
+        ? { ...l, alphaMask: true, mainMask: undefined, shotMask: undefined }
+        : l;
+    });
   };
 
   // Templates never inherit; a game card keeps its previous source default.
