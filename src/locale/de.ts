@@ -427,6 +427,10 @@ export const de: Record<string, string> = {
   "Zoom out": "Verkleinern",
   "Drag to rotate · flick to spin · wheel to zoom · F flips, R resets":
     "Ziehen zum Drehen · Schwung zum Weiterdrehen · Mausrad zoomt · F dreht um, R setzt zurück",
+  "Previous card ([)": "Vorherige Karte ([)",
+  "Next card (])": "Nächste Karte (])",
+  "[ ] step cards · drag to rotate · flick to spin · wheel to zoom · F flips, R resets":
+    "[ ] blättert Karten · Ziehen zum Drehen · Schwung zum Weiterdrehen · Mausrad zoomt · F dreht um, R setzt zurück",
 
   // ── DemoMode ─────────────────────────────────────────────────────────────
   "Demo mode": "Demo-Modus",

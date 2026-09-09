@@ -419,7 +419,14 @@ function Shell({
         </aside>
       </div>
 
-      {preview && <CardPreview canvas={canvas} onClose={() => setPreview(false)} />}
+      {preview && (
+        <CardPreview
+          canvas={canvas}
+          activeGameKey={activeGameKey}
+          activeConsoleId={activeConsoleId}
+          onClose={() => setPreview(false)}
+        />
+      )}
       {demo && <DemoMode onClose={() => setDemo(false)} />}
 
       <OverviewDialog

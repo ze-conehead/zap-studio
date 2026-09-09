@@ -1,61 +1,169 @@
-import { FlipHorizontal2, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import type Konva from "konva";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FlipHorizontal2,
+  RotateCcw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useT } from "../i18n";
+import { packImageSources } from "../demo";
 import { exportPng } from "../export";
-import { getFormat } from "../formats";
+import { ensureFontsLoaded } from "../fonts";
+import { getFormat, type FormatPanel } from "../formats";
+import { preloadImage } from "../hooks/useImage";
+import { loadOverviewCards, type OverviewCard } from "../overview";
+import { saveProject } from "../persist";
 import { useStore } from "../store";
 import { Card3D, type Card3DHandle } from "./Card3D";
+import { captureTrim, CardStage } from "./CardStage";
 import type { CanvasHandle } from "./EditorCanvas";
 
-export function CardPreview({
-  canvas,
-  onClose,
-}: {
+// Capture width for a stepped card (not the one open in the editor).
+const RENDER_W = 900;
+
+interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
+  // What the tree has selected — decides which card the preview opens on.
+  activeGameKey?: string;
+  activeConsoleId?: string;
   onClose: () => void;
-}) {
+}
+
+export function CardPreview(props: Props) {
+  const panels = getFormat().panels;
+  if (panels && panels.length > 1) {
+    return <FlatPreview canvas={props.canvas} onClose={props.onClose} panels={panels} />;
+  }
+  return <CardBrowserPreview {...props} />;
+}
+
+// The 3D preview, now a browser: Prev / Next step through every catalogue
+// card. Opens on the card being edited; on a console or the global template
+// it opens on the first (console) card instead of a blank template.
+function CardBrowserPreview({
+  canvas,
+  activeGameKey,
+  activeConsoleId,
+  onClose,
+}: Props) {
   const t = useT();
   const { state } = useStore();
-  const hasBack = !!state.project.back;
+  const [cards, setCards] = useState<OverviewCard[] | null>(null);
+  const [idx, setIdx] = useState(0);
   const [img, setImg] = useState<string | null>(null);
   const [backImg, setBackImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
-  const card = useRef<Card3DHandle>(null);
+  const card3d = useRef<Card3DHandle>(null);
+  const offStage = useRef<Konva.Stage | null>(null);
+  // Stable so React never re-runs it — the one CardStage below stays mounted
+  // and only its `card` prop changes as you step.
+  const setOffStage = useCallback((s: Konva.Stage | null) => {
+    offStage.current = s;
+  }, []);
 
+  // Load the catalogue once, then pick the starting card.
   useEffect(() => {
-    const w = canvas.current?.getStageWidth() ?? 0;
-    const front = canvas.current?.getStage("front");
-    if (!front || !w) {
-      setErr(t("No card to show."));
-      return;
-    }
-    // Both faces are mounted at once now — grab each stage directly.
-    let cancelled = false;
-    const fail = (e: unknown) => !cancelled && setErr((e as Error).message);
-    exportPng({ stage: front, stageWidth: w, mode: "trim" })
-      .then((d) => !cancelled && setImg(d))
-      .catch(fail);
-    if (hasBack) {
-      const b = canvas.current?.getStage("back");
-      if (b) {
-        exportPng({ stage: b, stageWidth: w, mode: "trim" })
-          .then((d) => !cancelled && setBackImg(d))
-          .catch(fail);
+    let alive = true;
+    (async () => {
+      try {
+        if (state.dirty) await saveProject(state.project);
+        await ensureFontsLoaded();
+        const list = await loadOverviewCards();
+        if (!alive) return;
+        let start = list.findIndex((c) => c.key === activeGameKey);
+        if (start < 0 && activeConsoleId) {
+          start = list.findIndex((c) => c.consoleId === activeConsoleId);
+        }
+        setCards(list);
+        setIdx(Math.max(0, start));
+      } catch (e) {
+        if (alive) setErr((e as Error).message);
       }
-    }
+    })();
     return () => {
-      cancelled = true;
+      alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvas]);
+  }, []);
+
+  const total = cards?.length ?? 0;
+  const current = cards?.[idx];
+  const activeIdx = useMemo(
+    () => cards?.findIndex((c) => c.key === activeGameKey) ?? -1,
+    [cards, activeGameKey],
+  );
+  // The open design is captured off the live editor stage so unsaved edits
+  // show; every other card is rendered off-screen.
+  const showingLive = current != null && idx === activeIdx && activeIdx >= 0;
+  const hasBack = showingLive && !!state.project.back;
+
+  const step = (delta: number) => {
+    if (total > 1) setIdx((i) => (i + delta + total) % total);
+  };
+
+  // Render the current card to a PNG.
+  useEffect(() => {
+    if (!current) return;
+    let alive = true;
+    setImg(null);
+    setBackImg(null);
+    setErr(null);
+
+    if (showingLive) {
+      const w = canvas.current?.getStageWidth() ?? 0;
+      const front = canvas.current?.getStage("front");
+      if (!front || !w) {
+        setErr(t("No card to show."));
+        return;
+      }
+      const fail = (e: unknown) => alive && setErr((e as Error).message);
+      exportPng({ stage: front, stageWidth: w, mode: "trim" })
+        .then((d) => alive && setImg(d))
+        .catch(fail);
+      if (state.project.back) {
+        const b = canvas.current?.getStage("back");
+        if (b) {
+          exportPng({ stage: b, stageWidth: w, mode: "trim" })
+            .then((d) => alive && setBackImg(d))
+            .catch(fail);
+        }
+      }
+      return () => {
+        alive = false;
+      };
+    }
+
+    void (async () => {
+      await Promise.all(packImageSources([current.card]).map(preloadImage));
+      if (!alive) return;
+      // Two frames: one for Konva to mount, one for it to paint.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (!alive) return;
+          if (offStage.current) setImg(captureTrim(offStage.current, RENDER_W));
+          else setErr(t("No card to show."));
+        }),
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, showingLive, idx]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const c = card.current;
+      const c = card3d.current;
       if (e.key === "Escape") return onClose();
+      if (e.key === "[") return step(-1);
+      if (e.key === "]") return step(1);
       if (!c) return;
       if (e.key === "ArrowLeft") c.spin(-45);
       else if (e.key === "ArrowRight") c.spin(45);
@@ -66,59 +174,71 @@ export function CardPreview({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, total]);
 
-  // Multi-panel formats (DVD wrap, J-card) aren't a card you turn over —
-  // show the flat artboard with the fold lines marked.
-  const panels = getFormat().panels;
-  if (panels && panels.length > 1) {
-    const totalW = panels.reduce((s, p) => s + p.wMM, 0);
-    let acc = 0;
-    const folds = panels.slice(0, -1).map((p) => {
-      acc += p.wMM;
-      return (acc / totalW) * 100;
-    });
-    return (
-      <div className="preview3d-backdrop" onPointerDown={onClose}>
-        <div className="flat-preview" onPointerDown={(e) => e.stopPropagation()}>
-          {img ? (
-            <img src={img} alt={t("Card preview")} draggable={false} />
-          ) : (
-            <div className="preview3d-placeholder">{err ?? t("rendering …")}</div>
-          )}
-          {folds.map((pct) => (
-            <span
-              key={pct}
-              className="flat-preview-fold"
-              style={{ left: `${pct}%` }}
-            />
-          ))}
-        </div>
-        <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
-          <span className="text-xs text-muted-foreground">
-            {t("Fold lines dashed")}
-          </span>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            <X /> {t("Close")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const placeholder = err ?? (cards ? t("rendering …") : t("loading …"));
 
   return (
     <div className="preview3d-backdrop" onPointerDown={onClose}>
+      {/* Off-screen render target for a stepped card — kept mounted, only
+          its `card` prop changes, so there is no remount race on the ref. */}
+      {current && !showingLive && (
+        <div
+          aria-hidden
+          style={{ position: "fixed", left: -20000, top: 0, opacity: 0 }}
+        >
+          <CardStage card={current.card} width={RENDER_W} stageRef={setOffStage} />
+        </div>
+      )}
+
       <div onPointerDown={(e) => e.stopPropagation()}>
         <Card3D
-          ref={card}
+          ref={card3d}
           front={img}
-          back={backImg}
+          back={hasBack ? backImg : null}
           holo={holo}
-          placeholder={err ?? t("rendering …")}
+          placeholder={placeholder}
         />
       </div>
 
       <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="icon"
+            title={t("Previous card ([)")}
+            disabled={total < 2}
+            onClick={() => step(-1)}
+          >
+            <ChevronLeft />
+          </Button>
+          <span className="min-w-40 text-center text-sm">
+            {current ? (
+              <>
+                {current.gameTitle}
+                <span className="block text-[11px] text-muted-foreground">
+                  {current.consoleName}
+                  {total > 0 && ` · ${idx + 1} / ${total}`}
+                </span>
+              </>
+            ) : (
+              t("loading …")
+            )}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            title={t("Next card (])")}
+            disabled={total < 2}
+            onClick={() => step(1)}
+          >
+            <ChevronRight />
+          </Button>
+        </div>
+
+        <span className="preview3d-sep" />
+
         <label className="flex items-center gap-2 text-sm">
           <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
           {t("Holographic card")}
@@ -128,7 +248,7 @@ export function CardPreview({
           variant="outline"
           size="icon"
           title={t("Zoom out")}
-          onClick={() => card.current?.zoomBy(1 / 1.2)}
+          onClick={() => card3d.current?.zoomBy(1 / 1.2)}
         >
           <ZoomOut />
         </Button>
@@ -136,14 +256,14 @@ export function CardPreview({
           variant="outline"
           size="icon"
           title={t("Zoom in")}
-          onClick={() => card.current?.zoomBy(1.2)}
+          onClick={() => card3d.current?.zoomBy(1.2)}
         >
           <ZoomIn />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => card.current?.flip()}>
+        <Button variant="outline" size="sm" onClick={() => card3d.current?.flip()}>
           <FlipHorizontal2 /> {t("Flip")}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => card.current?.reset()}>
+        <Button variant="outline" size="sm" onClick={() => card3d.current?.reset()}>
           <RotateCcw /> {t("Reset view")}
         </Button>
         <Button variant="outline" size="sm" onClick={onClose}>
@@ -152,8 +272,69 @@ export function CardPreview({
       </div>
 
       <p className="preview3d-hint" onPointerDown={(e) => e.stopPropagation()}>
-        {t("Drag to rotate · flick to spin · wheel to zoom · F flips, R resets")}
+        {t("[ ] step cards · drag to rotate · flick to spin · wheel to zoom · F flips, R resets")}
       </p>
+    </div>
+  );
+}
+
+// Multi-panel formats (DVD wrap, J-card) aren't a card you turn over — show
+// the flat artboard with the fold lines marked. Off the live editor stage.
+function FlatPreview({
+  canvas,
+  onClose,
+  panels,
+}: {
+  canvas: React.MutableRefObject<CanvasHandle | null>;
+  onClose: () => void;
+  panels: FormatPanel[];
+}) {
+  const t = useT();
+  const [img, setImg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    const w = canvas.current?.getStageWidth() ?? 0;
+    const front = canvas.current?.getStage("front");
+    if (!front || !w) {
+      setErr(t("No card to show."));
+      return;
+    }
+    let cancelled = false;
+    exportPng({ stage: front, stageWidth: w, mode: "trim" })
+      .then((d) => !cancelled && setImg(d))
+      .catch((e) => !cancelled && setErr((e as Error).message));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvas]);
+
+  const totalW = panels.reduce((s, p) => s + p.wMM, 0);
+  let acc = 0;
+  const folds = panels.slice(0, -1).map((p) => {
+    acc += p.wMM;
+    return (acc / totalW) * 100;
+  });
+
+  return (
+    <div className="preview3d-backdrop" onPointerDown={onClose}>
+      <div className="flat-preview" onPointerDown={(e) => e.stopPropagation()}>
+        {img ? (
+          <img src={img} alt={t("Card preview")} draggable={false} />
+        ) : (
+          <div className="preview3d-placeholder">{err ?? t("rendering …")}</div>
+        )}
+        {folds.map((pct) => (
+          <span key={pct} className="flat-preview-fold" style={{ left: `${pct}%` }} />
+        ))}
+      </div>
+      <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
+        <span className="text-xs text-muted-foreground">{t("Fold lines dashed")}</span>
+        <Button variant="outline" size="sm" onClick={onClose}>
+          <X /> {t("Close")}
+        </Button>
+      </div>
     </div>
   );
 }
