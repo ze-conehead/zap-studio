@@ -1054,8 +1054,22 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   );
 }
 
+// Off-stage measurer so each icon+text chip can be centred in its slot —
+// Konva has no "shrink a Group to its content".
+let badgeProbe: Konva.Text | null = null;
+function badgeTextWidth(text: string, fontSize: number): number {
+  badgeProbe ??= new Konva.Text({
+    fontFamily: "system-ui, sans-serif",
+    fontStyle: "bold",
+  });
+  badgeProbe.fontSize(fontSize);
+  return badgeProbe.measureSize(text).width;
+}
+
 // Console-level badge: rating, release year and a players icon, all read
 // live from the gamelist.xml entry matched to the current card (`meta`).
+// The badge width is split into equal slots and every element is centred in
+// its own slot, so they sit evenly spread however many are shown.
 function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMeta }) {
   const w = layer.width;
   const h = layer.height;
@@ -1072,9 +1086,6 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
   const colW = w / n;
   const iconSize = Math.min(h * 0.62, layer.fontSize * 1.6);
   const pad = Math.max(3, layer.fontSize * 0.15);
-  // A single standalone element (added on its own, not part of a combined
-  // badge) reads better as one centred icon+text chip than left-aligned.
-  const solo = n === 1;
 
   const ratingText = ratingOutOfFive(meta?.rating);
   const yearText = releaseYear(meta?.releasedate);
@@ -1083,12 +1094,13 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
   return (
     <>
       {segments.map((kind, i) => {
-        const colX = -w / 2 + colW * i;
+        // Centre of this element's equal slot.
+        const mid = -w / 2 + colW * (i + 0.5);
         if (kind === "year") {
           return (
             <Text
               key={kind}
-              x={colX}
+              x={mid - colW / 2}
               y={-h / 2}
               width={colW}
               height={h}
@@ -1105,13 +1117,11 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
 
         const label =
           kind === "rating" ? (ratingText ?? "–") : (playersRaw || "–");
-        const textW = solo
-          ? layer.fontSize * (kind === "rating" ? 2 : 2.6)
-          : Math.max(4, colW - iconSize - pad * 3);
+        const textW = badgeTextWidth(label, layer.fontSize);
         const pairW = iconSize + pad + textW;
-        const pairX = solo ? -pairW / 2 : colX;
-        const iconCx = pairX + iconSize / 2 + (solo ? 0 : pad);
-        const textX = pairX + iconSize + (solo ? pad : pad * 2);
+        const pairX = mid - pairW / 2; // centre the icon+text pair in the slot
+        const iconCx = pairX + iconSize / 2;
+        const textX = pairX + iconSize + pad;
 
         return (
           <Group key={kind}>
@@ -1136,7 +1146,7 @@ function MetaBadgeInner({ layer, meta }: { layer: TMetaBadgeLayer; meta?: GameMe
             <Text
               x={textX}
               y={-h / 2}
-              width={textW}
+              width={textW + pad * 2}
               height={h}
               align="left"
               verticalAlign="middle"
