@@ -55,15 +55,15 @@ export const templateId = (consoleId: string) => `tpl-${consoleId}${TPL_SUFFIX}`
 export const GLOBAL_TEMPLATE_ID = `tpl-global${TPL_SUFFIX}`;
 
 // The global template sits above every console: its layers are overlaid on
-// every game sticker, no matter the console. Starts with no background — add
-// one as a layer for a shared card background.
+// every game sticker, no matter the console. It always carries a background
+// layer — the shared card background every sticker falls back to.
 export function newGlobalTemplate(): Project {
   const now = Date.now();
   return {
     id: GLOBAL_TEMPLATE_ID,
     name: t("Global template"),
     format: getFormatId(),
-    layers: [],
+    layers: [makeBackgroundLayer()],
     createdAt: now,
     updatedAt: now,
     isTemplate: true,
@@ -391,7 +391,13 @@ export function migrateProject(p: Project): Project {
   const frontSource = p.isTemplate
     ? "card"
     : p.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  const nextLayers = toAlphaMask(faceLayers(p.layers, p, frontSource));
+  const migrated = toAlphaMask(faceLayers(p.layers, p, frontSource));
+  // The global template always keeps a background layer — backfill one for
+  // templates saved before that became the default.
+  const nextLayers =
+    p.isGlobalTemplate && !migrated.some(isBackground)
+      ? [makeBackgroundLayer(), ...migrated]
+      : migrated;
   const nextBack = p.back
     ? { ...p.back, layers: toAlphaMask(faceLayers(p.back.layers, p.back, "card")) }
     : p.back;
