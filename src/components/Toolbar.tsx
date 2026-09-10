@@ -1,20 +1,6 @@
-import {
-  Box,
-  LayoutGrid,
-  MoveHorizontal,
-  MoveVertical,
-  Redo2,
-  Ruler,
-  Undo2,
-} from "lucide-react";
+import { Box, LayoutGrid, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStore } from "../store";
@@ -34,7 +20,7 @@ export function Toolbar({
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
-  const { project, past, future, showBleed } = state;
+  const { past, future, showBleed } = state;
 
 
 
@@ -84,23 +70,6 @@ export function Toolbar({
           />
           {t("Snap")}
         </label>
-        {project.isGlobalTemplate && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" title={t("Add guide")}>
-                <Ruler />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => guides.add("x")}>
-                <MoveVertical /> {t("Vertical guide")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => guides.add("y")}>
-                <MoveHorizontal /> {t("Horizontal guide")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
 
       {/* Centred on the whole bar, independent of the controls on the left. */}
