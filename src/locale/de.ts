@@ -639,6 +639,32 @@ export const de: Record<string, string> = {
   Cancel: "Abbrechen",
   Continue: "Weiter",
 
+  // ── ZaparooImportDialog ──────────────────────────────────────────────────
+  "Zaparoo (MiSTer) …": "Zaparoo (MiSTer) …",
+  "Import from Zaparoo (MiSTer)": "Aus Zaparoo (MiSTer) importieren",
+  "Address of the MiSTer (or other Zaparoo device). The dev server forwards the request — Zaparoo Core must be running.":
+    "Adresse des MiSTer (oder eines anderen Zaparoo-Geräts). Der Dev-Server leitet die Anfrage weiter – Zaparoo Core muss laufen.",
+  Connect: "Verbinden",
+  "Connected to Zaparoo {version} on {platform}.":
+    "Verbunden mit Zaparoo {version} auf {platform}.",
+  "{n} systems": "{n} Systeme",
+  "~{n} games": "~{n} Spiele",
+  "Import games": "Spiele importieren",
+  "Fetching games … {n}": "Spiele werden geladen … {n}",
+  "Imported {games} games across {consoles} systems — with metadata.":
+    "{games} Spiele aus {consoles} Systemen übernommen – mit Metadaten.",
+  "Nothing to import.": "Nichts zu importieren.",
+  "Enter the Zaparoo / MiSTer address first.": "Zuerst die Zaparoo-/MiSTer-Adresse eingeben.",
+  "The dev server isn't reachable — is it running?":
+    "Der Dev-Server ist nicht erreichbar – läuft er?",
+  "Can't reach Zaparoo at {host}. Check the address and that Zaparoo Core is running.":
+    "Zaparoo unter {host} nicht erreichbar. Prüfe die Adresse und ob Zaparoo Core läuft.",
+  "Zaparoo error (HTTP {status}).": "Zaparoo-Fehler (HTTP {status}).",
+  "{host} isn't a local address — this only reaches a device on your network.":
+    "{host} ist keine lokale Adresse – erreichbar ist nur ein Gerät in deinem Netzwerk.",
+  "Zaparoo: {message}": "Zaparoo: {message}",
+  "Cancelled.": "Abgebrochen.",
+
   // \u2500\u2500 ApiKeysDialog \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   "API keys": "API-Schl\u00fcssel",
   "API keys \u2026": "API-Schl\u00fcssel \u2026",

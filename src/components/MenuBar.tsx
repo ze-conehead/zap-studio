@@ -52,6 +52,7 @@ interface Props {
   onOpenCutSheet: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
+  onOpenZaparoo: () => void;
   onOpenOverview: () => void;
   onOpenDataSafety: () => void;
   onOpenWorkspaces: () => void;
@@ -73,6 +74,7 @@ export function MenuBar({
   onOpenCutSheet,
   onOpenBaseImport,
   onOpenQuickImport,
+  onOpenZaparoo,
   onOpenOverview,
   onOpenDataSafety,
   onOpenWorkspaces,
@@ -224,6 +226,9 @@ export function MenuBar({
         <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenQuickImport}>Quick Import …</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenZaparoo}>
+          {t("Zaparoo (MiSTer) …")}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => void file.saveBackup()}>

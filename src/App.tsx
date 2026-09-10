@@ -21,6 +21,7 @@ import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
 import { QuickImportDialog } from "./components/QuickImportDialog";
+import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
 import {
   GLOBAL_TEMPLATE_ID,
   isBackground,
@@ -321,6 +322,7 @@ function Shell({
   const [cutSheet, setCutSheet] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
+  const [zaparoo, setZaparoo] = useState(false);
   const [overview, setOverview] = useState(false);
   const [dataSafety, setDataSafety] = useState(false);
   const [workspaces, setWorkspaces] = useState(false);
@@ -364,6 +366,7 @@ function Shell({
     onOpenCutSheet: () => setCutSheet(true),
     onOpenBaseImport: () => setBaseImport(true),
     onOpenQuickImport: () => setQuickImport(true),
+    onOpenZaparoo: () => setZaparoo(true),
     onOpenOverview: () => setOverview(true),
     onOpenDataSafety: () => setDataSafety(true),
     onOpenWorkspaces: () => setWorkspaces(true),
@@ -447,6 +450,7 @@ function Shell({
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
+      <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />
       <QuickImportDialog
         open={quickImport}
         onOpenChange={setQuickImport}
