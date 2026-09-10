@@ -661,6 +661,7 @@ export const de: Record<string, string> = {
     "Verbunden mit Zaparoo {version} auf {platform}.",
   "{n} systems": "{n} Systeme",
   "~{n} games": "~{n} Spiele",
+  "List games": "Spiele auflisten",
   "Import games": "Spiele importieren",
   "Fetching games … {n}": "Spiele werden geladen … {n}",
   "Imported {games} games across {consoles} systems — with metadata.":
