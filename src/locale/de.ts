@@ -386,6 +386,8 @@ export const de: Record<string, string> = {
   "Editable only in “All consoles”": "Nur unter „Alle Konsolen“ bearbeitbar",
   "No layers yet. Add text, an image or a shape above.":
     "Noch keine Ebenen. Füge oben Text, ein Bild oder eine Form hinzu.",
+  "Just the background so far — add text, an image or a shape above.":
+    "Bisher nur der Hintergrund – füge oben Text, ein Bild oder eine Form hinzu.",
   Hide: "Ausblenden",
   Show: "Einblenden",
   Unlock: "Entsperren",

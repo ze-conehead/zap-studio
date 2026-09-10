@@ -87,7 +87,9 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
 
       {contentCount === 0 && (
         <p className="text-xs text-muted-foreground">
-          {t("No layers yet. Add text, an image or a shape above.")}
+          {faceLayers.length === 0
+            ? t("No layers yet. Add text, an image or a shape above.")
+            : t("Just the background so far — add text, an image or a shape above.")}
         </p>
       )}
 
