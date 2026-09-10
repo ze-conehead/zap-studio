@@ -61,7 +61,7 @@ async function rpc<T>(host: string, method: string, params?: unknown): Promise<T
   } catch {
     throw new Error(t("The dev server isn't reachable — is it running?"));
   }
-  if (res.status === 502) {
+  if (res.status === 502 || res.status === 504) {
     throw new Error(
       t("Can't reach Zaparoo at {host}. Check the address and that Zaparoo Core is running.", {
         host,

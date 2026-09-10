@@ -29,11 +29,15 @@ const apiProxy: Record<string, ProxyOptions> = {
 };
 
 // ── Zaparoo proxy ─────────────────────────────────────────────────────────
-// Zaparoo Core's HTTP API only sends CORS headers for a fixed origin
-// allowlist (its own apps, zaparoo.app, bare http://localhost), so a browser
-// on :5173 can't POST to it directly. Forward the JSON-RPC call from Node,
-// where CORS doesn't apply. `POST /zaparoo?ip=<host>&port=<n>` — the host
-// must be loopback or an RFC-1918 / link-local address (no arbitrary SSRF).
+// Zaparoo Core denies its HTTP JSON-RPC transport to any non-loopback
+// client (403) unless `allowed_ips` is set, and its WebSocket transport
+// checks the browser Origin against a fixed allowlist that doesn't include
+// :5173. But the WS transport DOES accept an unauthenticated "legacy"
+// client with no Origin header for read methods (version / systems /
+// media.search) on MiSTer & friends. So this middleware opens that
+// WebSocket from Node — where there is no Origin — sends the one JSON-RPC
+// frame and returns the matching reply. `POST /zaparoo?ip=<host>&port=<n>`;
+// the host must be loopback / RFC-1918 / link-local / *.local (no SSRF).
 const PRIVATE_HOST =
   /^(?:localhost|127(?:\.\d{1,3}){3}|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|169\.254(?:\.\d{1,3}){2}|\[?::1\]?|[\w-]+\.local)$/i;
 
@@ -46,6 +50,7 @@ function zaparooProxy(): Plugin {
     },
     res: {
       statusCode: number;
+      writableEnded?: boolean;
       setHeader(k: string, v: string): void;
       end(body?: unknown): void;
     },
@@ -55,31 +60,81 @@ function zaparooProxy(): Plugin {
       return res.end("POST only");
     }
     const params = new URL(req.url ?? "", "http://localhost").searchParams;
-    const host = (params.get("ip") ?? "").trim().replace(/^https?:\/\//, "").replace(/[/:].*$/, "");
+    const host = (params.get("ip") ?? "")
+      .trim()
+      .replace(/^wss?:\/\//, "")
+      .replace(/^https?:\/\//, "")
+      .replace(/[/:].*$/, "");
     const port = /^\d{1,5}$/.test(params.get("port") ?? "") ? params.get("port") : "7497";
     if (!host || !PRIVATE_HOST.test(host)) {
       res.statusCode = 400;
       return res.end("bad or non-local host");
     }
+
     let body = "";
     for await (const chunk of req) body += chunk.toString();
+    let reqId: unknown;
     try {
-      const upstream = await fetch(`http://${host}:${port}/api/v0.1`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body,
-        signal: AbortSignal.timeout(20000),
-      });
-      res.statusCode = upstream.status;
-      res.setHeader(
-        "content-type",
-        upstream.headers.get("content-type") ?? "application/json",
-      );
-      res.end(Buffer.from(await upstream.arrayBuffer()));
-    } catch (e) {
-      res.statusCode = 502;
-      res.end((e as Error).message || "upstream error");
+      reqId = (JSON.parse(body) as { id?: unknown }).id;
+    } catch {
+      res.statusCode = 400;
+      return res.end("bad JSON body");
     }
+
+    const reply = (status: number, payload: string) => {
+      if ("writableEnded" in res && res.writableEnded) return;
+      res.statusCode = status;
+      res.setHeader("content-type", "application/json");
+      res.end(payload);
+    };
+
+    const ws = new WebSocket(`ws://${host}:${port}/api/v0.1`);
+    const timer = setTimeout(() => {
+      reply(504, JSON.stringify({ error: { message: "Zaparoo did not respond" } }));
+      try {
+        ws.close();
+      } catch {
+        /* already closed */
+      }
+    }, 20000);
+
+    ws.addEventListener("open", () => ws.send(body));
+    ws.addEventListener("message", (ev: { data: unknown }) => {
+      const text =
+        typeof ev.data === "string"
+          ? ev.data
+          : Buffer.from(ev.data as ArrayBuffer).toString();
+      let parsed: { id?: unknown } | undefined;
+      try {
+        parsed = JSON.parse(text) as { id?: unknown };
+      } catch {
+        return; // not JSON — ignore
+      }
+      // Only our reply — skip notifications and unrelated frames.
+      if (parsed && "id" in parsed && parsed.id === reqId) {
+        clearTimeout(timer);
+        reply(200, text);
+        try {
+          ws.close();
+        } catch {
+          /* */
+        }
+      }
+    });
+    ws.addEventListener("error", () => {
+      clearTimeout(timer);
+      reply(
+        502,
+        JSON.stringify({ error: { message: "can't reach Zaparoo at this address" } }),
+      );
+    });
+    ws.addEventListener("close", () => {
+      clearTimeout(timer);
+      reply(
+        502,
+        JSON.stringify({ error: { message: "the connection closed before a reply" } }),
+      );
+    });
   };
   return {
     name: "zaparoo-proxy",
