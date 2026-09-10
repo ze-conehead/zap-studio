@@ -1040,6 +1040,23 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
     );
   }
 
+  // Alpha masks and logo slots are placement frames — never a fill. They
+  // always draw as a dashed outline, the same as the placeholder a card
+  // shows for an empty slot.
+  if (layer.alphaMask || layer.logoSlot) {
+    const line = {
+      stroke: layer.logoSlot ? "#38bdf8" : "#a78bfa",
+      strokeWidth: 1.5,
+      dash: [7, 5] as number[],
+      fillEnabled: false,
+    };
+    return ellipse ? (
+      <Ellipse radiusX={w / 2} radiusY={h / 2} {...line} />
+    ) : (
+      <Rect x={-w / 2} y={-h / 2} width={w} height={h} cornerRadius={radius} {...line} />
+    );
+  }
+
   if (ellipse) {
     return (
       <>

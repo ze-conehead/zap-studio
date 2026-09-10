@@ -248,7 +248,13 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
 
       {isImage(selected) && <ImageProps layer={selected} patch={patch} />}
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
-      {isShape(selected) && <ShapeProps layer={selected} patch={patch} />}
+      {isShape(selected) && (
+        <ShapeProps
+          layer={selected}
+          patch={patch}
+          frame={isMask || isLogoSlot}
+        />
+      )}
       {isMetaBadge(selected) && <MetaBadgeProps layer={selected} patch={patch} />}
 
       {(isImage(selected) || isText(selected) || isShape(selected)) &&
@@ -1277,7 +1283,17 @@ function AdjustControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
   );
 }
 
-function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
+function ShapeProps({
+  layer,
+  patch,
+  frame = false,
+}: {
+  layer: ShapeLayer;
+  patch: Patch;
+  // Alpha masks and logo slots are placement frames: size only, no fill
+  // or stroke — they always draw as a dashed outline.
+  frame?: boolean;
+}) {
   const t = useT();
   return (
     <>
@@ -1302,26 +1318,36 @@ function ShapeProps({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
         />
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <Label>{t("Fill")}</Label>
-        <FillEditor
-          value={layer.fill}
-          onChange={(fp, history) => patch({ fill: { ...layer.fill, ...fp } }, history)}
-        />
-      </div>
+      {frame ? (
+        <p className="text-xs text-muted-foreground">
+          {t("A placement frame — it always shows as a dashed outline.")}
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <Label>{t("Fill")}</Label>
+            <FillEditor
+              value={layer.fill}
+              onChange={(fp, history) =>
+                patch({ fill: { ...layer.fill, ...fp } }, history)
+              }
+            />
+          </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <ColorField
-          label={t("Stroke")}
-          value={layer.stroke}
-          onChange={(v) => patch({ stroke: v })}
-        />
-        <NumberField
-          label={t("Stroke width")}
-          value={round(layer.strokeWidth)}
-          onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
-        />
-      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <ColorField
+              label={t("Stroke")}
+              value={layer.stroke}
+              onChange={(v) => patch({ stroke: v })}
+            />
+            <NumberField
+              label={t("Stroke width")}
+              value={round(layer.strokeWidth)}
+              onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
+            />
+          </div>
+        </>
+      )}
     </>
   );
 }

@@ -358,6 +358,8 @@ export const de: Record<string, string> = {
   Fill: "Füllung",
   Stroke: "Kontur",
   "Stroke width": "Konturstärke",
+  "A placement frame — it always shows as a dashed outline.":
+    "Ein Platzierungsrahmen – wird immer als gestrichelte Umrandung angezeigt.",
   "Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
     "Zeigt Bewertung, Release-Jahr und Spieleranzahl des jeweils geöffneten Spiels aus dessen gamelist.xml. Am besten in einer Konsolen- oder der globalen Vorlage platzieren.",
   "Shows the star rating of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
