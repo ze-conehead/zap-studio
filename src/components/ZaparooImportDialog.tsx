@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   ChevronDown,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { addConsole, addGame, getCatalog, slug } from "../data/catalog";
 import { upsertGameMetaMany } from "../gamelist";
@@ -43,22 +43,23 @@ function groupBySystem(games: ZaparooGame[]): Group[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// A scrollable, per-system expandable tree. `picked` drives the checkboxes;
-// `onToggleGame` / `onToggleGroup` move rows in or out of the selection.
+// A scrollable, per-system expandable tree. Clicking a game or a whole
+// system moves it to the other side — `side` only picks the affordance
+// (▸ to send right, ✕ to send back).
 function GameTree({
   groups,
-  picked,
+  side,
   forceOpen,
   empty,
-  onToggleGame,
-  onToggleGroup,
+  onMoveGame,
+  onMoveGroup,
 }: {
   groups: Group[];
-  picked: Set<string>;
+  side: "available" | "selected";
   forceOpen?: boolean;
   empty: string;
-  onToggleGame: (g: ZaparooGame) => void;
-  onToggleGroup: (list: ZaparooGame[]) => void;
+  onMoveGame: (g: ZaparooGame) => void;
+  onMoveGroup: (list: ZaparooGame[]) => void;
 }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   if (!groups.length) {
@@ -66,15 +67,14 @@ function GameTree({
       <p className="p-4 text-center text-xs text-muted-foreground">{empty}</p>
     );
   }
+  const GameIcon = side === "available" ? ArrowRight : ArrowLeft;
   return (
     <ul className="p-1">
       {groups.map((g) => {
-        const keys = g.list.map(gameKey);
-        const on = keys.filter((k) => picked.has(k)).length;
         const isOpen = forceOpen || !!expanded[g.name];
         return (
           <li key={g.name}>
-            <div className="flex items-center gap-1.5 rounded px-1.5 py-1">
+            <div className="group flex items-center gap-1.5 rounded px-1.5 py-1 hover:bg-accent">
               <button
                 type="button"
                 className="rounded p-0.5 text-muted-foreground hover:text-foreground"
@@ -88,39 +88,35 @@ function GameTree({
                   <ChevronRight className="size-3.5" />
                 )}
               </button>
-              <Checkbox
-                checked={
-                  on === 0 ? false : on === keys.length ? true : "indeterminate"
-                }
-                onCheckedChange={() => onToggleGroup(g.list)}
-              />
               <button
                 type="button"
-                className="flex-1 truncate text-left text-sm font-medium"
-                onClick={() => onToggleGroup(g.list)}
+                className="flex flex-1 items-center gap-1.5 truncate text-left text-sm font-medium"
+                onClick={() => onMoveGroup(g.list)}
               >
-                {g.name}
+                <span className="flex-1 truncate">{g.name}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {g.list.length}
+                </span>
+                <GameIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
               </button>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {on}/{g.list.length}
-              </span>
             </div>
             {isOpen && (
               <ul className="ml-6 border-l pl-2">
                 {g.list.map((game) => (
                   <li key={gameKey(game)}>
-                    <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent">
-                      <Checkbox
-                        checked={picked.has(gameKey(game))}
-                        onCheckedChange={() => onToggleGame(game)}
-                      />
+                    <button
+                      type="button"
+                      className="group flex w-full cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-left text-[13px] hover:bg-accent"
+                      onClick={() => onMoveGame(game)}
+                    >
                       <span className="flex-1 truncate">{game.title}</span>
                       <span className="shrink-0 text-[11px] text-muted-foreground">
                         {[game.meta.releasedate?.slice(0, 4), game.meta.genre]
                           .filter(Boolean)
                           .join(" · ")}
                       </span>
-                    </label>
+                      <GameIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -198,18 +194,20 @@ export function ZaparooImportDialog({
     }
   };
 
-  // Left tree — every game, narrowed by the filter box.
+  // Left tree — every game that hasn't been moved over yet, narrowed by
+  // the filter box.
   const available = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return groupBySystem(games);
     return groupBySystem(
       games.filter(
         (g) =>
-          g.title.toLowerCase().includes(q) ||
-          g.systemName.toLowerCase().includes(q),
+          !picked.has(gameKey(g)) &&
+          (!q ||
+            g.title.toLowerCase().includes(q) ||
+            g.systemName.toLowerCase().includes(q)),
       ),
     );
-  }, [games, filter]);
+  }, [games, filter, picked]);
 
   // Right tree — only what's been moved over.
   const selected = useMemo(
@@ -217,7 +215,7 @@ export function ZaparooImportDialog({
     [games, picked],
   );
 
-  const toggleGame = (g: ZaparooGame) =>
+  const moveGame = (g: ZaparooGame) =>
     setPicked((prev) => {
       const next = new Set(prev);
       const k = gameKey(g);
@@ -225,15 +223,14 @@ export function ZaparooImportDialog({
       return next;
     });
 
-  const toggleGroup = (list: ZaparooGame[]) => {
-    const keys = list.map(gameKey);
-    const allOn = keys.every((k) => picked.has(k));
+  const addGroup = (list: ZaparooGame[]) =>
+    setPicked((prev) => new Set([...prev, ...list.map(gameKey)]));
+
+  const removeGroup = (list: ZaparooGame[]) =>
     setPicked((prev) => {
-      const next = new Set(prev);
-      for (const k of keys) allOn ? next.delete(k) : next.add(k);
-      return next;
+      const drop = new Set(list.map(gameKey));
+      return new Set([...prev].filter((k) => !drop.has(k)));
     });
-  };
 
   const run = () => {
     const chosen = games.filter((g) => picked.has(gameKey(g)));
@@ -357,14 +354,16 @@ export function ZaparooImportDialog({
                     <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
                       <GameTree
                         groups={available}
-                        picked={picked}
+                        side="available"
                         empty={t("No games found.")}
-                        onToggleGame={toggleGame}
-                        onToggleGroup={toggleGroup}
+                        onMoveGame={moveGame}
+                        onMoveGroup={addGroup}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {t("{n} games available", { n: games.length })}
+                      {t("{n} games available", {
+                        n: games.length - picked.size,
+                      })}
                     </span>
                   </div>
 
@@ -377,13 +376,13 @@ export function ZaparooImportDialog({
                     <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
                       <GameTree
                         groups={selected}
-                        picked={picked}
+                        side="selected"
                         forceOpen
                         empty={t(
                           "Pick games or whole consoles on the left — they move here.",
                         )}
-                        onToggleGame={toggleGame}
-                        onToggleGroup={toggleGroup}
+                        onMoveGame={moveGame}
+                        onMoveGroup={removeGroup}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">
