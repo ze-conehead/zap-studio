@@ -39,7 +39,6 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
       ? state.project.back?.layers ?? []
       : state.project.layers;
   const layers = [...faceLayers].reverse(); // top of stack first
-  const contentCount = faceLayers.filter((l) => !isBackground(l)).length;
 
   // Which condition cases are live for the game this card is for — the rest
   // are dimmed, so it's clear at a glance which branch prints.
@@ -84,14 +83,6 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
           <AddLayerMenu />
         </div>
       </div>
-
-      {contentCount === 0 && (
-        <p className="text-xs text-muted-foreground">
-          {faceLayers.length === 0
-            ? t("No layers yet. Add text, an image or a shape above.")
-            : t("Just the background so far — add text, an image or a shape above.")}
-        </p>
-      )}
 
       <ul className="flex flex-col gap-1">
         {layers.map((l) => {
