@@ -456,7 +456,6 @@ export const de: Record<string, string> = {
 
   // ── Logo layer ───────────────────────────────────────────────────────────
   Logo: "Logo",
-  "Find logo (SteamGridDB) \u2026": "Logo suchen (SteamGridDB) \u2026",
   "Logo for": "Logo f\u00fcr",
   "Searching logos \u2026": "Logos werden gesucht \u2026",
   "No logos found for \u201c{title}\u201d.":

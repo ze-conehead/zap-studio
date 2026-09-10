@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  fitImageToSlot,
   isBackground,
   makeBackgroundLayer,
   makeConditionLayer,
@@ -49,8 +48,6 @@ import {
 import { useT } from "../i18n";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
 import { useStore } from "../store";
-import { loadLogoSlot } from "../templates";
-import { CoverSearchDialog } from "./CoverSearchDialog";
 import type { ShapeKind } from "../types";
 
 // The single "+" entry point for adding a layer, shown in the Layers panel.
@@ -69,7 +66,6 @@ export function AddLayerMenu() {
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
-  const [logoOpen, setLogoOpen] = useState(false);
 
   // A freshly added image goes in as-is; which alpha mask it fills (if any)
   // is picked in the Inspector, or set for you by the cover flow.
@@ -82,25 +78,6 @@ export function AddLayerMenu() {
       setBusy(true);
       const img = await fileToLayerSource(file);
       addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // A logo is an ordinary image layer flagged `logo` — never the card's main
-  // image, and it keeps its aspect ratio rather than filling the mask.
-  const addLogoFromUrl = async (value: string) => {
-    try {
-      setBusy(true);
-      const img = await urlToLayerSource(value);
-      const layer = fitImageToSlot(
-        { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
-        await loadLogoSlot(),
-      );
-      dispatch({ type: "ADD_LAYER", layer });
-      setLogoOpen(false);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -177,12 +154,6 @@ export function AddLayerMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setUrlOpen(true)}>
             <Link2 /> {t("Add from URL")}
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>{t("Logo")}</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setLogoOpen(true)}>
-            <ImageIcon /> {t("Find logo (SteamGridDB) …")}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -278,16 +249,6 @@ export function AddLayerMenu() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <CoverSearchDialog
-        open={logoOpen}
-        onOpenChange={setLogoOpen}
-        kind="logo"
-        consoleName={project.consoleName ?? ""}
-        gameTitle={project.name}
-        busy={busy}
-        onPick={(u) => void addLogoFromUrl(u)}
-      />
 
       <input
         ref={fileRef}
