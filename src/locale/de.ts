@@ -677,6 +677,11 @@ export const de: Record<string, string> = {
     "{host} ist keine lokale Adresse – erreichbar ist nur ein Gerät in deinem Netzwerk.",
   "Zaparoo: {message}": "Zaparoo: {message}",
   "Cancelled.": "Abgebrochen.",
+  "Selected for import": "F\u00fcr den Import ausgew\u00e4hlt",
+  "{n} games available": "{n} Spiele verf\u00fcgbar",
+  "No games found.": "Keine Spiele gefunden.",
+  "Pick games or whole consoles on the left \u2014 they move here.":
+    "W\u00e4hle links Spiele oder ganze Konsolen aus \u2013 sie wandern hierher.",
 
   // \u2500\u2500 ApiKeysDialog \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   "API keys": "API-Schl\u00fcssel",

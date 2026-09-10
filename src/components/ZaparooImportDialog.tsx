@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -16,17 +17,120 @@ import {
   getZaparooHost,
   setZaparooHost,
   zaparooGames,
-  zaparooSystems,
   zaparooVersion,
   type ZaparooGame,
-  type ZaparooSystem,
 } from "../zaparoo";
-import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
-type Phase = "connect" | "pick" | "fetching" | "select" | "done";
+type Phase = "connect" | "loading" | "select" | "done";
 
 const gameKey = (g: ZaparooGame) => `${g.systemId}/${slug(g.title)}`;
+
+interface Group {
+  name: string;
+  list: ZaparooGame[];
+}
+
+function groupBySystem(games: ZaparooGame[]): Group[] {
+  const by = new Map<string, ZaparooGame[]>();
+  for (const g of games) {
+    const arr = by.get(g.systemName) ?? [];
+    arr.push(g);
+    by.set(g.systemName, arr);
+  }
+  return [...by.entries()]
+    .map(([name, list]) => ({ name, list }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// A scrollable, per-system expandable tree. `picked` drives the checkboxes;
+// `onToggleGame` / `onToggleGroup` move rows in or out of the selection.
+function GameTree({
+  groups,
+  picked,
+  forceOpen,
+  empty,
+  onToggleGame,
+  onToggleGroup,
+}: {
+  groups: Group[];
+  picked: Set<string>;
+  forceOpen?: boolean;
+  empty: string;
+  onToggleGame: (g: ZaparooGame) => void;
+  onToggleGroup: (list: ZaparooGame[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  if (!groups.length) {
+    return (
+      <p className="p-4 text-center text-xs text-muted-foreground">{empty}</p>
+    );
+  }
+  return (
+    <ul className="p-1">
+      {groups.map((g) => {
+        const keys = g.list.map(gameKey);
+        const on = keys.filter((k) => picked.has(k)).length;
+        const isOpen = forceOpen || !!expanded[g.name];
+        return (
+          <li key={g.name}>
+            <div className="flex items-center gap-1.5 rounded px-1.5 py-1">
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  setExpanded((o) => ({ ...o, [g.name]: !o[g.name] }))
+                }
+              >
+                {isOpen ? (
+                  <ChevronDown className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+              </button>
+              <Checkbox
+                checked={
+                  on === 0 ? false : on === keys.length ? true : "indeterminate"
+                }
+                onCheckedChange={() => onToggleGroup(g.list)}
+              />
+              <button
+                type="button"
+                className="flex-1 truncate text-left text-sm font-medium"
+                onClick={() => onToggleGroup(g.list)}
+              >
+                {g.name}
+              </button>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {on}/{g.list.length}
+              </span>
+            </div>
+            {isOpen && (
+              <ul className="ml-6 border-l pl-2">
+                {g.list.map((game) => (
+                  <li key={gameKey(game)}>
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent">
+                      <Checkbox
+                        checked={picked.has(gameKey(game))}
+                        onCheckedChange={() => onToggleGame(game)}
+                      />
+                      <span className="flex-1 truncate">{game.title}</span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {[game.meta.releasedate?.slice(0, 4), game.meta.genre]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 export function ZaparooImportDialog({
   open,
@@ -42,12 +146,8 @@ export function ZaparooImportDialog({
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  const [systems, setSystems] = useState<ZaparooSystem[]>([]);
-  const [sysPicked, setSysPicked] = useState<Set<string>>(new Set());
-
   const [games, setGames] = useState<ZaparooGame[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState("");
 
   const [progress, setProgress] = useState(0);
@@ -61,11 +161,8 @@ export function ZaparooImportDialog({
     setError("");
     setInfo("");
     setBusy(false);
-    setSystems([]);
-    setSysPicked(new Set());
     setGames([]);
     setPicked(new Set());
-    setExpanded({});
     setFilter("");
     setProgress(0);
   }, [open]);
@@ -81,35 +178,12 @@ export function ZaparooImportDialog({
       const v = await zaparooVersion(h);
       setInfo(t("Connected to Zaparoo {version} on {platform}.", v));
       setZaparooHost(h);
-      const list = await zaparooSystems(h);
-      setSystems(list);
-      setSysPicked(new Set(list.map((s) => s.id)));
-      if (list.length) setPhase("pick");
-      else {
-        setStats({ consoles: 0, games: 0 });
-        setPhase("done");
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const fetchGames = async () => {
-    setPhase("fetching");
-    setError("");
-    setProgress(0);
-    abort.current = new AbortController();
-    try {
-      const rows = await zaparooGames(
-        host.trim(),
-        [...sysPicked],
-        setProgress,
-        abort.current.signal,
-      );
+      setPhase("loading");
+      setProgress(0);
+      abort.current = new AbortController();
+      const rows = await zaparooGames(h, [], setProgress, abort.current.signal);
       setGames(rows);
-      setPicked(new Set(rows.map(gameKey)));
+      setPicked(new Set());
       if (rows.length) setPhase("select");
       else {
         setStats({ consoles: 0, games: 0 });
@@ -117,30 +191,31 @@ export function ZaparooImportDialog({
       }
     } catch (e) {
       setError((e as Error).message);
-      setPhase("pick");
+      setPhase("connect");
     } finally {
+      setBusy(false);
       abort.current = null;
     }
   };
 
-  // Games grouped by system, filtered by the search box.
-  const groups = useMemo(() => {
+  // Left tree — every game, narrowed by the filter box.
+  const available = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    const by = new Map<string, ZaparooGame[]>();
-    for (const g of games) {
-      if (
-        q &&
-        !g.title.toLowerCase().includes(q) &&
-        !g.systemName.toLowerCase().includes(q)
-      ) {
-        continue;
-      }
-      const arr = by.get(g.systemName) ?? [];
-      arr.push(g);
-      by.set(g.systemName, arr);
-    }
-    return [...by.entries()].map(([name, list]) => ({ name, list }));
+    if (!q) return groupBySystem(games);
+    return groupBySystem(
+      games.filter(
+        (g) =>
+          g.title.toLowerCase().includes(q) ||
+          g.systemName.toLowerCase().includes(q),
+      ),
+    );
   }, [games, filter]);
+
+  // Right tree — only what's been moved over.
+  const selected = useMemo(
+    () => groupBySystem(games.filter((g) => picked.has(gameKey(g)))),
+    [games, picked],
+  );
 
   const toggleGame = (g: ZaparooGame) =>
     setPicked((prev) => {
@@ -192,14 +267,17 @@ export function ZaparooImportDialog({
     setPhase("done");
   };
 
-  const allSys = systems.length > 0 && sysPicked.size === systems.length;
-  const sysGameCount = systems
-    .filter((s) => sysPicked.has(s.id))
-    .reduce((n, s) => n + (s.mediaCount ?? 0), 0);
+  const big = phase === "select";
 
   return (
     <Dialog open={open} onOpenChange={(o) => (busy ? null : onOpenChange(o))}>
-      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-4">
+      <DialogContent
+        className={
+          big
+            ? "flex h-[88vh] max-w-5xl flex-col gap-4 sm:max-w-5xl"
+            : "flex max-h-[85vh] max-w-lg flex-col gap-4"
+        }
+      >
         <DialogHeader>
           <DialogTitle>{t("Import from Zaparoo (MiSTer)")}</DialogTitle>
         </DialogHeader>
@@ -209,7 +287,10 @@ export function ZaparooImportDialog({
             <p className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="size-4 text-emerald-500" />
               {stats.games > 0
-                ? t("Imported {games} games across {consoles} systems — with metadata.", stats)
+                ? t(
+                    "Imported {games} games across {consoles} systems — with metadata.",
+                    stats,
+                  )
                 : t("Nothing to import.")}
             </p>
             <Button onClick={() => onOpenChange(false)}>{t("Close")}</Button>
@@ -247,63 +328,7 @@ export function ZaparooImportDialog({
               {error && <span className="text-xs text-destructive">{error}</span>}
             </div>
 
-            {/* ── pick systems to fetch ────────────────────────────────── */}
-            {phase === "pick" && (
-              <>
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Checkbox
-                    checked={allSys ? true : sysPicked.size ? "indeterminate" : false}
-                    onCheckedChange={() =>
-                      setSysPicked(
-                        allSys ? new Set() : new Set(systems.map((s) => s.id)),
-                      )
-                    }
-                  />
-                  {t("{n} systems", { n: systems.length })}
-                  <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                    {t("~{n} games", { n: sysGameCount })}
-                  </span>
-                </label>
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
-                  <ul className="p-1">
-                    {systems.map((s) => (
-                      <li key={s.id}>
-                        <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent">
-                          <Checkbox
-                            checked={sysPicked.has(s.id)}
-                            onCheckedChange={() =>
-                              setSysPicked((prev) => {
-                                const next = new Set(prev);
-                                next.has(s.id) ? next.delete(s.id) : next.add(s.id);
-                                return next;
-                              })
-                            }
-                          />
-                          <span className="flex-1 truncate">{s.name}</span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {s.mediaCount ?? "?"}
-                          </span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-                    {t("Cancel")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={!sysPicked.size}
-                    onClick={() => void fetchGames()}
-                  >
-                    {t("List games")}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {phase === "fetching" && (
+            {phase === "loading" && (
               <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
                 {t("Fetching games … {n}", { n: progress })}
@@ -318,104 +343,66 @@ export function ZaparooImportDialog({
               </div>
             )}
 
-            {/* ── per-game selection tree ──────────────────────────────── */}
             {phase === "select" && (
               <>
-                <Input
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  placeholder={t("Filter …")}
-                  className="h-8"
-                />
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
-                  <ul className="p-1">
-                    {groups.map((g) => {
-                      const keys = g.list.map(gameKey);
-                      const on = keys.filter((k) => picked.has(k)).length;
-                      const isOpen = filter.trim() ? true : !!expanded[g.name];
-                      return (
-                        <li key={g.name}>
-                          <div className="flex items-center gap-1.5 rounded px-1.5 py-1">
-                            <button
-                              type="button"
-                              className="rounded p-0.5 text-muted-foreground hover:text-foreground"
-                              onClick={() =>
-                                setExpanded((o) => ({ ...o, [g.name]: !o[g.name] }))
-                              }
-                            >
-                              {isOpen ? (
-                                <ChevronDown className="size-3.5" />
-                              ) : (
-                                <ChevronRight className="size-3.5" />
-                              )}
-                            </button>
-                            <Checkbox
-                              checked={
-                                on === 0
-                                  ? false
-                                  : on === keys.length
-                                    ? true
-                                    : "indeterminate"
-                              }
-                              onCheckedChange={() => toggleGroup(g.list)}
-                            />
-                            <span className="flex-1 truncate text-sm font-medium">
-                              {g.name}
-                            </span>
-                            <span className="text-xs tabular-nums text-muted-foreground">
-                              {on}/{g.list.length}
-                            </span>
-                          </div>
-                          {isOpen && (
-                            <ul className="ml-6 border-l pl-2">
-                              {g.list.map((game) => (
-                                <li key={gameKey(game)}>
-                                  <label
-                                    className={cn(
-                                      "flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent",
-                                    )}
-                                  >
-                                    <Checkbox
-                                      checked={picked.has(gameKey(game))}
-                                      onCheckedChange={() => toggleGame(game)}
-                                    />
-                                    <span className="flex-1 truncate">
-                                      {game.title}
-                                    </span>
-                                    <span className="shrink-0 text-[11px] text-muted-foreground">
-                                      {[
-                                        game.meta.releasedate?.slice(0, 4),
-                                        game.meta.genre,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(" · ")}
-                                    </span>
-                                  </label>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {t("{n} game(s) selected", { n: picked.size })}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onOpenChange(false)}
-                    >
-                      {t("Cancel")}
-                    </Button>
-                    <Button size="sm" disabled={!picked.size} onClick={run}>
-                      {t("Import games")}
-                    </Button>
+                <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
+                  {/* ── all games ─────────────────────────────────────── */}
+                  <div className="flex min-h-0 flex-col gap-2">
+                    <Input
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      placeholder={t("Filter …")}
+                      className="h-8"
+                    />
+                    <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+                      <GameTree
+                        groups={available}
+                        picked={picked}
+                        empty={t("No games found.")}
+                        onToggleGame={toggleGame}
+                        onToggleGroup={toggleGroup}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {t("{n} games available", { n: games.length })}
+                    </span>
                   </div>
+
+                  {/* ── the selection ─────────────────────────────────── */}
+                  <div className="flex min-h-0 flex-col gap-2">
+                    <div className="flex h-8 items-center gap-1.5 px-1 text-sm font-medium">
+                      <ArrowRight className="size-3.5 text-muted-foreground" />
+                      {t("Selected for import")}
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+                      <GameTree
+                        groups={selected}
+                        picked={picked}
+                        forceOpen
+                        empty={t(
+                          "Pick games or whole consoles on the left — they move here.",
+                        )}
+                        onToggleGame={toggleGame}
+                        onToggleGroup={toggleGroup}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {t("{n} game(s) selected", { n: picked.size })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {t("Cancel")}
+                  </Button>
+                  <Button size="sm" disabled={!picked.size} onClick={run}>
+                    {t("Import games")}
+                  </Button>
                 </div>
               </>
             )}
