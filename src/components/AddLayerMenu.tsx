@@ -132,6 +132,32 @@ export function AddLayerMenu() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {!onBack && project.isTemplate && (
+            <>
+              <DropdownMenuLabel>{t("Template")}</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({
+                    type: "ADD_LAYER",
+                    layer: makeAlphaMaskLayer(nextMask),
+                  })
+                }
+              >
+                <Crop /> {t("Alpha mask")}
+              </DropdownMenuItem>
+              {project.isGlobalTemplate && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    dispatch({ type: "ADD_LAYER", layer: makeLogoSlotLayer() })
+                  }
+                >
+                  <ImageIcon /> {t("Logo slot")}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+            </>
+          )}
+
           <DropdownMenuItem
             onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
           >
@@ -199,31 +225,6 @@ export function AddLayerMenu() {
             </>
           )}
 
-          {!onBack && project.isTemplate && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  dispatch({ type: "ADD_LAYER", layer: makeAlphaMaskLayer(nextMask) })
-                }
-              >
-                <Crop /> {t("Alpha mask")}
-              </DropdownMenuItem>
-            </>
-          )}
-
-          {!onBack && project.isGlobalTemplate && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  dispatch({ type: "ADD_LAYER", layer: makeLogoSlotLayer() })
-                }
-              >
-                <ImageIcon /> {t("Logo slot")}
-              </DropdownMenuItem>
-            </>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
