@@ -41,6 +41,26 @@ export interface CardBackground {
   enabled?: boolean; // templates only: false => contributes no background
 }
 
+// A soft drop shadow drawn behind an image / text / shape layer. Offset
+// (0, 0) turns it into an even glow. Sizes are in canvas px (300-dpi units).
+export interface LayerShadow {
+  enabled: boolean;
+  color: string; // hex
+  blur: number;
+  x: number; // offset
+  y: number;
+  opacity: number; // 0..1
+}
+
+export const DEFAULT_SHADOW: LayerShadow = {
+  enabled: true,
+  color: "#000000",
+  blur: 12,
+  x: 6,
+  y: 6,
+  opacity: 0.5,
+};
+
 // A background layer on a game card can inherit its fill from a template.
 export type BackgroundSource = "card" | "console" | "global";
 
@@ -77,6 +97,8 @@ export interface BaseLayer {
   // Belongs to the condition layer with this id: the layer is one of its
   // cases, and its `name` is the metadata value it stands for.
   condId?: string;
+  // Layer effect: a drop shadow / glow (image, text and shape layers).
+  shadow?: LayerShadow;
 }
 
 export interface ImageLayer extends BaseLayer {

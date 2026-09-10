@@ -481,6 +481,15 @@ export const de: Record<string, string> = {
   White: "Wei\u00df",
   Black: "Schwarz",
 
+  // ── Layer effects (shadow / glow) ──
+  "Shadow / glow": "Schatten / Schein",
+  "Shadow colour": "Schattenfarbe",
+  "Blur {n}": "Weichzeichnen {n}",
+  "Offset X": "Versatz X",
+  "Offset Y": "Versatz Y",
+  "Offset 0 / 0 makes it an even glow.":
+    "Versatz 0 / 0 ergibt einen gleichm\u00e4\u00dfigen Schein.",
+
   // ── CoverSearchDialog ────────────────────────────────────────────────────
   "Cover {n} / {total}:": "Cover {n} / {total}:",
   "Cover for": "Cover für",

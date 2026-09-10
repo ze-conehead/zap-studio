@@ -71,18 +71,20 @@ import {
 } from "../gamelist";
 import { canBeClipped, maskGroupStart } from "../masking";
 import { useStore } from "../store";
-import type {
-  BackgroundLayer,
-  BackgroundSource,
-  CardBackground,
-  ConditionField,
-  ConditionLayer,
-  ImageLayer,
-  Layer,
-  MetaBadgeLayer,
-  PlayersIconStyle,
-  ShapeLayer,
-  TextLayer,
+import {
+  DEFAULT_SHADOW,
+  type BackgroundLayer,
+  type BackgroundSource,
+  type CardBackground,
+  type ConditionField,
+  type ConditionLayer,
+  type ImageLayer,
+  type Layer,
+  type LayerShadow,
+  type MetaBadgeLayer,
+  type PlayersIconStyle,
+  type ShapeLayer,
+  type TextLayer,
 } from "../types";
 
 type Patch = (p: Partial<Layer>, history?: boolean) => void;
@@ -248,7 +250,71 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
       {isText(selected) && <TextProps layer={selected} patch={patch} />}
       {isShape(selected) && <ShapeProps layer={selected} patch={patch} />}
       {isMetaBadge(selected) && <MetaBadgeProps layer={selected} patch={patch} />}
+
+      {(isImage(selected) || isText(selected) || isShape(selected)) &&
+        !isMask &&
+        !isLogoSlot && <EffectsControls layer={selected} patch={patch} />}
     </Panel>
+  );
+}
+
+// Drop shadow / glow for image, text and shape layers. Renders through the
+// same Konva props in the editor and the export (src/layerEffects.ts).
+function EffectsControls({ layer, patch }: { layer: Layer; patch: Patch }) {
+  const t = useT();
+  const s: LayerShadow = { ...DEFAULT_SHADOW, ...(layer.shadow ?? {}) };
+  const on = !!layer.shadow?.enabled;
+  const set = (p: Partial<LayerShadow>, history = true) =>
+    patch({ shadow: { ...s, ...p } }, history);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox checked={on} onCheckedChange={(v) => set({ enabled: !!v })} />
+        {t("Shadow / glow")}
+      </label>
+
+      {on && (
+        <>
+          <ColorField
+            label={t("Shadow colour")}
+            value={s.color}
+            onChange={(v) => set({ color: v })}
+          />
+          <SliderField
+            label={t("Blur {n}", { n: Math.round(s.blur) })}
+            min={0}
+            max={80}
+            step={1}
+            value={s.blur}
+            onChange={(v, done) => set({ blur: Math.round(v) }, done)}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <NumberField
+              label={t("Offset X")}
+              value={round(s.x)}
+              onChange={(v) => set({ x: v })}
+            />
+            <NumberField
+              label={t("Offset Y")}
+              value={round(s.y)}
+              onChange={(v) => set({ y: v })}
+            />
+          </div>
+          <SliderField
+            label={t("Opacity {n}%", { n: Math.round(s.opacity * 100) })}
+            min={0}
+            max={1}
+            step={0.01}
+            value={s.opacity}
+            onChange={(v, done) => set({ opacity: v }, done)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("Offset 0 / 0 makes it an even glow.")}
+          </p>
+        </>
+      )}
+    </div>
   );
 }
 

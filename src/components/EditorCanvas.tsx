@@ -28,6 +28,7 @@ import type { Guide } from "../guides";
 import { gradientFill, noiseTile } from "../background";
 import { isBackground, makeImageLayer } from "../factory";
 import { fileToLayerSource } from "../image";
+import { shadowProps } from "../layerEffects";
 import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../card";
 import { useT } from "../i18n";
 import type { GameMeta } from "../gamelist";
@@ -1009,6 +1010,8 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
       ? { stroke: layer.stroke, strokeWidth: layer.strokeWidth }
       : {};
 
+  const shadow = gco ? undefined : shadowProps(layer.shadow);
+
   const noise =
     fill.noise > 0
       ? {
@@ -1040,7 +1043,7 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   if (ellipse) {
     return (
       <>
-        <Ellipse radiusX={w / 2} radiusY={h / 2} {...paint} {...stroke} />
+        <Ellipse radiusX={w / 2} radiusY={h / 2} {...paint} {...stroke} {...shadow} />
         {noise && <Ellipse radiusX={w / 2} radiusY={h / 2} {...noise} />}
       </>
     );
@@ -1048,7 +1051,7 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   const box = { x: -w / 2, y: -h / 2, width: w, height: h, cornerRadius: radius };
   return (
     <>
-      <Rect {...box} {...paint} {...stroke} />
+      <Rect {...box} {...paint} {...stroke} {...shadow} />
       {noise && <Rect {...box} {...noise} />}
     </>
   );
@@ -1289,6 +1292,7 @@ function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
       offsetY={layer.height / 2}
       cornerRadius={layer.cornerRadius}
       globalCompositeOperation={gco}
+      {...(gco ? {} : shadowProps(layer.shadow))}
       listening
     />
   );
@@ -1359,6 +1363,7 @@ function TextInner({
       strokeWidth={gco ? 0 : layer.strokeWidth}
       fillAfterStrokeEnabled
       globalCompositeOperation={gco}
+      {...(gco ? {} : shadowProps(layer.shadow))}
       offsetX={layer.width / 2}
       offsetY={h / 2}
       listening
@@ -1436,6 +1441,7 @@ function FlowText({
           strokeWidth={gco ? 0 : layer.strokeWidth}
           fillAfterStrokeEnabled
           globalCompositeOperation={gco}
+          {...(gco ? {} : shadowProps(layer.shadow))}
           listening={false}
         />
       ))}
