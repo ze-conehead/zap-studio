@@ -30,11 +30,18 @@ import {
   newProject,
   templateId,
 } from "./factory";
+import { getCatalog } from "./data/catalog";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
 import { getFormatId } from "./formats";
-import { lastProjectId, loadProject, saveProject } from "./persist";
+import {
+  lastProjectId,
+  lastViewId,
+  loadProject,
+  saveProject,
+  setLastViewId,
+} from "./persist";
 import { parseProject } from "./projectFile";
 import { StoreProvider, useStore } from "./store";
 import { t, useT } from "./i18n";
@@ -153,26 +160,39 @@ export default function App() {
     };
   }, [project]);
 
-  // Boot: restore last project or start a fresh one.
+  // Boot: restore whatever was last open (a design, a console template or
+  // the global one). There must always be something selected — never a
+  // detached blank project — so the global template is the fallback.
   useEffect(() => {
     (async () => {
       // Make sure the "All consoles" template exists (cards may reference it).
-      if (!(await loadProject(GLOBAL_TEMPLATE_ID))) {
-        await saveProject(newGlobalTemplate());
+      let globalP = await loadProject(GLOBAL_TEMPLATE_ID);
+      if (!globalP) {
+        globalP = newGlobalTemplate();
+        await saveProject(globalP);
       }
 
-      const id = lastProjectId();
-      const existing = id ? await loadProject(id) : undefined;
-      // Only restore the last design if it belongs to the active format.
-      if (existing && (existing.format ?? "card") === getFormatId()) {
-        setProject(existing);
-      } else {
-        const p = newProject();
-        await saveProject(p);
-        setProject(p);
+      const id = lastViewId() ?? lastProjectId();
+      let restored = id ? await loadProject(id) : undefined;
+      // A console template that was opened but never edited isn't saved —
+      // rebuild it from the catalogue so the reload lands back on it.
+      if (!restored && id && id !== GLOBAL_TEMPLATE_ID) {
+        const c = getCatalog().find((c) => templateId(c.id) === id);
+        if (c) restored = newConsoleTemplate(c.id, c.name);
       }
+      // Only restore it if it belongs to the active format.
+      setProject(
+        restored && (restored.format ?? "card") === getFormatId()
+          ? restored
+          : globalP,
+      );
     })();
   }, []);
+
+  // Remember what's open so a reload comes back to it.
+  useEffect(() => {
+    if (project) setLastViewId(project.id);
+  }, [project]);
 
   const swap = async (p: Project) => {
     await saveProject(p);

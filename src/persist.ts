@@ -15,10 +15,29 @@ const PROJECT_PREFIX = `${NS}project:`;
 const TRASH_PREFIX = `${NS}trash:`;
 const KEY = (id: string) => `${PROJECT_PREFIX}${id}`;
 const LAST = `lastProjectId${wsSuffix()}`;
+// The last thing that was open in the editor — a design, a console template
+// or the global template — so a reload lands back there instead of nowhere.
+const VIEW = `lastViewId${wsSuffix()}`;
 
 export async function saveProject(p: Project): Promise<void> {
   await set(KEY(p.id), p);
   if (!p.isTemplate) localStorage.setItem(LAST, p.id);
+}
+
+export function lastViewId(): string | null {
+  try {
+    return localStorage.getItem(VIEW);
+  } catch {
+    return null;
+  }
+}
+
+export function setLastViewId(id: string): void {
+  try {
+    localStorage.setItem(VIEW, id);
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 export async function loadProject(id: string): Promise<Project | undefined> {
@@ -45,6 +64,7 @@ export async function deleteProject(id: string): Promise<void> {
   if (p) await set(TRASH(id), { project: p, deletedAt: Date.now() } as TrashEntry);
   await del(KEY(id));
   if (localStorage.getItem(LAST) === id) localStorage.removeItem(LAST);
+  if (lastViewId() === id) localStorage.removeItem(VIEW);
 }
 
 export async function listTrash(): Promise<TrashEntry[]> {
