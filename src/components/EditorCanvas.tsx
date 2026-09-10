@@ -1044,11 +1044,13 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   // always draw as a dashed outline, the same as the placeholder a card
   // shows for an empty slot.
   if (layer.alphaMask || layer.logoSlot) {
+    // A transparent fill keeps the interior clickable / draggable (Konva's
+    // hit graph still fills it) while nothing paints on screen.
     const line = {
       stroke: layer.logoSlot ? "#38bdf8" : "#a78bfa",
       strokeWidth: 1.5,
       dash: [7, 5] as number[],
-      fillEnabled: false,
+      fill: "transparent",
     };
     return ellipse ? (
       <Ellipse radiusX={w / 2} radiusY={h / 2} {...line} />
