@@ -15,6 +15,7 @@ import {
   EXAMPLE_GAMES_MIN,
 } from "../data/baseGameList";
 import { FORMAT_IDS, FORMATS, getFormatId, type FormatId } from "../formats";
+import { FormatPreview } from "./FormatPreview";
 import { useT } from "../i18n";
 import {
   createWorkspace,
@@ -170,22 +171,25 @@ export function WorkspaceDialog({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && create()}
           />
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-sm text-muted-foreground">
-              {t("Format")}
-            </span>
-            <Select value={format} onValueChange={(v) => setFormat(v as FormatId)}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FORMAT_IDS.map((id) => (
-                  <SelectItem key={id} value={id}>
-                    {t(FORMATS[id].name)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-sm text-muted-foreground">
+                {t("Format")}
+              </span>
+              <Select value={format} onValueChange={(v) => setFormat(v as FormatId)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMAT_IDS.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {t(FORMATS[id].name)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <FormatPreview id={format} />
           </div>
 
           <label className="flex items-center gap-2 text-sm">

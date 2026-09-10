@@ -192,6 +192,9 @@ export const de: Record<string, string> = {
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
   Spine: "Rücken",
   Flap: "Lasche",
+  "{w} × {h} mm": "{w} × {h} mm",
+  "front & back": "Vorder- & Rückseite",
+  "{n} panels": "{n} Felder",
   "Fold lines dashed": "Faltlinien gestrichelt",
 
   // ── Factory defaults (layer / project names) ─────────────────────────────
