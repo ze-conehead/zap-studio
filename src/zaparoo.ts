@@ -123,6 +123,19 @@ interface ZapMedia {
   tags?: { tag?: string; type?: string }[];
 }
 
+// ROM filenames carry region / revision / language tags in brackets — the
+// No-Intro / TOSEC convention — so one game shows up many times. Strip every
+// "(…)" and "[…]" group to get the bare title.
+//   "Super Mario World (USA) (Rev 1) [!]" → "Super Mario World"
+export function cleanRomTitle(name: string): string {
+  const clean = name
+    .replace(/\s*[([][^()[\]]*[)\]]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*[-–,:]\s*$/, "")
+    .trim();
+  return clean || name.trim();
+}
+
 // Zaparoo tags carry the metadata: {type:"year", tag:"1997"} etc.
 function tagsToMeta(tags: ZapMedia["tags"]): Partial<Omit<GameMeta, "name">> {
   const first = (type: string) =>
@@ -156,7 +169,10 @@ export async function zaparooGames(
   onProgress?: (count: number) => void,
   signal?: AbortSignal,
 ): Promise<ZaparooGame[]> {
-  const out: ZaparooGame[] = [];
+  // Deduped by system + bare title: the first spelling wins, and any
+  // metadata field a later regional dump has that the first one lacks is
+  // filled in.
+  const byKey = new Map<string, ZaparooGame>();
   const scope = systemIds.length ? { systems: systemIds } : {};
   let cursor: string | undefined;
   // A safety ceiling for a runaway collection.
@@ -176,19 +192,31 @@ export async function zaparooGames(
 
     for (const m of page.results ?? []) {
       if (!m.name || !m.system?.id) continue;
-      out.push({
-        systemId: m.system.id,
-        systemName: m.system.name || m.system.id,
-        title: m.name,
-        meta: tagsToMeta(m.tags),
-      });
+      const title = cleanRomTitle(m.name);
+      const key = `${m.system.id} ${title.toLowerCase()}`;
+      const meta = tagsToMeta(m.tags);
+      const seen = byKey.get(key);
+      if (seen) {
+        for (const [k, v] of Object.entries(meta)) {
+          if (v && !seen.meta[k as keyof typeof seen.meta]) {
+            (seen.meta as Record<string, unknown>)[k] = v;
+          }
+        }
+      } else {
+        byKey.set(key, {
+          systemId: m.system.id,
+          systemName: m.system.name || m.system.id,
+          title,
+          meta,
+        });
+      }
     }
-    onProgress?.(out.length);
+    onProgress?.(byKey.size);
     cursor =
-      page.pagination?.hasNextPage && out.length < MAX
+      page.pagination?.hasNextPage && byKey.size < MAX
         ? page.pagination.nextCursor
         : undefined;
   } while (cursor);
 
-  return out;
+  return [...byKey.values()];
 }
