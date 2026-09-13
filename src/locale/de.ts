@@ -86,7 +86,6 @@ export const de: Record<string, string> = {
   German: "Deutsch",
 
   // ── Menu bar ─────────────────────────────────────────────────────────────
-  "Zap-Studio": "Zap-Studio",
   File: "Datei",
   Edit: "Bearbeiten",
   View: "Ansicht",

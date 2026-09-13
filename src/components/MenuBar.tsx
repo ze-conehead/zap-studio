@@ -182,10 +182,6 @@ export function MenuBar({
 
   return (
     <div className="flex items-center gap-0.5 border-b bg-sidebar px-2 py-0.5 text-muted-foreground">
-      <span className="px-2 text-[13px] font-semibold text-foreground">
-        {t("Zap-Studio")}
-      </span>
-
       <Menu id="file" label={t("File")}>
         <DropdownMenuItem onClick={onOpenWorkspaces}>
           {t("New project …")}

@@ -68,6 +68,7 @@
     "productName": "Zap-Studio",
     "directories": { "output": "release" },
     "files": ["dist/**/*", "dist-electron/**/*"],
+    "afterPack": "scripts/electron-afterpack.cjs",
     "mac": {
       "category": "public.app-category.graphics-design",
       "target": ["dmg", "zip"]
