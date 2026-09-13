@@ -191,6 +191,10 @@ function coverImageProxy(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Electron loads the packaged build over file://, where absolute asset
+  // paths (Vite's default) resolve to the filesystem root instead of next
+  // to index.html — relative paths work in both that and the dev server.
+  base: "./",
   plugins: [react(), tailwindcss(), coverImageProxy(), zaparooProxy()],
   resolve: {
     alias: {
