@@ -54,11 +54,12 @@ import {
 import {
   activeCases,
   casesOf,
-  CONDITION_FIELDS,
+  conditionFieldsFor,
   fieldLabel,
   isDefaultCase,
   metaValue,
 } from "../conditions";
+import { getWorkspaceKind } from "../workspace";
 import {
   addCustomFont,
   getCustomFontsVersion,
@@ -375,7 +376,7 @@ function ConditionProps({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CONDITION_FIELDS.map((f) => (
+            {conditionFieldsFor(getWorkspaceKind()).map((f) => (
               <SelectItem key={f} value={f}>
                 {fieldLabel(f)}
               </SelectItem>

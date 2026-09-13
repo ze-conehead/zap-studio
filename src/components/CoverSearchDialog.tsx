@@ -6,6 +6,7 @@ import {
   getCoverSource,
   getIgdbCreds,
   getSgdbKey,
+  getTmdbKey,
   isConfigured,
   resolveLibretroRepo,
   searchCovers,
@@ -14,10 +15,12 @@ import {
   setCoverSource,
   setIgdbCreds,
   setSgdbKey,
+  setTmdbKey,
   type CoverCandidate,
   type CoverSource,
 } from "../covers";
 import { useT } from "../i18n";
+import { getWorkspaceKind } from "../workspace";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -43,13 +46,16 @@ interface Props {
 type KeyedSource = Exclude<CoverSource, "libretro">;
 
 // The sources that appear as buttons in the picker, in order. "igdb-shots"
-// is IGDB reused for gameplay screenshots instead of box art.
-const PICKABLE: readonly KeyedSource[] = ["sgdb", "igdb", "igdb-shots"];
+// is IGDB reused for gameplay screenshots instead of box art. Movies have
+// their own single source (SGDB/IGDB are games-only databases).
+const PICKABLE_GAMES: readonly KeyedSource[] = ["sgdb", "igdb", "igdb-shots"];
+const PICKABLE_MOVIES: readonly KeyedSource[] = ["tmdb"];
 
 const CRED_LINK: Record<KeyedSource, string> = {
   sgdb: "https://www.steamgriddb.com/profile/preferences/api",
   igdb: "https://dev.twitch.tv/console/apps",
   "igdb-shots": "https://dev.twitch.tv/console/apps",
+  tmdb: "https://www.themoviedb.org/settings/api",
 };
 
 // How many covers to show per "page" — a fresh search starts here, "More"
@@ -76,11 +82,14 @@ export function CoverSearchDialog({
   >({ status: "loading" });
   const [visible, setVisible] = useState(PAGE);
   const [query, setQuery] = useState(gameTitle);
-  const [source, setSource] = useState<CoverSource>("sgdb");
+  const isMovies = getWorkspaceKind() === "movies";
+  const PICKABLE = isMovies ? PICKABLE_MOVIES : PICKABLE_GAMES;
+  const [source, setSource] = useState<CoverSource>(isMovies ? "tmdb" : "sgdb");
   const [editing, setEditing] = useState(false);
   const [sgKey, setSgKey] = useState("");
   const [igId, setIgId] = useState("");
   const [igSecret, setIgSecret] = useState("");
+  const [tmKey, setTmKey] = useState("");
 
   // Only the latest search updates the results.
   const runId = useRef(0);
@@ -123,6 +132,7 @@ export function CoverSearchDialog({
     const c = getIgdbCreds();
     setIgId(c.clientId);
     setIgSecret(c.clientSecret);
+    setTmKey(getTmdbKey());
   }, [open]);
 
   const logoMode = kind === "logo";
@@ -143,6 +153,7 @@ export function CoverSearchDialog({
 
   const saveCreds = () => {
     if (src === "sgdb") setSgdbKey(sgKey);
+    else if (src === "tmdb") setTmdbKey(tmKey);
     else setIgdbCreds(igId, igSecret);
     setEditing(false);
     search();
@@ -229,7 +240,7 @@ export function CoverSearchDialog({
             <div className="flex flex-col gap-1.5">
               <span className="text-muted-foreground">
                 {t("{source} credentials – free at ", {
-                  source: src === "sgdb" ? "SteamGridDB" : "IGDB",
+                  source: src === "sgdb" ? "SteamGridDB" : src === "tmdb" ? "TMDB" : "IGDB",
                 })}
                 <a
                   href={CRED_LINK[src]}
@@ -237,16 +248,22 @@ export function CoverSearchDialog({
                   rel="noreferrer"
                   className="underline"
                 >
-                  {src === "sgdb" ? "steamgriddb.com" : "dev.twitch.tv"}
+                  {src === "sgdb"
+                    ? "steamgriddb.com"
+                    : src === "tmdb"
+                      ? "themoviedb.org"
+                      : "dev.twitch.tv"}
                 </a>
                 {t(". Requests are proxied locally by the dev server; the key stays on this machine.")}
               </span>
-              {src === "sgdb" ? (
+              {src === "sgdb" || src === "tmdb" ? (
                 <div className="flex gap-1.5">
                   <Input
                     className="h-7"
-                    value={sgKey}
-                    onChange={(e) => setSgKey(e.target.value)}
+                    value={src === "sgdb" ? sgKey : tmKey}
+                    onChange={(e) =>
+                      src === "sgdb" ? setSgKey(e.target.value) : setTmKey(e.target.value)
+                    }
                     placeholder={t("API key")}
                     onKeyDown={(e) => e.key === "Enter" && saveCreds()}
                   />
@@ -276,11 +293,13 @@ export function CoverSearchDialog({
                   </div>
                 </div>
               )}
-              <span className="text-muted-foreground">
-                {logoMode
-                  ? t("Logos come from SteamGridDB only — an API key is required.")
-                  : t("Without credentials: libretro-thumbnails (retro / emulated consoles only).")}
-              </span>
+              {!isMovies && (
+                <span className="text-muted-foreground">
+                  {logoMode
+                    ? t("Logos come from SteamGridDB only — an API key is required.")
+                    : t("Without credentials: libretro-thumbnails (retro / emulated consoles only).")}
+                </span>
+              )}
             </div>
           )}
         </div>

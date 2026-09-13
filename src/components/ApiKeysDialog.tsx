@@ -6,24 +6,18 @@
 import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  coverSourceLabel,
-  getCoverSource,
   getIgdbCreds,
   getSgdbKey,
-  isConfigured,
-  setCoverSource,
+  getTmdbKey,
   setIgdbCreds,
   setSgdbKey,
-  type CoverSource,
+  setTmdbKey,
 } from "../covers";
 import { useT } from "../i18n";
-import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-
-const SOURCES: CoverSource[] = ["sgdb", "igdb", "igdb-shots", "libretro"];
 
 export function ApiKeysDialog({
   open,
@@ -36,7 +30,7 @@ export function ApiKeysDialog({
   const [sgKey, setSgKey] = useState("");
   const [igId, setIgId] = useState("");
   const [igSecret, setIgSecret] = useState("");
-  const [source, setSource] = useState<CoverSource>("sgdb");
+  const [tmKey, setTmKey] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -45,7 +39,7 @@ export function ApiKeysDialog({
     const c = getIgdbCreds();
     setIgId(c.clientId);
     setIgSecret(c.clientSecret);
-    setSource(getCoverSource());
+    setTmKey(getTmdbKey());
     setSaved(false);
   }, [open]);
 
@@ -54,11 +48,9 @@ export function ApiKeysDialog({
   const save = () => {
     setSgdbKey(sgKey.trim());
     setIgdbCreds(igId.trim(), igSecret.trim());
-    setCoverSource(source);
+    setTmdbKey(tmKey.trim());
     setSaved(true);
   };
-
-  const needsKey = source !== "libretro" && !isConfigured(source);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,38 +64,6 @@ export function ApiKeysDialog({
             "Keys for the cover-art search. They are stored on this machine only and go through the local dev server to the service — nowhere else.",
           )}
         </p>
-
-        <div className="flex flex-col gap-1.5">
-          <Label>{t("Use for cover search")}</Label>
-          <div className="flex flex-wrap gap-1">
-            {SOURCES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  setSource(s);
-                  touched();
-                }}
-                className={cn(
-                  "rounded px-2.5 py-1 text-xs font-medium",
-                  source === s
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                {coverSourceLabel(s)}
-              </button>
-            ))}
-          </div>
-          {needsKey && (
-            <p className="text-xs text-amber-500">
-              {t(
-                "No key for {source} yet — the search falls back to libretro-thumbnails (retro / emulated consoles only).",
-                { source: source === "sgdb" ? "SteamGridDB" : "IGDB" },
-              )}
-            </p>
-          )}
-        </div>
 
         <KeyField
           label={t("SteamGridDB API key")}
@@ -143,6 +103,23 @@ export function ApiKeysDialog({
             placeholder={t("Client secret")}
             onChange={(e) => {
               setIgSecret(e.target.value);
+              touched();
+            }}
+            onKeyDown={(e) => e.key === "Enter" && save()}
+          />
+        </KeyField>
+
+        <KeyField
+          label={t("TMDB API key")}
+          href="https://www.themoviedb.org/settings/api"
+        >
+          <Input
+            value={tmKey}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={t("API key")}
+            onChange={(e) => {
+              setTmKey(e.target.value);
               touched();
             }}
             onKeyDown={(e) => e.key === "Enter" && save()}

@@ -17,6 +17,11 @@ export interface GameMeta {
   genre?: string;
   players?: string;
   rating?: string; // "0".."1"
+  // Movies-workspace fields — a movie's entry uses these instead of
+  // developer/publisher/players.
+  director?: string;
+  studio?: string;
+  runtime?: string; // free text, e.g. "118 min"
 }
 
 // Namespaced per workspace ("" suffix for the original), so a project's

@@ -14,6 +14,7 @@ import {
 } from "../gamelist";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import { getWorkspaceKind } from "../workspace";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -131,34 +132,69 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
         />
       </Field>
 
-      <Field label={t("Developer")}>
-        <Input
-          value={draft.developer ?? ""}
-          onChange={(e) => update({ developer: e.target.value || undefined })}
-        />
-      </Field>
+      {getWorkspaceKind() === "movies" ? (
+        <>
+          <Field label={t("Director")}>
+            <Input
+              value={draft.director ?? ""}
+              onChange={(e) => update({ director: e.target.value || undefined })}
+            />
+          </Field>
 
-      <Field label={t("Publisher")}>
-        <Input
-          value={draft.publisher ?? ""}
-          onChange={(e) => update({ publisher: e.target.value || undefined })}
-        />
-      </Field>
+          <Field label={t("Studio")}>
+            <Input
+              value={draft.studio ?? ""}
+              onChange={(e) => update({ studio: e.target.value || undefined })}
+            />
+          </Field>
 
-      <Field label={t("Genre")}>
-        <Input
-          value={draft.genre ?? ""}
-          onChange={(e) => update({ genre: e.target.value || undefined })}
-        />
-      </Field>
+          <Field label={t("Genre")}>
+            <Input
+              value={draft.genre ?? ""}
+              onChange={(e) => update({ genre: e.target.value || undefined })}
+            />
+          </Field>
 
-      <Field label={t("Players")}>
-        <Input
-          value={draft.players ?? ""}
-          onChange={(e) => update({ players: e.target.value || undefined })}
-          placeholder={t("e.g. 1-4")}
-        />
-      </Field>
+          <Field label={t("Runtime")}>
+            <Input
+              value={draft.runtime ?? ""}
+              onChange={(e) => update({ runtime: e.target.value || undefined })}
+              placeholder={t("e.g. 118 min")}
+            />
+          </Field>
+        </>
+      ) : (
+        <>
+          <Field label={t("Developer")}>
+            <Input
+              value={draft.developer ?? ""}
+              onChange={(e) => update({ developer: e.target.value || undefined })}
+            />
+          </Field>
+
+          <Field label={t("Publisher")}>
+            <Input
+              value={draft.publisher ?? ""}
+              onChange={(e) => update({ publisher: e.target.value || undefined })}
+            />
+          </Field>
+
+          <Field label={t("Genre")}>
+            <Input
+              value={draft.genre ?? ""}
+              onChange={(e) => update({ genre: e.target.value || undefined })}
+            />
+          </Field>
+
+          <Field label={t("Players")}>
+            <Input
+              value={draft.players ?? ""}
+              onChange={(e) => update({ players: e.target.value || undefined })}
+              placeholder={t("e.g. 1-4")}
+            />
+          </Field>
+        </>
+      )}
     </section>
   );
 }

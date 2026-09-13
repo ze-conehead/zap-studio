@@ -10,8 +10,9 @@ import { isCondition } from "./factory";
 import { ratingOutOfFive, releaseYear, type GameMeta } from "./gamelist";
 import { t } from "./i18n";
 import type { ConditionField, ConditionLayer, Layer } from "./types";
+import type { WorkspaceKind } from "./workspace";
 
-export const CONDITION_FIELDS: ConditionField[] = [
+const GAME_CONDITION_FIELDS: ConditionField[] = [
   "genre",
   "developer",
   "publisher",
@@ -20,6 +21,17 @@ export const CONDITION_FIELDS: ConditionField[] = [
   "rating",
   "name",
 ];
+
+const MOVIE_CONDITION_FIELDS: ConditionField[] = [
+  "genre",
+  "director",
+  "year",
+  "rating",
+  "name",
+];
+
+export const conditionFieldsFor = (kind: WorkspaceKind): ConditionField[] =>
+  kind === "movies" ? MOVIE_CONDITION_FIELDS : GAME_CONDITION_FIELDS;
 
 export function fieldLabel(f: ConditionField): string {
   switch (f) {
@@ -31,6 +43,8 @@ export function fieldLabel(f: ConditionField): string {
       return t("Publisher");
     case "players":
       return t("Players");
+    case "director":
+      return t("Director");
     case "year":
       return t("Release year");
     case "rating":
@@ -54,6 +68,8 @@ export function metaValue(
       return meta?.publisher ?? "";
     case "players":
       return meta?.players ?? "";
+    case "director":
+      return meta?.director ?? "";
     case "year":
       return releaseYear(meta?.releasedate) ?? "";
     case "rating":

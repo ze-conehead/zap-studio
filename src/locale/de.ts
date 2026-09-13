@@ -130,6 +130,11 @@ export const de: Record<string, string> = {
     "{consoles} \u2013 je die besten {n} Spiele, mit Metadaten aus base_game_list.csv.",
   "Starts empty — no consoles, no cards. Add your own in the tree.":
     "Startet leer \u2013 keine Konsolen, keine Karten. Eigene im Baum anlegen.",
+  "Starts empty — no movies, no cards. Add your own in the tree.":
+    "Startet leer \u2013 keine Filme, keine Karten. Eigene im Baum anlegen.",
+  Content: "Inhalt",
+  Games: "Spiele",
+  Movies: "Filme",
   Create: "Erstellen",
 
   // ── Data safety (automatic backups + trash) ──────────────────────────────
@@ -241,6 +246,10 @@ export const de: Record<string, string> = {
   "IGDB error (HTTP {status}).": "IGDB-Fehler (HTTP {status}).",
   "GitHub not reachable.": "GitHub nicht erreichbar.",
   "GitHub request failed (HTTP {status}).": "GitHub-Anfrage fehlgeschlagen (HTTP {status}).",
+  "TMDB is not reachable.": "TMDB ist nicht erreichbar.",
+  "TMDB API key missing or invalid. Create one at themoviedb.org.":
+    "TMDB-API-Key fehlt oder ist ung\u00fcltig. Neuen Key unter themoviedb.org anlegen.",
+  "TMDB error (HTTP {status}).": "TMDB-Fehler (HTTP {status}).",
 
   // ── gamelist.ts / projectFile.ts / backup.ts ─────────────────────────────
   "The file is not a valid gamelist.xml (XML error).":
@@ -283,6 +292,21 @@ export const de: Record<string, string> = {
   "{title} (right-click: rename / remove)": "{title} (Rechtsklick: umbenennen / entfernen)",
   Console: "Konsole",
   Game: "Spiel",
+  "Collections & movies": "Sammlungen & Filme",
+  "All collections": "Alle Sammlungen",
+  "Add collection": "Sammlung hinzuf\u00fcgen",
+  "Collection name:": "Name der Sammlung:",
+  "That collection already exists.": "Diese Sammlung gibt es bereits.",
+  "New movie for {name}:": "Neuer Film f\u00fcr {name}:",
+  "Rename movie:": "Film umbenennen:",
+  "Rename collection:": "Sammlung umbenennen:",
+  "Remove collection \u201c{name}\u201d and all its movies from the tree? Existing sticker designs stay under \u201cProjects\u201d.":
+    "Sammlung \u201e{name}\u201c mit allen Filmen aus dem Baum entfernen? Angelegte Sticker-Designs bleiben unter \u201eProjekte\u201c.",
+  "{name} \u2013 edit shared template (right-click: add movie / rename collection)":
+    "{name} \u2013 gemeinsame Vorlage bearbeiten (Rechtsklick: Film hinzuf\u00fcgen / Sammlung umbenennen)",
+  "Add movie": "Film hinzuf\u00fcgen",
+  "All movies": "Alle Filme",
+  "Show movies": "Filme anzeigen",
 
   // ── Inspector ────────────────────────────────────────────────────────────
   "Console template": "Konsolen-Vorlage",
@@ -435,6 +459,10 @@ export const de: Record<string, string> = {
   Genre: "Genre",
   Players: "Spieler",
   "e.g. 1-4": "z. B. 1-4",
+  Director: "Regisseur",
+  Studio: "Studio",
+  Runtime: "Laufzeit",
+  "e.g. 118 min": "z. B. 118 Min.",
   "{n} of 5 stars (left/right half for half steps)":
     "{n} von 5 Sternen (linke/rechte Hälfte für halbe Schritte)",
   "Image (local path): {src}": "Bild (lokaler Pfad): {src}",
@@ -710,11 +738,9 @@ export const de: Record<string, string> = {
   "API keys \u2026": "API-Schl\u00fcssel \u2026",
   "Keys for the cover-art search. They are stored on this machine only and go through the local dev server to the service \u2014 nowhere else.":
     "Schl\u00fcssel f\u00fcr die Cover-Suche. Sie werden nur auf diesem Rechner gespeichert und gehen \u00fcber den lokalen Dev-Server an den Dienst \u2013 sonst nirgendwohin.",
-  "Use for cover search": "F\u00fcr Cover-Suche verwenden",
-  "No key for {source} yet \u2014 the search falls back to libretro-thumbnails (retro / emulated consoles only).":
-    "Noch kein Schl\u00fcssel f\u00fcr {source} \u2013 die Suche nutzt ersatzweise libretro-thumbnails (nur Retro-/Emulations-Konsolen).",
   "SteamGridDB API key": "SteamGridDB-API-Schl\u00fcssel",
   "IGDB (Twitch) credentials": "IGDB-(Twitch-)Zugangsdaten",
+  "TMDB API key": "TMDB-API-Schl\u00fcssel",
   "get a key": "Schl\u00fcssel anlegen",
   "Saved.": "Gespeichert.",
 
