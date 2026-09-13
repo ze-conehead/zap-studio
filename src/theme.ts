@@ -1,8 +1,9 @@
-// Colour themes. The app is dark-only, so a theme is an accent colour plus a
-// tint for the greys around it; every palette below is derived from those two
-// numbers, so the ten themes stay consistent with each other. The choice
-// lives in localStorage and is exposed through a useSyncExternalStore pub/sub,
-// like the language in src/i18n.ts.
+// Colour themes. A theme is an accent colour plus a tint for the greys
+// around it, and a light/dark mode that picks which lightness ladder those
+// greys climb; every palette below is derived from those numbers, so themes
+// of the same mode stay consistent with each other. The choice lives in
+// localStorage and is exposed through a useSyncExternalStore pub/sub, like
+// the language in src/i18n.ts.
 
 import { useSyncExternalStore } from "react";
 
@@ -16,7 +17,12 @@ export type ThemeId =
   | "crimson"
   | "ember"
   | "gold"
-  | "graphite";
+  | "graphite"
+  | "paper"
+  | "sky"
+  | "rose";
+
+export type ThemeMode = "dark" | "light";
 
 /** An OKLCH colour as [lightness 0-1, chroma, hue deg]. */
 type Oklch = [number, number, number];
@@ -24,12 +30,13 @@ type Oklch = [number, number, number];
 export interface Theme {
   id: ThemeId;
   name: string; // English i18n key
+  mode: ThemeMode;
   accent: Oklch;
   /** true when the accent is bright enough to need dark text on top. */
   darkOnAccent: boolean;
   /** Hue of the greys (background, cards, borders …). */
   hue: number;
-  /** How strongly the greys are tinted. 0 = plain dark grey, no hue. */
+  /** How strongly the greys are tinted. 0 = plain grey, no hue. */
   chroma: number;
 }
 
@@ -38,6 +45,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   lime: {
     id: "lime",
     name: "Lime",
+    mode: "dark",
     accent: [0.86, 0.21, 130],
     darkOnAccent: true,
     hue: 0,
@@ -46,6 +54,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   emerald: {
     id: "emerald",
     name: "Emerald",
+    mode: "dark",
     accent: [0.79, 0.16, 162],
     darkOnAccent: true,
     hue: 165,
@@ -54,6 +63,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   cyan: {
     id: "cyan",
     name: "Cyan",
+    mode: "dark",
     accent: [0.81, 0.14, 197],
     darkOnAccent: true,
     hue: 210,
@@ -62,6 +72,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   cobalt: {
     id: "cobalt",
     name: "Cobalt",
+    mode: "dark",
     accent: [0.67, 0.19, 258],
     darkOnAccent: false,
     hue: 258,
@@ -70,6 +81,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   violet: {
     id: "violet",
     name: "Violet",
+    mode: "dark",
     accent: [0.7, 0.2, 297],
     darkOnAccent: false,
     hue: 295,
@@ -78,6 +90,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   magenta: {
     id: "magenta",
     name: "Magenta",
+    mode: "dark",
     accent: [0.72, 0.24, 341],
     darkOnAccent: false,
     hue: 336,
@@ -86,6 +99,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   crimson: {
     id: "crimson",
     name: "Crimson",
+    mode: "dark",
     accent: [0.66, 0.23, 21],
     darkOnAccent: false,
     hue: 20,
@@ -94,6 +108,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   ember: {
     id: "ember",
     name: "Ember",
+    mode: "dark",
     accent: [0.76, 0.18, 52],
     darkOnAccent: true,
     hue: 45,
@@ -102,6 +117,7 @@ export const THEMES: Record<ThemeId, Theme> = {
   gold: {
     id: "gold",
     name: "Gold",
+    mode: "dark",
     accent: [0.85, 0.16, 88],
     darkOnAccent: true,
     hue: 80,
@@ -110,10 +126,40 @@ export const THEMES: Record<ThemeId, Theme> = {
   graphite: {
     id: "graphite",
     name: "Graphite",
+    mode: "dark",
     accent: [0.8, 0.035, 250],
     darkOnAccent: true,
     hue: 250,
     chroma: 0.007,
+  },
+
+  // ── Light themes ──────────────────────────────────────────────────────────
+  paper: {
+    id: "paper",
+    name: "Paper",
+    mode: "light",
+    accent: [0.32, 0.03, 250],
+    darkOnAccent: false,
+    hue: 250,
+    chroma: 0.006,
+  },
+  sky: {
+    id: "sky",
+    name: "Sky",
+    mode: "light",
+    accent: [0.58, 0.17, 250],
+    darkOnAccent: false,
+    hue: 235,
+    chroma: 0.012,
+  },
+  rose: {
+    id: "rose",
+    name: "Rose",
+    mode: "light",
+    accent: [0.62, 0.2, 10],
+    darkOnAccent: false,
+    hue: 20,
+    chroma: 0.012,
   },
 };
 
@@ -222,46 +268,73 @@ const onAccent = (theme: Theme) =>
     ? okl(0.2, theme.accent[1] * 0.22, theme.accent[2])
     : okl(0.98, theme.accent[1] * 0.05, theme.accent[2]);
 
-// Every CSS custom property a theme drives. The lightness ladder is the one
-// the dark palette already used; a theme only shifts its hue/chroma and swaps
-// the accent in.
+// Every CSS custom property a theme drives. Two lightness ladders — one per
+// mode — climb from a dim/void surface (canvas) up through background, card,
+// popover and the raised hover/muted greys; a theme only shifts hue/chroma
+// within its mode's ladder and swaps the accent in. The 3D preview's
+// "--scene-bg" is deliberately left out of the mode split: that stage stays
+// a dark backdrop in every theme (see index.css's hardcoded white overlay
+// colours there), the same way a photo lightbox stays dark regardless of a
+// site's own light/dark mode.
+const LADDER: Record<ThemeMode, {
+  bg: number; card: number; popover: number; soft: number;
+  mutedFg: number; mutedFgMul: number; hover: number; sidebar: number;
+  canvas: number; checker: number; checkerAlpha: number;
+  borderL: number; borderMul: number; borderAlpha: number; inputAlpha: number;
+}> = {
+  dark: {
+    bg: 0.16, card: 0.216, popover: 0.24, soft: 0.29,
+    mutedFg: 0.68, mutedFgMul: 0.6, hover: 0.32, sidebar: 0.19,
+    canvas: 0.135, checker: 0.225, checkerAlpha: 0.55,
+    borderL: 0.99, borderMul: 0.2, borderAlpha: 0.11, inputAlpha: 0.15,
+  },
+  light: {
+    bg: 0.965, card: 0.99, popover: 1, soft: 0.905,
+    mutedFg: 0.42, mutedFgMul: 0.5, hover: 0.87, sidebar: 0.94,
+    canvas: 0.88, checker: 0.78, checkerAlpha: 0.4,
+    borderL: 0.15, borderMul: 0.25, borderAlpha: 0.14, inputAlpha: 0.18,
+  },
+};
+
 function themeVars(theme: Theme): Record<string, string> {
-  const { hue: h, chroma: c } = theme;
+  const { hue: h, chroma: c, mode } = theme;
   const grey = (l: number, mul = 1, alpha = 1) => okl(l, c * mul, h, alpha);
   const accent = accentColor(theme);
   const fg = onAccent(theme);
+  const L = LADDER[mode];
+  const ink = mode === "dark" ? grey(0.97, 0.3) : grey(0.2, 0.35);
 
   return {
-    "--background": grey(0.16),
-    "--foreground": grey(0.97, 0.3),
-    "--card": grey(0.216),
-    "--card-foreground": grey(0.97, 0.3),
-    "--popover": grey(0.24),
-    "--popover-foreground": grey(0.97, 0.3),
+    "--background": grey(L.bg),
+    "--foreground": ink,
+    "--card": grey(L.card),
+    "--card-foreground": ink,
+    "--popover": grey(L.popover),
+    "--popover-foreground": ink,
     "--primary": accent,
     "--primary-foreground": fg,
-    "--secondary": grey(0.29),
-    "--secondary-foreground": grey(0.97, 0.3),
-    "--muted": grey(0.29),
-    "--muted-foreground": grey(0.68, 0.6),
-    "--accent": grey(0.32),
-    "--accent-foreground": grey(0.97, 0.3),
-    "--border": grey(0.99, 0.2, 0.11),
-    "--input": grey(0.99, 0.2, 0.15),
+    "--secondary": grey(L.soft),
+    "--secondary-foreground": ink,
+    "--muted": grey(L.soft),
+    "--muted-foreground": grey(L.mutedFg, L.mutedFgMul),
+    "--accent": grey(L.hover),
+    "--accent-foreground": ink,
+    "--border": grey(L.borderL, L.borderMul, L.borderAlpha),
+    "--input": grey(L.borderL, L.borderMul, L.inputAlpha),
     "--ring": accent,
-    "--sidebar": grey(0.19),
-    "--sidebar-foreground": grey(0.97, 0.3),
+    "--sidebar": grey(L.sidebar),
+    "--sidebar-foreground": ink,
     "--sidebar-primary": accent,
     "--sidebar-primary-foreground": fg,
-    "--sidebar-accent": grey(0.32),
-    "--sidebar-accent-foreground": grey(0.97, 0.3),
-    "--sidebar-border": grey(0.99, 0.2, 0.11),
+    "--sidebar-accent": grey(L.hover),
+    "--sidebar-accent-foreground": ink,
+    "--sidebar-border": grey(L.borderL, L.borderMul, L.borderAlpha),
     "--sidebar-ring": accent,
 
     // App surfaces and effects that sit outside the shadcn token set.
-    "--canvas-bg": grey(0.135),
-    "--canvas-checker": grey(0.225, 1.2, 0.55),
-    "--scene-bg": grey(0.115),
+    "--canvas-bg": grey(L.canvas),
+    "--canvas-checker": grey(L.checker, 1.2, L.checkerAlpha),
+    "--scene-bg": okl(0.115, c, h),
     "--accent-solid": accent,
     "--accent-on": fg,
     "--accent-bright": accentShade(theme, 0.1, 0.8),
@@ -290,8 +363,14 @@ let current: ThemeId = load();
 function apply(): void {
   try {
     const root = document.documentElement;
+    const theme = THEMES[current];
     root.dataset.theme = current;
-    const vars = themeVars(THEMES[current]);
+    // index.css's ".dark" class only supplies the pre-hydration fallback
+    // palette and a couple of tokens this file doesn't drive (e.g.
+    // --destructive) — toggling it keeps those in step with the chosen mode.
+    root.classList.toggle("dark", theme.mode === "dark");
+    root.style.colorScheme = theme.mode;
+    const vars = themeVars(theme);
     for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   } catch {
     /* no document (tests) */

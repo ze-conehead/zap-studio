@@ -333,13 +333,27 @@ export function MenuBar({
 
       <Menu id="settings" label={t("Settings")}>
         <Sub label={t("Theme")} value={t(theme.name)}>
-          {THEME_IDS.map((id) => (
+          {THEME_IDS.filter((id) => THEMES[id].mode === "dark").map((id) => (
             <DropdownMenuItem
               key={id}
               onSelect={(e) => (e.preventDefault(), setTheme(id))}
             >
               <span
                 className="size-3.5 rounded-full ring-1 ring-white/25"
+                style={{ background: accentColor(THEMES[id]) }}
+              />
+              {t(THEMES[id].name)}
+              <Check className={cn("ml-auto size-4", id !== theme.id && "opacity-0")} />
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          {THEME_IDS.filter((id) => THEMES[id].mode === "light").map((id) => (
+            <DropdownMenuItem
+              key={id}
+              onSelect={(e) => (e.preventDefault(), setTheme(id))}
+            >
+              <span
+                className="size-3.5 rounded-full ring-1 ring-black/15"
                 style={{ background: accentColor(THEMES[id]) }}
               />
               {t(THEMES[id].name)}

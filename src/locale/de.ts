@@ -194,6 +194,9 @@ export const de: Record<string, string> = {
   Ember: "Glut",
   Gold: "Gold",
   Graphite: "Graphit",
+  Paper: "Papier",
+  Sky: "Himmel",
+  Rose: "Rosé",
 
   // ── Export labels ────────────────────────────────────────────────────────
   "PNG – final size ({w} × {h} mm)": "PNG – Endformat ({w} × {h} mm)",
