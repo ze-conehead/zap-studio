@@ -25,7 +25,7 @@ import {
 } from "../covers";
 import { getWorkspace, setWorkspaceFormat } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
-import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
+import { FORMAT_IDS, FORMATS, getFormat, getFormatId, isCard, setFormat } from "../formats";
 import { useLang, useT } from "../i18n";
 import { useStore } from "../store";
 import {
@@ -215,6 +215,13 @@ export function MenuBar({
               {exportLabel(m)}
             </DropdownMenuItem>
           ))}
+          {isCard() && (
+            <DropdownMenuItem onClick={() => void file.runCardTrayExport()}>
+              {project.back
+                ? t("PDF – card-tray printer (front + back)")
+                : t("PDF – card-tray printer (exact size)")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
           <DropdownMenuItem onClick={onOpenCutSheet}>
             {t("Print / cut sheet (Cricut · wir-machen-druck) …")}

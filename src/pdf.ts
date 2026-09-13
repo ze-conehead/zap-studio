@@ -192,8 +192,91 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
     );
   }
 
-  // Assemble with a cross-reference table. The header's binary comment must
-  // be raw high bytes, so build it directly.
+  return buildPdf(objects);
+}
+
+// ── plain card-tray PDF ─────────────────────────────────────────────────────
+// One page per face, sized exactly to that face's physical mm — no bleed, no
+// cut marks, no colour management. Meant for printing straight onto a blank
+// card through a printer's own card tray (e.g. Canon's), at "actual size /
+// 100 %" with the matching card paper size picked in the print dialog —
+// never "fit to page", which would silently rescale it.
+export interface CardPdfPage {
+  imageDataUrl: string; // the face, already at physical px size (no bleed)
+  widthMM: number;
+  heightMM: number;
+}
+
+export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
+  if (!pages.length) throw new Error("cardTrayPdf: no pages");
+  const enc = (s: string) => new TextEncoder().encode(s);
+  const box = (x0: number, y0: number, x1: number, y1: number) =>
+    `[${x0.toFixed(3)} ${y0.toFixed(3)} ${x1.toFixed(3)} ${y1.toFixed(3)}]`;
+
+  // obj 1 = Catalog, obj 2 = Pages; each face after that is 3 objects
+  // (Page, Image, Content), filled in as they're rendered.
+  const objects: Uint8Array[] = [enc(""), enc("")];
+  const kids: string[] = [];
+
+  for (const p of pages) {
+    const img = await loadImg(p.imageDataUrl);
+    const cw = img.naturalWidth;
+    const ch = img.naturalHeight;
+    const cvs = document.createElement("canvas");
+    cvs.width = cw;
+    cvs.height = ch;
+    const ctx = cvs.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, 0, 0);
+    const rgba = ctx.getImageData(0, 0, cw, ch).data;
+    const rgb = new Uint8Array(cw * ch * 3);
+    for (let s = 0, d = 0; s < rgba.length; s += 4, d += 3) {
+      rgb[d] = rgba[s];
+      rgb[d + 1] = rgba[s + 1];
+      rgb[d + 2] = rgba[s + 2];
+    }
+    const imgStream = zlibSync(rgb, { level: 6 });
+
+    const pageW = p.widthMM * MM_TO_PT;
+    const pageH = p.heightMM * MM_TO_PT;
+    const content = enc(`q ${pageW.toFixed(3)} 0 0 ${pageH.toFixed(3)} 0 0 cm /Im0 Do Q`);
+
+    const pageNum = objects.length + 1;
+    const imageNum = pageNum + 1;
+    const contentNum = pageNum + 2;
+    kids.push(`${pageNum} 0 R`);
+
+    objects.push(
+      enc(
+        `<< /Type /Page /Parent 2 0 R /MediaBox ${box(0, 0, pageW, pageH)} ` +
+          `/Resources << /XObject << /Im0 ${imageNum} 0 R >> >> ` +
+          `/Contents ${contentNum} 0 R >>`,
+      ),
+      concat(
+        enc(
+          `<< /Type /XObject /Subtype /Image /Width ${cw} /Height ${ch} ` +
+            `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode ` +
+            `/Length ${imgStream.length} >>\nstream\n`,
+        ),
+        imgStream,
+        enc("\nendstream"),
+      ),
+      concat(enc(`<< /Length ${content.length} >>\nstream\n`), content, enc("\nendstream")),
+    );
+  }
+
+  objects[0] = enc("<< /Type /Catalog /Pages 2 0 R >>");
+  objects[1] = enc(`<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${pages.length} >>`);
+
+  return buildPdf(objects);
+}
+
+// Assembles a cross-reference table + trailer around already-built indirect
+// objects (1-indexed, in order) and returns the finished file. The header's
+// binary comment must be raw high bytes, so it's built directly.
+function buildPdf(objects: Uint8Array[]): Blob {
+  const enc = (s: string) => new TextEncoder().encode(s);
   const header = Uint8Array.from([
     0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x35, 0x0a, // %PDF-1.5\n
     0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a, // %<bin>\n
