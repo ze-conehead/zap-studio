@@ -247,6 +247,36 @@ Stack: Vite + React 19 + TypeScript, Tailwind CSS v4 (`@tailwindcss/vite`),
 shadcn/ui, `react-konva`/`konva` für die Zeichenfläche, `idb-keyval` für die
 IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 
+## Desktop-App (Electron)
+
+Dieselbe App, gepackt als eigenständiges Programm für macOS/Windows/Linux –
+kein Dev-Server nötig, App-eigene IndexedDB/localStorage im Nutzerprofil.
+
+```bash
+npm run dev:electron   # Entwicklung: Vite-Dev-Server + Electron-Fenster
+npm run dist           # Build + Installer nach release/ (dmg/zip, nsis, AppImage/deb)
+```
+
+Zwei Dinge kann nur ein echter Node-Prozess ohne CORS-Sperre – dafür gibt es
+in der Browser-Version die Vite-Proxys aus `vite.config.ts`, in der
+Desktop-App ein Gegenstück im Electron-Hauptprozess:
+
+| Zweck | Browser (Vite-Dev-Server) | Desktop (Electron) |
+| --- | --- | --- |
+| SteamGridDB/IGDB/Twitch-API | `server.proxy` in `vite.config.ts` | IPC `desktop:apiFetch` in `electron/main.ts` |
+| Cover-Bild laden (CORS) | `/img?url=…`-Middleware | Custom-Scheme `app-img://` in `electron/main.ts` |
+| Zaparoo-Core-Verbindung | `/zaparoo?ip=…`-Middleware (Node-WebSocket) | IPC `desktop:zaparooRpc` (Node-WebSocket via `ws`) |
+
+`src/desktop.ts` stellt fest, ob `window.desktop` existiert (vom Preload-Skript
+`electron/preload.ts` gesetzt) und schaltet `src/covers.ts` / `src/zaparoo.ts`
+entsprechend um – derselbe App-Code läuft unverändert in beiden Umgebungen.
+
+`npm run build:electron` kompiliert `electron/*.ts` nach `dist-electron/`
+(eigenes `tsconfig.electron.json`, CommonJS). electron-builder-Konfiguration
+liegt im `"build"`-Schlüssel von `package.json`. Für echte Windows-/
+Linux-Installer eignet sich am ehesten CI (je ein Runner pro Betriebssystem)
+statt Cross-Build von macOS aus.
+
 ## Aufbau
 
 | Datei | Zweck |
@@ -281,6 +311,9 @@ IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
 | `src/components/DemoMode.tsx` | Pack-Öffnen-Animation, Kartenraster, 3D-Einzelansicht |
 | `src/components/CardStage.tsx` | Karte read-only rendern & als PNG abgreifen |
 | `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
+| `src/desktop.ts` | Bridge zu Electron (`window.desktop`), Fallback = Browser-Proxys |
+| `electron/main.ts` | Electron-Hauptprozess: Fenster, `app-img://`-Scheme, IPC-Proxys |
+| `electron/preload.ts` | `contextBridge`: stellt `window.desktop` sicher bereit |
 
 ## Rechtliches
 

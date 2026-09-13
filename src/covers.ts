@@ -7,10 +7,13 @@
 //
 // SteamGridDB's API and CDN block browser CORS, and IGDB's API needs an
 // OAuth token from Twitch (also CORS-blocked). Vite's dev/preview server
-// forwards them for us (see the cover-art proxy in vite.config.ts), so an
-// API key only ever goes browser → local Vite → upstream. IGDB's image CDN
-// and libretro-thumbnails (GitHub) already send CORS headers.
+// forwards them for us (see the cover-art proxy in vite.config.ts) in the
+// browser; the packaged desktop app instead goes through the Electron main
+// process (src/desktop.ts / electron/main.ts). Either way an API key only
+// ever goes browser → local proxy → upstream. IGDB's image CDN and
+// libretro-thumbnails (GitHub) already send CORS headers.
 
+import { desktopApiFetch, isDesktop } from "./desktop";
 import { t } from "./i18n";
 export interface CoverCandidate {
   title: string;
@@ -30,12 +33,24 @@ export function coverSourceLabel(s: CoverSource): string {
   return "libretro-thumbnails";
 }
 
-// Same-origin paths handled by the Vite cover-art proxy (vite.config.ts).
-const SGDB_API = "/api/sgdb";
-const IGDB_API = "/api/igdb";
-const TWITCH_API = "/api/twitch";
+// Same-origin paths handled by the Vite cover-art proxy (vite.config.ts) —
+// used as-is in the browser; apiFetch() below routes through the desktop
+// bridge instead when running as the packaged app.
+const DEV_BASE = { sgdb: "/api/sgdb", igdb: "/api/igdb", twitch: "/api/twitch" };
+
+async function apiFetch(
+  kind: "sgdb" | "igdb" | "twitch",
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
+  if (isDesktop()) return desktopApiFetch(kind, path, init);
+  return fetch(`${DEV_BASE[kind]}${path}`, init);
+}
+
 const proxied = (url: string) =>
-  `${window.location.origin}/img?url=${encodeURIComponent(url)}`;
+  isDesktop()
+    ? `app-img://p/${encodeURIComponent(url)}`
+    : `${window.location.origin}/img?url=${encodeURIComponent(url)}`;
 
 // ── stored settings ────────────────────────────────────────────────────────
 
@@ -115,7 +130,7 @@ interface SgdbGrid {
 async function sgdbFetch<T>(path: string): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${SGDB_API}${path}`, {
+    res = await apiFetch("sgdb", path, {
       headers: { Authorization: `Bearer ${getSgdbKey()}` },
     });
   } catch {
@@ -231,8 +246,9 @@ async function igdbToken(): Promise<string> {
   const { clientId, clientSecret } = getIgdbCreds();
   let res: Response;
   try {
-    res = await fetch(
-      `${TWITCH_API}/oauth2/token?client_id=${encodeURIComponent(
+    res = await apiFetch(
+      "twitch",
+      `/oauth2/token?client_id=${encodeURIComponent(
         clientId,
       )}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
       { method: "POST" },
@@ -275,7 +291,7 @@ async function igdbFetch<T>(endpoint: string, body: string): Promise<T> {
   const { clientId } = getIgdbCreds();
   let res: Response;
   try {
-    res = await fetch(`${IGDB_API}/${endpoint}`, {
+    res = await apiFetch("igdb", `/${endpoint}`, {
       method: "POST",
       headers: { "Client-ID": clientId, Authorization: `Bearer ${token}` },
       body,

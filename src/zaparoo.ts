@@ -3,9 +3,11 @@
 //   https://zaparoo.org/docs/core/api/
 //
 // Zaparoo only sends CORS headers to a fixed origin allowlist, so the call
-// is forwarded through the dev server (POST /zaparoo?ip=… — see the
-// zaparoo-proxy plugin in vite.config.ts).
+// is forwarded through the dev server in the browser (POST /zaparoo?ip=… —
+// see the zaparoo-proxy plugin in vite.config.ts) and through the Electron
+// main process in the packaged desktop app (src/desktop.ts).
 
+import { isDesktop } from "./desktop";
 import type { GameMeta } from "./gamelist";
 import { t } from "./i18n";
 
@@ -43,43 +45,63 @@ function splitHost(raw: string): { ip: string; port?: string } {
 async function rpc<T>(host: string, method: string, params?: unknown): Promise<T> {
   const { ip, port } = splitHost(host);
   if (!ip) throw new Error(t("Enter the Zaparoo / MiSTer address first."));
-  const url =
-    `/zaparoo?ip=${encodeURIComponent(ip)}` + (port ? `&port=${port}` : "");
+  const body = JSON.stringify({
+    jsonrpc: "2.0",
+    id: crypto.randomUUID?.() ?? `${Date.now()}`,
+    method,
+    params,
+  });
 
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: crypto.randomUUID?.() ?? `${Date.now()}`,
-        method,
-        params,
-      }),
-    });
-  } catch {
-    throw new Error(t("The dev server isn't reachable — is it running?"));
+  let text: string;
+  if (isDesktop()) {
+    const r = await window.desktop!.zaparooRpc(ip, port ? Number(port) : 7497, body);
+    if ("error" in r) {
+      if (r.error === "bad-host") {
+        throw new Error(
+          t("{host} isn't a local address — this only reaches a device on your network.", {
+            host,
+          }),
+        );
+      }
+      throw new Error(
+        t("Can't reach Zaparoo at {host}. Check the address and that Zaparoo Core is running.", {
+          host,
+        }),
+      );
+    }
+    text = r.text;
+  } else {
+    const url =
+      `/zaparoo?ip=${encodeURIComponent(ip)}` + (port ? `&port=${port}` : "");
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+    } catch {
+      throw new Error(t("The dev server isn't reachable — is it running?"));
+    }
+    if (res.status === 502 || res.status === 504) {
+      throw new Error(
+        t("Can't reach Zaparoo at {host}. Check the address and that Zaparoo Core is running.", {
+          host,
+        }),
+      );
+    }
+    if (res.status === 400) {
+      throw new Error(
+        t("{host} isn't a local address — this only reaches a device on your network.", { host }),
+      );
+    }
+    if (!res.ok) {
+      throw new Error(t("Zaparoo error (HTTP {status}).", { status: res.status }));
+    }
+    text = await res.text();
   }
-  if (res.status === 502 || res.status === 504) {
-    throw new Error(
-      t("Can't reach Zaparoo at {host}. Check the address and that Zaparoo Core is running.", {
-        host,
-      }),
-    );
-  }
-  if (res.status === 400) {
-    throw new Error(
-      t("{host} isn't a local address — this only reaches a device on your network.", { host }),
-    );
-  }
-  if (!res.ok) {
-    throw new Error(t("Zaparoo error (HTTP {status}).", { status: res.status }));
-  }
-  const data = (await res.json()) as {
-    result?: T;
-    error?: { message?: string };
-  };
+
+  const data = JSON.parse(text) as { result?: T; error?: { message?: string } };
   if (data.error) {
     throw new Error(t("Zaparoo: {message}", { message: data.error.message ?? "error" }));
   }
