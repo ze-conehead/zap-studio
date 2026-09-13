@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
-  "author": "Ze Conehead",
+  "author": {
+    "name": "Ze Conehead",
+    "email": "claude.excusably011@passmail.net"
+  },
+  "description": "Design and export credit-card-sized console/game stickers, locally in your browser.",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
