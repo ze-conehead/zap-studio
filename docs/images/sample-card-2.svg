@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="856" viewBox="0 0 540 856">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <clipPath id="round2">
+      <rect x="0" y="0" width="540" height="856" rx="31.8" ry="31.8"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#round2)">
+    <rect x="0" y="0" width="540" height="856" fill="url(#bg2)"/>
+    <circle cx="80" cy="120" r="170" fill="#ffffff" opacity="0.06"/>
+    <circle cx="500" cy="760" r="200" fill="#000000" opacity="0.14"/>
+    <text x="270" y="470" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="58" fill="#fffbeb" letter-spacing="2">STAR FOX</text>
+    <rect x="180" y="504" width="180" height="3" fill="#fffbeb" opacity="0.5"/>
+    <text x="270" y="542" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="20" fill="#fed7aa" letter-spacing="6">SUPER NINTENDO</text>
+
+    <!-- a small rating badge, like the gamelist-driven metadata layers -->
+    <g transform="translate(270,620)">
+      <rect x="-84" y="0" width="168" height="40" rx="20" fill="#000000" opacity="0.22"/>
+      <g fill="#fde68a" font-family="Helvetica, Arial, sans-serif" font-size="20">
+        <text x="-68" y="27">&#9733;</text>
+        <text x="-40" y="27">&#9733;</text>
+        <text x="-12" y="27">&#9733;</text>
+        <text x="16" y="27" fill="#fde68a" opacity="0.35">&#9733;</text>
+        <text x="44" y="27" fill="#fde68a" opacity="0.35">&#9733;</text>
+      </g>
+      <text x="0" y="-12" text-anchor="middle" fill="#fffbeb" font-family="Helvetica, Arial, sans-serif" font-size="15" opacity="0.85">1993</text>
+    </g>
+  </g>
+  <rect x="1" y="1" width="538" height="854" rx="31" ry="31" fill="none" stroke="#000000" stroke-opacity="0.15" stroke-width="1.5"/>
+</svg>

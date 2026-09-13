@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="856" viewBox="0 0 540 856">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#863bff"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect x="0" y="0" width="540" height="856" rx="31.8" ry="31.8"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#round)">
+    <rect x="0" y="0" width="540" height="856" fill="url(#bg)"/>
+    <circle cx="470" cy="90" r="150" fill="#ffffff" opacity="0.05"/>
+    <circle cx="60" cy="800" r="190" fill="#000000" opacity="0.12"/>
+    <text x="270" y="470" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="58" fill="#f8fafc" letter-spacing="2">GRAN</text>
+    <text x="270" y="536" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="58" fill="#f8fafc" letter-spacing="2">TURISMO</text>
+    <rect x="180" y="570" width="180" height="3" fill="#f8fafc" opacity="0.5"/>
+    <text x="270" y="608" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="20" fill="#c4b5fd" letter-spacing="6">PLAYSTATION</text>
+  </g>
+  <rect x="1" y="1" width="538" height="854" rx="31" ry="31" fill="none" stroke="#000000" stroke-opacity="0.15" stroke-width="1.5"/>
+</svg>

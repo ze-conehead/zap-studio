@@ -3,6 +3,11 @@
 Browser app for designing credit-card-sized stickers (ISO ID-1, portrait
 54 × 85.6 mm) for consoles. Runs entirely locally – no server, no login.
 
+<p align="center">
+  <img src="docs/images/sample-card-1.png" alt="Sample sticker: Gran Turismo, PlayStation" width="260">
+  <img src="docs/images/sample-card-2.png" alt="Sample sticker: Star Fox, Super Nintendo" width="260">
+</p>
+
 UI built with **shadcn/ui** (Radix + Tailwind CSS v4, "new-york" style,
 dark theme). UI primitives live in `src/components/ui/`; `components.json`
 enables `npx shadcn@latest add <component>`.
@@ -328,3 +333,7 @@ cross-building from macOS – see `.github/workflows/build-desktop.yml`.
 Console and game logos, as well as cover art, are trademarked and/or
 copyrighted – only upload your own or licensed artwork, and use the
 result privately.
+
+## License
+
+[MIT](LICENSE)

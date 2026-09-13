@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Ze Conehead",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
