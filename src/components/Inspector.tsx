@@ -7,6 +7,7 @@ import {
   CornerDownRight,
   Crop,
   Italic,
+  Loader2,
   Lock,
   LockOpen,
   Minus,
@@ -26,6 +27,8 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -56,7 +59,12 @@ import {
   isDefaultCase,
   metaValue,
 } from "../conditions";
-import { FONTS } from "../fonts";
+import {
+  addCustomFont,
+  getCustomFontsVersion,
+  subscribeCustomFonts,
+} from "../customFonts";
+import { allFontOptions } from "../fonts";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../imageAdjust";
 import { DEFAULT_FLOW_GAP, DEFAULT_FLOW_HEIGHT } from "../textFlow";
 import type { MaskOption } from "../templates";
@@ -1423,6 +1431,27 @@ function MetaBadgeProps({ layer, patch }: { layer: MetaBadgeLayer; patch: Patch 
 
 function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
   const t = useT();
+  useSyncExternalStore(subscribeCustomFonts, getCustomFontsVersion, getCustomFontsVersion);
+  const fonts = allFontOptions();
+  const builtIn = fonts.filter((f) => !f.custom);
+  const custom = fonts.filter((f) => f.custom);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const uploadFont = async (file: File) => {
+    setBusy(true);
+    setError("");
+    try {
+      const font = await addCustomFont(file);
+      patch({ fontFamily: font.family });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <Field label={t("Text")}>
@@ -1435,18 +1464,53 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
       </Field>
 
       <Field label={t("Font")}>
-        <Select value={layer.fontFamily} onValueChange={(v) => patch({ fontFamily: v })}>
-          <SelectTrigger style={{ fontFamily: layer.fontFamily }}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONTS.map((f) => (
-              <SelectItem key={f.label} value={f.value} style={{ fontFamily: f.value }}>
-                {f.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-1.5">
+          <Select value={layer.fontFamily} onValueChange={(v) => patch({ fontFamily: v })}>
+            <SelectTrigger style={{ fontFamily: layer.fontFamily }} className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {builtIn.map((f) => (
+                <SelectItem key={f.label} value={f.value} style={{ fontFamily: f.value }}>
+                  {f.label}
+                </SelectItem>
+              ))}
+              {custom.length > 0 && (
+                <>
+                  <SelectSeparator />
+                  <SelectLabel>{t("Uploaded")}</SelectLabel>
+                  {custom.map((f) => (
+                    <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            disabled={busy}
+            title={t("Upload a font file (.ttf, .otf, .woff, .woff2)")}
+            onClick={() => fileRef.current?.click()}
+          >
+            {busy ? <Loader2 className="animate-spin" /> : <Upload />}
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".ttf,.otf,.woff,.woff2"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void uploadFont(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        {error && <span className="text-xs text-destructive">{error}</span>}
       </Field>
 
       <div className="grid grid-cols-2 gap-2">

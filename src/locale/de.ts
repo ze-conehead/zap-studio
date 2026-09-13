@@ -383,6 +383,21 @@ export const de: Record<string, string> = {
   "Letter spacing": "Laufweite",
   "Stroke color": "Konturfarbe",
 
+  // ── custom fonts ─────────────────────────────────────────────────────────
+  "Custom fonts …": "Eigene Schriftarten …",
+  "Custom fonts": "Eigene Schriftarten",
+  "Uploaded": "Hochgeladen",
+  "Upload font …": "Schriftart hochladen …",
+  "Upload a font file (.ttf, .otf, .woff, .woff2)":
+    "Schriftdatei hochladen (.ttf, .otf, .woff, .woff2)",
+  "Font files stay on this machine, in this project. They show up in every text layer's font picker.":
+    "Schriftdateien bleiben auf diesem Rechner, in diesem Projekt. Sie erscheinen in jeder Text-Ebene in der Schriftauswahl.",
+  "No custom fonts yet.": "Noch keine eigenen Schriftarten.",
+  "That doesn't look like a font file (.ttf, .otf, .woff, .woff2).":
+    "Das sieht nicht nach einer Schriftdatei aus (.ttf, .otf, .woff, .woff2).",
+  "That font file is too big (max {n} MB).": "Diese Schriftdatei ist zu groß (max. {n} MB).",
+  "Couldn't read that file.": "Die Datei konnte nicht gelesen werden.",
+
   // ── LayerList ────────────────────────────────────────────────────────────
   Layers: "Ebenen",
   "Editable only in “All consoles”": "Nur unter „Alle Konsolen“ bearbeitbar",

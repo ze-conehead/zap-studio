@@ -1,6 +1,12 @@
 import { t } from "./i18n";
 import { set } from "idb-keyval";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import {
+  ensureCustomFontsLoaded,
+  importCustomFont,
+  listCustomFonts,
+  type CustomFont,
+} from "./customFonts";
 import { loadAllProjects } from "./persist";
 import { wsIdbPrefix, wsSuffix } from "./workspace";
 import type { Project } from "./types";
@@ -74,6 +80,8 @@ function bytesToDataUrl(bytes: Uint8Array, mime: string): string {
 
 export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   const projects = await loadAllProjects();
+  await ensureCustomFontsLoaded();
+  const fonts = listCustomFonts();
   const files: Record<string, Uint8Array> = {};
   const assetMime: Record<string, string> = {};
   const seen = new Map<string, string>(); // data URL -> "asset:<file>"
@@ -130,6 +138,10 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
     files["settings/gameIndexes.json"] = strToU8(JSON.stringify(gameIndexes));
   }
 
+  for (const f of fonts) {
+    files[`fonts/${f.id}.json`] = strToU8(JSON.stringify(f));
+  }
+
   files["manifest.json"] = strToU8(
     JSON.stringify(
       {
@@ -138,6 +150,7 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
         exportedAt: new Date().toISOString(),
         projects: np,
         templates: nt,
+        fonts: fonts.length,
         assets: assetMime,
       },
       null,
@@ -192,6 +205,16 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
     await set(`${wsIdbPrefix()}project:${proj.id}`, proj);
     if (proj.isTemplate) nt++;
     else np++;
+  }
+
+  for (const path of Object.keys(entries)) {
+    if (!/^fonts\/.+\.json$/.test(path)) continue;
+    try {
+      const font = JSON.parse(strFromU8(entries[path])) as CustomFont;
+      if (font.id && font.family && font.dataUrl) await importCustomFont(font);
+    } catch {
+      /* skip an unreadable font entry */
+    }
   }
 
   if (entries["settings/guides.json"]) {

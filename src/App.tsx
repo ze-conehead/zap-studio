@@ -17,6 +17,7 @@ import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
 import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
+import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -31,6 +32,7 @@ import {
   templateId,
 } from "./factory";
 import { getCatalog } from "./data/catalog";
+import { ensureCustomFontsLoaded } from "./customFonts";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
@@ -187,6 +189,9 @@ export default function App() {
           : globalP,
       );
     })();
+    // Register uploaded fonts as early as possible — no need to block the
+    // boot on it, the font pickers just fill in once it resolves.
+    void ensureCustomFontsLoaded();
   }, []);
 
   // Remember what's open so a reload comes back to it.
@@ -349,6 +354,7 @@ function Shell({
   const [preflight, setPreflight] = useState(false);
   const [templates, setTemplates] = useState(false);
   const [apiKeys, setApiKeys] = useState(false);
+  const [customFonts, setCustomFonts] = useState(false);
   const t = useT();
   // View-level shortcuts. The layer ones live in the store, which owns the
   // selection; these need the guides API and the Shell's dialogs.
@@ -393,6 +399,7 @@ function Shell({
     onOpenPreflight: () => setPreflight(true),
     onOpenTemplates: () => setTemplates(true),
     onOpenApiKeys: () => setApiKeys(true),
+    onOpenCustomFonts: () => setCustomFonts(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -468,6 +475,7 @@ function Shell({
       />
       <TemplateDialog open={templates} onOpenChange={setTemplates} />
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
+      <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />

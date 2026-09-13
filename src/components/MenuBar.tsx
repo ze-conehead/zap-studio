@@ -59,6 +59,7 @@ interface Props {
   onOpenPreflight: () => void;
   onOpenTemplates: () => void;
   onOpenApiKeys: () => void;
+  onOpenCustomFonts: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -81,6 +82,7 @@ export function MenuBar({
   onOpenPreflight,
   onOpenTemplates,
   onOpenApiKeys,
+  onOpenCustomFonts,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -396,6 +398,9 @@ export function MenuBar({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenApiKeys}>
           {t("API keys …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenCustomFonts}>
+          {t("Custom fonts …")}
         </DropdownMenuItem>
       </Menu>
 

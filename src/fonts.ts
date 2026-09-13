@@ -1,10 +1,14 @@
 // Curated font list. System fonts render everywhere; the web fonts are
-// pulled in via index.html and must be loaded before an export.
+// pulled in via index.html and must be loaded before an export. User-uploaded
+// fonts (src/customFonts.ts) round the picker out further.
+
+import { ensureCustomFontsLoaded, listCustomFonts } from "./customFonts";
 
 export interface FontOption {
   label: string;
   value: string; // CSS font-family
   web?: boolean;
+  custom?: boolean;
 }
 
 export const FONTS: FontOption[] = [
@@ -19,7 +23,17 @@ export const FONTS: FontOption[] = [
   { label: "Rubik Mono", value: "'Rubik Mono One', sans-serif", web: true },
 ];
 
+/** Every font a text layer can use: the curated list plus whatever the user
+ * has uploaded, as one flat FontOption[] for the picker. */
+export function allFontOptions(): FontOption[] {
+  return [
+    ...FONTS,
+    ...listCustomFonts().map((f) => ({ label: f.name, value: f.family, custom: true })),
+  ];
+}
+
 export async function ensureFontsLoaded(): Promise<void> {
+  await ensureCustomFontsLoaded();
   try {
     // Nudge the browser to fetch each web face, then wait.
     for (const f of FONTS.filter((x) => x.web)) {
