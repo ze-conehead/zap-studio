@@ -60,7 +60,14 @@ export async function urlToLayerSource(url: string): Promise<LoadedImage> {
   } catch {
     throw new Error(t("Invalid URL."));
   }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+  // "app-img:" is the desktop app's own scheme (registered in
+  // electron/main.ts) that covers.ts's proxied() wraps cover/logo URLs in
+  // for CORS-safe loading — trusted internal plumbing, not user input.
+  if (
+    parsed.protocol !== "http:" &&
+    parsed.protocol !== "https:" &&
+    parsed.protocol !== "app-img:"
+  ) {
     throw new Error(t("Only http(s) URLs are supported."));
   }
 
