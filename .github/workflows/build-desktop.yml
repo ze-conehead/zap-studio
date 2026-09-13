@@ -2,7 +2,8 @@ name: Build desktop app
 
 # Cross-compiling Windows/Linux installers from macOS is unreliable — one
 # native runner per OS is the realistic way to get all three. Manual trigger
-# plus tags, so a normal push doesn't spend CI minutes packaging installers.
+# plus version tags, so a normal push doesn't spend CI minutes packaging
+# installers (that's what ci.yml is for).
 on:
   workflow_dispatch:
   push:
@@ -34,3 +35,23 @@ jobs:
             release/*.AppImage
             release/*.deb
           if-no-files-found: ignore
+
+  # Only for a "vX.Y.Z" tag push: gathers what all three OS jobs built and
+  # attaches them to one GitHub Release. workflow_dispatch runs stop after
+  # `build` — nothing to publish a release under without a tag.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: release/*
