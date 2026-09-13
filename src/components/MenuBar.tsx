@@ -50,6 +50,7 @@ interface Props {
   onOpenPreview: () => void;
   onOpenDemo: () => void;
   onOpenCutSheet: () => void;
+  onOpenCardTray: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
   onOpenZaparoo: () => void;
@@ -73,6 +74,7 @@ export function MenuBar({
   onOpenPreview,
   onOpenDemo,
   onOpenCutSheet,
+  onOpenCardTray,
   onOpenBaseImport,
   onOpenQuickImport,
   onOpenZaparoo,
@@ -216,10 +218,8 @@ export function MenuBar({
             </DropdownMenuItem>
           ))}
           {isCard() && (
-            <DropdownMenuItem onClick={() => void file.runCardTrayExport()}>
-              {project.back
-                ? t("PDF – card-tray printer (front + back)")
-                : t("PDF – card-tray printer (exact size)")}
+            <DropdownMenuItem onClick={onOpenCardTray}>
+              {t("PDF – card-tray printer …")}
             </DropdownMenuItem>
           )}
           <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>

@@ -65,11 +65,18 @@ export const de: Record<string, string> = {
   "Loading cover …": "Cover wird geladen …",
   "Generating PNG …": "PNG wird erzeugt …",
   "Generating PDF …": "PDF wird erzeugt …",
-  "PDF – card-tray printer (front + back)":
-    "PDF – Kartenfach-Drucker (Vorder- + Rückseite)",
-  "PDF – card-tray printer (exact size)": "PDF – Kartenfach-Drucker (Originalgröße)",
-  "In the print dialog, pick the card-sized paper/media your printer's tray uses and print at Actual size / 100 % — never “Fit to page”, which would rescale it. Two pages means front + back: print one, flip the card, print the other.":
-    "Im Druckdialog das Karten-Papierformat wählen, das dein Kartenfach nutzt, und in Originalgröße / 100 % drucken – nicht „An Seite anpassen“, das würde die Größe verändern. Zwei Seiten bedeuten Vorder- + Rückseite: eine drucken, Karte wenden, die andere drucken.",
+  "PDF – card-tray printer …": "PDF – Kartenfach-Drucker …",
+  "Card-tray printing": "Kartenfach-Druck",
+  "For a printer's disc/card tray (e.g. Canon's). The tray is usually bigger than the card, and exactly where the card sits on it depends on your printer — print a test page, measure the offset from a corner against the real card, and adjust it below. Remembered per tray type.":
+    "Für das Disc-/Kartenfach eines Druckers (z. B. Canon). Das Fach ist meist größer als die Karte, und wo genau die Karte darauf sitzt, hängt vom Drucker ab – drucke eine Testseite, miss den Versatz ab einer Ecke an der echten Karte und passe ihn unten an. Wird je Fach-Typ gemerkt.",
+  "Tray type": "Fach-Typ",
+  "Card position on the tray page": "Kartenposition auf der Fach-Seite",
+  "Page width (mm)": "Seitenbreite (mm)",
+  "Page height (mm)": "Seitenhöhe (mm)",
+  "Card offset X (mm)": "Karten-Versatz X (mm)",
+  "Card offset Y (mm)": "Karten-Versatz Y (mm)",
+  "Export PDF (front + back)": "PDF exportieren (Vorder- + Rückseite)",
+  "Export PDF": "PDF exportieren",
   "Load backup? Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.":
     "Backup laden? Projekte und Vorlagen aus der Datei werden übernommen (vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
   "{projects} project(s) and {templates} template(s) imported.":

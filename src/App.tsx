@@ -21,6 +21,7 @@ import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
+import { CardTrayDialog } from "./components/CardTrayDialog";
 import { QuickImportDialog } from "./components/QuickImportDialog";
 import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
 import {
@@ -345,6 +346,7 @@ function Shell({
   const [demo, setDemo] = useState(false);
   // Dialogs the menu bar and the toolbar both open.
   const [cutSheet, setCutSheet] = useState(false);
+  const [cardTray, setCardTray] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
   const [zaparoo, setZaparoo] = useState(false);
@@ -390,6 +392,7 @@ function Shell({
     onOpenDemo: () => setDemo(true),
     onImportJson,
     onOpenCutSheet: () => setCutSheet(true),
+    onOpenCardTray: () => setCardTray(true),
     onOpenBaseImport: () => setBaseImport(true),
     onOpenQuickImport: () => setQuickImport(true),
     onOpenZaparoo: () => setZaparoo(true),
@@ -477,6 +480,7 @@ function Shell({
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
+      <CardTrayDialog open={cardTray} onOpenChange={setCardTray} canvas={canvas} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />
       <QuickImportDialog

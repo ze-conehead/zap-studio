@@ -196,15 +196,24 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
 }
 
 // ── plain card-tray PDF ─────────────────────────────────────────────────────
-// One page per face, sized exactly to that face's physical mm — no bleed, no
-// cut marks, no colour management. Meant for printing straight onto a blank
-// card through a printer's own card tray (e.g. Canon's), at "actual size /
-// 100 %" with the matching card paper size picked in the print dialog —
-// never "fit to page", which would silently rescale it.
+// One page per face, no colour management. Meant for printing straight onto
+// a blank card through a printer's own disc/card tray (e.g. Canon's "Disc
+// Tray G/J/K/M" or "MP Tray" media): the tray is usually much bigger than
+// the card itself, so the page is the *tray's* media size, with the card
+// drawn at whatever offset that tray places it — everything else on the
+// page stays white. Print at "actual size / 100 %" with the matching media
+// picked in the print dialog — never "fit to page", which would rescale it.
 export interface CardPdfPage {
   imageDataUrl: string; // the face, already at physical px size (no bleed)
-  widthMM: number;
-  heightMM: number;
+  cardWidthMM: number;
+  cardHeightMM: number;
+  // The full tray media page, and where the card's top-left corner sits on
+  // it. Defaults to the card's own size at (0, 0) — i.e. no tray margin —
+  // when omitted, so a page-less caller still gets a plain card-sized page.
+  pageWidthMM?: number;
+  pageHeightMM?: number;
+  offsetXMM?: number;
+  offsetYMM?: number;
 }
 
 export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
@@ -238,9 +247,21 @@ export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
     }
     const imgStream = zlibSync(rgb, { level: 6 });
 
-    const pageW = p.widthMM * MM_TO_PT;
-    const pageH = p.heightMM * MM_TO_PT;
-    const content = enc(`q ${pageW.toFixed(3)} 0 0 ${pageH.toFixed(3)} 0 0 cm /Im0 Do Q`);
+    const pageWMM = p.pageWidthMM ?? p.cardWidthMM;
+    const pageHMM = p.pageHeightMM ?? p.cardHeightMM;
+    const offXMM = p.offsetXMM ?? 0;
+    const offYMM = p.offsetYMM ?? 0;
+
+    const pageW = pageWMM * MM_TO_PT;
+    const pageH = pageHMM * MM_TO_PT;
+    const cardW = p.cardWidthMM * MM_TO_PT;
+    const cardH = p.cardHeightMM * MM_TO_PT;
+    const x = offXMM * MM_TO_PT;
+    // flip: mm-from-top-left of the page → pt-from-bottom (PDF space)
+    const y = pageH - (offYMM * MM_TO_PT + cardH);
+    const content = enc(
+      `q ${cardW.toFixed(3)} 0 0 ${cardH.toFixed(3)} ${x.toFixed(3)} ${y.toFixed(3)} cm /Im0 Do Q`,
+    );
 
     const pageNum = objects.length + 1;
     const imageNum = pageNum + 1;
