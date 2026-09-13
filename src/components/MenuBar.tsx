@@ -23,7 +23,7 @@ import {
   setCoverSource,
   type CoverSource,
 } from "../covers";
-import { getWorkspace, setWorkspaceFormat } from "../workspace";
+import { getWorkspace, getWorkspaceKind, setWorkspaceFormat } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
 import { FORMAT_IDS, FORMATS, getFormat, getFormatId, isCard, setFormat } from "../formats";
 import { useLang, useT } from "../i18n";
@@ -229,11 +229,15 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
-        <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
+        {getWorkspaceKind() === "games" && (
+          <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={onOpenQuickImport}>Quick Import …</DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenZaparoo}>
-          {t("Zaparoo (MiSTer) …")}
-        </DropdownMenuItem>
+        {getWorkspaceKind() === "games" && (
+          <DropdownMenuItem onClick={onOpenZaparoo}>
+            {t("Zaparoo (MiSTer) …")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => void file.saveBackup()}>
@@ -386,17 +390,19 @@ export function MenuBar({
           </DropdownMenuItem>
         </Sub>
 
-        <Sub label={t("Cover source")} value={coverSourceLabel(coverSource)}>
-          {(["sgdb", "igdb", "igdb-shots", "libretro"] as CoverSource[]).map((s) => (
-            <DropdownMenuItem
-              key={s}
-              onSelect={(e) => (e.preventDefault(), setCoverSource(s))}
-            >
-              {coverSourceLabel(s)}
-              <Check className={cn("ml-auto size-4", s !== coverSource && "opacity-0")} />
-            </DropdownMenuItem>
-          ))}
-        </Sub>
+        {getWorkspaceKind() === "games" && (
+          <Sub label={t("Cover source")} value={coverSourceLabel(coverSource)}>
+            {(["sgdb", "igdb", "igdb-shots", "libretro"] as CoverSource[]).map((s) => (
+              <DropdownMenuItem
+                key={s}
+                onSelect={(e) => (e.preventDefault(), setCoverSource(s))}
+              >
+                {coverSourceLabel(s)}
+                <Check className={cn("ml-auto size-4", s !== coverSource && "opacity-0")} />
+              </DropdownMenuItem>
+            ))}
+          </Sub>
+        )}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenApiKeys}>

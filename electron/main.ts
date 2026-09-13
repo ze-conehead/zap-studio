@@ -14,8 +14,9 @@ const API_HOSTS: Record<string, string> = {
   sgdb: "https://www.steamgriddb.com/api/v2",
   igdb: "https://api.igdb.com/v4",
   twitch: "https://id.twitch.tv",
+  tmdb: "https://api.themoviedb.org/3",
 };
-const IMG_HOSTS = [/(^|\.)steamgriddb\.com$/];
+const IMG_HOSTS = [/(^|\.)steamgriddb\.com$/, /(^|\.)tmdb\.org$/];
 
 protocol.registerSchemesAsPrivileged([
   {

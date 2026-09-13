@@ -13,7 +13,7 @@ export interface DesktopBridge {
   /** A same-origin-restricted API call proxied through the main process —
    * SteamGridDB / IGDB / Twitch, mirroring apiProxy() in vite.config.ts. */
   apiFetch(
-    kind: "sgdb" | "igdb" | "twitch",
+    kind: "sgdb" | "igdb" | "twitch" | "tmdb",
     path: string,
     init?: { method?: string; headers?: Record<string, string>; body?: string },
   ): Promise<{ status: number; bodyBase64: string }>;
@@ -44,7 +44,7 @@ function base64ToBuffer(b64: string): ArrayBuffer {
  * Response, so calling code (res.status, res.json() …) doesn't need to know
  * it isn't a normal same-origin fetch. */
 export async function desktopApiFetch(
-  kind: "sgdb" | "igdb" | "twitch",
+  kind: "sgdb" | "igdb" | "twitch" | "tmdb",
   path: string,
   init?: RequestInit,
 ): Promise<Response> {

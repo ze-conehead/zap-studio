@@ -26,6 +26,11 @@ const apiProxy: Record<string, ProxyOptions> = {
     changeOrigin: true,
     rewrite: (p) => p.replace(/^\/api\/twitch/, ""),
   },
+  "/api/tmdb": {
+    target: "https://api.themoviedb.org",
+    changeOrigin: true,
+    rewrite: (p) => p.replace(/^\/api\/tmdb/, "/3"),
+  },
 };
 
 // ── Zaparoo proxy ─────────────────────────────────────────────────────────
@@ -145,7 +150,8 @@ function zaparooProxy(): Plugin {
 
 // SteamGridDB's image CDN also blocks cross-origin reads, which taints the
 // export canvas. `/img?url=<cdn url>` streams the bytes back same-origin.
-const IMG_HOSTS = [/(^|\.)steamgriddb\.com$/];
+// TMDB's image CDN is the movie-poster equivalent.
+const IMG_HOSTS = [/(^|\.)steamgriddb\.com$/, /(^|\.)tmdb\.org$/];
 
 function coverImageProxy(): Plugin {
   const handler = async (

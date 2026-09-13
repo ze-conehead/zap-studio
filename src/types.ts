@@ -23,6 +23,7 @@ export type ConditionField =
   | "developer"
   | "publisher"
   | "players"
+  | "director"
   | "year"
   | "rating"
   | "name";

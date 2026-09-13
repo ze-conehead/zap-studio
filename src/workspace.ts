@@ -7,12 +7,15 @@
 // nothing on disk. Switching reloads the page, exactly like switching format:
 // the ids below are read once at module load.
 
+export type WorkspaceKind = "games" | "movies";
+
 export interface Workspace {
   id: string; // "" = the original workspace
   name: string;
   createdAt: number;
   seeded: boolean; // false => starts with an empty catalogue
   format?: string; // FormatId it was created with — shown in the list
+  kind?: WorkspaceKind; // absent = "games" (all pre-existing workspaces)
 }
 
 const LIST_KEY = "stickerstudio:workspaces";
@@ -86,6 +89,9 @@ export function getWorkspace(): Workspace {
 /** True when the active workspace shows the built-in example consoles. */
 export const isSeededWorkspace = () => getWorkspace().seeded;
 
+/** "movies" for a project created as a movie library, "games" otherwise. */
+export const getWorkspaceKind = (): WorkspaceKind => getWorkspace().kind ?? "games";
+
 /** Suffix for localStorage keys and template ids ("" for the original). */
 export const wsSuffix = () => (active === DEFAULT_WS ? "" : `--w${active}`);
 
@@ -101,7 +107,7 @@ const newId = () =>
 
 export function createWorkspace(
   name: string,
-  opts: { seeded?: boolean; format?: string } = {},
+  opts: { seeded?: boolean; format?: string; kind?: WorkspaceKind } = {},
 ): Workspace {
   const ws: Workspace = {
     id: newId(),
@@ -109,6 +115,7 @@ export function createWorkspace(
     createdAt: Date.now(),
     seeded: !!opts.seeded,
     format: opts.format,
+    kind: opts.kind,
   };
   writeList([...readList(), ws]);
   // src/formats.ts reads this key through wsSuffix(), so seeding it here is

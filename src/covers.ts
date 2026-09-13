@@ -15,6 +15,7 @@
 
 import { desktopApiFetch, isDesktop } from "./desktop";
 import { t } from "./i18n";
+import { getWorkspaceKind } from "./workspace";
 export interface CoverCandidate {
   title: string;
   region: string; // libretro region tag / SGDB "WxH · style" / IGDB kind
@@ -23,23 +24,31 @@ export interface CoverCandidate {
 }
 
 // "igdb-shots" is IGDB again, but the cover picker pulls gameplay
-// screenshots from it instead of box art — see searchCovers().
-export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro";
+// screenshots from it instead of box art — see searchCovers(). "tmdb" is The
+// Movie Database — movie posters, used instead of sgdb/igdb/libretro when
+// the active workspace is a movies one (none of the other three index films).
+export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro" | "tmdb";
 
 export function coverSourceLabel(s: CoverSource): string {
   if (s === "sgdb") return "SteamGridDB";
   if (s === "igdb") return "IGDB";
   if (s === "igdb-shots") return "IGDB (Screenshots)";
+  if (s === "tmdb") return "TMDB";
   return "libretro-thumbnails";
 }
 
 // Same-origin paths handled by the Vite cover-art proxy (vite.config.ts) —
 // used as-is in the browser; apiFetch() below routes through the desktop
 // bridge instead when running as the packaged app.
-const DEV_BASE = { sgdb: "/api/sgdb", igdb: "/api/igdb", twitch: "/api/twitch" };
+const DEV_BASE = {
+  sgdb: "/api/sgdb",
+  igdb: "/api/igdb",
+  twitch: "/api/twitch",
+  tmdb: "/api/tmdb",
+};
 
 async function apiFetch(
-  kind: "sgdb" | "igdb" | "twitch",
+  kind: "sgdb" | "igdb" | "twitch" | "tmdb",
   path: string,
   init?: RequestInit,
 ): Promise<Response> {
@@ -58,6 +67,7 @@ const SGDB_KEY = "stickerstudio:sgdbKey";
 const IGDB_ID = "stickerstudio:igdbClientId";
 const IGDB_SECRET = "stickerstudio:igdbClientSecret";
 const IGDB_TOKEN = "stickerstudio:igdbToken";
+const TMDB_KEY = "stickerstudio:tmdbKey";
 const SOURCE_KEY = "stickerstudio:coverSource";
 
 const ls = {
@@ -81,6 +91,9 @@ const ls = {
 export const getSgdbKey = () => ls.get(SGDB_KEY);
 export const setSgdbKey = (v: string) => ls.set(SGDB_KEY, v);
 
+export const getTmdbKey = () => ls.get(TMDB_KEY);
+export const setTmdbKey = (v: string) => ls.set(TMDB_KEY, v);
+
 export const getIgdbCreds = () => ({
   clientId: ls.get(IGDB_ID),
   clientSecret: ls.get(IGDB_SECRET),
@@ -97,19 +110,24 @@ export function isConfigured(s: CoverSource): boolean {
     const c = getIgdbCreds();
     return !!c.clientId && !!c.clientSecret;
   }
+  if (s === "tmdb") return !!getTmdbKey();
   return true;
 }
 
 export function getCoverSource(): CoverSource {
   const v = ls.get(SOURCE_KEY);
+  if (getWorkspaceKind() === "movies") return "tmdb";
   return v === "igdb" || v === "igdb-shots" || v === "libretro" ? v : "sgdb";
 }
 export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
 
-// What actually gets queried: the chosen source if it has credentials,
-// otherwise the keyless libretro fallback.
+// What actually gets queried: the chosen source if it has credentials.
+// Games have a keyless fallback (libretro-thumbnails); movies have none —
+// TMDB is the only movie source, so it stays selected either way and the
+// search dialog shows its credentials form until a key is entered.
 export function effectiveSource(): CoverSource {
   const chosen = getCoverSource();
+  if (chosen === "tmdb") return "tmdb";
   return isConfigured(chosen) ? chosen : "libretro";
 }
 
@@ -387,6 +405,63 @@ async function searchShotsIGDB(gameTitle: string): Promise<CoverCandidate[]> {
   return [...shots, ...art];
 }
 
+// ── TMDB (The Movie Database) ───────────────────────────────────────────────
+
+interface TmdbMovie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date?: string;
+}
+
+async function tmdbFetch<T>(path: string): Promise<T> {
+  const key = getTmdbKey();
+  const sep = path.includes("?") ? "&" : "?";
+  let res: Response;
+  try {
+    res = await apiFetch("tmdb", `${path}${sep}api_key=${encodeURIComponent(key)}`);
+  } catch {
+    throw new Error(t("TMDB is not reachable."));
+  }
+  if (res.status === 401) {
+    throw new Error(t("TMDB API key missing or invalid. Create one at themoviedb.org."));
+  }
+  if (!res.ok) throw new Error(t("TMDB error (HTTP {status}).", { status: res.status }));
+  return res.json() as Promise<T>;
+}
+
+const tmdbImg = (path: string, size: string) => `https://image.tmdb.org/t/p/${size}${path}`;
+
+async function tmdbSearch(title: string): Promise<TmdbMovie[]> {
+  const data = await tmdbFetch<{ results?: TmdbMovie[] }>(
+    `/search/movie?query=${encodeURIComponent(title)}&include_adult=false`,
+  );
+  return data.results ?? [];
+}
+
+async function searchCoversTMDB(title: string): Promise<CoverCandidate[]> {
+  const results = (await tmdbSearch(title)).filter((m) => m.poster_path);
+  return results.slice(0, 48).map((m) => ({
+    title: m.title,
+    region: m.release_date?.slice(0, 4) ?? "",
+    url: proxied(tmdbImg(m.poster_path!, "w500")),
+    thumb: proxied(tmdbImg(m.poster_path!, "w185")),
+  }));
+}
+
+// TMDB has no gameplay-shot equivalent, but its backdrops (wide promotional
+// stills) are the closest thing — a reasonable fit for a landscape frame.
+async function searchShotsTMDB(title: string): Promise<CoverCandidate[]> {
+  const results = (await tmdbSearch(title)).filter((m) => m.backdrop_path);
+  return results.slice(0, 48).map((m) => ({
+    title: m.title,
+    region: m.release_date?.slice(0, 4) ?? "",
+    url: proxied(tmdbImg(m.backdrop_path!, "w780")),
+    thumb: proxied(tmdbImg(m.backdrop_path!, "w300")),
+  }));
+}
+
 // ── libretro-thumbnails ────────────────────────────────────────────────────
 
 // Console name (normalized, lowercase) -> libretro-thumbnails repo slug.
@@ -576,6 +651,7 @@ export async function searchCovers(
   if (src === "sgdb") return searchCoversSGDB(title);
   if (src === "igdb") return searchCoversIGDB(title);
   if (src === "igdb-shots") return searchShotsIGDB(title);
+  if (src === "tmdb") return searchCoversTMDB(title);
   return searchCoversLibretro(consoleName, title);
 }
 
@@ -593,5 +669,6 @@ export async function searchScreenshots(
   const src = effectiveSource();
   if (src === "sgdb") return searchShotsSGDB(title);
   if (src === "igdb" || src === "igdb-shots") return searchShotsIGDB(title);
+  if (src === "tmdb") return searchShotsTMDB(title);
   return searchCoversLibretro(consoleName, title, "shots");
 }

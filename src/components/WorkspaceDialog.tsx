@@ -26,6 +26,7 @@ import {
   renameWorkspace,
   switchWorkspace,
   type Workspace,
+  type WorkspaceKind,
 } from "../workspace";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
@@ -53,6 +54,7 @@ export function WorkspaceDialog({
   const active = getWorkspaceId();
   const [list, setList] = useState<Workspace[]>([]);
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<WorkspaceKind>("games");
   const [example, setExample] = useState(false);
   const [games, setGames] = useState(EXAMPLE_GAMES_DEFAULT);
   const [format, setFormat] = useState<FormatId>(getFormatId());
@@ -61,6 +63,7 @@ export function WorkspaceDialog({
     if (!open) return;
     setList(listWorkspaces());
     setName("");
+    setKind("games");
     setExample(false);
     setGames(EXAMPLE_GAMES_DEFAULT);
     setFormat(getFormatId());
@@ -68,10 +71,11 @@ export function WorkspaceDialog({
 
   const create = () => {
     const ws = createWorkspace(name || t("New project"), {
-      seeded: example,
+      seeded: kind === "games" && example,
       format,
+      kind,
     });
-    if (example) seedWorkspace(ws.id, games);
+    if (kind === "games" && example) seedWorkspace(ws.id, games);
     switchWorkspace(ws.id); // reloads
   };
 
@@ -128,6 +132,8 @@ export function WorkspaceDialog({
               >
                 {ws.name}
                 <span className="ml-1.5 text-[11px] text-muted-foreground">
+                  {ws.kind === "movies" ? t("Movies") : ""}
+                  {ws.kind === "movies" && ws.format ? " · " : ""}
                   {ws.format && FORMATS[ws.format as FormatId]
                     ? t(FORMATS[ws.format as FormatId].name)
                     : ""}
@@ -171,6 +177,29 @@ export function WorkspaceDialog({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && create()}
           />
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-sm text-muted-foreground">
+              {t("Content")}
+            </span>
+            <div className="flex flex-1 gap-1 rounded-md border p-0.5">
+              {(["games", "movies"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setKind(k)}
+                  className={cn(
+                    "flex-1 rounded px-2 py-1 text-sm font-medium",
+                    kind === k
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent",
+                  )}
+                >
+                  {k === "games" ? t("Games") : t("Movies")}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="shrink-0 text-sm text-muted-foreground">
@@ -192,34 +221,42 @@ export function WorkspaceDialog({
             <FormatPreview id={format} />
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={example} onCheckedChange={(v) => setExample(!!v)} />
-            {t("Example consoles")}
-          </label>
+          {kind === "games" ? (
+            <>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={example} onCheckedChange={(v) => setExample(!!v)} />
+                {t("Example consoles")}
+              </label>
 
-          {example ? (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{t("Games per console")}</span>
-                <span className="tabular-nums text-foreground">{games}</span>
-              </div>
-              <Slider
-                min={EXAMPLE_GAMES_MIN}
-                max={EXAMPLE_GAMES_MAX}
-                step={1}
-                value={[games]}
-                onValueChange={([v]) => setGames(v)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("{consoles} — top {n} games each, with metadata from base_game_list.csv.", {
-                  consoles: EXAMPLE_CONSOLES.join(", "),
-                  n: games,
-                })}
-              </p>
-            </div>
+              {example ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{t("Games per console")}</span>
+                    <span className="tabular-nums text-foreground">{games}</span>
+                  </div>
+                  <Slider
+                    min={EXAMPLE_GAMES_MIN}
+                    max={EXAMPLE_GAMES_MAX}
+                    step={1}
+                    value={[games]}
+                    onValueChange={([v]) => setGames(v)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("{consoles} — top {n} games each, with metadata from base_game_list.csv.", {
+                      consoles: EXAMPLE_CONSOLES.join(", "),
+                      n: games,
+                    })}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t("Starts empty — no consoles, no cards. Add your own in the tree.")}
+                </p>
+              )}
+            </>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {t("Starts empty — no consoles, no cards. Add your own in the tree.")}
+              {t("Starts empty — no movies, no cards. Add your own in the tree.")}
             </p>
           )}
         </section>

@@ -2,6 +2,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Clapperboard,
   Gamepad2,
   Globe,
   ListFilter,
@@ -46,6 +47,7 @@ import {
 import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
+import { getWorkspaceKind } from "../workspace";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
@@ -57,6 +59,11 @@ type TreeFilter = "all" | "with" | "without";
 const FILTER_KEY = "stickerstudio:treeFilter";
 const FILTER_LABEL: Record<TreeFilter, string> = {
   all: "All games",
+  with: "With image only",
+  without: "Without image only",
+};
+const FILTER_LABEL_MOVIES: Record<TreeFilter, string> = {
+  all: "All movies",
   with: "With image only",
   without: "Without image only",
 };
@@ -98,6 +105,8 @@ export function GameTree({
   onOpenGlobal,
 }: Props) {
   const t = useT();
+  const isMovies = getWorkspaceKind() === "movies";
+  const filterLabel = isMovies ? FILTER_LABEL_MOVIES : FILTER_LABEL;
   // Re-render when a game is added/removed elsewhere (right-click menu).
   const catalogVersion = useSyncExternalStore(
     subscribeCatalog,
@@ -151,9 +160,13 @@ export function GameTree({
   ];
 
   const addConsolePrompt = () => {
-    const name = window.prompt(t("Console name:"))?.trim();
+    const name = window
+      .prompt(isMovies ? t("Collection name:") : t("Console name:"))
+      ?.trim();
     if (!name) return;
-    if (!addConsole(name)) alert(t("That console already exists."));
+    if (!addConsole(name)) {
+      alert(isMovies ? t("That collection already exists.") : t("That console already exists."));
+    }
   };
 
   // Per-console / per-game sweep: covers only. Logos are a global-template
@@ -219,7 +232,13 @@ export function GameTree({
     setOpen((o) => ({ ...o, [consoleId]: true }));
 
   const handleAddGame = (consoleId: string, consoleName: string) => {
-    const title = window.prompt(t("New game for {name}:", { name: consoleName }))?.trim();
+    const title = window
+      .prompt(
+        isMovies
+          ? t("New movie for {name}:", { name: consoleName })
+          : t("New game for {name}:", { name: consoleName }),
+      )
+      ?.trim();
     if (!title) return;
     const game = addGame(consoleId, title);
     if (game) expand(consoleId);
@@ -238,7 +257,9 @@ export function GameTree({
   };
 
   const handleRenameGame = (consoleId: string, game: { id: string; title: string }) => {
-    const next = window.prompt(t("Rename game:"), game.title)?.trim();
+    const next = window
+      .prompt(isMovies ? t("Rename movie:") : t("Rename game:"), game.title)
+      ?.trim();
     if (!next || next === game.title) return;
     if (renameGame(consoleId, game.id, next)) {
       // keep the gamelist.xml entry (matched by title) attached
@@ -247,27 +268,32 @@ export function GameTree({
   };
 
   const handleRenameConsole = (consoleId: string, consoleName: string) => {
-    const next = window.prompt(t("Rename console:"), consoleName)?.trim();
+    const next = window
+      .prompt(isMovies ? t("Rename collection:") : t("Rename console:"), consoleName)
+      ?.trim();
     if (!next || next === consoleName) return;
     renameConsole(consoleId, next);
   };
 
   const handleRemoveConsole = (consoleId: string, consoleName: string) => {
-    if (
-      window.confirm(
-        t("Remove console \u201c{name}\u201d and all its games from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
-          name: consoleName,
-        }),
-      )
-    ) {
-      removeConsole(consoleId);
-    }
+    const confirmed = isMovies
+      ? window.confirm(
+          t("Remove collection \u201c{name}\u201d and all its movies from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
+            name: consoleName,
+          }),
+        )
+      : window.confirm(
+          t("Remove console \u201c{name}\u201d and all its games from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
+            name: consoleName,
+          }),
+        );
+    if (confirmed) removeConsole(consoleId);
   };
 
   return (
     <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("Consoles & games")}
+        {isMovies ? t("Collections & movies") : t("Consoles & games")}
       </h2>
 
       <div className="mx-2 mb-1 flex min-w-0 items-center gap-1">
@@ -284,14 +310,16 @@ export function GameTree({
           }}
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate text-left">{t("All consoles")}</span>
+          <span className="min-w-0 flex-1 truncate text-left">
+            {isMovies ? t("All collections") : t("All consoles")}
+          </span>
           <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
             {countText(shownGames, totalGames)}
           </span>
         </button>
         <button
           className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          title={t("Add console")}
+          title={isMovies ? t("Add collection") : t("Add console")}
           onClick={addConsolePrompt}
         >
           <Plus className="size-4" />
@@ -303,17 +331,17 @@ export function GameTree({
                 "rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground",
                 filter !== "all" && "text-primary",
               )}
-              title={t("Filter games: {label}", { label: t(FILTER_LABEL[filter]) })}
+              title={t("Filter games: {label}", { label: t(filterLabel[filter]) })}
             >
               <ListFilter className="size-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{t("Show games")}</DropdownMenuLabel>
-            {(Object.keys(FILTER_LABEL) as TreeFilter[]).map((f) => (
+            <DropdownMenuLabel>{isMovies ? t("Show movies") : t("Show games")}</DropdownMenuLabel>
+            {(Object.keys(filterLabel) as TreeFilter[]).map((f) => (
               <DropdownMenuItem key={f} onClick={() => changeFilter(f)}>
                 <Check className={cn("size-4", filter !== f && "opacity-0")} />
-                {t(FILTER_LABEL[f])}
+                {t(filterLabel[f])}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -378,10 +406,18 @@ export function GameTree({
                     </CollapsibleTrigger>
                     <button
                       className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
-                      title={t("{name} – edit shared template (right-click: add game / rename console)", { name: c.name })}
+                      title={
+                        isMovies
+                          ? t("{name} – edit shared template (right-click: add movie / rename collection)", { name: c.name })
+                          : t("{name} – edit shared template (right-click: add game / rename console)", { name: c.name })
+                      }
                       onClick={() => onOpenConsole(c.id, c.name)}
                     >
-                      <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
+                      {isMovies ? (
+                        <Clapperboard className="size-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
+                      )}
                       <span className="min-w-0 flex-1 truncate text-left">{c.name}</span>
                       <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
                         {countText(games.length, c.games.length)}
@@ -389,7 +425,7 @@ export function GameTree({
                     </button>
                     <button
                       className="mr-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                      title={t("Add game")}
+                      title={isMovies ? t("Add movie") : t("Add game")}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddGame(c.id, c.name);
