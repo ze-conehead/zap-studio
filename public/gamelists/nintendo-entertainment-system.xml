@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Nintendo Entertainment System. -->
+<!-- Example gamelist.xml (EmulationStation format) for Nintendo Entertainment System. -->
 <gameList>
 	<game>
 		<path>./Super Mario Bros.nes</path>
 		<name>Super Mario Bros.</name>
-		<desc>Der Klassiker, der das Scrolling-Jump'n'Run populär machte: Mario rettet Prinzessin Toadstool aus Bowsers Klauen.</desc>
+		<desc>The classic that popularized the side-scrolling platformer: Mario rescues Princess Toadstool from Bowser's clutches.</desc>
 		<image>./media/images/Super Mario Bros.png</image>
 		<releasedate>19850913T000000</releasedate>
 		<developer>Nintendo R&amp;D4</developer>
@@ -16,7 +16,7 @@
 	<game>
 		<path>./Super Mario Bros 3.nes</path>
 		<name>Super Mario Bros. 3</name>
-		<desc>Umfangreiches Jump'n'Run mit Weltkarte, Anzügen wie dem Waschbär-Mario und versteckten Mini-Festungen.</desc>
+		<desc>Sprawling platformer with a world map, suits like Raccoon Mario, and hidden mini-fortresses.</desc>
 		<image>./media/images/Super Mario Bros 3.png</image>
 		<releasedate>19881023T000000</releasedate>
 		<developer>Nintendo R&amp;D4</developer>
@@ -28,7 +28,7 @@
 	<game>
 		<path>./The Legend of Zelda.nes</path>
 		<name>The Legend of Zelda</name>
-		<desc>Offenes Action-Adventure mit Erkundung, Geheimnissen und acht Verliesen zur Rettung Hyrules und des Triforce.</desc>
+		<desc>Open action-adventure of exploration, secrets, and eight dungeons to save Hyrule and the Triforce.</desc>
 		<image>./media/images/The Legend of Zelda.png</image>
 		<releasedate>19860221T000000</releasedate>
 		<developer>Nintendo R&amp;D4</developer>
@@ -40,7 +40,7 @@
 	<game>
 		<path>./Metroid.nes</path>
 		<name>Metroid</name>
-		<desc>Nichtlineares Science-Fiction-Abenteuer, in dem Kopfgeldjägerin Samus Aran die Weltraumpiraten auf Zebes bekämpft.</desc>
+		<desc>Non-linear sci-fi adventure in which bounty hunter Samus Aran battles space pirates on Zebes.</desc>
 		<image>./media/images/Metroid.png</image>
 		<releasedate>19860806T000000</releasedate>
 		<developer>Nintendo R&amp;D1</developer>
@@ -52,7 +52,7 @@
 	<game>
 		<path>./Mega Man 2.nes</path>
 		<name>Mega Man 2</name>
-		<desc>Action-Platformer mit acht frei wählbaren Robot Masters, deren Waffen Mega Man nach dem Sieg übernimmt.</desc>
+		<desc>Action-platformer with eight Robot Masters to tackle in any order, whose weapons Mega Man gains after each win.</desc>
 		<image>./media/images/Mega Man 2.png</image>
 		<releasedate>19881224T000000</releasedate>
 		<developer>Capcom</developer>

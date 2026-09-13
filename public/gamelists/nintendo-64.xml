@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Nintendo 64. -->
+<!-- Example gamelist.xml (EmulationStation format) for Nintendo 64. -->
 <gameList>
 	<game>
 		<path>./Super Mario 64.z64</path>
 		<name>Super Mario 64</name>
-		<desc>Wegweisendes 3D-Jump'n'Run, in dem Mario Sterne in offen gestalteten Themenwelten sammelt.</desc>
+		<desc>Groundbreaking 3D platformer in which Mario collects stars across open, themed worlds.</desc>
 		<image>./media/images/Super Mario 64.png</image>
 		<releasedate>19960623T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -16,7 +16,7 @@
 	<game>
 		<path>./Mario Kart 64.z64</path>
 		<name>Mario Kart 64</name>
-		<desc>Kart-Rennspiel mit Items, Sprungrampen und Split-Screen-Mehrspieler für bis zu vier Personen.</desc>
+		<desc>Kart racer with items, jump ramps, and split-screen multiplayer for up to four.</desc>
 		<image>./media/images/Mario Kart 64.png</image>
 		<releasedate>19970210T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -28,7 +28,7 @@
 	<game>
 		<path>./GoldenEye 007.z64</path>
 		<name>GoldenEye 007</name>
-		<desc>Ego-Shooter zum gleichnamigen Film mit Schleichmissionen und einflussreichem Split-Screen-Deathmatch.</desc>
+		<desc>First-person shooter based on the film of the same name, with stealth missions and an influential split-screen deathmatch.</desc>
 		<image>./media/images/GoldenEye 007.png</image>
 		<releasedate>19970825T000000</releasedate>
 		<developer>Rare</developer>
@@ -40,7 +40,7 @@
 	<game>
 		<path>./Zelda Ocarina of Time.z64</path>
 		<name>The Legend of Zelda: Ocarina of Time</name>
-		<desc>Meilenstein der 3D-Action-Adventures mit Zeitreisen zwischen Kindheit und Erwachsensein in Hyrule.</desc>
+		<desc>Milestone 3D action-adventure with time travel between childhood and adulthood across Hyrule.</desc>
 		<image>./media/images/Zelda Ocarina of Time.png</image>
 		<releasedate>19981121T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -52,7 +52,7 @@
 	<game>
 		<path>./Super Smash Bros (1999).z64</path>
 		<name>Super Smash Bros.</name>
-		<desc>Erster Teil der Kampfspielreihe mit Nintendo-Figuren, prozentualem Schadenssystem und Ring-out-Regeln.</desc>
+		<desc>First entry in the fighting series starring Nintendo characters, with a percentage damage system and ring-out rules.</desc>
 		<image>./media/images/Super Smash Bros.png</image>
 		<releasedate>19990426T000000</releasedate>
 		<developer>HAL Laboratory</developer>

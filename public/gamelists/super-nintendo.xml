@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Super Nintendo. -->
+<!-- Example gamelist.xml (EmulationStation format) for Super Nintendo. -->
 <gameList>
 	<game>
 		<path>./Super Mario World.sfc</path>
 		<name>Super Mario World</name>
-		<desc>Launch-Jump'n'Run des SNES mit Yoshi, geheimen Ausgängen und einer verzweigten Weltkarte über Dinosaur Land.</desc>
+		<desc>SNES launch platformer starring Yoshi, secret exits, and a branching world map across Dinosaur Land.</desc>
 		<image>./media/images/Super Mario World.png</image>
 		<releasedate>19901121T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -16,7 +16,7 @@
 	<game>
 		<path>./Zelda A Link to the Past.sfc</path>
 		<name>The Legend of Zelda: A Link to the Past</name>
-		<desc>Top-Down-Action-Adventure mit dem Wechsel zwischen Licht- und Schattenwelt, prägend für die gesamte Reihe.</desc>
+		<desc>Top-down action-adventure built around switching between the Light and Dark Worlds, defining the series for years to come.</desc>
 		<image>./media/images/Zelda A Link to the Past.png</image>
 		<releasedate>19911121T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -28,7 +28,7 @@
 	<game>
 		<path>./Super Mario Kart.sfc</path>
 		<name>Super Mario Kart</name>
-		<desc>Der Serienauftakt der Kart-Rennspiele mit Mode-7-Strecken, Item-Boxen und geteiltem Bildschirm.</desc>
+		<desc>The series opener for kart racers, with Mode 7 tracks, item boxes, and split-screen play.</desc>
 		<image>./media/images/Super Mario Kart.png</image>
 		<releasedate>19920827T000000</releasedate>
 		<developer>Nintendo EAD</developer>
@@ -40,7 +40,7 @@
 	<game>
 		<path>./Donkey Kong Country.sfc</path>
 		<name>Donkey Kong Country</name>
-		<desc>Jump'n'Run mit vorgerenderter 3D-Grafik, in dem Donkey und Diddy Kong ihren gestohlenen Bananenhort zurückholen.</desc>
+		<desc>Platformer with pre-rendered 3D graphics, in which Donkey and Diddy Kong reclaim their stolen banana hoard.</desc>
 		<image>./media/images/Donkey Kong Country.png</image>
 		<releasedate>19941121T000000</releasedate>
 		<developer>Rare</developer>
@@ -52,7 +52,7 @@
 	<game>
 		<path>./Super Metroid.sfc</path>
 		<name>Super Metroid</name>
-		<desc>Atmosphärisches Action-Adventure auf dem Planeten Zebes mit offener, nach und nach zugänglicher Karte.</desc>
+		<desc>Atmospheric action-adventure on planet Zebes with an open map that gradually reveals itself.</desc>
 		<image>./media/images/Super Metroid.png</image>
 		<releasedate>19940319T000000</releasedate>
 		<developer>Nintendo R&amp;D1</developer>

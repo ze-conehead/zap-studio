@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- Beispiel-gamelist.xml (EmulationStation-Format) für Neo Geo. -->
+<!-- Example gamelist.xml (EmulationStation format) for Neo Geo. -->
 <gameList>
 	<game>
 		<path>./mslug3.zip</path>
 		<name>Metal Slug 3</name>
-		<desc>Handgezeichneter Run-and-Gun-Shooter mit verzweigten Levelwegen, Fahrzeugen und schrulligen Bossgegnern.</desc>
+		<desc>Hand-drawn run-and-gun shooter with branching level paths, vehicles, and quirky boss fights.</desc>
 		<image>./media/images/Metal Slug 3.png</image>
 		<releasedate>20000323T000000</releasedate>
 		<developer>SNK</developer>
@@ -16,7 +16,7 @@
 	<game>
 		<path>./kof98.zip</path>
 		<name>The King of Fighters '98</name>
-		<desc>Als "Dream Match" ohne Story gefeierter Serienteil mit riesigem Roster und ausbalanciertem 3-gegen-3-Kampf.</desc>
+		<desc>Beloved as a story-free "Dream Match" entry, with a huge roster and well-balanced 3-on-3 combat.</desc>
 		<image>./media/images/The King of Fighters 98.png</image>
 		<releasedate>19980723T000000</releasedate>
 		<developer>SNK</developer>
@@ -28,7 +28,7 @@
 	<game>
 		<path>./garou.zip</path>
 		<name>Garou: Mark of the Wolves</name>
-		<desc>Letzter Fatal-Fury-Ableger auf Neo Geo mit neuem Cast, T.O.P.-System und dem Just-Defense-Konter.</desc>
+		<desc>The final Fatal Fury spin-off on Neo Geo, with a new cast, the T.O.P. system, and the Just Defense counter.</desc>
 		<image>./media/images/Garou Mark of the Wolves.png</image>
 		<releasedate>19991126T000000</releasedate>
 		<developer>SNK</developer>
@@ -40,7 +40,7 @@
 	<game>
 		<path>./samsho2.zip</path>
 		<name>Samurai Shodown II</name>
-		<desc>Waffenbasiertes Prügelspiel im Japan der Edo-Zeit mit betontem Abstandsspiel, Paraden und Wutleiste.</desc>
+		<desc>Weapon-based fighter set in Edo-period Japan, emphasizing spacing, parries, and a rage gauge.</desc>
 		<image>./media/images/Samurai Shodown II.png</image>
 		<releasedate>19941028T000000</releasedate>
 		<developer>SNK</developer>
@@ -52,7 +52,7 @@
 	<game>
 		<path>./lastblad2.zip</path>
 		<name>The Last Blade 2</name>
-		<desc>Stilvolles Schwertkampfspiel gegen Ende der Bakumatsu-Ära mit wählbarem Geschwindigkeits- und Power-Modus.</desc>
+		<desc>Stylish sword-fighting game set near the end of the Bakumatsu era, with a choice of Speed or Power mode.</desc>
 		<image>./media/images/The Last Blade 2.png</image>
 		<releasedate>19981125T000000</releasedate>
 		<developer>SNK</developer>
