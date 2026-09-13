@@ -13,7 +13,7 @@ import { loadAllProjects } from "./persist";
 
 const DIR_KEY = "autobackup:dir";
 const SETTINGS_KEY = "stickerstudio:autobackup";
-const PREFIX = "sticker-studio-backup_";
+const PREFIX = "zap-studio-backup_";
 
 export interface AutoBackupSettings {
   enabled: boolean;
@@ -129,7 +129,7 @@ async function permission(h: DirHandle, ask: boolean): Promise<boolean> {
 export async function chooseFolder(): Promise<void> {
   if (!isSupported()) throw new Error("unsupported");
   const picked = await window.showDirectoryPicker({
-    id: "stickerstudio-backups",
+    id: "zap-studio-backups",
     mode: "readwrite",
     startIn: "documents",
   });

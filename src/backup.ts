@@ -161,7 +161,7 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   const zipped = zipSync(files, { level: 6 });
   return {
     blob: new Blob([zipped], { type: "application/zip" }),
-    name: `sticker-studio-backup_${new Date().toISOString().slice(0, 10)}.zip`,
+    name: `zap-studio-backup_${new Date().toISOString().slice(0, 10)}.zip`,
   };
 }
 

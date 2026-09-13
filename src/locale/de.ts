@@ -79,7 +79,7 @@ export const de: Record<string, string> = {
   German: "Deutsch",
 
   // ── Menu bar ─────────────────────────────────────────────────────────────
-  "Sticker Studio": "Sticker Studio",
+  "Zap-Studio": "Zap-Studio",
   File: "Datei",
   Edit: "Bearbeiten",
   View: "Ansicht",

@@ -1,4 +1,4 @@
-# Kreditkarten-Sticker Studio
+# Zap-Studio
 
 Browser-App zum Designen von Stickern in Kreditkartengröße (ISO ID-1,
 hochkant 54 × 85,6 mm) für Konsolen. Läuft komplett lokal – keine Server,

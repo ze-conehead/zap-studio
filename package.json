@@ -1,5 +1,5 @@
 {
-  "name": "cards",
+  "name": "zap-studio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -58,8 +58,8 @@
     "wait-on": "^9.1.0"
   },
   "build": {
-    "appId": "studio.stickerstudio.app",
-    "productName": "Credit Card Sticker Studio",
+    "appId": "studio.zapstudio.app",
+    "productName": "Zap-Studio",
     "directories": { "output": "release" },
     "files": ["dist/**/*", "dist-electron/**/*"],
     "mac": {
