@@ -1,322 +1,330 @@
 # Zap-Studio
 
-Browser-App zum Designen von Stickern in Kreditkartengröße (ISO ID-1,
-hochkant 54 × 85,6 mm) für Konsolen. Läuft komplett lokal – keine Server,
-kein Login.
+Browser app for designing credit-card-sized stickers (ISO ID-1, portrait
+54 × 85.6 mm) for consoles. Runs entirely locally – no server, no login.
 
-UI mit **shadcn/ui** (Radix + Tailwind CSS v4, „new-york"-Stil, Dark-Theme).
-UI-Primitives liegen in `src/components/ui/`, `components.json` erlaubt
-`npx shadcn@latest add <komponente>`.
+UI built with **shadcn/ui** (Radix + Tailwind CSS v4, "new-york" style,
+dark theme). UI primitives live in `src/components/ui/`; `components.json`
+enables `npx shadcn@latest add <component>`.
 
 ## Features
 
-- **Konsolen-/Spiele-Baum** (links): 5 Klassik-Konsolen (PlayStation,
-  Nintendo 64, Super Nintendo, NES, Neo Geo) mit je den Top 5 Spielen
-  ([src/data/catalog.ts](src/data/catalog.ts)). Ein Spiel auswählen
-  legt ein Sticker-Design dafür an (mit Titel-Textebene) bzw. öffnet das
-  bereits vorhandene – die Zuordnung Spiel→Design steht in `localStorage`.
-  Hinter „Alle Konsolen" und jeder Konsole steht in Klammern die
-  Spielanzahl darunter.
-  - **Rechtsklick auf eine Konsole** → „Hinzufügen" oder „Umbenennen"
-    (bei selbst hinzugefügten Konsolen zusätzlich „Entfernen").
-    **Rechtsklick auf ein Spiel** → „Umbenennen" oder „Entfernen" (ein
-    bereits angelegtes Design bleibt unter „Projekte"). Umbenennen ändert
-    nur das Label – die interne ID (und damit `gameKey`, Vorlage und
-    `gamelist.xml`) bleibt gleich, ein verknüpftes Design und der
-    Metadaten-Eintrag (per Titel gematcht, wird mit umbenannt) bleiben
-    erhalten. Die Änderungen liegen als Diff (hinzugefügte / entfernte /
-    umbenannte Konsolen & Spiele) in `localStorage`
-    (`stickerstudio:catalogOverlay`) und sind Teil des ZIP-Backups.
-  - **Basis-Set** (Toolbar): übernimmt Konsolen/Spiele aus der
-    mitgelieferten [`base_game_list.csv`](src/data/base_game_list.csv)
-    (Top-N je Konsole, 27 Systeme). Dialog mit auswählbarem Baum, „Weiter"
-    legt die markierten Einträge im Baum an **inklusive Metadaten** (Jahr,
-    Publisher, Spieler, Genre, Wertung → jeweilige `gamelist.xml`). Nicht
-    vorhandene Konsolen werden als eigene Konsolen angelegt; NES/SNES/… und
-    Namensgleiche landen in der passenden bestehenden Konsole.
-  - **Filter** (Trichter-Symbol neben „Alle Konsolen"): alle Spiele, nur
-    Spiele **mit** Bild oder nur **ohne** Bild (= Design hat eine Bild-Ebene).
-    Bei aktivem Filter zeigt die Klammer `sichtbar/gesamt`; die Auswahl
-    bleibt in `localStorage` gespeichert. Das gerade offene Design zählt
-    live mit.
-- **Vorlagen-Hierarchie** (im Baum, von oben nach unten):
-  - **Globale Vorlage** („Alle Konsolen") – Ebenen auf **jeder** Karte, egal
-    welche Konsole. Projekt `tpl-global`. Ihr eigener Hintergrund ist immer
-    an, und **Hilfslinien werden nur hier angelegt/bearbeitet** (siehe unten).
-  - **Konsolen-Vorlage** (Konsolenname anklicken) – Ebenen auf allen
-    Spiel-Karten dieser Konsole. Projekt `tpl-<konsole>`.
-  - **Spiel-Design** – die Karte selbst.
+- **Console/game tree** (left): 5 classic consoles (PlayStation,
+  Nintendo 64, Super Nintendo, NES, Neo Geo) each with their top 5 games
+  ([src/data/catalog.ts](src/data/catalog.ts)). Selecting a game creates
+  a sticker design for it (with a title text layer) or opens the
+  existing one – the game→design mapping lives in `localStorage`.
+  The game count is shown in parentheses under "All consoles" and each
+  console.
+  - **Right-click a console** → "Add" or "Rename" (self-added consoles
+    also get "Remove"). **Right-click a game** → "Rename" or "Remove"
+    (an already-created design stays under "Projects"). Renaming only
+    changes the label – the internal id (and with it `gameKey`, the
+    template and `gamelist.xml`) stays the same; a linked design and its
+    metadata entry (matched by title, renamed along with it) are kept.
+    These changes are stored as a diff (added/removed/renamed consoles &
+    games) in `localStorage` (`stickerstudio:catalogOverlay`) and are
+    part of the ZIP backup.
+  - **Base set** (toolbar): pulls consoles/games from the bundled
+    [`base_game_list.csv`](src/data/base_game_list.csv) (top-N per
+    console, 27 systems). A dialog with a selectable tree; "Continue"
+    creates the checked entries in the tree **including metadata** (year,
+    publisher, players, genre, rating → the respective `gamelist.xml`).
+    Consoles that don't exist yet are created as their own console;
+    NES/SNES/… and same-named ones land in the matching existing console.
+  - **Filter** (funnel icon next to "All consoles"): all games, only
+    games **with** an image, or only **without** one (= design has an
+    image layer). While a filter is active the parenthesised count shows
+    `visible/total`; the choice is saved to `localStorage`. The
+    currently open design counts live.
+- **Template hierarchy** (in the tree, top to bottom):
+  - **Global template** ("All consoles") – layers on **every** card,
+    regardless of console. Project `tpl-global`. Its own background is
+    always on, and **guides are only created/edited here** (see below).
+  - **Console template** (click a console name) – layers on every game
+    card of that console. Project `tpl-<console>`.
+  - **Game design** – the card itself.
 
-  Render-Reihenfolge auf einer Karte (unten → oben): Kartenhintergrund →
-  Spiel-Ebenen → Konsolen-Vorlage → globale Vorlage. Vorlagen-Ebenen sind
-  auf der Spiel-Karte schreibgeschützt und landen im PNG-Export. Beim
-  Bearbeiten einer Konsolen-Vorlage wird die globale Vorlage als Kontext
-  eingeblendet. Vorlagen erscheinen nicht in der Projektliste.
-- **Hintergrund** ist eine eigene, unterste **Ebene** (Farbeimer-Symbol,
-  nicht verschiebbar). Standardmäßig hat ein Design **keinen** Hintergrund –
-  über „+ → Hintergrund" legt man einen an, er lässt sich aus-/einblenden,
-  bearbeiten und wieder löschen. Füllung: einfarbig **oder** Farbverlauf
-  (zwei Farben + Richtung) plus optionalen Körnungs-/Noise-Overlay
-  (0–100 %). Wird in den PNG-Export übernommen.
-  - In den Eigenschaften der Hintergrund-Ebene wählt eine **Spiel-Karte**
-    die **Hintergrund-Quelle**: eigener Hintergrund, „Von der
-    Konsolen-Vorlage" oder „Von der globalen Vorlage" (letztere beiden
-    deaktiviert, solange die Vorlage keine Hintergrund-Ebene hat). Migrierte
-    Alt-Designs behalten „Von der globalen Vorlage".
-- **Formen**: „+ Form" → Kapsel, Quadrat/Rechteck, Kreis. Jede Form hat
-  dieselbe Füllung wie die Karte (einfarbig **oder** Farbverlauf) plus
-  optionalen Noise-Overlay, dazu Kontur/Konturstärke und beim Rechteck
-  einen Ecken-Radius.
-- **Alpha-Maske**: jede Ebene (Form, Bild oder Text) kann im Inspector als
-  **Maske** markiert werden – ihr Alpha-Kanal beschneidet die Ebene(n)
-  direkt darunter (`»In Maske«`). So legt man z. B. einen Kreis obenauf und
-  lädt darunter ein Bild „in den Kreis". Die verdeckte Ebene bleibt
-  frei verschiebbar; die Maske selbst wählt man über die Ebenenliste aus.
-  - **Mehrere Ebenen pro Maske**: im Masken-Inspector „Ebene aufnehmen" /
-    „Oberste lösen" bzw. „In Maske" bei den einzelnen Ebenen.
-  - **Ebenen mitbewegen** (Checkbox an der Maske, optional): Verschieben,
-    Skalieren und Drehen der Maske wirkt dann auf alle Ebenen in der Maske.
-  - „Maske auflösen" gibt Maske + alle Kinder wieder frei.
+  Render order on a card (bottom → top): card background → game layers
+  → console template → global template. Template layers are read-only
+  on a game card and are included in the PNG export. Editing a console
+  template shows the global template as context. Templates don't appear
+  in the project list.
+- **Background** is its own, bottommost **layer** (paint-bucket icon, not
+  draggable). By default a design has **no** background – "+ →
+  Background" adds one; it can be shown/hidden, edited and removed again.
+  Fill: solid **or** gradient (two colours + angle) plus an optional
+  grain/noise overlay (0–100 %). Carried over into the PNG export.
+  - In the background layer's properties, a **game card** picks the
+    **background source**: its own background, "From the console
+    template" or "From the global template" (the latter two disabled as
+    long as the template has no background layer). Migrated legacy
+    designs keep "From the global template".
+- **Shapes**: "+ Shape" → capsule, square/rectangle, circle. Every shape
+  has the same fill as the card (solid **or** gradient) plus an optional
+  noise overlay, plus stroke/stroke width and, for the rectangle, a
+  corner radius.
+- **Alpha mask**: any layer (shape, image or text) can be flagged as a
+  **mask** in the Inspector – its alpha channel clips the layer(s)
+  directly beneath it ("Into mask"). This lets you, say, place a circle
+  on top and load an image underneath "into the circle". The covered
+  layer stays freely movable; the mask itself is picked from the layer
+  list.
+  - **Several layers per mask**: in the mask's Inspector, "Add layer" /
+    "Release top", or "Into mask" on individual layers.
+  - **Move layers together** (checkbox on the mask, optional): moving,
+    scaling and rotating the mask then affects every layer in the mask.
+  - "Dissolve mask" frees the mask + all its children again.
 
-  Umgesetzt über `globalCompositeOperation: "destination-in"` je Masken-
-  gruppe in einem eigenen Konva-Layer – landet 1:1 im PNG-Export.
-- **Hauptbild + Haupt-Alpha-Maske**: Jede Spiel-Karte hat ein *Hauptbild*
-  (Bild-Ebene, Checkbox „Hauptbild" im Inspector; „Cover suchen" und „Quick
-  Import" setzen es automatisch, sonst gilt das einzige Bild der Karte).
-  Bei **„Alle Konsolen"** legt man **eine** *Haupt-Alpha-Maske* an
-  („+ Form → Haupt-Alpha-Maske" oder Checkbox an einer Form/einem Bild).
-  Deren Alpha-Kanal beschneidet auf **jeder** Karte automatisch das
-  Hauptbild – der Rahmen wird also nur einmal gestaltet. Die Maskenform
-  selbst wird auf den Karten nicht gezeichnet. **Ein frisch eingefügtes
-  Hauptbild wird automatisch so skaliert, dass es die Maske voll ausfüllt**
-  (Höhe *und* Breite, Seitenverhältnis bleibt, Überstand wird beschnitten)
-  und auf die Maskenmitte gesetzt.
-- **Ebenen**: Bilder, Formen, beliebig viele Textebenen. Auswählen,
-  verschieben, skalieren, drehen, sperren, ausblenden, duplizieren.
-  Reihenfolge per **Drag & Drop** in der Ebenenliste (Greifpunkt links,
-  Drop-Linie zeigt die Zielposition).
-- **Bilder**: „+ Bild" → Datei hochladen oder von einer URL einfügen
-  (PNG/JPG/SVG/WebP …). URL-Bilder werden heruntergeladen und ins Projekt
-  eingebettet – der Host muss Cross-Origin-Zugriff erlauben, sonst kommt ein
-  Hinweis. Große Bilder werden auf max. 2400 px heruntergerechnet.
-- **Cover suchen**: bei einer offenen Spiel-Karte sucht der Button „Cover
-  suchen" (Toolbar) anhand von Konsole + Spieltitel nach Box-Art. Ein
-  Dialog zeigt die Treffer als Vorschau; anklicken lädt das Bild herunter,
-  bettet es ein und legt es als Hauptbild-Ebene an (derselbe Pfad wie „Von
-  URL einfügen"). Die Quelle wird oben im Dialog umgeschaltet, Zugangsdaten
-  liegen in `localStorage`.
-  - Auf **„Alle Konsolen"** geht derselbe Button **alle Karten ohne Bild
-    nacheinander durch**: pro Karte der Such-Dialog mit Zähler „Cover
-    3 / 25", ein Klick fügt das Cover ins jeweilige Design ein (legt es bei
-    Bedarf an) und springt zur nächsten Karte; „Überspringen" lässt eine
-    Karte aus.
-  - **SteamGridDB**: API-Key (kostenlos unter
+  Implemented via `globalCompositeOperation: "destination-in"` per mask
+  group in its own Konva layer – carries over 1:1 into the PNG export.
+- **Main image + main alpha mask**: every game card has a *main image*
+  (image layer, "Main image" checkbox in the Inspector; "Find cover" and
+  "Quick Import" set it automatically, otherwise the card's only image
+  counts). On **"All consoles"** you set up **one** *main alpha mask*
+  ("+ Shape → Main alpha mask", or the checkbox on a shape/image). Its
+  alpha channel automatically clips the main image on **every** card –
+  so the frame is only designed once. The mask shape itself isn't drawn
+  on the cards. **A freshly inserted main image is automatically scaled
+  to fully cover the mask** (both height and width, aspect ratio kept,
+  overflow cropped) and centred on the mask.
+- **Layers**: images, shapes, any number of text layers. Select, move,
+  scale, rotate, lock, hide, duplicate. Reorder via **drag & drop** in
+  the layer list (grip handle on the left, a drop line shows the target
+  position).
+- **Images**: "+ Image" → upload a file or paste from a URL (PNG/JPG/SVG/
+  WebP …). URL images are downloaded and embedded into the project – the
+  host must allow cross-origin access, otherwise you get a notice. Large
+  images are downscaled to max. 2400 px.
+- **Find cover**: with a game card open, the "Find cover" button
+  (toolbar) searches for box art by console + game title. A dialog shows
+  the results as previews; clicking one downloads the image, embeds it
+  and sets it as the main image layer (same path as "paste from URL").
+  The source is switched at the top of the dialog; credentials live in
+  `localStorage`.
+  - On **"All consoles"** the same button steps **through every card
+    with no image, one after another**: per card, the search dialog with
+    a "Cover 3 / 25" counter; a click inserts the cover into that design
+    (creating it if needed) and jumps to the next card; "Skip" leaves a
+    card out.
+  - **SteamGridDB**: API key (free at
     [steamgriddb.com](https://www.steamgriddb.com/profile/preferences/api)).
-    Alle Konsolen, hochauflösendes Box-Art, viele Varianten.
-  - **IGDB**: Twitch-Client-ID + -Secret (kostenlos unter
-    [dev.twitch.tv](https://dev.twitch.tv/console/apps)). Offizielles Cover
-    + Artworks pro Spiel.
-  - **Ohne Zugangsdaten**: Fallback auf
-    [libretro-thumbnails](https://github.com/libretro-thumbnails) (statische
-    Scans auf GitHub, kein Key) – nur Retro-/Emulations-Konsolen (NES/SNES/
+    Every console, high-resolution box art, many variants.
+  - **IGDB**: Twitch client ID + secret (free at
+    [dev.twitch.tv](https://dev.twitch.tv/console/apps)). Official cover
+    + artworks per game.
+  - **Without credentials**: falls back to
+    [libretro-thumbnails](https://github.com/libretro-thumbnails) (static
+    scans on GitHub, no key) – retro/emulation consoles only (NES/SNES/
     N64, Mega Drive/Genesis, PlayStation 1–4, GameCube/Wii …).
 
-  SteamGridDBs API/CDN und IGDBs API blockieren Browser-CORS (IGDB braucht
-  zudem einen Twitch-OAuth-Token). Ohne Backend laufen diese Aufrufe über
-  den Proxy `proxy.cors.sh` (für localhost kostenlos); SteamGridDB-Bilder
-  über `wsrv.nl`, IGDB-Bilder direkt (deren CDN sendet CORS-Header).
-  Siehe [src/covers.ts](src/covers.ts).
-- **Quick Import** (Toolbar): Sammel-Import für Bilder. Öffnet eine Tabelle
-  mit allen Spielen, deren Design noch keine Bild-Ebene hat (Spalten
-  Konsole / Spiel / URL). Je eine Bild-URL eintragen, „Fertig" – jede URL
-  wird geladen, eingebettet und als Bild-Ebene ins jeweilige Design gelegt
-  (fehlt das Design noch, wird es angelegt). Fehlgeschlagene URLs (CORS,
-  404, kein Bild) bleiben mit Fehlermeldung stehen und lassen sich erneut
-  versuchen. Siehe [src/quickImport.ts](src/quickImport.ts).
-- **Schriften**: System-Fonts + Google Fonts (Oswald, Bebas Neue,
-  Montserrat, Press Start 2P, Rubik Mono One). Farbe, Kontur, Ausrichtung,
-  Zeilenhöhe, Laufweite.
-- **Hilfslinien**: Beschnittkante (3 mm), Endformat, Sicherheitszone (3 mm).
-  Standardmäßig **aus** – die Vorschau zeigt die reine Karte, auf das
-  Endformat mit abgerundeten Ecken zugeschnitten.
-- **Eigene Hilfslinien**: vertikale/horizontale Linien, die auf **allen**
-  Karten erscheinen. Angelegt und bearbeitet werden sie **nur bei „Alle
-  Konsolen"** (Toolbar-Lineal-Menü + „Hilfslinien"-Panel im Inspector,
-  „Hilfslinien"-Checkbox an/aus). Auf der Karte ziehen zum Positionieren,
-  über den Rand ziehen oder Papierkorb im Inspector zum Löschen, mm-genaue
-  Eingabe im Inspector. Auf Spiel-Karten und Konsolen-Vorlagen werden sie
-  nur angezeigt (nicht verschiebbar). Global in `localStorage` gespeichert,
-  nicht im PNG-Export.
-- **Demo-Modus** (Toolbar-Button „Demo"): Booster-Pack-Simulation. Erst
-  wählst du eine Konsole oder „Alle Konsolen", dann liegt ein geschlossenes
-  Pack mit 12 zufälligen Karten da. Ein Klick reißt es auf – die Karten
-  fliegen per 3D-Animation heraus und legen sich als Raster ab. Mit **10 %
-  Wahrscheinlichkeit** ist eine davon **holografisch** (goldener Rahmen +
-  Foil-Schimmer). Jede Karte lässt sich anklicken und in derselben
-  3D-Ansicht wie die Vorschau frei drehen; ← → oder die Pfeil-Buttons
-  blättern durch das Pack. Die Karten werden dafür mit derselben
-  Konva-Pipeline wie im Editor gerendert (inkl. Vorlagen, Masken und
-  Haupt-Alpha-Maske), Spiele ohne Design bekommen eine Titel-Platzhalterkarte.
-  Siehe [src/demo.ts](src/demo.ts) und
+  SteamGridDB's API/CDN and IGDB's API block browser CORS (IGDB also
+  needs a Twitch OAuth token). These calls are forwarded through Vite's
+  own dev/preview server (`server.proxy` + the `coverImageProxy`
+  middleware in `vite.config.ts`), so an API key only ever travels
+  browser → local Vite → the upstream service, never through a
+  third-party proxy. The packaged desktop app uses the Electron-side
+  equivalent instead (see "Desktop app" below). IGDB's image CDN and
+  libretro-thumbnails already send CORS headers, so those load directly.
+  See [src/covers.ts](src/covers.ts).
+- **Quick Import** (toolbar): bulk import for images. Opens a table of
+  every game whose design has no image layer yet (columns console / game
+  / URL). Enter one image URL each, "Done" – each URL is fetched,
+  embedded and placed as an image layer in the respective design
+  (creating it if it doesn't exist yet). Failed URLs (CORS, 404, not an
+  image) stay listed with an error and can be retried. See
+  [src/quickImport.ts](src/quickImport.ts).
+- **Fonts**: system fonts + Google Fonts (Oswald, Bebas Neue, Montserrat,
+  Press Start 2P, Rubik Mono One) + your own uploaded font files
+  (.ttf/.otf/.woff/.woff2, per workspace, see
+  [src/customFonts.ts](src/customFonts.ts)). Colour, stroke, alignment,
+  line height, letter spacing.
+- **Guides**: trim edge (3 mm), final size, safe zone (3 mm). **Off** by
+  default – the preview shows the plain card, cropped to the final size
+  with rounded corners.
+- **Custom guides**: vertical/horizontal lines that appear on **every**
+  card. Created and edited **only on "All consoles"** (toolbar ruler menu
+  + the "Guides" panel in the Inspector, "Guides" checkbox on/off). Drag
+  on the card to position, drag past the edge or use the trash icon in
+  the Inspector to delete, mm-precise entry in the Inspector. On game
+  cards and console templates they're only shown (not draggable). Stored
+  globally in `localStorage`, not part of the PNG export.
+- **Demo mode** (toolbar button "Demo"): booster-pack simulation. First
+  pick a console or "All consoles", then a sealed pack with 12 random
+  cards sits there. A click tears it open – the cards fly out with a 3D
+  animation and land in a grid. With a **10 % chance** one of them is
+  **holographic** (gold frame + foil shimmer). Any card can be clicked and
+  freely rotated in the same 3D view as the preview; ← → or the arrow
+  buttons page through the pack. Cards are rendered with the same Konva
+  pipeline as the editor (including templates, masks and the main alpha
+  mask); games with no design get a title placeholder card. See
+  [src/demo.ts](src/demo.ts) and
   [src/components/DemoMode.tsx](src/components/DemoMode.tsx).
-- **3D-Vorschau**: Button in der Toolbar öffnet die Karte als 3D-Objekt
-  (CSS-Perspektive), mit der Maus frei drehbar. Checkbox „Holographische
-  Karte" legt einen Regenbogen-Foil-/Glitzer-/Glanz-Effekt darüber, der
-  sich mit der Drehung verändert. Nutzt den Endformat-Export (ohne
-  Hilfslinien).
+- **3D preview**: a toolbar button opens the card as a 3D object (CSS
+  perspective), freely rotatable with the mouse. The "Holographic card"
+  checkbox overlays a rainbow foil/glitter/gloss effect that shifts with
+  rotation. Uses the final-size export (no guides).
 - **Export**:
-  - PNG Endformat (54 × 85,6 mm, 300 DPI ≈ 638 × 1011 px)
-  - PNG mit 3 mm Beschnitt
-  - PNG mit Beschnitt + Schnittmarken
-  - Einzelnes Projekt als `.json` (Bilder eingebettet) speichern / laden
-  - **Komplett-Backup als `.zip`**: alle Projekte, Vorlagen (global +
-    Konsole), Hilfslinien, der Spiel-Index und die Baum-Änderungen
-    (hinzugefügte/entfernte Spiele); Bilder als echte, deduplizierte
-    Dateien unter `assets/`. Laden übernimmt alles (gleiche IDs werden
-    überschrieben) und lädt die Seite neu.
-- **Autosave** in IndexedDB, mehrere Designs über den „Projekte"-Dialog.
-- **Shortcuts**: ⌘Z / ⌘⇧Z (Undo/Redo), Entf (Ebene löschen), Esc (Auswahl aufheben).
-- **gamelist.xml / Metadaten**: pro Konsole eine eigene `gamelist.xml`
-  hochladbar (EmulationStation-Format: `<name>`, `<desc>`, `<image>`,
+  - PNG, final size (54 × 85.6 mm, 300 DPI ≈ 638 × 1011 px)
+  - PNG with 3 mm bleed
+  - PNG with bleed + crop marks
+  - **PDF for a card-tray printer** (e.g. Canon's): one page per face,
+    each sized exactly to the trim – no bleed, no crop marks. Meant to be
+    printed straight onto a blank card via the printer's own tray at
+    "actual size / 100 %". Card format only. See
+    [src/pdf.ts](src/pdf.ts) (`cardTrayPdf`).
+  - Save/load a single project as `.json` (images embedded)
+  - **Full backup as `.zip`**: every project, template (global +
+    console), the guides, the game index and the tree changes
+    (added/removed games); images as real, deduplicated files under
+    `assets/`. Loading restores everything (same ids get overwritten)
+    and reloads the page.
+- **Autosave** in IndexedDB, multiple designs via the "Projects" dialog.
+- **Shortcuts**: ⌘Z / ⌘⇧Z (undo/redo), Delete (delete layer), Esc (clear
+  selection).
+- **gamelist.xml / metadata**: an uploadable `gamelist.xml` per console
+  (EmulationStation format: `<name>`, `<desc>`, `<image>`,
   `<releasedate>`, `<developer>`, `<publisher>`, `<genre>`, `<players>`,
-  `<rating>`) – im Konsolen-Vorlage-Panel unter „Eigenschaften"
-  (Konsolenname im Baum anklicken). Nur bei einer offenen **Spiel-Karte**
-  hat die Sidebar rechts einen **Tab „Metadaten"** (Vorlagen haben keinen):
-  er zeigt den per Titel aus der geladenen `gamelist.xml` gefundenen
-  Eintrag als
-  **editierbares Formular** – Sterne-Wertung anklicken (linke/rechte
-  Hälfte eines Sterns für halbe Schritte, 0,5er-Genauigkeit), Bild-URL/-Pfad,
-  Beschreibung, Release-Datum, Entwickler, Publisher, Genre und Spieler-
-  zahl direkt bearbeiten, jede Änderung wird sofort in die `gamelist.xml`
-  des Spiels zurückgeschrieben. Gibt es noch keinen Eintrag, startet das
-  Formular leer und legt beim ersten Ausfüllen automatisch einen neuen
-  Eintrag an; ein Papierkorb-Button löscht ihn wieder. Beispiel-Dateien
-  für alle 5 Konsolen liegen unter `public/gamelists/` und lassen sich im
-  Panel direkt per „Beispiel laden" einspielen. Rein lokal in
-  `localStorage`, nicht Teil des PNG-Exports.
-  - **Metadaten-Ebenen** (im „+ Form"-Menü, Abschnitt „Aus gamelist.xml"):
-    besondere, konfigurierbare Ebenen, die auf Konsolen-/globaler
-    Vorlagenebene platziert werden und live aus der `gamelist.xml` des
-    jeweils geöffneten Spiels lesen – pro Karte automatisch die richtigen
-    Werte, ohne pro Spiel neu gepflegt werden zu müssen. Einzeln
-    hinzufügbar für **Bewertung** (★, aus 5), **Erscheinungsjahr** oder
-    **Spieleranzahl** (jede frei positionier- und skalierbar), oder als
-    „Alle kombiniert" in einer Ebene. Das **Spieler-Icon ist
-    konfigurierbar** (automatisch Einzel-/Mehrspieler anhand der
-    Spielerzahl, oder fest Einzelspieler / Mehrspieler / Controller), dazu
-    Text-/Sternfarbe und ein optionaler Hintergrund-Chip. Beim Bearbeiten
-    einer Konsolen-Vorlage zeigen die Ebenen zur Vorschau die Daten des
-    ersten geladenen gamelist-Eintrags; ohne passende Daten erscheinen
-    „–"-Platzhalter statt erfundener Werte. Rendert komplett aus
-    Konva-Primitiven (kein Bild-Icon), landet also unverändert im
-    PNG-Export.
+  `<rating>`) – in the console template panel under "Properties" (click
+  the console name in the tree). Only with a game card open does the
+  right-hand sidebar have a **"Metadata" tab** (templates don't): it
+  shows the entry matched by title from the loaded `gamelist.xml` as an
+  **editable form** – click the star rating (left/right half of a star
+  for half steps, 0.5 precision), edit image URL/path, description,
+  release date, developer, publisher, genre and player count directly;
+  every change is written straight back into that game's `gamelist.xml`.
+  If there's no entry yet, the form starts empty and creates one
+  automatically the first time you fill it in; a trash button removes it
+  again. Example files for all 5 consoles live under `public/gamelists/`
+  and can be loaded straight from the panel via "Load example". Purely
+  local, in `localStorage`, not part of the PNG export.
+  - **Metadata layers** (in the "+ Shape" menu, "From gamelist.xml"
+    section): special, configurable layers placed on a console/global
+    template that read live from the currently open game's
+    `gamelist.xml` – the right values automatically per card, with
+    nothing to maintain per game. Addable individually for **rating**
+    (★, out of 5), **release year** or **player count** (each freely
+    positionable and scalable), or as "All combined" in one layer. The
+    **player icon is configurable** (automatically single/multiplayer
+    based on player count, or fixed to single-player / multiplayer /
+    controller), plus text/star colour and an optional background chip.
+    While editing a console template, the layers preview data from the
+    first loaded gamelist entry; without matching data, "–" placeholders
+    show instead of made-up values. Renders entirely from Konva
+    primitives (no image icon), so it carries over unchanged into the
+    PNG export.
 
-- **Sprache**: Umschalter oben rechts (Weltkugel-Icon) zwischen **English**
-  (Standard) und **Deutsch**. Die Wahl liegt in `localStorage`
-  (`stickerstudio:lang`); alle Texte kommen aus [src/i18n.ts](src/i18n.ts)
-  mit der Übersetzungstabelle [src/locale/de.ts](src/locale/de.ts) (die
-  englischen Strings im Code sind die Schlüssel).
+- **Language**: switcher top right (globe icon) between **English**
+  (default) and **German**. The choice lives in `localStorage`
+  (`stickerstudio:lang`); all text comes from [src/i18n.ts](src/i18n.ts)
+  with the translation table [src/locale/de.ts](src/locale/de.ts) (the
+  English strings in the code are the keys).
 
-- **Vorder- & Rückseite**: „＋ Rückseite" legt eine zweite Fläche für die
-  Karte an; danach schaltet ein **Vorderseite | Rückseite**-Umschalter um.
-  Jede Seite hat eigene Ebenen und Hintergrund; die Rückseite erscheint auch
-  in der 3D-Vorschau und im Export (`_front` / `_back`).
+- **Front & back**: "＋ Back side" adds a second face to the card; a
+  **Front | Back** switch then toggles between them. Each side has its
+  own layers and background; the back also appears in the 3D preview and
+  the export (`_front` / `_back`).
 
-- **Format**: globaler Umschalter oben rechts (Formen-Icon) zwischen
-  **Kreditkarte**, **Kassetten-Label**, **Disketten-Label**,
-  **DVD-Hüllen-Wrap** und **Kassettenhülle (J-Card)**. Definiert in
-  [src/formats.ts](src/formats.ts) (Maße dort anpassbar); die Wahl liegt in
-  `localStorage` (`stickerstudio:format`), ein Wechsel lädt die Seite neu.
-  Jedes Format hat eigene Designs, eigene Vorlagen („Alle Konsolen" /
-  Konsolen-Vorlagen, id-Suffix `--<format>`) und einen eigenen Spiel-Index.
-  **Mehrpanel-Formate** (DVD-Wrap = Lasche + Rücken + Buchrücken + Front + Lasche,
-  J-Card = Front + Buchrücken + Rückseite + Einsteck-Lasche) sind ein durchgehendes Artboard mit
-  Faltlinien (`panels` in `formats.ts`); die Falze erscheinen als
-  Hilfslinien im Editor, als Falt-Marken im „Schnittmarken"-Export und in
-  einer flachen 3D-Vorschau.
+- **Format**: a global switcher top right (shape icon) between **credit
+  card**, **cassette label**, **floppy disk label**, **DVD wrap** and
+  **cassette case (J-card)**. Defined in [src/formats.ts](src/formats.ts)
+  (dimensions adjustable there); the choice lives in `localStorage`
+  (`stickerstudio:format`), switching reloads the page. Each format has
+  its own designs, its own templates ("All consoles" / console
+  templates, id suffix `--<format>`) and its own game index.
+  **Multi-panel formats** (DVD wrap = flap + spine + book-spine + front +
+  flap, J-card = front + book-spine + back + insert flap) are one
+  continuous artboard with fold lines (`panels` in `formats.ts`); the
+  folds show up as guides in the editor, as fold marks in the "crop
+  marks" export, and in a flat 3D preview.
 
-## Entwicklung
+## Development
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # Produktions-Build nach dist/
+npm run build    # production build into dist/
 ```
 
 Stack: Vite + React 19 + TypeScript, Tailwind CSS v4 (`@tailwindcss/vite`),
-shadcn/ui, `react-konva`/`konva` für die Zeichenfläche, `idb-keyval` für die
-IndexedDB-Speicherung. Pfad-Alias `@/` → `src/`.
+shadcn/ui, `react-konva`/`konva` for the canvas, `idb-keyval` for
+IndexedDB storage. Path alias `@/` → `src/`.
 
-## Desktop-App (Electron)
+## Desktop app (Electron)
 
-Dieselbe App, gepackt als eigenständiges Programm für macOS/Windows/Linux –
-kein Dev-Server nötig, App-eigene IndexedDB/localStorage im Nutzerprofil.
+The same app, packaged as a standalone program for macOS/Windows/Linux –
+no dev server needed, with its own IndexedDB/localStorage in the user
+profile.
 
 ```bash
-npm run dev:electron   # Entwicklung: Vite-Dev-Server + Electron-Fenster
-npm run dist           # Build + Installer nach release/ (dmg/zip, nsis, AppImage/deb)
+npm run dev:electron   # development: Vite dev server + Electron window
+npm run dist           # build + installers into release/ (dmg/zip, nsis, AppImage/deb)
 ```
 
-Zwei Dinge kann nur ein echter Node-Prozess ohne CORS-Sperre – dafür gibt es
-in der Browser-Version die Vite-Proxys aus `vite.config.ts`, in der
-Desktop-App ein Gegenstück im Electron-Hauptprozess:
+Two things can only be done by a real Node process with no CORS
+restriction – the browser version has the Vite proxies from
+`vite.config.ts` for that; the desktop app has an Electron-main-process
+equivalent:
 
-| Zweck | Browser (Vite-Dev-Server) | Desktop (Electron) |
+| Purpose | Browser (Vite dev server) | Desktop (Electron) |
 | --- | --- | --- |
-| SteamGridDB/IGDB/Twitch-API | `server.proxy` in `vite.config.ts` | IPC `desktop:apiFetch` in `electron/main.ts` |
-| Cover-Bild laden (CORS) | `/img?url=…`-Middleware | Custom-Scheme `app-img://` in `electron/main.ts` |
-| Zaparoo-Core-Verbindung | `/zaparoo?ip=…`-Middleware (Node-WebSocket) | IPC `desktop:zaparooRpc` (Node-WebSocket via `ws`) |
+| SteamGridDB/IGDB/Twitch API | `server.proxy` in `vite.config.ts` | IPC `desktop:apiFetch` in `electron/main.ts` |
+| Load a cover image (CORS) | `/img?url=…` middleware | Custom scheme `app-img://` in `electron/main.ts` |
+| Zaparoo Core connection | `/zaparoo?ip=…` middleware (Node WebSocket) | IPC `desktop:zaparooRpc` (Node WebSocket via `ws`) |
 
-`src/desktop.ts` stellt fest, ob `window.desktop` existiert (vom Preload-Skript
-`electron/preload.ts` gesetzt) und schaltet `src/covers.ts` / `src/zaparoo.ts`
-entsprechend um – derselbe App-Code läuft unverändert in beiden Umgebungen.
+`src/desktop.ts` detects whether `window.desktop` exists (set by the
+preload script `electron/preload.ts`) and switches `src/covers.ts` /
+`src/zaparoo.ts` accordingly – the same app code runs unchanged in both
+environments.
 
-`npm run build:electron` kompiliert `electron/*.ts` nach `dist-electron/`
-(eigenes `tsconfig.electron.json`, CommonJS). electron-builder-Konfiguration
-liegt im `"build"`-Schlüssel von `package.json`. Für echte Windows-/
-Linux-Installer eignet sich am ehesten CI (je ein Runner pro Betriebssystem)
-statt Cross-Build von macOS aus.
+`npm run build:electron` compiles `electron/*.ts` into `dist-electron/`
+(its own `tsconfig.electron.json`, CommonJS). electron-builder
+configuration lives in the `"build"` key of `package.json`. For real
+Windows/Linux installers, CI (one runner per OS) is the better bet than
+cross-building from macOS – see `.github/workflows/build-desktop.yml`.
 
-## Aufbau
+## Structure
 
-| Datei | Zweck |
+| File | Purpose |
 | --- | --- |
-| `src/formats.ts` | Sticker-Formate (Maße, Bleed, Radius) + aktive Auswahl |
-| `src/card.ts` | Maße des aktiven Formats, DPI, abgeleitete Pixelwerte |
-| `src/background.ts` | Hintergrund normalisieren, Verlaufspunkte, Noise-Kachel |
-| `src/masking.ts` | Ebenenstapel in Plain-/Masken-Segmente aufteilen |
-| `src/data/catalog.ts` | Seed-Konsolen + lokaler Overlay (Konsolen/Spiele hinzufügen/umbenennen/entfernen) |
-| `src/components/GameTree.tsx` | Baumansicht links (inkl. Rechtsklick-Menü) |
-| `src/components/ContextMenu.tsx` | Minimales Rechtsklick-Menü (ohne Extra-Dependency) |
-| `src/gameIndex.ts` | Zuordnung Spiel → Projekt-ID (localStorage) |
-| `src/types.ts` | Datenmodell (Layer, Project) |
-| `src/i18n.ts` | Sprachumschaltung (EN/DE), `t()`-Funktion + `useT()`-Hook |
-| `src/locale/de.ts` | Deutsche Übersetzungstabelle (Schlüssel = englischer Text) |
-| `src/store.tsx` | Reducer, Undo/Redo, Autosave, Shortcuts |
-| `src/components/EditorCanvas.tsx` | Konva-Bühne, Transformer, Hilfslinien |
-| `src/components/Toolbar.tsx` | Ebene hinzufügen, Export, Projekte |
-| `src/components/Inspector.tsx` | Eigenschaften der ausgewählten Ebene |
-| `src/export.ts` | PNG-Rendering mit Beschnitt & Schnittmarken |
-| `src/persist.ts` | IndexedDB-Speicherung (`idb-keyval`) |
-| `src/backup.ts` | Komplett-Backup als ZIP (`fflate`), Bilder als Dateien |
-| `src/gamelist.ts` | gamelist.xml parsen/speichern, Metadaten per Titel matchen, Live-Update-Subscription |
-| `src/components/MetadataPanel.tsx` | Sidebar-Tab „Metadaten" (editierbares Formular) |
-| `src/covers.ts` | Cover-Suche: SteamGridDB / IGDB (Keys, via CORS-Proxy) oder libretro-thumbnails |
-| `src/data/baseGameList.ts` | `base_game_list.csv` parsen (Konsolen/Spiele + Metadaten) |
-| `src/components/BaseImportDialog.tsx` | „Basis-Set": Auswahlbaum + Übernahme inkl. Metadaten |
-| `src/quickImport.ts` | Sammel-Import: Spiele ohne Bild finden, URLs als Ebene laden |
-| `src/components/CoverSearchDialog.tsx` | Auswahl-Dialog für gefundene Cover (mit Sweep-Modus) |
-| `src/components/CoverSweepDialog.tsx` | „Alle Konsolen": alle bildlosen Karten nacheinander |
-| `src/demo.ts` | Demo-Modus: Booster-Pack ziehen (Zufallskarten, Holo-Chance) |
-| `src/components/DemoMode.tsx` | Pack-Öffnen-Animation, Kartenraster, 3D-Einzelansicht |
-| `src/components/CardStage.tsx` | Karte read-only rendern & als PNG abgreifen |
-| `public/gamelists/*.xml` | Beispiel-gamelist.xml je Konsole |
-| `src/desktop.ts` | Bridge zu Electron (`window.desktop`), Fallback = Browser-Proxys |
-| `electron/main.ts` | Electron-Hauptprozess: Fenster, `app-img://`-Scheme, IPC-Proxys |
-| `electron/preload.ts` | `contextBridge`: stellt `window.desktop` sicher bereit |
+| `src/formats.ts` | Sticker formats (dimensions, bleed, radius) + active choice |
+| `src/card.ts` | Active format's dimensions, DPI, derived pixel values |
+| `src/background.ts` | Normalise background, gradient points, noise tile |
+| `src/masking.ts` | Split the layer stack into plain/mask segments |
+| `src/data/catalog.ts` | Seed consoles + local overlay (add/rename/remove consoles & games) |
+| `src/components/GameTree.tsx` | Left-hand tree view (incl. right-click menu) |
+| `src/components/ContextMenu.tsx` | Minimal right-click menu (no extra dependency) |
+| `src/gameIndex.ts` | Game → project id mapping (localStorage) |
+| `src/types.ts` | Data model (Layer, Project) |
+| `src/i18n.ts` | Language switching (EN/DE), the `t()` function + `useT()` hook |
+| `src/locale/de.ts` | German translation table (keys = the English source text) |
+| `src/store.tsx` | Reducer, undo/redo, autosave, shortcuts |
+| `src/components/EditorCanvas.tsx` | Konva stage, transformer, guides |
+| `src/components/Toolbar.tsx` | Add layer, export, projects |
+| `src/components/Inspector.tsx` | Properties of the selected layer |
+| `src/export.ts` | PNG rendering with bleed & crop marks |
+| `src/pdf.ts` | Hand-rolled PDF writer: the print/cut-sheet PDF and the card-tray PDF |
+| `src/persist.ts` | IndexedDB storage (`idb-keyval`) |
+| `src/backup.ts` | Full backup as ZIP (`fflate`), images as files |
+| `src/gamelist.ts` | Parse/save gamelist.xml, match metadata by title, live-update subscription |
+| `src/components/MetadataPanel.tsx` | Sidebar "Metadata" tab (editable form) |
+| `src/covers.ts` | Cover search: SteamGridDB / IGDB (keys, via CORS proxy) or libretro-thumbnails |
+| `src/data/baseGameList.ts` | Parses `base_game_list.csv` (consoles/games + metadata) |
+| `src/components/BaseImportDialog.tsx` | "Base set": selectable tree + import including metadata |
+| `src/quickImport.ts` | Bulk import: find games with no image, load URLs as a layer |
+| `src/components/CoverSearchDialog.tsx` | Picker dialog for found covers (with sweep mode) |
+| `src/components/CoverSweepDialog.tsx` | "All consoles": every image-less card, one after another |
+| `src/demo.ts` | Demo mode: draw a booster pack (random cards, holo chance) |
+| `src/components/DemoMode.tsx` | Pack-opening animation, card grid, 3D single view |
+| `src/components/CardStage.tsx` | Render a card read-only & grab it as a PNG |
+| `public/gamelists/*.xml` | Example gamelist.xml per console |
+| `src/customFonts.ts` | Uploaded font files: add/remove/list, register as FontFace |
+| `src/desktop.ts` | Bridge to Electron (`window.desktop`), falls back to the browser proxies |
+| `electron/main.ts` | Electron main process: window, `app-img://` scheme, IPC proxies |
+| `electron/preload.ts` | `contextBridge`: exposes `window.desktop` safely |
 
-## Rechtliches
+## Legal
 
-Konsolen- und Spielelogos sowie Cover-Art sind marken- bzw.
-urheberrechtlich geschützt – lade nur eigene oder lizenzierte Grafiken hoch
-und nutze das Ergebnis privat.
+Console and game logos, as well as cover art, are trademarked and/or
+copyrighted – only upload your own or licensed artwork, and use the
+result privately.
