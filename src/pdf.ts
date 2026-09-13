@@ -4,7 +4,6 @@
 // library — the file is assembled by hand.
 
 import { zlibSync } from "fflate";
-import isoCoatedUrl from "./assets/ISOcoated_v2_300_eci.icc?url";
 
 const MM_TO_PT = 72 / 25.4;
 const KAPPA = 0.5522847498307936; // circle → cubic-bézier control offset
@@ -23,10 +22,6 @@ interface PdfOptions {
   heightMM: number;
   bleedMM: number; // outer bleed → TrimBox inset
   cutRects: PdfCutRect[];
-  // Raw ISOcoated_v2_300_eci.icc bytes. When given, the profile is embedded as
-  // the page's output intent (PDF/X-3 style); otherwise the output intent only
-  // names the condition and the printer converts RGB to it.
-  iccProfile?: Uint8Array;
 }
 
 // wir-machen-druck's standard print condition.
@@ -34,21 +29,6 @@ const OI_CONDITION = "ISO Coated v2 300% (ECI)";
 
 // Escape a PDF literal string: (, ) and \ must be backslashed.
 const pdfStr = (s: string) => `(${s.replace(/[\\()]/g, "\\$&")})`;
-
-// The bundled ISOcoated_v2_300_eci profile (src/assets/). Returns null only if
-// the fetch somehow fails or the file is not a valid ICC profile.
-export async function loadIsoCoatedProfile(): Promise<Uint8Array | null> {
-  try {
-    const res = await fetch(isoCoatedUrl);
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    // An ICC profile carries the signature "acsp" at byte offset 36.
-    const sig = String.fromCharCode(...bytes.slice(36, 40));
-    return bytes.length > 128 && sig === "acsp" ? bytes : null;
-  } catch {
-    return null;
-  }
-}
 
 function loadImg(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
@@ -135,16 +115,15 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
   const box = (x0: number, y0: number, x1: number, y1: number) =>
     `[${x0.toFixed(3)} ${y0.toFixed(3)} ${x1.toFixed(3)} ${y1.toFixed(3)}]`;
 
-  // Output intent (obj 8), plus the embedded ICC profile (obj 9) when supplied.
-  const icc = opts.iccProfile;
-  const iccStream = icc ? zlibSync(icc, { level: 6 }) : null;
-  const outputIntent = iccStream
-    ? `<< /Type /OutputIntent /S /GTS_PDFX ` +
-      `/OutputConditionIdentifier ${pdfStr(OI_CONDITION)} ` +
-      `/Info ${pdfStr(OI_CONDITION)} /DestOutputProfile 9 0 R >>`
-    : `<< /Type /OutputIntent /S /GTS_PDFX ` +
-      `/OutputConditionIdentifier (FOGRA39) ` +
-      `/RegistryName (http://www.color.org) /Info ${pdfStr(OI_CONDITION)} >>`;
+  // Output intent (obj 8): names the print condition by its ICC registry
+  // entry rather than embedding the profile's own bytes — ECI's ISOcoated_v2
+  // profiles may be used/embedded/exchanged freely but not *redistributed*
+  // without ECI's written permission, which rules out shipping the file in
+  // this repo. The printer maps the name to their own copy instead.
+  const outputIntent =
+    `<< /Type /OutputIntent /S /GTS_PDFX ` +
+    `/OutputConditionIdentifier (FOGRA39) ` +
+    `/RegistryName (http://www.color.org) /Info ${pdfStr(OI_CONDITION)} >>`;
 
   const objects: Uint8Array[] = [
     enc("<< /Type /Catalog /Pages 2 0 R /OutputIntents [8 0 R] >>"),
@@ -180,17 +159,6 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
     ),
     enc(outputIntent),
   ];
-  if (iccStream) {
-    objects.push(
-      concat(
-        enc(
-          `<< /N 4 /Filter /FlateDecode /Length ${iccStream.length} >>\nstream\n`,
-        ),
-        iccStream,
-        enc("\nendstream"),
-      ),
-    );
-  }
 
   return buildPdf(objects);
 }
