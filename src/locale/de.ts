@@ -50,7 +50,7 @@ export const de: Record<string, string> = {
   Square: "Quadrat",
   Circle: "Kreis",
   Capsule: "Kapsel",
-  "From gamelist.xml": "Aus gamelist.xml",
+  Property: "Eigenschaft",
   Rating: "Bewertung",
   "Release year": "Erscheinungsjahr",
   "Player count": "Spieleranzahl",

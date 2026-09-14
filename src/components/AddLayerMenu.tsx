@@ -168,11 +168,6 @@ export function AddLayerMenu() {
             <Type /> {t("Text")}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => dispatch({ type: "ADD_LAYER", layer: makeMetaTextLayer() })}
-          >
-            <Database /> {t("Metadata")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
             onClick={() => dispatch({ type: "ADD_LAYER", layer: makeQrLayer() })}
           >
             <QrCode /> {t("QR code")}
@@ -215,7 +210,12 @@ export function AddLayerMenu() {
           {!onBack && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>{t("From gamelist.xml")}</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("Metadata")}</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => dispatch({ type: "ADD_LAYER", layer: makeMetaTextLayer() })}
+              >
+                <Database /> {t("Property")}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
                   dispatch({ type: "ADD_LAYER", layer: makeConditionLayer() })

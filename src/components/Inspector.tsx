@@ -1524,7 +1524,7 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
   return (
     <>
       {layer.metaField ? (
-        <Field label={t("Metadata")}>
+        <Field label={t("Property")}>
           <Select
             value={layer.metaField}
             onValueChange={(v) => {
@@ -1532,7 +1532,7 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
               patch({
                 metaField: key,
                 text: `{${key}}`,
-                name: `${t("Metadata")} · ${placeholderLabel(key, kind)}`,
+                name: `${t("Property")} · ${placeholderLabel(key, kind)}`,
               });
             }}
           >

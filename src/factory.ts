@@ -175,11 +175,11 @@ export function makeTextLayer(text = t("Your text")): TextLayer {
   };
 }
 
-// A Metadata layer: a text layer bound to one metadata field.
+// A Property layer: a text layer bound to one metadata field.
 export function makeMetaTextLayer(field: PlaceholderKey = "title"): TextLayer {
   return {
     ...makeTextLayer(`{${field}}`),
-    name: t("Metadata"),
+    name: t("Property"),
     metaField: field,
     fontSize: 32,
     bold: false,
