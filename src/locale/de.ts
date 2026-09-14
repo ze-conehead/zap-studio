@@ -165,6 +165,19 @@ export const de: Record<string, string> = {
   "No TMDB API key yet — Settings ▸ API keys …": "Noch kein TMDB-API-Schlüssel – Einstellungen ▸ API-Schlüssel …",
   "No IGDB credentials yet — Settings ▸ API keys …": "Noch keine IGDB-Zugangsdaten – Einstellungen ▸ API-Schlüssel …",
   "Nothing found for “{title}”.": "Nichts gefunden für „{title}“.",
+
+  // ── ExportAllDialog ───────────────────────────────────────
+  "All cards as PNG (.zip) …": "Alle Karten als PNG (.zip) …",
+  "All cards as PNG": "Alle Karten als PNG",
+  "One PNG per card, sorted into a folder per console. A card with a back side gets a second file. Same three variants as the single export.":
+    "Ein PNG pro Karte, sortiert in einen Ordner je Konsole. Eine Karte mit Rückseite bekommt eine zweite Datei. Dieselben drei Varianten wie beim Einzelexport.",
+  "No card has a design yet.": "Noch keine Karte hat ein Design.",
+  "{n} of {total} selected": "{n} von {total} ausgewählt",
+  "Export .zip": ".zip exportieren",
+  "Rendering {n} card(s) …": "Rendere {n} Karte(n) …",
+  "{n} file(s) exported.": "{n} Datei(en) exportiert.",
+  "Nothing to export.": "Nichts zu exportieren.",
+  cards: "Karten",
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
   "New card": "Neue Karte",

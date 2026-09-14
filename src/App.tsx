@@ -28,6 +28,7 @@ import {
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
+import { ExportAllDialog } from "./components/ExportAllDialog";
 import { CardTrayDialog } from "./components/CardTrayDialog";
 import { QuickImportDialog } from "./components/QuickImportDialog";
 import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
@@ -356,6 +357,7 @@ function Shell({
   const [demo, setDemo] = useState(false);
   // Dialogs the menu bar and the toolbar both open.
   const [cutSheet, setCutSheet] = useState(false);
+  const [exportAll, setExportAll] = useState(false);
   const [cardTray, setCardTray] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
@@ -413,6 +415,7 @@ function Shell({
     onOpenDemo: () => setDemo(true),
     onImportJson,
     onOpenCutSheet: () => setCutSheet(true),
+    onOpenExportAll: () => setExportAll(true),
     onOpenCardTray: () => setCardTray(true),
     onOpenBaseImport: () => setBaseImport(true),
     onOpenQuickImport: () => setQuickImport(true),
@@ -515,6 +518,7 @@ function Shell({
         }}
       />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
+      <ExportAllDialog open={exportAll} onOpenChange={setExportAll} />
       <CardTrayDialog open={cardTray} onOpenChange={setCardTray} canvas={canvas} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />

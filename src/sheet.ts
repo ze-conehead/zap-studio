@@ -91,6 +91,10 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       consoleBg: bgFill(consoleP),
       globalBg,
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
+      // Own back, else the console template's, else the global one's —
+      // same fallback as the overview. The cut sheet ignores it; the
+      // all-cards export renders it as a second file.
+      back: project.back ?? consoleP?.back ?? globalP?.back,
       holo: false,
     });
   }

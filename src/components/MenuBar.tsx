@@ -51,6 +51,7 @@ interface Props {
   onOpenPreview: () => void;
   onOpenDemo: () => void;
   onOpenCutSheet: () => void;
+  onOpenExportAll: () => void;
   onOpenCardTray: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
@@ -77,6 +78,7 @@ export function MenuBar({
   onOpenPreview,
   onOpenDemo,
   onOpenCutSheet,
+  onOpenExportAll,
   onOpenCardTray,
   onOpenBaseImport,
   onOpenQuickImport,
@@ -233,6 +235,9 @@ export function MenuBar({
             </DropdownMenuItem>
           )}
           <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
+          <DropdownMenuItem onClick={onOpenExportAll}>
+            {t("All cards as PNG (.zip) …")}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onOpenCutSheet}>
             {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
           </DropdownMenuItem>
