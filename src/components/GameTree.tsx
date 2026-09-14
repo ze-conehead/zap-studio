@@ -57,6 +57,7 @@ import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
+import { MetaSweepDialog } from "./MetaSweepDialog";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 import { QuickImportDialog } from "./QuickImportDialog";
 
@@ -131,6 +132,7 @@ export function GameTree({
   const [consoleLogos, setConsoleLogos] = useState(false);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
+  const [metaSweep, setMetaSweep] = useState<{ consoleId: string; consoleName: string } | null>(null);
 
   // Add a cover to a single game: straight into the live editor when that
   // game's design is the one open, otherwise onto its design on disk.
@@ -423,6 +425,12 @@ export function GameTree({
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
                           ...sweepMenuItems({ consoleId: c.id, consoleName: c.name }),
+                          {
+                            label: isMovies
+                              ? t("Fetch metadata for all movies")
+                              : t("Fetch metadata for all games"),
+                            onSelect: () => setMetaSweep({ consoleId: c.id, consoleName: c.name }),
+                          },
                           ...(isCustomConsole(c.id)
                             ? [
                                 {
@@ -590,6 +598,15 @@ export function GameTree({
       )}
 
       <PromptDialog state={prompt} onOpenChange={(o) => !o && setPrompt(null)} />
+
+      {metaSweep && (
+        <MetaSweepDialog
+          open
+          onOpenChange={(o) => !o && setMetaSweep(null)}
+          consoleId={metaSweep.consoleId}
+          consoleName={metaSweep.consoleName}
+        />
+      )}
     </nav>
   );
 }

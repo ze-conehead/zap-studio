@@ -165,6 +165,16 @@ export const de: Record<string, string> = {
   "No TMDB API key yet — Settings ▸ API keys …": "Noch kein TMDB-API-Schlüssel – Einstellungen ▸ API-Schlüssel …",
   "No IGDB credentials yet — Settings ▸ API keys …": "Noch keine IGDB-Zugangsdaten – Einstellungen ▸ API-Schlüssel …",
   "Nothing found for “{title}”.": "Nichts gefunden für „{title}“.",
+  "Fetch metadata for all games": "Metadaten für alle Spiele holen",
+  "Fetch metadata for all movies": "Metadaten für alle Filme holen",
+  "{n} game(s) in “{console}” — looked up one by one on IGDB. Fields the service returns overwrite what is there; anything else is left alone.":
+    "{n} Spiel(e) in „{console}“ – nacheinander bei IGDB nachgeschlagen. Felder, die der Dienst liefert, überschreiben Vorhandenes; alles andere bleibt unangetastet.",
+  "{n} movie(s) in “{console}” — looked up one by one on TMDB. Fields the service returns overwrite what is there; anything else is left alone.":
+    "{n} Film(e) in „{console}“ – nacheinander bei TMDB nachgeschlagen. Felder, die der Dienst liefert, überschreiben Vorhandenes; alles andere bleibt unangetastet.",
+  "Skip the {n} that already have an entry": "Die {n} mit vorhandenem Eintrag überspringen",
+  Start: "Starten",
+  "{done} / {total} …": "{done} / {total} …",
+  "{ok} of {total} updated.": "{ok} von {total} aktualisiert.",
 
   // ── ExportAllDialog ───────────────────────────────────────
   "All cards as PNG (.zip) …": "Alle Karten als PNG (.zip) …",
