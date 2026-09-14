@@ -18,6 +18,7 @@ import { PreflightDialog } from "./components/PreflightDialog";
 import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
+import { ConfirmHost } from "./components/ConfirmDialog";
 import {
   WalkthroughDialog,
   walkthroughSeen,
@@ -281,6 +282,7 @@ export default function App() {
   };
 
   return (
+    <>
     <StoreProvider key={project.id} initial={project}>
       <Shell
         overlay={templates.overlay}
@@ -307,6 +309,8 @@ export default function App() {
         onOpen={openProject}
       />
     </StoreProvider>
+    <ConfirmHost />
+    </>
   );
 }
 

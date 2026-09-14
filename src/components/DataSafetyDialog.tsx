@@ -21,6 +21,7 @@ import {
   useBackupStatus,
 } from "../autobackup";
 import { useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import {
   emptyTrash,
   listTrash,
@@ -220,9 +221,13 @@ export function DataSafetyDialog({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => {
-                  if (!confirm(t("Permanently delete everything in the trash?"))) return;
-                  void emptyTrash().then(reloadTrash);
+                onClick={async () => {
+                  const ok = await askConfirm({
+                    title: t("Permanently delete everything in the trash?"),
+                    confirmLabel: t("Empty trash"),
+                    destructive: true,
+                  });
+                  if (ok) void emptyTrash().then(reloadTrash);
                 }}
               >
                 <Trash2 /> {t("Empty trash")}

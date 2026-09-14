@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getLang, useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import { unlinkProject } from "../gameIndex";
 import { deleteProject, listProjects, loadProject } from "../persist";
 import type { ProjectMeta } from "../types";
@@ -69,7 +70,12 @@ export function ProjectsDialog({ open, onOpenChange, currentId, onOpen }: Props)
                     disabled={p.id === currentId}
                     title={t("Delete")}
                     onClick={async () => {
-                      if (confirm(t("Really delete \u201c{name}\u201d?", { name: p.name }))) {
+                      const ok = await askConfirm({
+                        title: t("Really delete \u201c{name}\u201d?", { name: p.name }),
+                        confirmLabel: t("Delete"),
+                        destructive: true,
+                      });
+                      if (ok) {
                         await deleteProject(p.id);
                         unlinkProject(p.id);
                         refresh();

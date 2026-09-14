@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { exportBackup, importBackup } from "../backup";
 import { downloadBlob, downloadDataUrl, exportPng, type ExportMode } from "../export";
 import { useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
@@ -71,15 +72,14 @@ export function useFileActions(
   };
 
   const loadBackup = async (file: File) => {
-    if (
-      !confirm(
-        t(
-          "Load backup? Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.",
-        ),
-      )
-    ) {
-      return;
-    }
+    const ok = await askConfirm({
+      title: t("Load backup?"),
+      body: t(
+        "Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.",
+      ),
+      confirmLabel: t("Load backup"),
+    });
+    if (!ok) return;
     try {
       setBusy(t("Loading backup …"));
       const { projects, templates } = await importBackup(file);

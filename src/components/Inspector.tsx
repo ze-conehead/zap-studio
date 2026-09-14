@@ -36,6 +36,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import type { GuideApi } from "../App";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
 import {
@@ -746,10 +747,14 @@ function BackFacePanel() {
         variant="outline"
         size="sm"
         className="text-destructive hover:text-destructive"
-        onClick={() => {
-          if (window.confirm(t("Remove the back side? Its layers are deleted."))) {
-            dispatch({ type: "REMOVE_BACK" });
-          }
+        onClick={async () => {
+          const ok = await askConfirm({
+            title: t("Remove the back side?"),
+            body: t("Its layers are deleted."),
+            confirmLabel: t("Remove back side"),
+            destructive: true,
+          });
+          if (ok) dispatch({ type: "REMOVE_BACK" });
         }}
       >
         <Trash2 /> {t("Remove back side")}

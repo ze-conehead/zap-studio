@@ -28,6 +28,7 @@ import { previewCssVars } from "../formats";
 import { preloadImage } from "../hooks/useImage";
 import { loadProject } from "../persist";
 import { useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import { alphaMasksOf } from "../templates";
 import {
   applyBundle,
@@ -192,12 +193,14 @@ export function TemplateDialog({
 
   const apply = async (b: TemplateBundle) => {
     if (
-      !confirm(
-        t(
-          "Apply “{name}”? It replaces the global template and {n} console template(s). Your cards keep their own layers.",
-          { name: b.name, n: b.consoles.length },
+      !(await askConfirm({
+        title: t("Apply “{name}”?", { name: b.name }),
+        body: t(
+          "It replaces the global template and {n} console template(s). Your cards keep their own layers.",
+          { n: b.consoles.length },
         ),
-      )
+        confirmLabel: t("Apply"),
+      }))
     ) {
       return;
     }
@@ -323,10 +326,13 @@ export function TemplateDialog({
                       variant="ghost"
                       className="h-7"
                       title={t("Delete")}
-                      onClick={() => {
-                        if (confirm(t("Really delete “{name}”?", { name: b.name }))) {
-                          void deleteBundle(b.id).then(refresh);
-                        }
+                      onClick={async () => {
+                        const ok = await askConfirm({
+                          title: t("Really delete “{name}”?", { name: b.name }),
+                          confirmLabel: t("Delete"),
+                          destructive: true,
+                        });
+                        if (ok) void deleteBundle(b.id).then(refresh);
                       }}
                     >
                       <Trash2 />

@@ -25,6 +25,7 @@ import {
 } from "../formats";
 import { FormatPreview } from "./FormatPreview";
 import { PromptDialog, type PromptState } from "./PromptDialog";
+import { askConfirm } from "./ConfirmDialog";
 import { useT } from "../i18n";
 import { parseLocaleNumber } from "@/lib/utils";
 import {
@@ -105,16 +106,15 @@ export function WorkspaceDialog({
   };
 
   const remove = async (ws: Workspace) => {
-    if (
-      !confirm(
-        t(
-          "Delete “{name}” with all its consoles, cards and templates? This cannot be undone.",
-          { name: ws.name },
-        ),
-      )
-    ) {
-      return;
-    }
+    const ok = await askConfirm({
+      title: t("Delete “{name}” with all its consoles, cards and templates?", {
+        name: ws.name,
+      }),
+      body: t("This cannot be undone."),
+      confirmLabel: t("Delete project"),
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteWorkspace(ws.id, { keys, del });
     if (ws.id === active) location.reload();
     else setList(listWorkspaces());

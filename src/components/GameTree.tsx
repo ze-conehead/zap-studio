@@ -48,6 +48,7 @@ import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { getWorkspaceKind } from "../workspace";
+import { askConfirm } from "./ConfirmDialog";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
@@ -252,16 +253,14 @@ export function GameTree({
     });
   };
 
-  const handleRemoveGame = (consoleId: string, game: { id: string; title: string }) => {
-    if (
-      window.confirm(
-        t("Remove \u201c{title}\u201d from the list? An existing sticker design stays under \u201cProjects\u201d.", {
-          title: game.title,
-        }),
-      )
-    ) {
-      removeGame(consoleId, game.id);
-    }
+  const handleRemoveGame = async (consoleId: string, game: { id: string; title: string }) => {
+    const ok = await askConfirm({
+      title: t("Remove \u201c{title}\u201d from the list?", { title: game.title }),
+      body: t("An existing sticker design stays under \u201cProjects\u201d."),
+      confirmLabel: t("Remove"),
+      destructive: true,
+    });
+    if (ok) removeGame(consoleId, game.id);
   };
 
   const handleRenameGame = (consoleId: string, game: { id: string; title: string }) => {
@@ -289,19 +288,16 @@ export function GameTree({
     });
   };
 
-  const handleRemoveConsole = (consoleId: string, consoleName: string) => {
-    const confirmed = isMovies
-      ? window.confirm(
-          t("Remove collection \u201c{name}\u201d and all its movies from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
-            name: consoleName,
-          }),
-        )
-      : window.confirm(
-          t("Remove console \u201c{name}\u201d and all its games from the tree? Existing sticker designs stay under \u201cProjects\u201d.", {
-            name: consoleName,
-          }),
-        );
-    if (confirmed) removeConsole(consoleId);
+  const handleRemoveConsole = async (consoleId: string, consoleName: string) => {
+    const ok = await askConfirm({
+      title: isMovies
+        ? t("Remove collection \u201c{name}\u201d and all its movies from the tree?", { name: consoleName })
+        : t("Remove console \u201c{name}\u201d and all its games from the tree?", { name: consoleName }),
+      body: t("Existing sticker designs stay under \u201cProjects\u201d."),
+      confirmLabel: t("Remove"),
+      destructive: true,
+    });
+    if (ok) removeConsole(consoleId);
   };
 
   return (

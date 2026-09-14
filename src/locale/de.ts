@@ -60,8 +60,8 @@ export const de: Record<string, string> = {
   Back: "Rückseite",
   "Back background": "Hintergrund Rückseite",
   "Remove back side": "Rückseite entfernen",
-  "Remove the back side? Its layers are deleted.":
-    "Rückseite entfernen? Ihre Ebenen werden gelöscht.",
+  "Remove the back side?": "Rückseite entfernen?",
+  "Its layers are deleted.": "Ihre Ebenen werden gelöscht.",
   "Packing backup …": "Backup wird gepackt …",
   "Loading backup …": "Backup wird geladen …",
   "Loading image …": "Bild wird geladen …",
@@ -80,8 +80,10 @@ export const de: Record<string, string> = {
   "Card offset Y (mm)": "Karten-Versatz Y (mm)",
   "Export PDF (front + back)": "PDF exportieren (Vorder- + Rückseite)",
   "Export PDF": "PDF exportieren",
-  "Load backup? Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.":
-    "Backup laden? Projekte und Vorlagen aus der Datei werden übernommen (vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
+  "Load backup?": "Backup laden?",
+  "Load backup": "Backup laden",
+  "Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.":
+    "Projekte und Vorlagen aus der Datei werden übernommen (vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
   "{projects} project(s) and {templates} template(s) imported.":
     "{projects} Projekt(e) und {templates} Vorlage(n) übernommen.",
   Language: "Sprache",
@@ -157,8 +159,9 @@ export const de: Record<string, string> = {
   "Switch to this project": "Zu diesem Projekt wechseln",
   "(empty start)": "(leer gestartet)",
   "Delete project": "Projekt l\u00f6schen",
-  "Delete \u201c{name}\u201d with all its consoles, cards and templates? This cannot be undone.":
-    "\u201e{name}\u201c mit allen Konsolen, Karten und Vorlagen l\u00f6schen? Das l\u00e4sst sich nicht r\u00fcckg\u00e4ngig machen.",
+  "Delete \u201c{name}\u201d with all its consoles, cards and templates?":
+    "\u201e{name}\u201c mit allen Konsolen, Karten und Vorlagen l\u00f6schen?",
+  "This cannot be undone.": "Das l\u00e4sst sich nicht r\u00fcckg\u00e4ngig machen.",
   "Project name": "Projektname",
   "New project": "Neues Projekt",
   "Name, e.g. \u201cMega Drive collection\u201d": "Name, z. B. \u201eMega-Drive-Sammlung\u201c",
@@ -326,10 +329,13 @@ export const de: Record<string, string> = {
   "New game for {name}:": "Neues Spiel für {name}:",
   "Rename game:": "Spiel umbenennen:",
   "Rename console:": "Konsole umbenennen:",
-  "Remove “{title}” from the list? An existing sticker design stays under “Projects”.":
-    "„{title}“ aus der Liste entfernen? Ein bereits angelegtes Sticker-Design bleibt unter „Projekte“ erhalten.",
-  "Remove console “{name}” and all its games from the tree? Existing sticker designs stay under “Projects”.":
-    "Konsole „{name}“ mit allen Spielen aus dem Baum entfernen? Angelegte Sticker-Designs bleiben unter „Projekte“.",
+  "Remove “{title}” from the list?": "„{title}“ aus der Liste entfernen?",
+  "An existing sticker design stays under “Projects”.":
+    "Ein bereits angelegtes Sticker-Design bleibt unter „Projekte“ erhalten.",
+  "Remove console “{name}” and all its games from the tree?":
+    "Konsole „{name}“ mit allen Spielen aus dem Baum entfernen?",
+  "Existing sticker designs stay under “Projects”.":
+    "Angelegte Sticker-Designs bleiben unter „Projekte“.",
   "{name} – edit shared template (right-click: add game / rename console)":
     "{name} – gemeinsame Vorlage bearbeiten (Rechtsklick: Spiel hinzufügen / Konsole umbenennen)",
   "No game with an image.": "Kein Spiel mit Bild.",
@@ -345,8 +351,8 @@ export const de: Record<string, string> = {
   "New movie for {name}:": "Neuer Film f\u00fcr {name}:",
   "Rename movie:": "Film umbenennen:",
   "Rename collection:": "Sammlung umbenennen:",
-  "Remove collection \u201c{name}\u201d and all its movies from the tree? Existing sticker designs stay under \u201cProjects\u201d.":
-    "Sammlung \u201e{name}\u201c mit allen Filmen aus dem Baum entfernen? Angelegte Sticker-Designs bleiben unter \u201eProjekte\u201c.",
+  "Remove collection \u201c{name}\u201d and all its movies from the tree?":
+    "Sammlung \u201e{name}\u201c mit allen Filmen aus dem Baum entfernen?",
   "{name} \u2013 edit shared template (right-click: add movie / rename collection)":
     "{name} \u2013 gemeinsame Vorlage bearbeiten (Rechtsklick: Film hinzuf\u00fcgen / Sammlung umbenennen)",
   "Add movie": "Film hinzuf\u00fcgen",
@@ -817,8 +823,9 @@ export const de: Record<string, string> = {
   "{n} console template(s)": "{n} Konsolen-Vorlage(n)",
   "No templates yet. Save the current one above, or import a JSON file.":
     "Noch keine Vorlagen. Speichere oben die aktuelle oder importiere eine JSON-Datei.",
-  "Apply \u201c{name}\u201d? It replaces the global template and {n} console template(s). Your cards keep their own layers.":
-    "\u201e{name}\u201c anwenden? Ersetzt die globale Vorlage und {n} Konsolen-Vorlage(n). Deine Karten behalten ihre eigenen Ebenen.",
+  "Apply \u201c{name}\u201d?": "\u201e{name}\u201c anwenden?",
+  "It replaces the global template and {n} console template(s). Your cards keep their own layers.":
+    "Ersetzt die globale Vorlage und {n} Konsolen-Vorlage(n). Deine Karten behalten ihre eigenen Ebenen.",
   "That file isn't valid JSON.": "Diese Datei ist kein g\u00fcltiges JSON.",
   "Not a template file.": "Keine Vorlagen-Datei.",
   "The template is empty.": "Die Vorlage ist leer.",

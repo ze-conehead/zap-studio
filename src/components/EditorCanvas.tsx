@@ -31,6 +31,7 @@ import { fileToLayerSource } from "../image";
 import { shadowProps } from "../layerEffects";
 import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../card";
 import { useT } from "../i18n";
+import { askConfirm } from "./ConfirmDialog";
 import type { GameMeta } from "../gamelist";
 import {
   getGamelistVersion,
@@ -469,10 +470,14 @@ function FaceStage({
             <button
               className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
               title={t("Remove back side")}
-              onClick={() => {
-                if (window.confirm(t("Remove the back side? Its layers are deleted."))) {
-                  onRemove();
-                }
+              onClick={async () => {
+                const ok = await askConfirm({
+                  title: t("Remove the back side?"),
+                  body: t("Its layers are deleted."),
+                  confirmLabel: t("Remove back side"),
+                  destructive: true,
+                });
+                if (ok) onRemove();
               }}
             >
               <Trash2 className="size-3.5" />
