@@ -120,10 +120,12 @@ export function withMasks(
   return out;
 }
 
-// The fill a background layer actually paints. `inherit` (front game cards)
-// lets it pull the fill from the console / global template instead.
-// `fallback` is painted when the face has no background layer at all — a
-// console or card with none inherits the global background.
+// The fill a background layer actually paints. The chain is card → console
+// → global: a front game card with no background of its own (no layer, or
+// a layer set to inherit) takes the console template's background, and
+// where the console has none, the global one. A console template with no
+// background likewise shows the global one. `inherit` is false for the
+// back face and for templates (they only ever paint their own layer).
 export function effectiveBgFill(
   bgLayer: TBackgroundLayer | undefined,
   opts: {
@@ -133,12 +135,10 @@ export function effectiveBgFill(
     globalBg?: CardBackground;
   },
 ): CardBackground | null {
-  if (!bgLayer) return opts.fallback ?? null;
+  const inherited = opts.consoleBg ?? opts.globalBg ?? null;
+  if (!bgLayer) return opts.inherit ? inherited : (opts.fallback ?? null);
   if (!bgLayer.visible) return null;
-  if (opts.inherit) {
-    if (bgLayer.source === "global") return opts.globalBg ?? null;
-    if (bgLayer.source === "console") return opts.consoleBg ?? null;
-  }
+  if (opts.inherit && (bgLayer.source ?? "card") !== "card") return inherited;
   return bgLayer.fill;
 }
 

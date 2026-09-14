@@ -710,7 +710,7 @@ function BackgroundLayerProps({
       {isGameCard && (
         <Field label={t("Background source")}>
           <Select
-            value={source}
+            value={source === "card" ? "card" : "console"}
             onValueChange={(v) => patch({ source: v as BackgroundSource })}
           >
             <SelectTrigger>
@@ -718,22 +718,18 @@ function BackgroundLayerProps({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="card">{t("Own background")}</SelectItem>
-              <SelectItem value="console" disabled={!consoleBg}>
-                {t("From the console template")}
-                {!consoleBg ? t(" (not set)") : ""}
-              </SelectItem>
-              <SelectItem value="global" disabled={!globalBg}>
-                {t("From the global template")}
-                {!globalBg ? t(" (not set)") : ""}
-              </SelectItem>
+              <SelectItem value="console">{t("From the template (console, else global)")}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
       )}
       {isGameCard && source !== "card" ? (
         <p className="text-xs text-muted-foreground">
-          {t("The background comes from the ")}
-          {source === "console" ? t("console template") : t("global template")}
+          {consoleBg
+            ? t("The background comes from the ") + t("console template")
+            : globalBg
+              ? t("The background comes from the ") + t("global template")
+              : t("Neither template has a background yet.")}
           {t(". Edit it there (click the console / “All consoles” in the tree).")}
         </p>
       ) : (
