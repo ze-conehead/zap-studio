@@ -56,6 +56,7 @@ import {
   isCondition,
   isImage,
   isMetaBadge,
+  isQr,
   isShape,
   isText,
   metaBadgeKind,
@@ -101,6 +102,8 @@ import {
   type LayerShadow,
   type MetaBadgeLayer,
   type PlayersIconStyle,
+  type QrEcLevel,
+  type QrLayer,
   type ShapeLayer,
   type TextLayer,
 } from "../types";
@@ -274,8 +277,9 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
         />
       )}
       {isMetaBadge(selected) && <MetaBadgeProps layer={selected} patch={patch} />}
+      {isQr(selected) && <QrProps layer={selected} patch={patch} />}
 
-      {(isImage(selected) || isText(selected) || isShape(selected)) &&
+      {(isImage(selected) || isText(selected) || isShape(selected) || isQr(selected)) &&
         !isMask &&
         !isLogoSlot && <EffectsControls layer={selected} patch={patch} />}
     </Panel>
@@ -1883,5 +1887,66 @@ function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) => void }
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function QrProps({ layer, patch }: { layer: QrLayer; patch: Patch }) {
+  const t = useT();
+  const levels: { id: QrEcLevel; label: string }[] = [
+    { id: "L", label: t("Low (7 %)") },
+    { id: "M", label: t("Medium (15 %)") },
+    { id: "Q", label: t("Quartile (25 %)") },
+    { id: "H", label: t("High (30 %)") },
+  ];
+  return (
+    <>
+      <Field label={t("Content (URL or text)")}>
+        <Textarea
+          rows={2}
+          value={layer.text}
+          onChange={(e) => patch({ text: e.target.value }, false)}
+          onBlur={(e) => patch({ text: e.target.value })}
+        />
+        <PlaceholderPicker
+          onPick={(key) => patch({ text: `${layer.text}{${key}}` })}
+        />
+      </Field>
+
+      <NumberField
+        label={t("Size px")}
+        value={round(layer.width)}
+        onChange={(v) => patch({ width: Math.max(24, v), height: Math.max(24, v) })}
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <ColorField label={t("Modules")} value={layer.fg} onChange={(v) => patch({ fg: v })} />
+        <ColorField label={t("Background")} value={layer.bg} onChange={(v) => patch({ bg: v })} />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={layer.bgEnabled}
+          onCheckedChange={(v) => patch({ bgEnabled: !!v })}
+        />
+        {t("Draw background (quiet zone)")}
+      </label>
+
+      <Field label={t("Error correction")}>
+        <Select value={layer.ecLevel} onValueChange={(v) => patch({ ecLevel: v as QrEcLevel })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {levels.map((l) => (
+              <SelectItem key={l.id} value={l.id}>
+                {l.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          {t("Higher levels survive more damage but need more modules. Keep the code at least 15 mm wide for a phone to read it.")}
+        </p>
+      </Field>
+    </>
   );
 }

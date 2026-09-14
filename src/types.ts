@@ -7,7 +7,8 @@ export type LayerType =
   | "shape"
   | "metabadge"
   | "background"
-  | "condition";
+  | "condition"
+  | "qr";
 
 export type ShapeKind = "rect" | "circle" | "capsule";
 
@@ -188,13 +189,30 @@ export interface BackgroundLayer extends BaseLayer {
   source?: BackgroundSource;
 }
 
+// A QR code, drawn as vector modules so it stays crisp at print size.
+// `text` may contain {placeholders} (src/placeholders.ts), e.g. a URL with
+// the game's title in it. width/height are kept equal — the code is square.
+export type QrEcLevel = "L" | "M" | "Q" | "H";
+
+export interface QrLayer extends BaseLayer {
+  type: "qr";
+  text: string;
+  width: number;
+  height: number;
+  fg: string; // module colour
+  bg: string; // quiet-zone / background colour
+  bgEnabled: boolean; // false => transparent background
+  ecLevel: QrEcLevel; // error correction: more = denser but more damage-tolerant
+}
+
 export type Layer =
   | ImageLayer
   | TextLayer
   | ShapeLayer
   | MetaBadgeLayer
   | BackgroundLayer
-  | ConditionLayer;
+  | ConditionLayer
+  | QrLayer;
 
 // Which face of the card is being edited / shown.
 export type CardSide = "front" | "back";

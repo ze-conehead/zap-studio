@@ -11,6 +11,7 @@ import {
   Lock,
   LockOpen,
   PaintBucket,
+  QrCode,
   Shapes,
   Trash2,
   Type,
@@ -98,7 +99,9 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
                   ? Shapes
                   : isMetaBadge(l)
                     ? Award
-                    : Type;
+                    : l.type === "qr"
+                      ? QrCode
+                      : Type;
           // A case that the metadata doesn't select still prints nothing —
           // dim it, but keep it clickable so it can be edited.
           const dimmed = !!l.condId && !live.has(l.id);

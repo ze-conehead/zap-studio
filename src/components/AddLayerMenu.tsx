@@ -10,6 +10,7 @@ import {
   PaintBucket,
   Pill,
   Plus,
+  QrCode,
   Square,
   Star,
   Type,
@@ -41,6 +42,7 @@ import {
   makeAlphaMaskLayer,
   makeLogoSlotLayer,
   makeMetaBadgeLayer,
+  makeQrLayer,
   makeShapeLayer,
   makeTextLayer,
   type MetaBadgeKind,
@@ -162,6 +164,11 @@ export function AddLayerMenu() {
             onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
           >
             <Type /> {t("Text")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => dispatch({ type: "ADD_LAYER", layer: makeQrLayer() })}
+          >
+            <QrCode /> {t("QR code")}
           </DropdownMenuItem>
           {!hasBg && (
             <DropdownMenuItem

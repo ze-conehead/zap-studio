@@ -17,11 +17,13 @@ import {
   Layer,
   Line,
   Rect,
+  Shape,
   Stage,
   Star,
   Text,
   Transformer,
 } from "react-konva";
+import qrcode from "qrcode-generator";
 import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import type { Guide } from "../guides";
@@ -68,6 +70,7 @@ import type {
   MetaBadgeLayer as TMetaBadgeLayer,
   PlayersIconStyle,
   Project,
+  QrLayer as TQrLayer,
   ShapeLayer as TShapeLayer,
   TextLayer as TTextLayer,
 } from "../types";
@@ -1027,6 +1030,7 @@ export function LayerInner({
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
+  if (layer.type === "qr") return <QrInner layer={layer} gco={gco} vars={vars} />;
   // {title} & co. resolve here, so measuring, flowing and exporting all see
   // the same string — the stored layer keeps the raw text.
   const text = resolvePlaceholders(layer.text, vars);
@@ -1035,6 +1039,76 @@ export function LayerInner({
 }
 
 type Gco = "destination-in" | undefined;
+
+// The QR modules, drawn as one Konva Shape so adjacent squares share edges
+// with no hairline seams at any scale. Four modules of quiet zone all
+// round, per the spec, inside the layer's own box.
+const QR_QUIET = 4;
+
+function QrInner({ layer, gco, vars }: { layer: TQrLayer; gco?: Gco; vars?: PlaceholderContext }) {
+  const text = resolvePlaceholders(layer.text, vars);
+  const code = useMemo(() => {
+    try {
+      const qr = qrcode(0, layer.ecLevel);
+      qr.addData(text || " ");
+      qr.make();
+      const n = qr.getModuleCount();
+      const dark: number[] = [];
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) if (qr.isDark(r, c)) dark.push(r * n + c);
+      }
+      return { n, dark };
+    } catch {
+      return null; // longer than a version-40 code can hold
+    }
+  }, [text, layer.ecLevel]);
+
+  const size = layer.width;
+  const n = code?.n ?? 21;
+  const cell = size / (n + QR_QUIET * 2);
+  const fg = gco ? "#000" : layer.fg;
+  const shadow = gco ? {} : shadowProps(layer.shadow);
+
+  return (
+    <Group offsetX={size / 2} offsetY={size / 2}>
+      {layer.bgEnabled && (
+        <Rect
+          width={size}
+          height={size}
+          fill={gco ? "#000" : layer.bg}
+          globalCompositeOperation={gco}
+          {...shadow}
+        />
+      )}
+      {code ? (
+        <Shape
+          fill={fg}
+          globalCompositeOperation={gco}
+          {...(layer.bgEnabled ? {} : shadow)}
+          sceneFunc={(ctx, shape) => {
+            ctx.beginPath();
+            for (const i of code.dark) {
+              const r = Math.floor(i / n);
+              const c = i % n;
+              ctx.rect((c + QR_QUIET) * cell, (r + QR_QUIET) * cell, cell, cell);
+            }
+            ctx.fillStrokeShape(shape);
+          }}
+        />
+      ) : (
+        <Text
+          width={size}
+          height={size}
+          align="center"
+          verticalAlign="middle"
+          fontSize={Math.max(12, size / 12)}
+          fill={fg}
+          text="QR: too long"
+        />
+      )}
+    </Group>
+  );
+}
 
 function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
   const { width: w, height: h, fill } = layer;

@@ -40,6 +40,7 @@
     "idb-keyval": "^6.3.0",
     "konva": "^10.3.2",
     "lucide-react": "^1.40.0",
+    "qrcode-generator": "^1.5.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-konva": "^19.2.5",
@@ -66,15 +67,34 @@
   "build": {
     "appId": "studio.zapstudio.app",
     "productName": "Zap-Studio",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "dist-electron/**/*"],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
     "afterPack": "scripts/electron-afterpack.cjs",
     "mac": {
       "category": "public.app-category.graphics-design",
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "build/icon.png"
     },
-    "win": { "target": ["portable"], "icon": "build/icon.png" },
-    "linux": { "target": ["AppImage", "deb"], "category": "Graphics", "icon": "build/icon.png" }
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "icon": "build/icon.png"
+    }
   }
 }

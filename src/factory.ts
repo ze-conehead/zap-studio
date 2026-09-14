@@ -16,6 +16,7 @@ import type {
   MetaBadgeKind,
   MetaBadgeLayer,
   Project,
+  QrLayer,
   ShapeKind,
   ShapeLayer,
   TextLayer,
@@ -179,6 +180,21 @@ const SHAPE_NAME: Record<ShapeKind, string> = {
   capsule: "Capsule",
 };
 
+export function makeQrLayer(): QrLayer {
+  const size = TRIM_RECT.w * 0.3;
+  return {
+    ...base(t("QR code")),
+    type: "qr",
+    text: "https://",
+    width: size,
+    height: size,
+    fg: "#000000",
+    bg: "#ffffff",
+    bgEnabled: true,
+    ecLevel: "M",
+  };
+}
+
 export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   const square = TRIM_RECT.w * 0.4;
   const size =
@@ -302,6 +318,9 @@ export function isImage(l: Layer): l is ImageLayer {
 }
 export function isText(l: Layer): l is TextLayer {
   return l.type === "text";
+}
+export function isQr(l: Layer): l is QrLayer {
+  return l.type === "qr";
 }
 export function isShape(l: Layer): l is ShapeLayer {
   return l.type === "shape";
