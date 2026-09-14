@@ -17,7 +17,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { gradientStops } from "../background";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
@@ -772,29 +772,14 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
     unit === "mm" ? mmToPxGuide(v, axis) : pctToPxGuide(v, axis);
 
   const row = (g: (typeof items)[number]) => (
-    <div key={g.id} className="flex items-center gap-1">
-      <Input
-        type="number"
-        className="h-7 min-w-0 flex-1"
-        disabled={locked}
-        value={toValue(g)}
-        onChange={(e) => {
-          const v = Number(e.target.value);
-          if (Number.isFinite(v)) guides.update(g.id, fromValue(v, g.axis));
-        }}
-      />
-      <span className="shrink-0 text-[10px] text-muted-foreground">{unit}</span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
-        title={t("Delete")}
-        disabled={locked}
-        onClick={() => guides.remove(g.id)}
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
-    </div>
+    <GuideRow
+      key={g.id}
+      value={toValue(g)}
+      unit={unit}
+      locked={locked}
+      onCommit={(v) => guides.update(g.id, fromValue(v, g.axis))}
+      onRemove={() => guides.remove(g.id)}
+    />
   );
 
   return (
@@ -879,6 +864,71 @@ function GuidesPanel({ guides }: { guides: GuideApi }) {
         </div>
       )}
     </Panel>
+  );
+}
+
+// A guide's position field. Keeps its own draft text so an in-progress,
+// not-yet-valid value ("-", "3,", "12.") isn't clobbered by the controlled
+// re-render on every keystroke — it only re-syncs from `value` when that
+// changes for a reason other than this field's own last commit (a drag on
+// the canvas, or switching the mm/% unit).
+function GuideRow({
+  value,
+  unit,
+  locked,
+  onCommit,
+  onRemove,
+}: {
+  value: number;
+  unit: "mm" | "%";
+  locked: boolean;
+  onCommit: (v: number) => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+  const [draft, setDraft] = useState(() => String(value));
+  const lastCommitted = useRef(draft);
+
+  useEffect(() => {
+    const s = String(value);
+    if (s !== lastCommitted.current) {
+      setDraft(s);
+      lastCommitted.current = s;
+    }
+    // Only re-sync on an external change (value/unit) — not on our own edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, unit]);
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="text"
+        inputMode="decimal"
+        className="h-7 min-w-0 flex-1"
+        disabled={locked}
+        value={draft}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setDraft(raw);
+          const v = parseLocaleNumber(raw);
+          if (v !== undefined) {
+            lastCommitted.current = raw;
+            onCommit(v);
+          }
+        }}
+      />
+      <span className="shrink-0 text-[10px] text-muted-foreground">{unit}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-6 shrink-0 text-muted-foreground hover:text-destructive"
+        title={t("Delete")}
+        disabled={locked}
+        onClick={onRemove}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+    </div>
   );
 }
 

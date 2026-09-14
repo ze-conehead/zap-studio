@@ -6,6 +6,9 @@ export const de: Record<string, string> = {
   // ── App shell ────────────────────────────────────────────────────────────
   "loading …": "lädt …",
 
+  // ── PromptDialog ─────────────────────────────────────────────────────────
+  OK: "OK",
+
   // ── Toolbar ──────────────────────────────────────────────────────────────
   Global: "Global",
   Template: "Vorlage",
@@ -210,6 +213,10 @@ export const de: Record<string, string> = {
   "Floppy disk label": "Disketten-Label",
   "DVD case wrap": "DVD-Hüllen-Wrap",
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
+  Custom: "Benutzerdefiniert",
+  Width: "Breite",
+  Height: "Höhe",
+  Radius: "Radius",
   Spine: "Rücken",
   Flap: "Lasche",
   "{w} × {h} mm": "{w} × {h} mm",

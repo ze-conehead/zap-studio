@@ -107,7 +107,15 @@ const newId = () =>
 
 export function createWorkspace(
   name: string,
-  opts: { seeded?: boolean; format?: string; kind?: WorkspaceKind } = {},
+  opts: {
+    seeded?: boolean;
+    format?: string;
+    kind?: WorkspaceKind;
+    // For format: "custom" — the chosen size/corner-radius, in the same
+    // shape as formats.ts's CustomFormatSpec. Kept untyped here to avoid a
+    // circular import (formats.ts already imports wsSuffix from this file).
+    customFormat?: { wMM: number; hMM: number; cornerRadiusMM: number };
+  } = {},
 ): Workspace {
   const ws: Workspace = {
     id: newId(),
@@ -122,6 +130,9 @@ export function createWorkspace(
   // all it takes for the new project to open in the chosen format. The
   // example catalogue itself is written by seedWorkspace() in the dialog.
   if (opts.format) ls.set(`stickerstudio:format--w${ws.id}`, opts.format);
+  if (opts.customFormat) {
+    ls.set(`stickerstudio:customFormat--w${ws.id}`, JSON.stringify(opts.customFormat));
+  }
   return ws;
 }
 

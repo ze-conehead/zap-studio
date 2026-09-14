@@ -1,17 +1,17 @@
-import { FORMATS, type FormatId } from "../formats";
+import type { CardFormat } from "../formats";
 import { useT } from "../i18n";
 
 // A to-scale outline of a sticker format: its aspect ratio, corner rounding
 // and — for the wraps / J-card — the fold lines between panels. Shown in the
-// new-project dialog so the format dropdown isn't a guess.
+// new-project dialog so the format dropdown isn't a guess. Takes the format
+// itself (not an id) so a not-yet-saved custom size can be previewed live.
 
 const BOX_W = 260;
 const BOX_H = 150;
 const PAD = 14;
 
-export function FormatPreview({ id }: { id: FormatId }) {
+export function FormatPreview({ format: f }: { format: CardFormat }) {
   const t = useT();
-  const f = FORMATS[id];
   const { w, h } = f.trimMM;
 
   const scale = Math.min((BOX_W - PAD * 2) / w, (BOX_H - PAD * 2) / h);

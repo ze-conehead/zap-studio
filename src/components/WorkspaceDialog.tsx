@@ -14,9 +14,19 @@ import {
   EXAMPLE_GAMES_MAX,
   EXAMPLE_GAMES_MIN,
 } from "../data/baseGameList";
-import { FORMAT_IDS, FORMATS, getFormatId, type FormatId } from "../formats";
+import {
+  customCardFormat,
+  DEFAULT_CUSTOM_FORMAT,
+  FORMAT_IDS,
+  FORMATS,
+  getFormatId,
+  type CustomFormatSpec,
+  type FormatId,
+} from "../formats";
 import { FormatPreview } from "./FormatPreview";
+import { PromptDialog, type PromptState } from "./PromptDialog";
 import { useT } from "../i18n";
+import { parseLocaleNumber } from "@/lib/utils";
 import {
   createWorkspace,
   DEFAULT_WS,
@@ -58,6 +68,10 @@ export function WorkspaceDialog({
   const [example, setExample] = useState(false);
   const [games, setGames] = useState(EXAMPLE_GAMES_DEFAULT);
   const [format, setFormat] = useState<FormatId>(getFormatId());
+  const [customW, setCustomW] = useState(String(DEFAULT_CUSTOM_FORMAT.wMM));
+  const [customH, setCustomH] = useState(String(DEFAULT_CUSTOM_FORMAT.hMM));
+  const [customR, setCustomR] = useState(String(DEFAULT_CUSTOM_FORMAT.cornerRadiusMM));
+  const [prompt, setPrompt] = useState<PromptState | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -67,13 +81,24 @@ export function WorkspaceDialog({
     setExample(false);
     setGames(EXAMPLE_GAMES_DEFAULT);
     setFormat(getFormatId());
+    setCustomW(String(DEFAULT_CUSTOM_FORMAT.wMM));
+    setCustomH(String(DEFAULT_CUSTOM_FORMAT.hMM));
+    setCustomR(String(DEFAULT_CUSTOM_FORMAT.cornerRadiusMM));
   }, [open]);
+
+  const customSpec: CustomFormatSpec = {
+    wMM: parseLocaleNumber(customW) ?? DEFAULT_CUSTOM_FORMAT.wMM,
+    hMM: parseLocaleNumber(customH) ?? DEFAULT_CUSTOM_FORMAT.hMM,
+    cornerRadiusMM: parseLocaleNumber(customR) ?? DEFAULT_CUSTOM_FORMAT.cornerRadiusMM,
+  };
+  const previewFormat = format === "custom" ? customCardFormat(customSpec) : FORMATS[format];
 
   const create = () => {
     const ws = createWorkspace(name || t("New project"), {
       seeded: kind === "games" && example,
       format,
       kind,
+      customFormat: format === "custom" ? customSpec : undefined,
     });
     if (kind === "games" && example) seedWorkspace(ws.id, games);
     switchWorkspace(ws.id); // reloads
@@ -96,15 +121,20 @@ export function WorkspaceDialog({
   };
 
   const rename = (ws: Workspace) => {
-    const next = prompt(t("Project name"), ws.name);
-    if (next === null) return;
-    renameWorkspace(ws.id, next);
-    setList(listWorkspaces());
+    setPrompt({
+      title: t("Project name"),
+      defaultValue: ws.name,
+      onSubmit: (next) => {
+        renameWorkspace(ws.id, next);
+        setList(listWorkspaces());
+      },
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] max-w-lg flex-col gap-4">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="flex max-h-[88vh] max-w-lg flex-col gap-4">
         <DialogHeader>
           <DialogTitle>{t("Projects")}</DialogTitle>
         </DialogHeader>
@@ -218,7 +248,16 @@ export function WorkspaceDialog({
                 </SelectContent>
               </Select>
             </div>
-            <FormatPreview id={format} />
+
+            {format === "custom" && (
+              <div className="grid grid-cols-3 gap-2">
+                <MmField label={t("Width")} value={customW} onChange={setCustomW} />
+                <MmField label={t("Height")} value={customH} onChange={setCustomH} />
+                <MmField label={t("Radius")} value={customR} onChange={setCustomR} />
+              </div>
+            )}
+
+            <FormatPreview format={previewFormat} />
           </div>
 
           {kind === "games" ? (
@@ -271,5 +310,36 @@ export function WorkspaceDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <PromptDialog state={prompt} onOpenChange={(o) => !o && setPrompt(null)} />
+    </>
+  );
+}
+
+// A single custom-format dimension, in mm — text input (not type="number")
+// so it works regardless of OS/locale, and accepts either "," or "." as the
+// decimal separator (see parseLocaleNumber).
+function MmField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">
+        <Input
+          type="text"
+          inputMode="decimal"
+          className="h-8"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <span className="shrink-0 text-[11px] text-muted-foreground">mm</span>
+      </div>
+    </label>
   );
 }

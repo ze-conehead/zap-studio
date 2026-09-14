@@ -11,7 +11,8 @@ export type FormatId =
   | "cassette-label"
   | "floppy-label"
   | "dvd-insert"
-  | "cassette-jcard";
+  | "cassette-jcard"
+  | "custom";
 
 // A multi-panel format (DVD wrap, cassette J-card) is one artboard split
 // into panels by fold lines. The panels partition trimMM.w left-to-right;
@@ -94,7 +95,72 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Flap", wMM: 14 },
     ],
   },
+  // Placeholder geometry — a project created with this format stores its own
+  // dimensions (see CustomFormatSpec below) and getFormat() merges them in.
+  custom: {
+    id: "custom",
+    name: "Custom",
+    trimMM: { w: 54, h: 85.6 },
+    bleedMM: 3,
+    cornerRadiusMM: 3.18,
+    thickRatio: 0.00888,
+    hasBack: true,
+  },
 };
+
+// A user-chosen size for the "custom" format — set once at project creation
+// (see WorkspaceDialog) and stored per workspace, the same way the format
+// choice itself is.
+export interface CustomFormatSpec {
+  wMM: number;
+  hMM: number;
+  cornerRadiusMM: number;
+}
+
+export const DEFAULT_CUSTOM_FORMAT: CustomFormatSpec = {
+  wMM: 54,
+  hMM: 85.6,
+  cornerRadiusMM: 3.18,
+};
+
+const customKey = (suffix: string) => `stickerstudio:customFormat${suffix}`;
+
+export function getCustomFormatSpec(suffix = wsSuffix()): CustomFormatSpec {
+  try {
+    const raw = localStorage.getItem(customKey(suffix));
+    if (raw) {
+      const v = JSON.parse(raw) as Partial<CustomFormatSpec>;
+      if (
+        typeof v.wMM === "number" &&
+        typeof v.hMM === "number" &&
+        typeof v.cornerRadiusMM === "number"
+      ) {
+        return { wMM: v.wMM, hMM: v.hMM, cornerRadiusMM: v.cornerRadiusMM };
+      }
+    }
+  } catch {
+    /* unavailable / malformed */
+  }
+  return DEFAULT_CUSTOM_FORMAT;
+}
+
+export function setCustomFormatSpec(spec: CustomFormatSpec, suffix = wsSuffix()): void {
+  try {
+    localStorage.setItem(customKey(suffix), JSON.stringify(spec));
+  } catch {
+    /* unavailable */
+  }
+}
+
+// A CardFormat for the "custom" id built from a spec, without touching
+// storage — used for the live preview while the user is still typing.
+export function customCardFormat(spec: CustomFormatSpec): CardFormat {
+  return {
+    ...FORMATS.custom,
+    trimMM: { w: spec.wMM, h: spec.hMM },
+    cornerRadiusMM: spec.cornerRadiusMM,
+  };
+}
 
 export const FORMAT_IDS = Object.keys(FORMATS) as FormatId[];
 
@@ -111,7 +177,9 @@ export function getFormatId(): FormatId {
 }
 
 export function getFormat(): CardFormat {
-  return FORMATS[getFormatId()];
+  const id = getFormatId();
+  if (id === "custom") return customCardFormat(getCustomFormatSpec());
+  return FORMATS[id];
 }
 
 export const isCard = () => getFormatId() === "card";

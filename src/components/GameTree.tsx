@@ -52,6 +52,7 @@ import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
+import { PromptDialog, type PromptState } from "./PromptDialog";
 import { QuickImportDialog } from "./QuickImportDialog";
 
 type TreeFilter = "all" | "with" | "without";
@@ -124,6 +125,7 @@ export function GameTree({
   const [quick, setQuick] = useState<SweepScope | null>(null);
   const [consoleLogos, setConsoleLogos] = useState(false);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
+  const [prompt, setPrompt] = useState<PromptState | null>(null);
 
   // Add a cover to a single game: straight into the live editor when that
   // game's design is the one open, otherwise onto its design on disk.
@@ -150,8 +152,10 @@ export function GameTree({
   };
 
   const promptCoverUrl = (row: QuickImportRow) => {
-    const url = window.prompt(t("Image URL for the cover:"))?.trim();
-    if (url) void insertCoverForGame(row, url);
+    setPrompt({
+      title: t("Image URL for the cover:"),
+      onSubmit: (url) => void insertCoverForGame(row, url),
+    });
   };
 
   const coverMenuItems = (row: QuickImportRow): ContextMenuItem[] => [
@@ -160,13 +164,18 @@ export function GameTree({
   ];
 
   const addConsolePrompt = () => {
-    const name = window
-      .prompt(isMovies ? t("Collection name:") : t("Console name:"))
-      ?.trim();
-    if (!name) return;
-    if (!addConsole(name)) {
-      alert(isMovies ? t("That collection already exists.") : t("That console already exists."));
-    }
+    setPrompt({
+      title: isMovies ? t("Collection name:") : t("Console name:"),
+      onSubmit: (name) => {
+        if (!addConsole(name)) {
+          alert(
+            isMovies
+              ? t("That collection already exists.")
+              : t("That console already exists."),
+          );
+        }
+      },
+    });
   };
 
   // Per-console / per-game sweep: covers only. Logos are a global-template
@@ -232,16 +241,15 @@ export function GameTree({
     setOpen((o) => ({ ...o, [consoleId]: true }));
 
   const handleAddGame = (consoleId: string, consoleName: string) => {
-    const title = window
-      .prompt(
-        isMovies
-          ? t("New movie for {name}:", { name: consoleName })
-          : t("New game for {name}:", { name: consoleName }),
-      )
-      ?.trim();
-    if (!title) return;
-    const game = addGame(consoleId, title);
-    if (game) expand(consoleId);
+    setPrompt({
+      title: isMovies
+        ? t("New movie for {name}:", { name: consoleName })
+        : t("New game for {name}:", { name: consoleName }),
+      onSubmit: (title) => {
+        const game = addGame(consoleId, title);
+        if (game) expand(consoleId);
+      },
+    });
   };
 
   const handleRemoveGame = (consoleId: string, game: { id: string; title: string }) => {
@@ -257,22 +265,28 @@ export function GameTree({
   };
 
   const handleRenameGame = (consoleId: string, game: { id: string; title: string }) => {
-    const next = window
-      .prompt(isMovies ? t("Rename movie:") : t("Rename game:"), game.title)
-      ?.trim();
-    if (!next || next === game.title) return;
-    if (renameGame(consoleId, game.id, next)) {
-      // keep the gamelist.xml entry (matched by title) attached
-      renameGameMeta(consoleId, game.title, next);
-    }
+    setPrompt({
+      title: isMovies ? t("Rename movie:") : t("Rename game:"),
+      defaultValue: game.title,
+      onSubmit: (next) => {
+        if (next === game.title) return;
+        if (renameGame(consoleId, game.id, next)) {
+          // keep the gamelist.xml entry (matched by title) attached
+          renameGameMeta(consoleId, game.title, next);
+        }
+      },
+    });
   };
 
   const handleRenameConsole = (consoleId: string, consoleName: string) => {
-    const next = window
-      .prompt(isMovies ? t("Rename collection:") : t("Rename console:"), consoleName)
-      ?.trim();
-    if (!next || next === consoleName) return;
-    renameConsole(consoleId, next);
+    setPrompt({
+      title: isMovies ? t("Rename collection:") : t("Rename console:"),
+      defaultValue: consoleName,
+      onSubmit: (next) => {
+        if (next === consoleName) return;
+        renameConsole(consoleId, next);
+      },
+    });
   };
 
   const handleRemoveConsole = (consoleId: string, consoleName: string) => {
@@ -546,6 +560,8 @@ export function GameTree({
           }}
         />
       )}
+
+      <PromptDialog state={prompt} onOpenChange={(o) => !o && setPrompt(null)} />
     </nav>
   );
 }
