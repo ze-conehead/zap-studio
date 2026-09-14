@@ -95,6 +95,41 @@ export const de: Record<string, string> = {
   Extra: "Extra",
   Settings: "Einstellungen",
   "Demo mode (card packs)": "Demo-Modus (Kartenpacks)",
+
+  // ── WalkthroughDialog ─────────────────────────────────────
+  "Walkthrough …": "Rundgang …",
+  Previous: "Zurück",
+  Next: "Weiter",
+  "{n} of {total}": "{n} von {total}",
+  "Welcome to Zap-Studio": "Willkommen bei Zap-Studio",
+  "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Extra ▸ Walkthrough.":
+    "Dieser kurze Rundgang zeigt die App einmal der Reihe nach – so, wie die Schritte aufeinander aufbauen. Du kannst ihn überspringen und jederzeit unter Extra ▸ Rundgang wieder öffnen.",
+  "1. Enter your API keys": "1. API-Schlüssel eintragen",
+  "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ API keys …":
+    "Die Cover-Suche läuft über einen kostenlosen API-Schlüssel: SteamGridDB oder IGDB für Spiele, TMDB für Filme. Ohne Schlüssel bleibt nur libretro-thumbnails – und das deckt nur Retro-Konsolen ab. Einstellungen ▸ API-Schlüssel …",
+  "Open API keys …": "API-Schlüssel öffnen …",
+  "2. Create a project": "2. Projekt anlegen",
+  "A project is a library of its own — its own consoles, cards and templates, shared with nothing else. When you create one you choose games or movies, and the format: credit card, cassette label, DVD wrap, or your own size in mm. File ▸ New project …":
+    "Ein Projekt ist eine eigene Sammlung – eigene Konsolen, Karten und Vorlagen, nichts davon wird geteilt. Beim Anlegen wählst du Spiele oder Filme und das Format: Kreditkarte, Kassetten-Label, DVD-Wrap oder eine eigene Größe in mm. Datei ▸ Neues Projekt …",
+  "Open projects …": "Projekte öffnen …",
+  "3. How the levels stack": "3. Wie die Ebenen aufeinander liegen",
+  "Three levels, bottom to top: “All consoles” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.":
+    "Drei Ebenen, von unten nach oben: „Alle Konsolen“ ist die globale Vorlage und erscheint auf jeder Karte, jede Konsole hat ihre eigene Vorlage, und jedes Spiel hat seine eigene Karte. Jede Ebene trägt Layer – Bilder, Text, Formen, Metadaten-Badges aus der gamelist und Bedingungen, die Layer nach Genre, Jahr oder Wertung austauschen.",
+  "4. Add an alpha mask": "4. Alpha-Maske anlegen",
+  "In “All consoles”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.":
+    "Lege in „Alle Konsolen“ einen „Alpha-Maske“-Layer an und schiebe ihn dorthin, wo das Artwork sitzen soll. Er ist der Rahmen, in den jedes Spielecover fällt: Cover werden daran zugeschnitten und auf seine Größe gebracht – auf allen Karten gleichzeitig. Verschiebst du ihn später, ziehen die Cover mit.",
+  "Open “All consoles”": "„Alle Konsolen“ öffnen",
+  "5. Check it in the preview": "5. In der Vorschau prüfen",
+  "“Preview” shows the card in 3D — drag to tilt it, and turn it over if it has a back side. “Preview all” lays out every card of the project side by side.":
+    "„Vorschau“ zeigt die Karte in 3D – ziehen zum Kippen, und umdrehen, wenn sie eine Rückseite hat. „Alle anzeigen“ legt alle Karten des Projekts nebeneinander.",
+  "Open preview": "Vorschau öffnen",
+  "6. Export": "6. Export",
+  "File ▸ Export writes a PNG — trimmed, with bleed, or with bleed and crop marks. For printing there is a cut sheet with several cards per page, and a card-tray PDF for printers that take PVC cards directly.":
+    "Datei ▸ Export schreibt ein PNG – auf Endformat, mit Beschnitt oder mit Beschnitt und Schnittmarken. Fürs Drucken gibt es einen Bogen mit mehreren Karten pro Seite und ein Kartenträger-PDF für Drucker, die PVC-Karten direkt einziehen.",
+  "7. Set up a backup": "7. Sicherung einrichten",
+  "Everything lives in this browser's local database — clearing the site data deletes it. Under “Data safety” you can point the app at a folder, and it keeps a rolling set of backup .zip files there for you.":
+    "Alles liegt in der lokalen Datenbank dieses Browsers – wenn du die Websitedaten löschst, ist es weg. Unter „Datensicherheit“ kannst du einen Ordner auswählen, in dem die App automatisch rotierende Backup-.zip-Dateien ablegt.",
+  "Open data safety …": "Datensicherheit öffnen …",
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
   "New card": "Neue Karte",

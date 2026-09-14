@@ -18,6 +18,11 @@ import { PreflightDialog } from "./components/PreflightDialog";
 import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
+import {
+  WalkthroughDialog,
+  walkthroughSeen,
+  markWalkthroughSeen,
+} from "./components/WalkthroughDialog";
 import { Toolbar } from "./components/Toolbar";
 import { BaseImportDialog } from "./components/BaseImportDialog";
 import { CutSheetDialog } from "./components/CutSheetDialog";
@@ -357,6 +362,14 @@ function Shell({
   const [templates, setTemplates] = useState(false);
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
+  // Opens by itself on a fresh install, then only from Extra ▸ Walkthrough.
+  // Marked seen as soon as it opens: the Shell remounts on every project
+  // switch (see the StoreProvider key), so "seen on close" would show it
+  // again after the tour's own jump buttons navigate away.
+  const [walkthrough, setWalkthrough] = useState(() => !walkthroughSeen());
+  useEffect(() => {
+    if (walkthrough) markWalkthroughSeen();
+  }, [walkthrough]);
   const t = useT();
   // View-level shortcuts. The layer ones live in the store, which owns the
   // selection; these need the guides API and the Shell's dialogs.
@@ -403,6 +416,7 @@ function Shell({
     onOpenTemplates: () => setTemplates(true),
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
+    onOpenWalkthrough: () => setWalkthrough(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -479,6 +493,17 @@ function Shell({
       <TemplateDialog open={templates} onOpenChange={setTemplates} />
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
+      <WalkthroughDialog
+        open={walkthrough}
+        onOpenChange={setWalkthrough}
+        targets={{
+          onOpenApiKeys: () => setApiKeys(true),
+          onOpenWorkspaces: () => setWorkspaces(true),
+          onOpenGlobal,
+          onOpenPreview: () => setPreview(true),
+          onOpenDataSafety: () => setDataSafety(true),
+        }}
+      />
       <CutSheetDialog open={cutSheet} onOpenChange={setCutSheet} />
       <CardTrayDialog open={cardTray} onOpenChange={setCardTray} canvas={canvas} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
