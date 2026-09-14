@@ -5,8 +5,8 @@
 // Radix' DropdownMenu has no menubar mode, so the "hover to walk across the
 // open menus" behaviour is wired up by hand via `openMenu`.
 
-import { useState } from "react";
-import { AlertTriangle, Check, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, ArrowUpCircle, Check, ChevronRight, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +41,7 @@ import {
 import type { GuideApi } from "../App";
 import type { CanvasHandle } from "./EditorCanvas";
 import { useFileActions } from "./fileActions";
+import { checkForUpdate, dismissUpdate, type UpdateInfo } from "../updateCheck";
 
 interface Props {
   canvas: React.MutableRefObject<CanvasHandle | null>;
@@ -103,6 +104,15 @@ export function MenuBar({
   const backup = useBackupStatus();
   // `backup.lastAt` is what makes this re-evaluate after a run.
   const backupStale = backup.lastAt >= 0 && isStale();
+  // Desktop only; null in the browser and when already up to date.
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void checkForUpdate().then((u) => alive && setUpdate(u));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Once one menu is open, hovering a sibling switches to it.
   const hover = (id: MenuId) => () => {
@@ -439,6 +449,31 @@ export function MenuBar({
       </Menu>
 
       <div className="ml-auto" />
+
+      {update && (
+        <span className="flex items-center gap-1 rounded bg-primary/15 pl-2 text-[11px] text-primary">
+          <a
+            href={update.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 py-0.5 hover:underline"
+            title={t("Open the release page")}
+          >
+            <ArrowUpCircle className="size-3.5" />
+            {t("Version {v} available", { v: update.version })}
+          </a>
+          <button
+            className="rounded p-1 hover:bg-accent"
+            title={t("Dismiss")}
+            onClick={() => {
+              dismissUpdate(update.version);
+              setUpdate(null);
+            }}
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      )}
 
       {backupStale && (
         <button

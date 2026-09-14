@@ -3,7 +3,7 @@
 // and the two proxies that only Node (never a browser tab) can do without
 // CORS getting in the way — same allowlists as vite.config.ts's plugins,
 // just reachable via IPC / a custom scheme instead of an HTTP route.
-import { app, BrowserWindow, ipcMain, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, shell } from "electron";
 import path from "node:path";
 import { WebSocket } from "ws";
 
@@ -38,6 +38,12 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+  // target="_blank" links (release page, "get a key" …) go to the system
+  // browser instead of spawning a bare Electron window with the site in it.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) void shell.openExternal(url);
+    return { action: "deny" };
   });
   if (app.isPackaged) {
     void win.loadFile(path.join(__dirname, "../dist/index.html"));

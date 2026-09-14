@@ -152,6 +152,11 @@ export const de: Record<string, string> = {
   "Reset the view": "Ansicht zurücksetzen",
   "Zoom in / out": "Vergrößern / verkleinern",
   "Previous / next card": "Vorherige / nächste Karte",
+
+  // ── Update check (desktop) ─────────────────────────────────
+  "Version {v} available": "Version {v} verfügbar",
+  "Open the release page": "Release-Seite öffnen",
+  Dismiss: "Ausblenden",
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
   "New card": "Neue Karte",

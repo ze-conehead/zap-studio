@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -196,11 +197,17 @@ function coverImageProxy(): Plugin {
 }
 
 // https://vite.dev/config/
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL("./package.json", import.meta.url)), "utf8"),
+) as { version: string };
+
 export default defineConfig({
   // Electron loads the packaged build over file://, where absolute asset
   // paths (Vite's default) resolve to the filesystem root instead of next
   // to index.html — relative paths work in both that and the dev server.
   base: "./",
+  // The app's own version, for the desktop update check (src/updateCheck.ts).
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [react(), tailwindcss(), coverImageProxy(), zaparooProxy()],
   resolve: {
     alias: {
