@@ -368,6 +368,12 @@ export const de: Record<string, string> = {
   // ── GameTree ─────────────────────────────────────────────────────────────
   "All games": "Alle Spiele",
   "Search …": "Suchen …",
+  Collection: "Sammlung",
+  "Insert placeholder": "Platzhalter einfügen",
+  "Number in console": "Nummer in der Konsole",
+  "Number in collection": "Nummer in der Sammlung",
+  "Games in console": "Spiele in der Konsole",
+  "Movies in collection": "Filme in der Sammlung",
   Clear: "Leeren",
   "With image only": "Nur mit Bild",
   "Without image only": "Nur ohne Bild",

@@ -51,6 +51,11 @@ import {
   obstacleBoxes,
 } from "../textFlow";
 import { isAlphaMask, resolveMask } from "../templates";
+import {
+  placeholderContextFor,
+  resolvePlaceholders,
+  type PlaceholderContext,
+} from "../placeholders";
 import { sweepMaskMove } from "../maskSweep";
 import { useStore } from "../store";
 import { useAccent } from "../theme";
@@ -317,6 +322,7 @@ function FaceStage({
     ...masks.filter((m) => !layerList.some((l) => l.id === m.id)),
   ];
 
+  const vars = placeholderContextFor(project, badgeMeta);
   const hiddenCases = hiddenCaseIds(layerList, badgeMeta);
   const preview = active && selectedId && hiddenCases.has(selectedId) ? selectedId : null;
   const cases = resolveConditions(layerList, badgeMeta, preview);
@@ -554,6 +560,7 @@ function FaceStage({
                   selected={active && layer.id === selectedId}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
+                  vars={vars}
                   snapLines={snapLines}
                   onSnap={reportSnap}
                   register={(n) => {
@@ -613,6 +620,7 @@ function FaceStage({
                     key={layer.id}
                     layer={layer}
                     meta={badgeMeta}
+                    vars={vars}
                     obstacles={obstacles}
                   />
                 ) : null,
@@ -795,6 +803,7 @@ function LayerNode({
   previewOnly = false,
   groupChildren,
   meta,
+  vars,
   obstacles,
   snapLines,
   onSnap,
@@ -811,6 +820,7 @@ function LayerNode({
   previewOnly?: boolean;
   groupChildren?: TLayer[];
   meta?: GameMeta;
+  vars?: PlaceholderContext;
   obstacles?: TLayer[];
   snapLines?: SnapLines;
   onSnap?: (hit: SnapHit | null) => void;
@@ -985,6 +995,7 @@ function LayerNode({
         layer={layer}
         asMask={asMask}
         meta={meta}
+        vars={vars}
         obstacles={obstacles}
       />
     </Group>
@@ -995,11 +1006,13 @@ export function LayerInner({
   layer,
   asMask = false,
   meta,
+  vars,
   obstacles,
 }: {
   layer: TLayer;
   asMask?: boolean;
   meta?: GameMeta;
+  vars?: PlaceholderContext;
   obstacles?: TLayer[];
 }) {
   // As a mask, the node paints only its alpha into its Konva layer and keeps
@@ -1014,7 +1027,11 @@ export function LayerInner({
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
   if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
-  return <TextInner layer={layer} gco={gco} obstacles={obstacles} />;
+  // {title} & co. resolve here, so measuring, flowing and exporting all see
+  // the same string — the stored layer keeps the raw text.
+  const text = resolvePlaceholders(layer.text, vars);
+  const shown = text === layer.text ? layer : { ...layer, text };
+  return <TextInner layer={shown} gco={gco} obstacles={obstacles} />;
 }
 
 type Gco = "destination-in" | undefined;
@@ -1301,10 +1318,12 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
 function ReadOnlyLayer({
   layer,
   meta,
+  vars,
   obstacles,
 }: {
   layer: TLayer;
   meta?: GameMeta;
+  vars?: PlaceholderContext;
   obstacles?: TLayer[];
 }) {
   const common = {
@@ -1318,7 +1337,7 @@ function ReadOnlyLayer({
   };
   return (
     <Group {...common}>
-      <LayerInner layer={layer} meta={meta} obstacles={obstacles} />
+      <LayerInner layer={layer} meta={meta} vars={vars} obstacles={obstacles} />
     </Group>
   );
 }

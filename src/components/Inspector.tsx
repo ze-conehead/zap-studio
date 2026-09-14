@@ -3,6 +3,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Braces,
   Check,
   CornerDownRight,
   Crop,
@@ -34,6 +35,13 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PLACEHOLDER_KEYS, type PlaceholderKey } from "../placeholders";
 import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
@@ -1517,6 +1525,11 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
           onChange={(e) => patch({ text: e.target.value }, false)}
           onBlur={(e) => patch({ text: e.target.value })}
         />
+        <PlaceholderPicker
+          onPick={(key) =>
+            patch({ text: `${layer.text}${layer.text && !/\s$/.test(layer.text) ? " " : ""}{${key}}` })
+          }
+        />
       </Field>
 
       <Field label={t("Font")}>
@@ -1829,3 +1842,46 @@ const round = (n: number, d = 0) => {
   const f = 10 ** d;
   return Math.round(n * f) / f;
 };
+
+// "{title}", "{year}" … — filled in per card at render time (src/placeholders.ts).
+function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) => void }) {
+  const t = useT();
+  const movies = getWorkspaceKind() === "movies";
+  const label: Record<PlaceholderKey, string> = {
+    title: t("Title"),
+    console: movies ? t("Collection") : t("Console"),
+    index: movies ? t("Number in collection") : t("Number in console"),
+    count: movies ? t("Movies in collection") : t("Games in console"),
+    year: t("Release year"),
+    date: t("Release date"),
+    genre: t("Genre"),
+    developer: t("Developer"),
+    publisher: t("Publisher"),
+    players: t("Players"),
+    rating: t("Rating"),
+    director: t("Director"),
+    studio: t("Studio"),
+    runtime: t("Runtime"),
+    desc: t("Description"),
+  };
+  const hidden: PlaceholderKey[] = movies
+    ? ["developer", "publisher", "players"]
+    : ["director", "studio", "runtime"];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="mt-1 h-6 self-start px-1.5 text-xs">
+          <Braces className="size-3.5" /> {t("Insert placeholder")}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+        {PLACEHOLDER_KEYS.filter((k) => !hidden.includes(k)).map((k) => (
+          <DropdownMenuItem key={k} onClick={() => onPick(k)} className="justify-between gap-4">
+            {label[k]}
+            <span className="font-mono text-[11px] text-muted-foreground">{`{${k}}`}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

@@ -7,6 +7,7 @@ import { resolveConditions } from "../conditions";
 import { isBackground } from "../factory";
 import { resolveBadgeMeta } from "../gamelist";
 import { segmentLayers } from "../masking";
+import { placeholderContextFor, type PlaceholderContext } from "../placeholders";
 import type { Layer as TLayer } from "../types";
 import {
   CardBackgroundNodes,
@@ -44,6 +45,7 @@ export function CardStage({
     globalBg: card.globalBg,
   });
   const meta = resolveBadgeMeta(card.project);
+  const vars = placeholderContextFor(card.project, meta);
   const resolved = resolveConditions(content, meta);
   const layers = back
     ? resolved
@@ -71,17 +73,18 @@ export function CardStage({
         <KLayer key={`seg-${i}`} listening={false}>
           {seg.kind === "plain"
             ? seg.layers.map((l) => (
-                <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
+                <StaticLayer key={l.id} layer={l} meta={meta} vars={vars} obstacles={obstacles} />
               ))
             : [
                 ...seg.clipped.map((l) => (
-                  <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
+                  <StaticLayer key={l.id} layer={l} meta={meta} vars={vars} obstacles={obstacles} />
                 )),
                 <StaticLayer
                   key={seg.mask.id}
                   layer={seg.mask}
                   asMask={seg.clipped.length > 0}
                   meta={meta}
+                  vars={vars}
                   obstacles={obstacles}
                 />,
               ]}
@@ -91,7 +94,7 @@ export function CardStage({
       {overlay.length > 0 && (
         <KLayer listening={false}>
           {overlay.map((l) => (
-            <StaticLayer key={l.id} layer={l} meta={meta} obstacles={obstacles} />
+            <StaticLayer key={l.id} layer={l} meta={meta} vars={vars} obstacles={obstacles} />
           ))}
         </KLayer>
       )}
@@ -103,11 +106,13 @@ function StaticLayer({
   layer,
   asMask = false,
   meta,
+  vars,
   obstacles,
 }: {
   layer: TLayer;
   asMask?: boolean;
   meta?: GameMeta;
+  vars?: PlaceholderContext;
   obstacles?: TLayer[];
 }) {
   if (!layer.visible) return null;
@@ -121,7 +126,7 @@ function StaticLayer({
       opacity={layer.opacity}
       listening={false}
     >
-      <LayerInner layer={layer} asMask={asMask} meta={meta} obstacles={obstacles} />
+      <LayerInner layer={layer} asMask={asMask} meta={meta} vars={vars} obstacles={obstacles} />
     </Group>
   );
 }
