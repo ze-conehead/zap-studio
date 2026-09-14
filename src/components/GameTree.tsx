@@ -63,7 +63,6 @@ import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import { MetaSweepDialog } from "./MetaSweepDialog";
 import { PromptDialog, type PromptState } from "./PromptDialog";
-import { QuickImportDialog } from "./QuickImportDialog";
 
 type TreeFilter = "all" | "with" | "without";
 
@@ -132,7 +131,6 @@ export function GameTree({
 
   // Cover actions from the right-click menus.
   const [sweep, setSweep] = useState<SweepScope | null>(null);
-  const [quick, setQuick] = useState<SweepScope | null>(null);
   const [consoleLogos, setConsoleLogos] = useState(false);
   const [consoleLogo, setConsoleLogo] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
@@ -237,13 +235,11 @@ export function GameTree({
       label: isMovies ? t("Find covers for all movies") : t("Find covers for all games"),
       onSelect: () => setSweep(row),
     },
-    { label: t("Insert cover by URL"), onSelect: () => setQuick(row) },
   ];
 
   const globalMenuItems = (): ContextMenuItem[] => [
     { label: t("Find covers for all cards"), onSelect: () => setSweep({}) },
     { label: t("Find logos"), onSelect: () => setConsoleLogos(true) },
-    { label: t("Insert cover by URL"), onSelect: () => setQuick({}) },
   ];
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
@@ -730,17 +726,6 @@ export function GameTree({
             setConsoleLogo(null);
             void insertLogoForConsole(consoleLogo, url);
           }}
-        />
-      )}
-
-      {quick && (
-        <QuickImportDialog
-          open
-          onOpenChange={(o) => !o && setQuick(null)}
-          consoleId={quick.consoleId}
-          consoleName={quick.consoleName}
-          currentGameKey={currentGameKey}
-          onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
         />
       )}
 
