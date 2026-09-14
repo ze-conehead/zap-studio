@@ -231,15 +231,12 @@ export function GameTree({
     ...(logoSlot
       ? [{ label: t("Find logo"), onSelect: () => setConsoleLogo(row) }]
       : []),
-    {
-      label: isMovies ? t("Find covers for all movies") : t("Find covers for all games"),
-      onSelect: () => setSweep(row),
-    },
+    { label: t("Find covers"), onSelect: () => setSweep(row) },
   ];
 
   const globalMenuItems = (): ContextMenuItem[] => [
-    { label: t("Find covers for all cards"), onSelect: () => setSweep({}) },
     { label: t("Find logos"), onSelect: () => setConsoleLogos(true) },
+    { label: t("Find covers"), onSelect: () => setSweep({}) },
   ];
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
