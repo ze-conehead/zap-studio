@@ -346,19 +346,56 @@ function themeVars(theme: Theme): Record<string, string> {
 }
 
 const KEY = "stickerstudio:theme";
+// "Follow system": one theme per OS appearance instead of a single fixed
+// one. Picking a theme while this is on fills the slot matching that
+// theme's own mode — a dark theme becomes the dark-mode pick and vice
+// versa — so there is no separate "which one for which mode" UI.
+const AUTO_KEY = "stickerstudio:themeAuto";
+const DARK_KEY = "stickerstudio:themeDark";
+const LIGHT_KEY = "stickerstudio:themeLight";
+export const DEFAULT_LIGHT_THEME: ThemeId = "paper";
 const listeners = new Set<() => void>();
 
-function load(): ThemeId {
+const readId = (key: string, fallback: ThemeId): ThemeId => {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key);
     if (raw && raw in THEMES) return raw as ThemeId;
   } catch {
     /* storage unavailable */
   }
-  return DEFAULT_THEME;
+  return fallback;
+};
+
+const readAuto = (): boolean => {
+  try {
+    return localStorage.getItem(AUTO_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const darkQuery =
+  typeof window !== "undefined" && window.matchMedia
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : undefined;
+
+let auto = readAuto();
+
+function resolve(): ThemeId {
+  if (!auto) return readId(KEY, DEFAULT_THEME);
+  return darkQuery?.matches !== false
+    ? readId(DARK_KEY, DEFAULT_THEME)
+    : readId(LIGHT_KEY, DEFAULT_LIGHT_THEME);
 }
 
-let current: ThemeId = load();
+let current: ThemeId = resolve();
+
+darkQuery?.addEventListener("change", () => {
+  if (!auto) return;
+  current = resolve();
+  apply();
+  for (const fn of listeners) fn();
+});
 
 function apply(): void {
   try {
@@ -389,14 +426,43 @@ export function getTheme(): Theme {
 }
 
 export function setTheme(next: ThemeId): void {
-  if (next === current || !(next in THEMES)) return;
-  current = next;
+  if (!(next in THEMES)) return;
   try {
-    localStorage.setItem(KEY, next);
+    if (auto) {
+      localStorage.setItem(THEMES[next].mode === "dark" ? DARK_KEY : LIGHT_KEY, next);
+    } else {
+      localStorage.setItem(KEY, next);
+    }
   } catch {
     /* storage unavailable */
   }
+  const resolved = resolve();
+  if (resolved === current) return;
+  current = resolved;
   apply();
+  for (const fn of listeners) fn();
+}
+
+export const getThemeAuto = () => auto;
+
+export function setThemeAuto(on: boolean): void {
+  if (on === auto) return;
+  auto = on;
+  try {
+    localStorage.setItem(AUTO_KEY, on ? "1" : "0");
+    // Turning it on: seed the slot for the current appearance with the
+    // theme that is showing right now, so nothing visibly changes yet.
+    if (on) {
+      localStorage.setItem(THEMES[current].mode === "dark" ? DARK_KEY : LIGHT_KEY, current);
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  const resolved = resolve();
+  if (resolved !== current) {
+    current = resolved;
+    apply();
+  }
   for (const fn of listeners) fn();
 }
 

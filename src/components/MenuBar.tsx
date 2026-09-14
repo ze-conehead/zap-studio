@@ -30,7 +30,9 @@ import { useLang, useT } from "../i18n";
 import { useStore } from "../store";
 import {
   accentColor,
+  getThemeAuto,
   setTheme,
+  setThemeAuto,
   setUiFont,
   THEME_IDS,
   THEMES,
@@ -359,6 +361,10 @@ export function MenuBar({
 
       <Menu id="settings" label={t("Settings")}>
         <Sub label={t("Theme")} value={t(theme.name)}>
+          <Toggle checked={getThemeAuto()} onSelect={() => setThemeAuto(!getThemeAuto())}>
+            {t("Follow system light / dark")}
+          </Toggle>
+          <DropdownMenuSeparator />
           {THEME_IDS.filter((id) => THEMES[id].mode === "dark").map((id) => (
             <DropdownMenuItem
               key={id}

@@ -284,6 +284,7 @@ export const de: Record<string, string> = {
   Paper: "Papier",
   Sky: "Himmel",
   Rose: "Rosé",
+  "Follow system light / dark": "Hell / Dunkel vom System übernehmen",
 
   // ── Export labels ────────────────────────────────────────────────────────
   "PNG – final size ({w} × {h} mm)": "PNG – Endformat ({w} × {h} mm)",
