@@ -22,6 +22,7 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  "Search consoles & games": "Konsolen & Spiele durchsuchen",
   "Find covers for all games": "Cover für alle Spiele suchen",
   "Find covers for all movies": "Cover für alle Filme suchen",
   "Find covers for all cards": "Cover für alle Karten suchen",

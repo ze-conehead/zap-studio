@@ -259,6 +259,20 @@ export function GameTree({
   // hidden, and everything still shown is expanded.
   const [query, setQuery] = useState("");
   const q = normalizeTitle(query);
+  // ⌘/Ctrl F jumps to the search box from anywhere — including from
+  // another input, so it wins over the browser's find-in-page.
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Drag & drop ordering. Consoles move among consoles, games within their
   // own console (a game's key embeds its console, so it can't change one).
@@ -464,9 +478,14 @@ export function GameTree({
       <div className="relative mx-2 mb-1">
         <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
+          ref={searchRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            if (query) setQuery("");
+            else e.currentTarget.blur();
+          }}
           placeholder={t("Search …")}
           className="h-7 pl-7 pr-7 text-xs"
         />

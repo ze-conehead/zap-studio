@@ -22,6 +22,7 @@ export function ShortcutsDialog({
       title: t("Editor"),
       rows: [
         [`${MOD} N`, t("New card")],
+        [`${MOD} F`, t("Search consoles & games")],
         [`${MOD} Z`, t("Undo")],
         [`${MOD} ⇧ Z  /  ${MOD} Y`, t("Redo")],
         ["B", t("Show / hide bleed")],
