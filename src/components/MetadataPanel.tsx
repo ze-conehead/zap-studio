@@ -1,4 +1,4 @@
-import { Star, Trash2 } from "lucide-react";
+import { CloudDownload, Loader2, Star, Trash2 } from "lucide-react";
 import { useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { findGame } from "../data/catalog";
 import {
@@ -13,6 +13,7 @@ import {
   type GameMeta,
 } from "../gamelist";
 import { useT } from "../i18n";
+import { fetchGameMeta, fetchMovieMeta } from "../metaFetch";
 import { useStore } from "../store";
 import { getWorkspaceKind } from "../workspace";
 import { Button } from "./ui/button";
@@ -72,6 +73,28 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
     setDraft({ name: title });
   }
 
+  // "Fetch from TMDB / IGDB": whatever the service knows overwrites the
+  // matching fields; fields it didn't return are left as they are.
+  const isMovies = getWorkspaceKind() === "movies";
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  async function fetchMeta() {
+    setFetching(true);
+    setFetchError(null);
+    try {
+      const patch = await (isMovies ? fetchMovieMeta(title) : fetchGameMeta(title));
+      if (Object.keys(patch).length === 0) {
+        setFetchError(t("Found it, but it carries no usable details."));
+      } else {
+        update(patch);
+      }
+    } catch (e) {
+      setFetchError((e as Error).message);
+    } finally {
+      setFetching(false);
+    }
+  }
+
   const rating = draft.rating !== undefined ? Number(draft.rating) : undefined;
 
   return (
@@ -101,6 +124,20 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
           {t("No entry for this game yet – just fill it in, it saves automatically.")}
         </p>
       )}
+
+      <div className="flex flex-col gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start"
+          disabled={fetching}
+          onClick={() => void fetchMeta()}
+        >
+          {fetching ? <Loader2 className="animate-spin" /> : <CloudDownload />}
+          {isMovies ? t("Fetch from TMDB") : t("Fetch from IGDB")}
+        </Button>
+        {fetchError && <p className="text-xs text-destructive">{fetchError}</p>}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Label className="text-xs text-muted-foreground">{t("Rating")}</Label>

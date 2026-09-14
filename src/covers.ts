@@ -304,7 +304,7 @@ interface IgdbImage {
 }
 
 // Any IGDB v4 endpoint (games, screenshots, artworks …) with an Apicalypse body.
-async function igdbFetch<T>(endpoint: string, body: string): Promise<T> {
+export async function igdbFetch<T>(endpoint: string, body: string): Promise<T> {
   const token = await igdbToken();
   const { clientId } = getIgdbCreds();
   let res: Response;
@@ -415,7 +415,7 @@ interface TmdbMovie {
   release_date?: string;
 }
 
-async function tmdbFetch<T>(path: string): Promise<T> {
+export async function tmdbFetch<T>(path: string): Promise<T> {
   const key = getTmdbKey();
   const sep = path.includes("?") ? "&" : "?";
   let res: Response;
@@ -575,7 +575,7 @@ async function loadTree(repo: string): Promise<TreeEntry[]> {
 
 const COMBINING = new RegExp("[\\u0300-\\u036f]", "g");
 
-function normalizeTitle(s: string): string {
+export function normalizeTitle(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")

@@ -157,6 +157,14 @@ export const de: Record<string, string> = {
   "Version {v} available": "Version {v} verfügbar",
   "Open the release page": "Release-Seite öffnen",
   Dismiss: "Ausblenden",
+
+  // ── metaFetch.ts / MetadataPanel fetch button ───────────────────────
+  "Fetch from TMDB": "Aus TMDB übernehmen",
+  "Fetch from IGDB": "Aus IGDB übernehmen",
+  "Found it, but it carries no usable details.": "Gefunden, aber ohne verwertbare Angaben.",
+  "No TMDB API key yet — Settings ▸ API keys …": "Noch kein TMDB-API-Schlüssel – Einstellungen ▸ API-Schlüssel …",
+  "No IGDB credentials yet — Settings ▸ API keys …": "Noch keine IGDB-Zugangsdaten – Einstellungen ▸ API-Schlüssel …",
+  "Nothing found for “{title}”.": "Nichts gefunden für „{title}“.",
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
   "New card": "Neue Karte",
