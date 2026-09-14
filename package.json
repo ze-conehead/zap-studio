@@ -71,7 +71,7 @@
     "afterPack": "scripts/electron-afterpack.cjs",
     "mac": {
       "category": "public.app-category.graphics-design",
-      "target": ["dmg", "zip"]
+      "target": ["dmg"]
     },
     "win": { "target": ["portable"] },
     "linux": { "target": ["AppImage", "deb"], "category": "Graphics" }
