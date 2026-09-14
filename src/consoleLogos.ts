@@ -13,6 +13,7 @@ import { t } from "./i18n";
 import { urlToLayerSource } from "./image";
 import { loadProject, saveProject } from "./persist";
 import { loadLogoSlot } from "./templates";
+import type { ImageLayer, Layer } from "./types";
 
 export interface ConsoleRow {
   consoleId: string;
@@ -34,16 +35,24 @@ export async function consolesWithoutLogo(): Promise<ConsoleRow[]> {
   return rows;
 }
 
+/** Embeds `url` as a logo image layer, fitted into the "All consoles" slot. */
+export async function makeConsoleLogoLayer(
+  url: string,
+  slot: Layer | undefined,
+): Promise<ImageLayer> {
+  const img = await urlToLayerSource(url);
+  return fitImageToSlot(
+    { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
+    slot,
+  );
+}
+
 /** Embeds `url` and adds it as a logo image layer on the console's template. */
 export async function insertConsoleLogo(
   row: ConsoleRow,
   url: string,
 ): Promise<void> {
-  const img = await urlToLayerSource(url);
-  const layer = fitImageToSlot(
-    { ...makeImageLayer({ ...img, name: t("Logo") }), logo: true },
-    await loadLogoSlot(),
-  );
+  const layer = await makeConsoleLogoLayer(url, await loadLogoSlot());
   const existing = await loadProject(templateId(row.consoleId));
   const base = existing ?? newConsoleTemplate(row.consoleId, row.consoleName);
   await saveProject({

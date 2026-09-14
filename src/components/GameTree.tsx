@@ -57,6 +57,8 @@ import { getWorkspaceKind } from "../workspace";
 import { askConfirm } from "./ConfirmDialog";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
+import { makeConsoleLogoLayer, insertConsoleLogo } from "../consoleLogos";
+import { loadLogoSlot } from "../templates";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import { MetaSweepDialog } from "./MetaSweepDialog";
@@ -132,6 +134,7 @@ export function GameTree({
   const [sweep, setSweep] = useState<SweepScope | null>(null);
   const [quick, setQuick] = useState<SweepScope | null>(null);
   const [consoleLogos, setConsoleLogos] = useState(false);
+  const [consoleLogo, setConsoleLogo] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [metaSweep, setMetaSweep] = useState<{ consoleId: string; consoleName: string } | null>(null);
@@ -154,6 +157,42 @@ export function GameTree({
         });
       } else {
         await insertCover(row, url);
+      }
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
+  // "Find logo" on a console only makes sense once "All consoles" has a
+  // logo slot to drop it into. Read from the live editor while the global
+  // template is the open project (the slot may not be saved yet), else
+  // from disk.
+  const [logoSlot, setLogoSlot] = useState<Layer | undefined>(undefined);
+  useEffect(() => {
+    if (state.project.isGlobalTemplate) {
+      setLogoSlot(state.project.layers.find((l) => l.logoSlot));
+      return;
+    }
+    let alive = true;
+    void loadLogoSlot().then((slot) => {
+      if (alive) setLogoSlot(slot);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [state.project]);
+
+  // Add a logo to one console: straight into the live editor when that
+  // console's template is the one open, otherwise onto the template on disk.
+  const insertLogoForConsole = async (
+    row: { consoleId: string; consoleName: string },
+    url: string,
+  ) => {
+    try {
+      if (state.project.isTemplate && state.project.consoleId === row.consoleId) {
+        dispatch({ type: "ADD_LAYER", layer: await makeConsoleLogoLayer(url, logoSlot) });
+      } else {
+        await insertConsoleLogo(row, url);
       }
     } catch (e) {
       alert((e as Error).message);
@@ -187,15 +226,22 @@ export function GameTree({
     });
   };
 
-  // Per-console / per-game sweep: covers only. Logos are a global-template
-  // job now — one per console, see the global context menu below.
-  const sweepMenuItems = (scope: SweepScope): ContextMenuItem[] => [
-    { label: t("Find cover"), onSelect: () => setSweep(scope) },
-    { label: t("Insert cover by URL"), onSelect: () => setQuick(scope) },
+  // A console has no cover of its own: its menu sweeps the covers of its
+  // games, and — once "All consoles" has a logo slot — finds the console's
+  // logo.
+  const consoleMenuItems = (row: { consoleId: string; consoleName: string }): ContextMenuItem[] => [
+    ...(logoSlot
+      ? [{ label: t("Find logo"), onSelect: () => setConsoleLogo(row) }]
+      : []),
+    {
+      label: isMovies ? t("Find covers for all movies") : t("Find covers for all games"),
+      onSelect: () => setSweep(row),
+    },
+    { label: t("Insert cover by URL"), onSelect: () => setQuick(row) },
   ];
 
   const globalMenuItems = (): ContextMenuItem[] => [
-    { label: t("Find cover"), onSelect: () => setSweep({}) },
+    { label: t("Find covers for all cards"), onSelect: () => setSweep({}) },
     { label: t("Find logos"), onSelect: () => setConsoleLogos(true) },
     { label: t("Insert cover by URL"), onSelect: () => setQuick({}) },
   ];
@@ -485,7 +531,7 @@ export function GameTree({
                             label: t("Rename"),
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
-                          ...sweepMenuItems({ consoleId: c.id, consoleName: c.name }),
+                          ...consoleMenuItems({ consoleId: c.id, consoleName: c.name }),
                           {
                             label: isMovies
                               ? t("Fetch metadata for all movies")
@@ -651,6 +697,20 @@ export function GameTree({
         <ConsoleLogoDialog
           open
           onOpenChange={(o) => !o && setConsoleLogos(false)}
+        />
+      )}
+
+      {consoleLogo && (
+        <CoverSearchDialog
+          open
+          onOpenChange={(o) => !o && setConsoleLogo(null)}
+          consoleName={consoleLogo.consoleName}
+          gameTitle={consoleLogo.consoleName}
+          kind="logo"
+          onPick={(url) => {
+            setConsoleLogo(null);
+            void insertLogoForConsole(consoleLogo, url);
+          }}
         />
       )}
 
