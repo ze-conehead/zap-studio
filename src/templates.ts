@@ -1,6 +1,6 @@
 import { GLOBAL_TEMPLATE_ID } from "./factory";
 import { loadProject } from "./persist";
-import type { Layer, Project } from "./types";
+import type { Layer, Project, ShapeLayer } from "./types";
 
 /** An alpha mask plus where it came from, for the card's mask picker. */
 export interface MaskOption {
@@ -10,7 +10,7 @@ export interface MaskOption {
 
 // Only a shape can be an alpha frame — its box is the frame. Migration
 // strips the flag off anything else, this is the backstop.
-const isAlphaMask = (l: Layer) =>
+export const isAlphaMask = (l: Layer): l is ShapeLayer =>
   l.type === "shape" && !!(l.alphaMask || l.mainMask || l.shotMask);
 
 /** The alpha masks of one project, in layer order. */

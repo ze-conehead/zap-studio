@@ -49,7 +49,8 @@ import {
   flowLayout,
   obstacleBoxes,
 } from "../textFlow";
-import { resolveMask } from "../templates";
+import { isAlphaMask, resolveMask } from "../templates";
+import { sweepMaskMove } from "../maskSweep";
 import { useStore } from "../store";
 import { useAccent } from "../theme";
 import type {
@@ -555,12 +556,30 @@ function FaceStage({
                     else nodeRefs.current.delete(layer.id);
                   }}
                   onSelect={() => selectLayer(layer.id)}
-                  onChange={(patch, history) =>
-                    dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history })
-                  }
-                  onGroupChange={(patches, history) =>
-                    dispatch({ type: "PATCH_LAYERS", patches, history })
-                  }
+                  onChange={(patch, history) => {
+                    dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history });
+                    // A committed move/resize/rotate of an alpha mask (only
+                    // meaningful in a template) re-fits every image
+                    // elsewhere that points at it, so it stays aligned
+                    // instead of silently drifting out of the frame.
+                    if (history && project.isTemplate && isAlphaMask(layer)) {
+                      void sweepMaskMove(
+                        { ...layer, ...patch } as TShapeLayer,
+                        project.id,
+                      );
+                    }
+                  }}
+                  onGroupChange={(patches, history) => {
+                    dispatch({ type: "PATCH_LAYERS", patches, history });
+                    // groupTransform's own patches[0] is always the mask
+                    // itself (the group layer) — see applyGroup() below.
+                    if (history && project.isTemplate && isAlphaMask(layer)) {
+                      void sweepMaskMove(
+                        { ...layer, ...patches[0]?.patch } as TShapeLayer,
+                        project.id,
+                      );
+                    }
+                  }}
                 />
               ) : null;
 
