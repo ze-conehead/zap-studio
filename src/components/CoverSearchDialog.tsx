@@ -5,6 +5,7 @@ import {
   effectiveSource,
   getCoverSource,
   getIgdbCreds,
+  getLogoSource,
   getSgdbKey,
   getTmdbKey,
   isConfigured,
@@ -137,8 +138,10 @@ export function CoverSearchDialog({
 
   const logoMode = kind === "logo";
   const shotMode = kind === "screenshot";
+  // Local logos need no credentials — the whole credentials box goes away.
+  const localLogos = logoMode && getLogoSource() === "local";
   const src: KeyedSource = logoMode ? "sgdb" : (source as KeyedSource);
-  const configured = isConfigured(src);
+  const configured = localLogos || isConfigured(src);
   const active = logoMode ? "sgdb" : effectiveSource();
   const supported = active !== "libretro" || !!resolveLibretroRepo(consoleName);
   const term = query.trim() || gameTitle;
@@ -202,6 +205,11 @@ export function CoverSearchDialog({
           </Button>
         </div>
 
+        {localLogos ? (
+          <p className="rounded-md border bg-muted/40 p-2.5 text-xs text-muted-foreground">
+            {t("Searching your own logos (Settings ▸ Manage logos …). Switch “Logo source” to SteamGridDB to search online.")}
+          </p>
+        ) : (
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
           <div className={cn("flex flex-wrap gap-1", logoMode && "hidden")}>
             {PICKABLE.map((s) => (
@@ -303,6 +311,7 @@ export function CoverSearchDialog({
             </div>
           )}
         </div>
+        )}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
         {state.status === "loading" && (
@@ -333,7 +342,9 @@ export function CoverSearchDialog({
 
         {state.status === "done" && supported && state.results.length === 0 && (
           <p className="py-6 text-sm text-muted-foreground">
-            {logoMode
+            {localLogos
+              ? t("None of your logos matches \u201c{title}\u201d. Try another search term, or add files under Settings \u25b8 Manage logos \u2026", { title: term })
+              : logoMode
               ? t("No logos found for \u201c{title}\u201d.", { title: term })
               : shotMode
                 ? t("No screenshots found for \u201c{title}\u201d.", { title: term })

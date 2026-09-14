@@ -15,6 +15,7 @@
 
 import { desktopApiFetch, isDesktop } from "./desktop";
 import { t } from "./i18n";
+import { searchLocalLogos } from "./localLogos";
 import { getWorkspaceKind } from "./workspace";
 export interface CoverCandidate {
   title: string;
@@ -69,6 +70,7 @@ const IGDB_SECRET = "stickerstudio:igdbClientSecret";
 const IGDB_TOKEN = "stickerstudio:igdbToken";
 const TMDB_KEY = "stickerstudio:tmdbKey";
 const SOURCE_KEY = "stickerstudio:coverSource";
+const LOGO_SOURCE_KEY = "stickerstudio:logoSource";
 
 const ls = {
   get: (k: string) => {
@@ -120,6 +122,16 @@ export function getCoverSource(): CoverSource {
   return v === "igdb" || v === "igdb-shots" || v === "libretro" ? v : "sgdb";
 }
 export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
+
+// Where "Find logo(s)" looks: SteamGridDB's logo set, or the user's own
+// files from Settings ▸ Manage logos (src/localLogos.ts).
+export type LogoSource = "sgdb" | "local";
+export const LOGO_SOURCES: readonly LogoSource[] = ["sgdb", "local"];
+export function getLogoSource(): LogoSource {
+  return ls.get(LOGO_SOURCE_KEY) === "local" ? "local" : "sgdb";
+}
+export const setLogoSource = (s: LogoSource) => ls.set(LOGO_SOURCE_KEY, s);
+export const logoSourceLabel = (s: LogoSource) => (s === "local" ? t("Local") : "SteamGridDB");
 
 // What actually gets queried: the chosen source if it has credentials.
 // Games have a keyless fallback (libretro-thumbnails); movies have none —
@@ -202,6 +214,7 @@ interface SgdbLogo {
 export async function searchLogos(gameTitle: string): Promise<CoverCandidate[]> {
   const title = gameTitle.trim();
   if (!title) return [];
+  if (getLogoSource() === "local") return searchLocalLogos(title);
   const found = await sgdbFetch<{ data?: SgdbGame[] }>(
     `/search/autocomplete/${encodeURIComponent(title)}`,
   );

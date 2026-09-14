@@ -20,7 +20,11 @@ import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
 import {
   coverSourceLabel,
   getCoverSource,
+  getLogoSource,
+  LOGO_SOURCES,
+  logoSourceLabel,
   setCoverSource,
+  setLogoSource,
   type CoverSource,
 } from "../covers";
 import { getWorkspace, getWorkspaceKind, setWorkspaceFormat } from "../workspace";
@@ -65,6 +69,7 @@ interface Props {
   onOpenTemplates: () => void;
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
+  onOpenManageLogos: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
   onImportJson: (file: File) => void;
@@ -92,6 +97,7 @@ export function MenuBar({
   onOpenTemplates,
   onOpenApiKeys,
   onOpenCustomFonts,
+  onOpenManageLogos,
   onOpenWalkthrough,
   onOpenShortcuts,
   onImportJson,
@@ -105,6 +111,7 @@ export function MenuBar({
   const [open, setOpen] = useState<MenuId | null>(null);
   const file = useFileActions(canvas);
   const coverSource = getCoverSource();
+  const logoSource = getLogoSource();
   const backup = useBackupStatus();
   // `backup.lastAt` is what makes this re-evaluate after a run.
   const backupStale = backup.lastAt >= 0 && isStale();
@@ -450,12 +457,27 @@ export function MenuBar({
           </Sub>
         )}
 
+        <Sub label={t("Logo source")} value={logoSourceLabel(logoSource)}>
+          {LOGO_SOURCES.map((s) => (
+            <DropdownMenuItem
+              key={s}
+              onSelect={(e) => (e.preventDefault(), setLogoSource(s))}
+            >
+              {logoSourceLabel(s)}
+              <Check className={cn("ml-auto size-4", s !== logoSource && "opacity-0")} />
+            </DropdownMenuItem>
+          ))}
+        </Sub>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenApiKeys}>
           {t("API keys …")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenCustomFonts}>
           {t("Custom fonts …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenManageLogos}>
+          {t("Manage logos …")}
         </DropdownMenuItem>
       </Menu>
 

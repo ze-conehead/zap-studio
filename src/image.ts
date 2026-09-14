@@ -63,10 +63,12 @@ export async function urlToLayerSource(url: string): Promise<LoadedImage> {
   // "app-img:" is the desktop app's own scheme (registered in
   // electron/main.ts) that covers.ts's proxied() wraps cover/logo URLs in
   // for CORS-safe loading — trusted internal plumbing, not user input.
+  // "blob:" is a local-logo object URL (src/localLogos.ts) — same-origin.
   if (
     parsed.protocol !== "http:" &&
     parsed.protocol !== "https:" &&
-    parsed.protocol !== "app-img:"
+    parsed.protocol !== "app-img:" &&
+    parsed.protocol !== "blob:"
   ) {
     throw new Error(t("Only http(s) URLs are supported."));
   }

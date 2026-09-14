@@ -18,6 +18,7 @@ import { PreflightDialog } from "./components/PreflightDialog";
 import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
+import { ManageLogosDialog } from "./components/ManageLogosDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import {
@@ -369,6 +370,7 @@ function Shell({
   const [templates, setTemplates] = useState(false);
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
+  const [manageLogos, setManageLogos] = useState(false);
   // Opens by itself on a fresh install, then only from Extra ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
   // switch (see the StoreProvider key), so "seen on close" would show it
@@ -427,6 +429,7 @@ function Shell({
     onOpenTemplates: () => setTemplates(true),
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
+    onOpenManageLogos: () => setManageLogos(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
   };
@@ -505,6 +508,7 @@ function Shell({
       <TemplateDialog open={templates} onOpenChange={setTemplates} />
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
+      <ManageLogosDialog open={manageLogos} onOpenChange={setManageLogos} />
       <ShortcutsDialog open={shortcuts} onOpenChange={setShortcuts} />
       <WalkthroughDialog
         open={walkthrough}
