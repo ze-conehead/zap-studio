@@ -73,7 +73,7 @@
       "category": "public.app-category.graphics-design",
       "target": ["dmg", "zip"]
     },
-    "win": { "target": ["nsis"] },
+    "win": { "target": ["portable"] },
     "linux": { "target": ["AppImage", "deb"], "category": "Graphics" }
   }
 }

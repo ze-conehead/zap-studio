@@ -263,7 +263,7 @@ profile.
 
 ```bash
 npm run dev:electron   # development: Vite dev server + Electron window
-npm run dist           # build + installers into release/ (dmg/zip, nsis, AppImage/deb)
+npm run dist           # build + packages into release/ (dmg/zip, portable .exe, AppImage/deb)
 ```
 
 Two things can only be done by a real Node process with no CORS
