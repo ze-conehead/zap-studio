@@ -90,6 +90,11 @@ export interface CatalogOverlay {
   consoleNames: Record<string, string>; // seed consoleId -> renamed console label
   gameTitles: Record<string, string>; // "consoleId/gameId" -> renamed game title
   consoles: CatalogConsole[]; // fully custom consoles (id + name + games)
+  // Manual ordering (drag & drop in the tree). Ids not listed keep their
+  // natural place after the listed ones, so a new console or game simply
+  // appends until it is moved.
+  consoleOrder: string[];
+  gameOrder: Record<string, string[]>; // consoleId -> game ids
 }
 
 const EMPTY_OVERLAY: CatalogOverlay = {
@@ -98,6 +103,8 @@ const EMPTY_OVERLAY: CatalogOverlay = {
   consoleNames: {},
   gameTitles: {},
   consoles: [],
+  consoleOrder: [],
+  gameOrder: {},
 };
 
 /**
@@ -160,7 +167,20 @@ function normalizeOverlay(parsed: Partial<CatalogOverlay>): CatalogOverlay {
     consoleNames: parsed.consoleNames ?? {},
     gameTitles: parsed.gameTitles ?? {},
     consoles: Array.isArray(parsed.consoles) ? parsed.consoles : [],
+    consoleOrder: Array.isArray(parsed.consoleOrder) ? parsed.consoleOrder : [],
+    gameOrder: parsed.gameOrder ?? {},
   };
+}
+
+// Items whose id is in `order` come first, in that order; the rest follow
+// in their natural order.
+function sortByOrder<T extends { id: string }>(items: T[], order: string[]): T[] {
+  if (!order.length) return items;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return items
+    .map((it, i) => ({ it, key: rank.get(it.id) ?? order.length + i }))
+    .sort((a, b) => a.key - b.key)
+    .map((x) => x.it);
 }
 
 const OVERLAY_KEY = `stickerstudio:catalogOverlay${wsSuffix()}`;
@@ -217,7 +237,8 @@ export function replaceCatalogOverlay(raw: string): void {
 const SEED_IDS = new Set(SEED.map((c) => c.id));
 
 export function getCatalog(): CatalogConsole[] {
-  const { added, removed, consoleNames, gameTitles, consoles } = loadCatalogOverlay();
+  const { added, removed, consoleNames, gameTitles, consoles, consoleOrder, gameOrder } =
+    loadCatalogOverlay();
   const retitle = (cId: string, g: CatalogGame) => ({
     id: g.id,
     title: gameTitles[`${cId}/${g.id}`] ?? g.title,
@@ -243,7 +264,23 @@ export function getCatalog(): CatalogConsole[] {
       games: c.games.map((g) => retitle(c.id, g)),
     }));
 
-  return [...seed, ...custom];
+  return sortByOrder([...seed, ...custom], consoleOrder).map((c) => ({
+    ...c,
+    games: sortByOrder(c.games, gameOrder[c.id] ?? []),
+  }));
+}
+
+// Drag & drop in the tree: `ids` is the complete new order.
+export function reorderConsoles(ids: string[]): void {
+  const overlay = loadCatalogOverlay();
+  overlay.consoleOrder = ids;
+  saveOverlay(overlay);
+}
+
+export function reorderGames(consoleId: string, ids: string[]): void {
+  const overlay = loadCatalogOverlay();
+  overlay.gameOrder = { ...overlay.gameOrder, [consoleId]: ids };
+  saveOverlay(overlay);
 }
 
 export function findGame(gameKey: string | undefined) {
@@ -290,6 +327,8 @@ export function removeConsole(consoleId: string): void {
   for (const k of Object.keys(overlay.gameTitles)) {
     if (k.startsWith(`${consoleId}/`)) delete overlay.gameTitles[k];
   }
+  overlay.consoleOrder = overlay.consoleOrder.filter((id) => id !== consoleId);
+  delete overlay.gameOrder[consoleId];
   saveOverlay(overlay);
 }
 

@@ -10,7 +10,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,6 +38,8 @@ import {
   removeGame,
   renameConsole,
   renameGame,
+  reorderConsoles,
+  reorderGames,
   subscribeCatalog,
 } from "../data/catalog";
 import { fitImageToMask, makeImageLayer } from "../factory";
@@ -211,6 +213,46 @@ export function GameTree({
   // hidden, and everything still shown is expanded.
   const [query, setQuery] = useState("");
   const q = normalizeTitle(query);
+
+  // Drag & drop ordering. Consoles move among consoles, games within their
+  // own console (a game's key embeds its console, so it can't change one).
+  // Native HTML5 DnD, same shape as LayerList. The drop rebuilds the full
+  // order from the catalogue, so it also works while a search or filter is
+  // hiding some rows.
+  type Drag = { kind: "console"; id: string } | { kind: "game"; consoleId: string; id: string };
+  const drag = useRef<Drag | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [over, setOver] = useState<{ id: string; after: boolean } | null>(null);
+  const resetDrag = () => {
+    drag.current = null;
+    setDragging(null);
+    setOver(null);
+  };
+  const moved = (ids: string[], src: string, target: string, after: boolean) => {
+    const rest = ids.filter((id) => id !== src);
+    const at = rest.indexOf(target);
+    if (at < 0) return ids;
+    rest.splice(after ? at + 1 : at, 0, src);
+    return rest;
+  };
+  const dropConsole = (targetId: string, after: boolean) => {
+    const d = drag.current;
+    if (d?.kind !== "console" || d.id === targetId) return;
+    reorderConsoles(moved(catalog.map((c) => c.id), d.id, targetId, after));
+  };
+  const dropGame = (consoleId: string, targetId: string, after: boolean) => {
+    const d = drag.current;
+    if (d?.kind !== "game" || d.consoleId !== consoleId || d.id === targetId) return;
+    const c = catalog.find((x) => x.id === consoleId);
+    if (!c) return;
+    reorderGames(consoleId, moved(c.games.map((g) => g.id), d.id, targetId, after));
+  };
+  const overClass = (id: string) =>
+    over?.id === id ? (over.after ? "border-b-2 border-b-primary" : "border-t-2 border-t-primary") : "";
+  const half = (e: React.DragEvent) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return e.clientY > r.top + r.height / 2;
+  };
 
   // Which games have an image — from IndexedDB, refreshed on navigation and
   // catalogue / current-image changes. The open design is overlaid live.
@@ -407,9 +449,28 @@ export function GameTree({
                 >
                   <div
                     className={cn(
-                      "flex min-w-0 items-center gap-1 rounded-md",
+                      "flex min-w-0 items-center gap-1 rounded-md border border-transparent",
                       activeConsoleId === c.id && "bg-primary/15 ring-1 ring-primary",
+                      dragging === c.id && "opacity-40",
+                      overClass(c.id),
                     )}
+                    draggable
+                    onDragStart={(e) => {
+                      drag.current = { kind: "console", id: c.id };
+                      setDragging(c.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={resetDrag}
+                    onDragOver={(e) => {
+                      if (drag.current?.kind !== "console" || drag.current.id === c.id) return;
+                      e.preventDefault();
+                      setOver({ id: c.id, after: half(e) });
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      dropConsole(c.id, half(e));
+                      resetDrag();
+                    }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       setMenu({
@@ -500,12 +561,32 @@ export function GameTree({
                         <button
                           key={g.id}
                           className={cn(
-                            "flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] transition-colors",
+                            "flex w-full min-w-0 items-center gap-2 rounded-md border border-transparent px-1.5 py-1.5 text-left text-[13px] transition-colors",
                             active
                               ? "bg-primary font-semibold text-primary-foreground"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            dragging === key && "opacity-40",
+                            overClass(key),
                           )}
                           title={t("{title} (right-click: rename / remove)", { title: g.title })}
+                          draggable
+                          onDragStart={(e) => {
+                            drag.current = { kind: "game", consoleId: c.id, id: g.id };
+                            setDragging(key);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragEnd={resetDrag}
+                          onDragOver={(e) => {
+                            const d = drag.current;
+                            if (d?.kind !== "game" || d.consoleId !== c.id || d.id === g.id) return;
+                            e.preventDefault();
+                            setOver({ id: key, after: half(e) });
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            dropGame(c.id, g.id, half(e));
+                            resetDrag();
+                          }}
                           onClick={() => onPickGame(c.name, g.title, key)}
                           onContextMenu={(e) => {
                             e.preventDefault();
