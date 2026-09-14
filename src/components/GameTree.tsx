@@ -7,6 +7,8 @@ import {
   Globe,
   ListFilter,
   Plus,
+  Search,
+  X,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
@@ -21,8 +23,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { normalizeTitle } from "../covers";
 import {
   addGame,
   gameKeyOf,
@@ -200,6 +204,11 @@ export function GameTree({
 
   const [filter, setFilter] = useState<TreeFilter>(loadTreeFilter);
   const [imaged, setImaged] = useState<Set<string>>(() => new Set());
+  // Title search: a console whose own name matches shows all its games;
+  // otherwise only the games that match. Consoles with nothing left are
+  // hidden, and everything still shown is expanded.
+  const [query, setQuery] = useState("");
+  const q = normalizeTitle(query);
 
   // Which games have an image — from IndexedDB, refreshed on navigation and
   // catalogue / current-image changes. The open design is overlaid live.
@@ -230,13 +239,17 @@ export function GameTree({
     (filter === "with" ? gameHasImage(gameKey) : !gameHasImage(gameKey));
 
   const countText = (shown: number, total: number) =>
-    filter === "all" ? `(${total})` : `(${shown}/${total})`;
+    filter === "all" && !q ? `(${total})` : `(${shown}/${total})`;
+
+  const consoleHit = (c: { name: string }) => !!q && normalizeTitle(c.name).includes(q);
+  const visibleGames = (c: (typeof catalog)[number]) =>
+    c.games
+      .map((g, i) => ({ g, i }))
+      .filter(({ g }) => matchesFilter(gameKeyOf(c, g)))
+      .filter(({ g }) => !q || consoleHit(c) || normalizeTitle(g.title).includes(q));
 
   const totalGames = catalog.reduce((n, c) => n + c.games.length, 0);
-  const shownGames = catalog.reduce(
-    (n, c) => n + c.games.filter((g) => matchesFilter(gameKeyOf(c, g))).length,
-    0,
-  );
+  const shownGames = catalog.reduce((n, c) => n + visibleGames(c).length, 0);
 
   const expand = (consoleId: string) =>
     setOpen((o) => ({ ...o, [consoleId]: true }));
@@ -358,13 +371,32 @@ export function GameTree({
         </DropdownMenu>
       </div>
 
+      <div className="relative mx-2 mb-1">
+        <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+          placeholder={t("Search …")}
+          className="h-7 pl-7 pr-7 text-xs"
+        />
+        {query && (
+          <button
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            title={t("Clear")}
+            onClick={() => setQuery("")}
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
       <ScrollArea className="min-h-0 flex-1">
         <ul className="px-2">
           {catalog.map((c) => {
-            const expanded = !!open[c.id];
-            const games = c.games
-              .map((g, i) => ({ g, i }))
-              .filter(({ g }) => matchesFilter(gameKeyOf(c, g)));
+            const games = visibleGames(c);
+            if (q && !consoleHit(c) && games.length === 0) return null;
+            const expanded = q ? true : !!open[c.id];
             return (
               <li key={c.id}>
                 <Collapsible

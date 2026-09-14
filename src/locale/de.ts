@@ -356,6 +356,8 @@ export const de: Record<string, string> = {
 
   // ── GameTree ─────────────────────────────────────────────────────────────
   "All games": "Alle Spiele",
+  "Search …": "Suchen …",
+  Clear: "Leeren",
   "With image only": "Nur mit Bild",
   "Without image only": "Nur ohne Bild",
   "Consoles & games": "Konsolen & Spiele",
