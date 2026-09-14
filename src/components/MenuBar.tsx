@@ -62,6 +62,7 @@ interface Props {
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
   onOpenWalkthrough: () => void;
+  onOpenShortcuts: () => void;
   onImportJson: (file: File) => void;
 }
 
@@ -87,6 +88,7 @@ export function MenuBar({
   onOpenApiKeys,
   onOpenCustomFonts,
   onOpenWalkthrough,
+  onOpenShortcuts,
   onImportJson,
 }: Props) {
   const t = useT();
@@ -330,6 +332,10 @@ export function MenuBar({
       <Menu id="extra" label={t("Extra")}>
         <DropdownMenuItem onClick={onOpenWalkthrough}>
           {t("Walkthrough …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenShortcuts} className="justify-between">
+          {t("Keyboard shortcuts …")}
+          <span className="text-xs text-muted-foreground">?</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenDemo}>
           {t("Demo mode (card packs)")}

@@ -19,6 +19,7 @@ import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
+import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import {
   WalkthroughDialog,
   walkthroughSeen,
@@ -371,6 +372,7 @@ function Shell({
   // switch (see the StoreProvider key), so "seen on close" would show it
   // again after the tour's own jump buttons navigate away.
   const [walkthrough, setWalkthrough] = useState(() => !walkthroughSeen());
+  const [shortcuts, setShortcuts] = useState(false);
   useEffect(() => {
     if (walkthrough) markWalkthroughSeen();
   }, [walkthrough]);
@@ -394,6 +396,8 @@ function Shell({
         guides.toggle();
       } else if (key === "p") {
         setPreview(true);
+      } else if (e.key === "?") {
+        setShortcuts(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -421,6 +425,7 @@ function Shell({
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
     onOpenWalkthrough: () => setWalkthrough(true),
+    onOpenShortcuts: () => setShortcuts(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -497,6 +502,7 @@ function Shell({
       <TemplateDialog open={templates} onOpenChange={setTemplates} />
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
+      <ShortcutsDialog open={shortcuts} onOpenChange={setShortcuts} />
       <WalkthroughDialog
         open={walkthrough}
         onOpenChange={setWalkthrough}
