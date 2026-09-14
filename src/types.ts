@@ -1,5 +1,6 @@
 import type { FormatId } from "./formats";
 import type { ImageAdjust } from "./imageAdjust";
+import type { PlaceholderKey } from "./placeholders";
 
 export type LayerType =
   | "image"
@@ -141,6 +142,11 @@ export interface TextLayer extends BaseLayer {
   flow?: boolean;
   height?: number; // frame height, flow only
   flowGap?: number; // clearance kept around each frame, in canvas px
+  // A Metadata layer: shows one metadata value picked from a dropdown
+  // instead of free text. `text` is kept as "{metaField}" so every text
+  // pipeline (measuring, flow, export) works unchanged; a card whose entry
+  // lacks the value draws nothing rather than the literal token.
+  metaField?: PlaceholderKey;
 }
 
 export interface ShapeLayer extends BaseLayer {

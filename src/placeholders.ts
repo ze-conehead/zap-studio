@@ -6,7 +6,9 @@
 
 import { findGame } from "./data/catalog";
 import { formatReleaseDate, ratingOutOfFive, releaseYear, type GameMeta } from "./gamelist";
+import { t } from "./i18n";
 import type { Project } from "./types";
+import type { WorkspaceKind } from "./workspace";
 
 export interface PlaceholderContext {
   title?: string; // the game / movie
@@ -32,9 +34,66 @@ export const PLACEHOLDER_KEYS = [
   "studio",
   "runtime",
   "desc",
+  "age",
+  "series",
+  "alt",
+  "tagline",
+  "cast",
+  "country",
+  "themes",
+  "modes",
+  "perspective",
+  "engine",
+  "storyline",
+  "url",
+  "votes",
 ] as const;
 
 export type PlaceholderKey = (typeof PLACEHOLDER_KEYS)[number];
+
+// Keys that only mean something for one workspace kind.
+const GAMES_ONLY: PlaceholderKey[] = ["developer", "publisher", "players", "modes", "perspective", "engine", "storyline"];
+const MOVIES_ONLY: PlaceholderKey[] = ["director", "studio", "runtime", "tagline", "cast", "country"];
+
+export function placeholderKeysFor(kind: WorkspaceKind): PlaceholderKey[] {
+  const hidden = kind === "movies" ? GAMES_ONLY : MOVIES_ONLY;
+  return PLACEHOLDER_KEYS.filter((k) => !hidden.includes(k));
+}
+
+// Human label for a key, as the picker and the Metadata layer show it.
+export function placeholderLabel(key: PlaceholderKey, kind: WorkspaceKind): string {
+  const movies = kind === "movies";
+  switch (key) {
+    case "title": return t("Title");
+    case "console": return movies ? t("Collection") : t("Console");
+    case "index": return movies ? t("Number in collection") : t("Number in console");
+    case "count": return movies ? t("Movies in collection") : t("Games in console");
+    case "year": return t("Release year");
+    case "date": return t("Release date");
+    case "genre": return t("Genre");
+    case "developer": return t("Developer");
+    case "publisher": return t("Publisher");
+    case "players": return t("Players");
+    case "rating": return t("Rating");
+    case "director": return t("Director");
+    case "studio": return t("Studio");
+    case "runtime": return t("Runtime");
+    case "desc": return t("Description");
+    case "age": return t("Age rating");
+    case "series": return movies ? t("Collection / series") : t("Series / franchise");
+    case "alt": return movies ? t("Original title") : t("Alternative title");
+    case "tagline": return t("Tagline");
+    case "cast": return t("Cast");
+    case "country": return t("Country");
+    case "themes": return movies ? t("Keywords") : t("Themes");
+    case "modes": return t("Game modes");
+    case "perspective": return t("Perspective");
+    case "engine": return t("Engine");
+    case "storyline": return t("Storyline");
+    case "url": return t("Website");
+    case "votes": return t("Votes");
+  }
+}
 
 export const hasPlaceholders = (text: string) => /\{[a-z]+\}/i.test(text);
 
@@ -71,8 +130,39 @@ function value(key: string, ctx: PlaceholderContext): string | undefined {
       return m?.runtime;
     case "desc":
       return m?.desc;
+    case "age":
+      return m?.ageRating;
+    case "series":
+      return m?.series;
+    case "alt":
+      return m?.altTitle;
+    case "tagline":
+      return m?.tagline;
+    case "cast":
+      return m?.cast;
+    case "country":
+      return m?.country;
+    case "themes":
+      return m?.themes;
+    case "modes":
+      return m?.modes;
+    case "perspective":
+      return m?.perspective;
+    case "engine":
+      return m?.engine;
+    case "storyline":
+      return m?.storyline;
+    case "url":
+      return m?.url;
+    case "votes":
+      return m?.ratingCount;
   }
   return undefined;
+}
+
+/** The value one placeholder key resolves to, or undefined when unknown. */
+export function placeholderValue(key: PlaceholderKey, ctx: PlaceholderContext | undefined) {
+  return ctx ? value(key, ctx) : undefined;
 }
 
 export function resolvePlaceholders(text: string, ctx: PlaceholderContext | undefined): string {

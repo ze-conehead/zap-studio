@@ -55,6 +55,7 @@ import {
 import { isAlphaMask, resolveMask } from "../templates";
 import {
   placeholderContextFor,
+  placeholderValue,
   resolvePlaceholders,
   type PlaceholderContext,
 } from "../placeholders";
@@ -1032,8 +1033,12 @@ export function LayerInner({
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
   if (layer.type === "qr") return <QrInner layer={layer} gco={gco} vars={vars} />;
   // {title} & co. resolve here, so measuring, flowing and exporting all see
-  // the same string — the stored layer keeps the raw text.
-  const text = resolvePlaceholders(layer.text, vars);
+  // the same string — the stored layer keeps the raw text. A Metadata layer
+  // whose card has no value for its field draws nothing; only the global
+  // template (no card to preview) shows the token so the layer stays visible.
+  const text = layer.metaField
+    ? (placeholderValue(layer.metaField, vars) ?? (vars?.title === undefined ? layer.text : ""))
+    : resolvePlaceholders(layer.text, vars);
   const shown = text === layer.text ? layer : { ...layer, text };
   return <TextInner layer={shown} gco={gco} obstacles={obstacles} />;
 }

@@ -69,7 +69,7 @@ export function MetaSweepDialog({
     for (const title of todo) {
       if (cancelled.current) break;
       try {
-        const patch = await (isMovies ? fetchMovieMeta(title) : fetchGameMeta(title));
+        const patch = await (isMovies ? fetchMovieMeta(title) : fetchGameMeta(title, consoleName));
         if (Object.keys(patch).length) {
           upsertGameMeta(consoleId, title, patch);
           good++;

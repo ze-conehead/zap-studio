@@ -41,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PLACEHOLDER_KEYS, type PlaceholderKey } from "../placeholders";
+import { placeholderKeysFor, placeholderLabel, type PlaceholderKey } from "../placeholders";
 import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
@@ -1520,21 +1520,52 @@ function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) {
     }
   };
 
+  const kind = getWorkspaceKind();
   return (
     <>
-      <Field label={t("Text")}>
-        <Textarea
-          rows={2}
-          value={layer.text}
-          onChange={(e) => patch({ text: e.target.value }, false)}
-          onBlur={(e) => patch({ text: e.target.value })}
-        />
-        <PlaceholderPicker
-          onPick={(key) =>
-            patch({ text: `${layer.text}${layer.text && !/\s$/.test(layer.text) ? " " : ""}{${key}}` })
-          }
-        />
-      </Field>
+      {layer.metaField ? (
+        <Field label={t("Metadata")}>
+          <Select
+            value={layer.metaField}
+            onValueChange={(v) => {
+              const key = v as PlaceholderKey;
+              patch({
+                metaField: key,
+                text: `{${key}}`,
+                name: `${t("Metadata")} · ${placeholderLabel(key, kind)}`,
+              });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {placeholderKeysFor(kind).map((k) => (
+                <SelectItem key={k} value={k}>
+                  {placeholderLabel(k, kind)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {t("Shows this value from the card's metadata; nothing is drawn where the entry has none.")}
+          </p>
+        </Field>
+      ) : (
+        <Field label={t("Text")}>
+          <Textarea
+            rows={2}
+            value={layer.text}
+            onChange={(e) => patch({ text: e.target.value }, false)}
+            onBlur={(e) => patch({ text: e.target.value })}
+          />
+          <PlaceholderPicker
+            onPick={(key) =>
+              patch({ text: `${layer.text}${layer.text && !/\s$/.test(layer.text) ? " " : ""}{${key}}` })
+            }
+          />
+        </Field>
+      )}
 
       <Field label={t("Font")}>
         <div className="flex gap-1.5">
@@ -1850,27 +1881,7 @@ const round = (n: number, d = 0) => {
 // "{title}", "{year}" … — filled in per card at render time (src/placeholders.ts).
 function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) => void }) {
   const t = useT();
-  const movies = getWorkspaceKind() === "movies";
-  const label: Record<PlaceholderKey, string> = {
-    title: t("Title"),
-    console: movies ? t("Collection") : t("Console"),
-    index: movies ? t("Number in collection") : t("Number in console"),
-    count: movies ? t("Movies in collection") : t("Games in console"),
-    year: t("Release year"),
-    date: t("Release date"),
-    genre: t("Genre"),
-    developer: t("Developer"),
-    publisher: t("Publisher"),
-    players: t("Players"),
-    rating: t("Rating"),
-    director: t("Director"),
-    studio: t("Studio"),
-    runtime: t("Runtime"),
-    desc: t("Description"),
-  };
-  const hidden: PlaceholderKey[] = movies
-    ? ["developer", "publisher", "players"]
-    : ["director", "studio", "runtime"];
+  const kind = getWorkspaceKind();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -1879,9 +1890,9 @@ function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) => void }
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-        {PLACEHOLDER_KEYS.filter((k) => !hidden.includes(k)).map((k) => (
+        {placeholderKeysFor(kind).map((k) => (
           <DropdownMenuItem key={k} onClick={() => onPick(k)} className="justify-between gap-4">
-            {label[k]}
+            {placeholderLabel(k, kind)}
             <span className="font-mono text-[11px] text-muted-foreground">{`{${k}}`}</span>
           </DropdownMenuItem>
         ))}

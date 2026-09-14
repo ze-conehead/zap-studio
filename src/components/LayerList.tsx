@@ -3,6 +3,7 @@ import {
   Copy,
   CornerDownRight,
   Crop,
+  Database,
   Eye,
   EyeOff,
   GitBranch,
@@ -101,7 +102,9 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
                     ? Award
                     : l.type === "qr"
                       ? QrCode
-                      : Type;
+                      : l.type === "text" && l.metaField
+                        ? Database
+                        : Type;
           // A case that the metadata doesn't select still prints nothing —
           // dim it, but keep it clickable so it can be edited.
           const dimmed = !!l.condId && !live.has(l.id);

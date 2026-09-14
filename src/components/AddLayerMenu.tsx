@@ -2,6 +2,7 @@ import {
   Award,
   CalendarDays,
   Circle,
+  Database,
   Crop,
   GitBranch,
   ImageIcon,
@@ -42,6 +43,7 @@ import {
   makeAlphaMaskLayer,
   makeLogoSlotLayer,
   makeMetaBadgeLayer,
+  makeMetaTextLayer,
   makeQrLayer,
   makeShapeLayer,
   makeTextLayer,
@@ -164,6 +166,11 @@ export function AddLayerMenu() {
             onClick={() => dispatch({ type: "ADD_LAYER", layer: makeTextLayer() })}
           >
             <Type /> {t("Text")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => dispatch({ type: "ADD_LAYER", layer: makeMetaTextLayer() })}
+          >
+            <Database /> {t("Metadata")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => dispatch({ type: "ADD_LAYER", layer: makeQrLayer() })}

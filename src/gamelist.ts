@@ -22,6 +22,22 @@ export interface GameMeta {
   director?: string;
   studio?: string;
   runtime?: string; // free text, e.g. "118 min"
+  // Extra details the IGDB / TMDB fetch fills in (all free text, comma-
+  // separated where a service returns lists). Shown by Metadata layers and
+  // {placeholders}; editable in the Metadata panel like everything else.
+  ageRating?: string; // "PEGI 12", "USK 16", "FSK 12" …
+  series?: string; // franchise / collection ("The Legend of Zelda")
+  url?: string; // official site, else Wikipedia / IMDb
+  altTitle?: string; // alternative / original title
+  themes?: string; // IGDB themes / TMDB keywords
+  modes?: string; // game modes: Single player, Co-op … (games)
+  perspective?: string; // player perspective (games)
+  engine?: string; // game engine (games)
+  storyline?: string; // IGDB storyline (games)
+  tagline?: string; // TMDB tagline (movies)
+  cast?: string; // top-billed cast (movies)
+  country?: string; // production countries (movies)
+  ratingCount?: string; // how many votes the rating rests on
 }
 
 // Namespaced per workspace ("" suffix for the original), so a project's

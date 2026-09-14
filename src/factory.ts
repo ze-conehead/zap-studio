@@ -4,6 +4,7 @@ import { CANVAS, TRIM_RECT } from "./card";
 import { FONTS } from "./fonts";
 import { getFormatId, isCard } from "./formats";
 import { wsSuffix } from "./workspace";
+import type { PlaceholderKey } from "./placeholders";
 import type {
   BackFace,
   BackgroundLayer,
@@ -171,6 +172,17 @@ export function makeTextLayer(text = t("Your text")): TextLayer {
     stroke: "#000000",
     strokeWidth: 0,
     width: TRIM_RECT.w * 0.8,
+  };
+}
+
+// A Metadata layer: a text layer bound to one metadata field.
+export function makeMetaTextLayer(field: PlaceholderKey = "title"): TextLayer {
+  return {
+    ...makeTextLayer(`{${field}}`),
+    name: t("Metadata"),
+    metaField: field,
+    fontSize: 32,
+    bold: false,
   };
 }
 

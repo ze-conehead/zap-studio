@@ -1,4 +1,4 @@
-import { CloudDownload, Loader2, Star, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, CloudDownload, Loader2, Star, Trash2 } from "lucide-react";
 import { useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { findGame } from "../data/catalog";
 import {
@@ -46,12 +46,21 @@ export function MetadataPanel() {
     <GameMetaForm
       key={`${consoleId}/${title}`}
       consoleId={consoleId}
+      consoleName={found?.console.name ?? project.consoleName}
       title={title}
     />
   );
 }
 
-function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }) {
+function GameMetaForm({
+  consoleId,
+  consoleName,
+  title,
+}: {
+  consoleId: string;
+  consoleName?: string;
+  title: string;
+}) {
   const t = useT();
   const games = loadGamelist(consoleId);
   const saved = findMeta(games, title);
@@ -82,7 +91,9 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
     setFetching(true);
     setFetchError(null);
     try {
-      const patch = await (isMovies ? fetchMovieMeta(title) : fetchGameMeta(title));
+      const patch = await (isMovies
+        ? fetchMovieMeta(title)
+        : fetchGameMeta(title, consoleName));
       if (Object.keys(patch).length === 0) {
         setFetchError(t("Found it, but it carries no usable details."));
       } else {
@@ -232,9 +243,91 @@ function GameMetaForm({ consoleId, title }: { consoleId: string; title: string }
           </Field>
         </>
       )}
+
+      <MoreDetails draft={draft} update={update} movies={getWorkspaceKind() === "movies"} />
     </section>
   );
 }
+
+// The extra fields the IGDB / TMDB fetch fills in. Folded away by default
+// — most cards only ever show a couple of them via Metadata layers.
+function MoreDetails({
+  draft,
+  update,
+  movies,
+}: {
+  draft: GameMeta;
+  update: (patch: Partial<GameMeta>) => void;
+  movies: boolean;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const filled = MORE_FIELDS.filter((f) => !f.only || f.only === (movies ? "movies" : "games"))
+    .filter((f) => !!draft[f.key]).length;
+  const text = (key: keyof GameMeta, label: string, placeholder?: string, rows?: number) => (
+    <Field key={key} label={label}>
+      {rows ? (
+        <Textarea
+          value={draft[key] ?? ""}
+          onChange={(e) => update({ [key]: e.target.value || undefined })}
+          rows={rows}
+        />
+      ) : (
+        <Input
+          value={draft[key] ?? ""}
+          onChange={(e) => update({ [key]: e.target.value || undefined })}
+          placeholder={placeholder}
+        />
+      )}
+    </Field>
+  );
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        className="flex items-center gap-1 self-start text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+        {t("More details")}
+        {filled > 0 && <span className="font-normal normal-case tracking-normal">({filled})</span>}
+      </button>
+      {open && (
+        <>
+          {text("ageRating", t("Age rating"), movies ? t("e.g. FSK 12") : t("e.g. PEGI 12"))}
+          {text("series", movies ? t("Collection / series") : t("Series / franchise"))}
+          {text("altTitle", movies ? t("Original title") : t("Alternative title"))}
+          {movies && text("tagline", t("Tagline"))}
+          {movies && text("cast", t("Cast"))}
+          {movies && text("country", t("Country"))}
+          {text("themes", movies ? t("Keywords") : t("Themes"))}
+          {!movies && text("modes", t("Game modes"))}
+          {!movies && text("perspective", t("Perspective"))}
+          {!movies && text("engine", t("Engine"))}
+          {!movies && text("storyline", t("Storyline"), undefined, 4)}
+          {text("url", t("Website"), "https://…")}
+          {text("ratingCount", t("Votes"))}
+        </>
+      )}
+    </div>
+  );
+}
+
+const MORE_FIELDS: { key: keyof GameMeta; only?: "games" | "movies" }[] = [
+  { key: "ageRating" },
+  { key: "series" },
+  { key: "altTitle" },
+  { key: "tagline", only: "movies" },
+  { key: "cast", only: "movies" },
+  { key: "country", only: "movies" },
+  { key: "themes" },
+  { key: "modes", only: "games" },
+  { key: "perspective", only: "games" },
+  { key: "engine", only: "games" },
+  { key: "storyline", only: "games" },
+  { key: "url" },
+  { key: "ratingCount" },
+];
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
