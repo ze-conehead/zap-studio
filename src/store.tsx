@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { t } from "./i18n";
+import { copyStyle, pasteStyle } from "./layerStyle";
 import { isBackground, isCondition, makeBackFace, newProject } from "./factory";
 import { getFormat } from "./formats";
 import { saveProject } from "./persist";
@@ -421,6 +422,32 @@ export function StoreProvider({
       } else if (mod && key === "d" && id) {
         e.preventDefault();
         dispatch({ type: "DUPLICATE_LAYER", id });
+      } else if (mod && e.shiftKey && (key === "h" || key === "l") && id) {
+        // Hide / lock the selected layer — a locked one can still be hidden.
+        const st = latest.current;
+        const ls = st.side === "back" ? st.project.back?.layers ?? [] : st.project.layers;
+        const l = ls.find((x) => x.id === id);
+        if (!l || isBackground(l)) return;
+        e.preventDefault();
+        dispatch({
+          type: "PATCH_LAYER",
+          id,
+          patch: key === "h" ? { visible: !l.visible } : { locked: !l.locked },
+        });
+      } else if (mod && e.altKey && key === "c" && id) {
+        const st = latest.current;
+        const ls = st.side === "back" ? st.project.back?.layers ?? [] : st.project.layers;
+        const l = ls.find((x) => x.id === id);
+        if (!l) return;
+        e.preventDefault();
+        copyStyle(l);
+      } else if (mod && e.altKey && key === "v") {
+        const layer = selected();
+        if (!layer) return;
+        const patch = pasteStyle(layer);
+        if (!Object.keys(patch).length) return;
+        e.preventDefault();
+        dispatch({ type: "PATCH_LAYER", id: layer.id, patch });
       } else if (mod && (e.key === "]" || e.key === "[")) {
         e.preventDefault();
         reorder(e.key === "]" ? 1 : -1);

@@ -35,6 +35,9 @@ export function ShortcutsDialog({
       title: t("Selected layer"),
       rows: [
         [`${MOD} D`, t("Duplicate")],
+        [`${MOD} ⇧ H`, t("Hide / show")],
+        [`${MOD} ⇧ L`, t("Lock / unlock")],
+        [`${MOD} ⌥ C  /  ${MOD} ⌥ V`, t("Copy / paste style")],
         [`${MOD} ]  /  ${MOD} [`, t("Move up / down in the stack")],
         ["← ↑ → ↓", t("Nudge by 1 px (⇧: 10 px)")],
         [t("Delete") + " / ⌫", t("Delete layer")],

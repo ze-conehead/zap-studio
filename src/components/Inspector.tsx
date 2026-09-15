@@ -4,6 +4,8 @@ import {
   AlignRight,
   Bold,
   Braces,
+  ClipboardCopy,
+  ClipboardPaste,
   Check,
   CornerDownRight,
   Crop,
@@ -42,6 +44,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { placeholderKeysFor, placeholderLabel, type PlaceholderKey } from "../placeholders";
+import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../recentColors";
+import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
@@ -206,6 +210,7 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
   return (
     <Panel title={t("Properties")}>
       <MaskRoleControls patch={patch} masks={masks} />
+      {!isMeta && !isMask && !isLogoSlot && <StyleClipboard layer={selected} patch={patch} />}
       <ConditionMembership patch={patch} />
 
       {!fixedName && (
@@ -1797,6 +1802,32 @@ function NumberField({
   );
 }
 
+// Copy the look of one layer onto another (colours, font, stroke, shadow,
+// opacity) — ⌘⌥C / ⌘⌥V do the same.
+function StyleClipboard({ layer, patch }: { layer: Layer; patch: Patch }) {
+  const t = useT();
+  useSyncExternalStore(subscribeStyleClipboard, getStyleClipboardVersion, getStyleClipboardVersion);
+  const clip = styleClipboard();
+  const canPaste = !!clip && Object.keys(pasteStyle(layer)).length > 0;
+  return (
+    <div className="flex gap-1.5">
+      <Button variant="outline" size="sm" className="h-7 flex-1" onClick={() => copyStyle(layer)}>
+        <ClipboardCopy /> {t("Copy style")}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 flex-1"
+        disabled={!canPaste}
+        title={clip && !canPaste ? t("Nothing in the copied style applies to this layer.") : undefined}
+        onClick={() => patch(pasteStyle(layer))}
+      >
+        <ClipboardPaste /> {t("Paste style")}
+      </Button>
+    </div>
+  );
+}
+
 function ColorField({
   label,
   value,
@@ -1806,14 +1837,48 @@ function ColorField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const t = useT();
+  useSyncExternalStore(subscribeRecentColors, getRecentColorsVersion, getRecentColorsVersion);
+  const recent = recentColors();
+  const ref = useRef<HTMLInputElement>(null);
+  // The native "change" fires once the picker closes — that's a pick worth
+  // remembering, unlike every "input" while dragging through the wheel.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const done = () => rememberColor(el.value);
+    el.addEventListener("change", done);
+    return () => el.removeEventListener("change", done);
+  }, []);
   return (
     <Field label={label}>
       <input
+        ref={ref}
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-8 w-full cursor-pointer rounded-md border border-input bg-transparent p-1"
       />
+      {recent.length > 0 && (
+        <div className="flex flex-wrap gap-1" title={t("Recent colors")}>
+          {recent.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={cn(
+                "size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
+                c === value.toLowerCase() && "ring-1 ring-primary",
+              )}
+              style={{ background: c }}
+              title={c}
+              onClick={() => {
+                onChange(c);
+                rememberColor(c);
+              }}
+            />
+          ))}
+        </div>
+      )}
     </Field>
   );
 }

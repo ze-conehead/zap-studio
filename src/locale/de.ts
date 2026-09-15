@@ -22,6 +22,13 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  "Recent colors": "Zuletzt verwendete Farben",
+  "Copy style": "Stil kopieren",
+  "Paste style": "Stil einfügen",
+  "Nothing in the copied style applies to this layer.": "Nichts aus dem kopierten Stil passt auf diese Ebene.",
+  "Hide / show": "Ausblenden / einblenden",
+  "Lock / unlock": "Sperren / entsperren",
+  "Copy / paste style": "Stil kopieren / einfügen",
   "Bleed \u2026": "Beschnitt \u2026",
   "Bleed (mm)": "Beschnitt (mm)",
   "How far artwork runs past the trim on every side, so a cut that is slightly off shows no white edge. Print shops usually want 2\u20133 mm; 0 for a plain cut. Everything on your cards keeps its place \u2014 the canvas grows or shrinks around it.":
