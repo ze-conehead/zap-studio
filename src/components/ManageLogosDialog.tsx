@@ -97,8 +97,8 @@ export function ManageLogosDialog({
   };
 
   const source = covers ? getCoverSource() : getLogoSource();
-  const useLocal = () => (covers ? setCoverSource("local") : setLogoSource("local"));
-  const useOnline = () => (covers ? setCoverSource("sgdb") : setLogoSource("sgdb"));
+  const pickLocal = () => (covers ? setCoverSource("local") : setLogoSource("local"));
+  const pickOnline = () => (covers ? setCoverSource("sgdb") : setLogoSource("sgdb"));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -234,11 +234,11 @@ export function ManageLogosDialog({
             {covers ? t("Cover source") : t("Logo source")}: <b>{source === "local" ? t("Local") : t("Online")}</b>
           </span>
           {source !== "local" ? (
-            <Button variant="outline" size="sm" onClick={() => (useLocal(), bump((n) => n + 1))}>
+            <Button variant="outline" size="sm" onClick={() => (pickLocal(), bump((n) => n + 1))}>
               {covers ? t("Use local covers") : t("Use local logos")}
             </Button>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => (useOnline(), bump((n) => n + 1))}>
+            <Button variant="outline" size="sm" onClick={() => (pickOnline(), bump((n) => n + 1))}>
               {t("Search online instead")}
             </Button>
           )}
