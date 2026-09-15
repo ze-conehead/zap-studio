@@ -50,7 +50,7 @@ import { cn, parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
 import type { GuideApi } from "../App";
-import { CANVAS, PX_PER_MM, TRIM_RECT } from "../card";
+import { PX_PER_MM, TRIM_RECT } from "../card";
 import {
   getCatalog,
   getCatalogVersion,
@@ -249,24 +249,7 @@ export function Inspector({ consoleBg, globalBg, masks = [], guides }: Inspector
         onChange={(v, done) => patch({ opacity: v }, done)}
       />
 
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={() => patch({ x: CANVAS.w / 2 })}
-        >
-          <MoveHorizontal /> {t("Center")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={() => patch({ y: CANVAS.h / 2 })}
-        >
-          <MoveVertical /> {t("Center")}
-        </Button>
-      </div>
+      <AlignButtons layer={selected} patch={patch} />
 
       {!isMeta && !isMask && !isLogoSlot && !isImageSel && (
         <MaskControls patch={patch} />
@@ -1798,6 +1781,62 @@ function NumberField({
           if (Number.isFinite(v)) onChange(v);
         }}
       />
+    </Field>
+  );
+}
+
+// Align the layer to the trimmed card: its edges or its middle. A layer's
+// box is its width × height times scale; a plain text layer has no fixed
+// height (it wraps), so it only aligns horizontally and to the middle.
+function AlignButtons({ layer, patch }: { layer: Layer; patch: Patch }) {
+  const t = useT();
+  const box =
+    "width" in layer && "height" in layer && layer.type !== "text"
+      ? { w: Math.abs(layer.width * layer.scaleX), h: Math.abs(layer.height * layer.scaleY) }
+      : layer.type === "text"
+        ? { w: Math.abs(layer.width * layer.scaleX), h: layer.flow && layer.height ? Math.abs(layer.height * layer.scaleY) : 0 }
+        : { w: 0, h: 0 };
+  const hasH = box.h > 0;
+  const row = (axis: "x" | "y") => {
+    const origin = trimOrigin(axis);
+    const span = trimSpan(axis);
+    const half = (axis === "x" ? box.w : box.h) / 2;
+    const items: [string, ReactNode, number, boolean][] =
+      axis === "x"
+        ? [
+            [t("Left"), <AlignLeft />, origin + half, true],
+            [t("Center"), <MoveHorizontal />, origin + span / 2, true],
+            [t("Right"), <AlignRight />, origin + span - half, true],
+          ]
+        : [
+            [t("Top"), <AlignLeft className="rotate-90" />, origin + half, hasH],
+            [t("Middle"), <MoveVertical />, origin + span / 2, true],
+            [t("Bottom"), <AlignRight className="rotate-90" />, origin + span - half, hasH],
+          ];
+    return (
+      <div className="flex gap-1">
+        {items.map(([label, icon, pos, enabled]) => (
+          <Button
+            key={label}
+            variant="outline"
+            size="sm"
+            className="h-7 flex-1 px-1"
+            title={label}
+            disabled={!enabled}
+            onClick={() => patch({ [axis]: pos } as Partial<Layer>)}
+          >
+            {icon}
+          </Button>
+        ))}
+      </div>
+    );
+  };
+  return (
+    <Field label={t("Align to card")}>
+      <div className="grid grid-cols-2 gap-1.5">
+        {row("x")}
+        {row("y")}
+      </div>
     </Field>
   );
 }

@@ -1,4 +1,14 @@
-import { Box, LayoutGrid, Redo2, Undo2 } from "lucide-react";
+import { Box, Check, History, LayoutGrid, Redo2, Undo2 } from "lucide-react";
+import { useMemo } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { describeChange } from "../historyLabel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +32,16 @@ export function Toolbar({
   const t = useT();
   const { past, future, showBleed } = state;
 
+  // The history list: every step, newest first, the current one marked.
+  // Labels come from diffing neighbouring snapshots (src/historyLabel.ts).
+  const timeline = useMemo(() => {
+    const snaps = [...past, state.pending ?? state.project, ...future];
+    return snaps.map((p, i) => ({
+      index: i,
+      label: i === 0 ? t("Opened") : describeChange(snaps[i - 1], p),
+      current: i === past.length,
+    }));
+  }, [past, future, state.pending, state.project, t]);
 
 
 
@@ -44,6 +64,33 @@ export function Toolbar({
         >
           <Redo2 />
         </IconBtn>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              title={t("History")}
+              disabled={timeline.length < 2}
+            >
+              <History />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-80 w-72 overflow-y-auto">
+            <DropdownMenuLabel>{t("History")}</DropdownMenuLabel>
+            {[...timeline].reverse().map((e) => (
+              <DropdownMenuItem
+                key={e.index}
+                className={cn("gap-2 text-xs", e.current && "bg-accent")}
+                onSelect={() => dispatch({ type: "JUMP", to: e.index })}
+              >
+                <Check className={cn("size-3.5 shrink-0", !e.current && "opacity-0")} />
+                <span className="truncate">{e.label}</span>
+                <span className="ml-auto tabular-nums text-muted-foreground">{e.index}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Separator orientation="vertical" className="h-6" />

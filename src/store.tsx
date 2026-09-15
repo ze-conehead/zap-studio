@@ -48,6 +48,8 @@ type Action =
   | { type: "TOGGLE"; key: "showBleed" }
   | { type: "UNDO" }
   | { type: "REDO" }
+  // Jump to a point in the history list: `to` indexes [...past, current, ...future].
+  | { type: "JUMP"; to: number }
   | { type: "SAVED" };
 
 const HISTORY_LIMIT = 60;
@@ -279,6 +281,23 @@ function reducer(state: State, action: Action): State {
 
     case "TOGGLE":
       return { ...state, [action.key]: !state[action.key] };
+
+    case "JUMP": {
+      const base = state.pending ?? state.project;
+      const timeline = [...state.past, base, ...state.future];
+      const to = Math.max(0, Math.min(timeline.length - 1, action.to));
+      if (to === state.past.length && !state.pending) return state;
+      const target = timeline[to];
+      return {
+        ...state,
+        past: timeline.slice(0, to),
+        future: timeline.slice(to + 1),
+        project: target,
+        pending: null,
+        side: target.back ? state.side : "front",
+        dirty: true,
+      };
+    }
 
     case "UNDO": {
       // A transient run still open (mid-drag, no commit yet): just drop it
