@@ -136,6 +136,17 @@ export function makeImageLayer(opts: {
 // alpha mask's box (fills width *and* height, aspect ratio kept, overflow
 // gets cropped by the mask). No-op unless the layer is the main image and a
 // mask exists. `mask` is the alpha mask the image was dropped into.
+// The natural size of what an image layer actually shows — its crop, or
+// the whole picture. Fits and re-fits scale this box, not the file's.
+export function croppedNatural(l: ImageLayer): { w: number; h: number } {
+  const c = l.crop;
+  if (!c) return { w: l.naturalWidth, h: l.naturalHeight };
+  return {
+    w: l.naturalWidth * Math.max(0.01, 1 - c.l - c.r),
+    h: l.naturalHeight * Math.max(0.01, 1 - c.t - c.b),
+  };
+}
+
 export function fitImageToMask(
   layer: ImageLayer,
   mask: Layer | undefined,
@@ -396,14 +407,16 @@ export function migrateProject(p: Project): Project {
   };
 
   // "Main alpha mask" and the numbered screenshot frames became one kind of
-  // frame; the flags are rewritten here so old projects keep working. Only a
-  // shape can be an alpha frame, so the flag is cleared off anything else —
-  // images could carry it while the UI still offered them the checkbox.
+  // frame; the flags are rewritten here so old projects keep working. The
+  // legacy numbers stay on the frame (`mainMask` / `shotMask`) so an old
+  // card's `main` / `shot: n` link still finds the frame it meant — see
+  // resolveMask(). Only a shape can be an alpha frame, so the flag is
+  // cleared off anything else — images could carry it while the UI still
+  // offered them the checkbox.
   const toAlphaMask = (layers: Layer[]): Layer[] => {
     const stale = layers.some(
       (l) =>
-        l.mainMask ||
-        l.shotMask ||
+        (!l.alphaMask && (l.mainMask || l.shotMask)) ||
         ((l.alphaMask || l.mainMask || l.shotMask) && l.type !== "shape"),
     );
     if (!stale) return layers;
@@ -412,9 +425,7 @@ export function migrateProject(p: Project): Project {
         if (!l.alphaMask && !l.mainMask && !l.shotMask) return l;
         return { ...l, alphaMask: undefined, mainMask: undefined, shotMask: undefined };
       }
-      return l.mainMask || l.shotMask
-        ? { ...l, alphaMask: true, mainMask: undefined, shotMask: undefined }
-        : l;
+      return (l.mainMask || l.shotMask) && !l.alphaMask ? { ...l, alphaMask: true } : l;
     });
   };
 

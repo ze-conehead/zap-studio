@@ -39,7 +39,7 @@ import { placeholderKeysFor, placeholderLabel, type PlaceholderKey } from "../..
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../../layerStyle";
 import { cn } from "@/lib/utils";
 import { useT } from "../../i18n";
-import { metaBadgeKind } from "../../factory";
+import { croppedNatural, metaBadgeKind } from "../../factory";
 import { getWorkspaceKind } from "../../workspace";
 import {
   addCustomFont,
@@ -51,6 +51,7 @@ import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAd
 import { DEFAULT_FLOW_GAP, DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import {
   DEFAULT_SHADOW,
+  type ImageCrop,
   type ImageLayer,
   type Layer,
   type LayerShadow,
@@ -147,8 +148,62 @@ export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }
         {t("Original: {w}\u00d7{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
       </p>
 
+      <CropControls layer={layer} patch={patch} />
       <AdjustControls layer={layer} patch={patch} />
     </>
+  );
+}
+
+// Trim the picture from each side. The layer's box follows the crop at
+// the same pixel scale, so cropping 20 % off the left shows the remaining
+// 80 % at the size it had — nothing stretches.
+function CropControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
+  const t = useT();
+  const c = layer.crop ?? { l: 0, t: 0, r: 0, b: 0 };
+  const cropped = !!layer.crop && (c.l || c.t || c.r || c.b);
+  const setSide = (side: keyof ImageCrop, v: number, done: boolean) => {
+    const next = { ...c, [side]: v };
+    // Never let opposite sides meet.
+    if (next.l + next.r > 0.9) next[side === "l" ? "l" : "r"] = 0.9 - (side === "l" ? next.r : next.l);
+    if (next.t + next.b > 0.9) next[side === "t" ? "t" : "b"] = 0.9 - (side === "t" ? next.b : next.t);
+    const before = croppedNatural(layer);
+    const scale = layer.width / before.w;
+    const after = croppedNatural({ ...layer, crop: next });
+    patch({ crop: next, width: after.w * scale, height: after.h * scale }, done);
+  };
+  const reset = () => {
+    const before = croppedNatural(layer);
+    const scale = layer.width / before.w;
+    patch({ crop: undefined, width: layer.naturalWidth * scale, height: layer.naturalHeight * scale });
+  };
+  const nat = croppedNatural(layer);
+  const pct = (v: number) => Math.round(v * 100);
+  return (
+    <Field label={t("Crop")}>
+      <div className="grid grid-cols-2 gap-x-3">
+        {(["l", "r", "t", "b"] as const).map((side) => (
+          <SliderField
+            key={side}
+            label={`${side === "l" ? t("Left") : side === "r" ? t("Right") : side === "t" ? t("Top") : t("Bottom")} ${pct(c[side])} %`}
+            min={0}
+            max={0.9}
+            step={0.01}
+            value={c[side]}
+            onChange={(v, done) => setSide(side, v, done)}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-muted-foreground">
+          {t("Shows {w}\u00d7{h} px", { w: Math.round(nat.w), h: Math.round(nat.h) })}
+        </span>
+        {cropped ? (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={reset}>
+            {t("Reset crop")}
+          </Button>
+        ) : null}
+      </div>
+    </Field>
   );
 }
 

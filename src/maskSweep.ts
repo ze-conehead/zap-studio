@@ -15,7 +15,7 @@
 // App.tsx) — so this rebuilds that list per project instead of only
 // matching on `maskId`, or every image inserted via a sweep would be missed.
 
-import { fitImageToMask, GLOBAL_TEMPLATE_ID } from "./factory";
+import { croppedNatural, fitImageToMask, GLOBAL_TEMPLATE_ID } from "./factory";
 import { loadAllProjects, saveProject } from "./persist";
 import { alphaMasksOf, resolveMask } from "./templates";
 import type { ImageLayer, Layer, Project } from "./types";
@@ -61,7 +61,8 @@ export async function sweepMaskMove(
       if (l.type !== "image") return l;
       const resolved = resolveMask(l, masks);
       if (!resolved || resolved.id !== mask.id) return l;
-      const natural: ImageLayer = { ...l, width: l.naturalWidth, height: l.naturalHeight };
+      const nat = croppedNatural(l);
+      const natural: ImageLayer = { ...l, width: nat.w, height: nat.h };
       const refit = fitImageToMask(natural, mask);
       if (
         refit.x === l.x &&

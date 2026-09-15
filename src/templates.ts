@@ -40,8 +40,16 @@ export function maskOptions(
 export function resolveMask(l: Layer, masks: Layer[]): Layer | undefined {
   if (l.type !== "image" || !masks.length) return undefined;
   if (l.maskId) return masks.find((m) => m.id === l.maskId);
-  if (l.main) return masks[0];
-  if (l.shot) return masks[l.shot - 1];
+  // Legacy links. The frames' old numbers are kept through migration; a
+  // template migrated before that keeps them by position: the main frame
+  // came first, the screenshot frames after it in order.
+  if (l.main) return masks.find((m) => m.mainMask) ?? masks[0];
+  if (l.shot) {
+    const byNumber = masks.find((m) => m.shotMask === l.shot);
+    if (byNumber) return byNumber;
+    const hasMain = masks.some((m) => m.mainMask) || masks.length > l.shot;
+    return masks[hasMain ? l.shot : l.shot - 1] ?? masks[l.shot - 1];
+  }
   return undefined;
 }
 

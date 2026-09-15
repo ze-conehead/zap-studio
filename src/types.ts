@@ -117,6 +117,16 @@ export interface ImageLayer extends BaseLayer {
   /** @deprecated resolved to the nth alpha mask. */
   shot?: number;
   adjust?: ImageAdjust; // greyscale / threshold, see src/imageAdjust.ts
+  // Trimmed off each side, as fractions (0..1) of the natural size, so the
+  // crop survives any resize. width / height describe the cropped area.
+  crop?: ImageCrop;
+}
+
+export interface ImageCrop {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
 }
 
 export interface TextLayer extends BaseLayer {

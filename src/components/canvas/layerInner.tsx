@@ -462,9 +462,24 @@ export function ReadOnlyLayer({
 function ImageInner({ layer, gco }: { layer: TImageLayer; gco?: Gco }) {
   // The adjusted copy is an offscreen canvas; Konva takes either.
   const img = useAdjustedImage(useImage(layer.src), layer.adjust);
+  // The crop is stored as fractions; Konva wants source pixels. The
+  // loaded image's own size is used (the stored naturalWidth could differ
+  // if the file was ever re-encoded).
+  const c = layer.crop;
+  const iw = img?.width ?? layer.naturalWidth;
+  const ih = img?.height ?? layer.naturalHeight;
+  const crop = c
+    ? {
+        x: iw * c.l,
+        y: ih * c.t,
+        width: Math.max(1, iw * (1 - c.l - c.r)),
+        height: Math.max(1, ih * (1 - c.t - c.b)),
+      }
+    : undefined;
   return (
     <KImage
       image={img}
+      crop={crop}
       width={layer.width}
       height={layer.height}
       offsetX={layer.width / 2}

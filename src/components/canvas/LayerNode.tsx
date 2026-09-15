@@ -42,6 +42,7 @@ export function LayerNode({
   onSnap,
   register,
   onSelect,
+  onContextMenu,
   onChange,
   onGroupChange,
 }: {
@@ -59,6 +60,7 @@ export function LayerNode({
   onSnap?: (hit: SnapHit | null) => void;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
+  onContextMenu?: (e: MouseEvent) => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
   onGroupChange: (
     patches: { id: string; patch: Partial<TLayer> }[],
@@ -147,6 +149,11 @@ export function LayerNode({
     draggable: !layer.locked && (!asMask || selected),
     onMouseDown: onSelect,
     onTap: onSelect,
+    onContextMenu: (e: Konva.KonvaEventObject<MouseEvent>) => {
+      e.evt.preventDefault();
+      onSelect();
+      onContextMenu?.(e.evt);
+    },
     onDragStart: grouped ? snapshot : undefined,
     onDragMove: grouped
       ? () => applyGroup(false)

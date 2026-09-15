@@ -5,6 +5,7 @@
 // Findings are deduplicated by layer, because a problem in a template layer
 // is one problem that shows up on every card, not twenty problems.
 
+import { croppedNatural } from "./factory";
 import { PX_PER_MM, TRIM_RECT } from "./card";
 import { resolveConditions } from "./conditions";
 import { isBackground } from "./factory";
@@ -55,8 +56,10 @@ export function effectiveDpi(l: Layer): number | null {
   const h = Math.abs(l.height * l.scaleY);
   if (!w || !h) return null;
   // Canvas px are already 300 dpi, so the ratio of source to placed pixels
-  // scales that directly. The tighter axis wins.
-  return Math.min((l.naturalWidth / w) * 300, (l.naturalHeight / h) * 300);
+  // scales that directly. The tighter axis wins. A crop shows fewer source
+  // pixels in the same box.
+  const nat = croppedNatural(l);
+  return Math.min((nat.w / w) * 300, (nat.h / h) * 300);
 }
 
 /** Axis-aligned bounds of a layer in canvas px, rotation included. */
