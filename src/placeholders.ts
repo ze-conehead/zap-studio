@@ -162,16 +162,19 @@ function value(key: string, ctx: PlaceholderContext): string | undefined {
 
 /** The value one placeholder key resolves to, or undefined when unknown. */
 export function placeholderValue(key: PlaceholderKey, ctx: PlaceholderContext | undefined) {
-  return ctx ? value(key, ctx) : undefined;
+  return ctx ? present(value(key, ctx)) : undefined;
 }
 
 export function resolvePlaceholders(text: string, ctx: PlaceholderContext | undefined): string {
   if (!ctx || !hasPlaceholders(text)) return text;
   return text.replace(/\{([a-z]+)\}/gi, (whole, key: string) => {
-    const v = value(key.toLowerCase(), ctx);
+    const v = present(value(key.toLowerCase(), ctx));
     return v === undefined ? whole : v;
   });
 }
+
+// An empty field counts as missing — a fetch or a cleared input leaves "".
+const present = (v: string | undefined) => (v === undefined || v === "" ? undefined : v);
 
 /**
  * The context for a project as the editor / renderer sees it. A game card
