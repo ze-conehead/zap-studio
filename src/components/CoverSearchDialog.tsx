@@ -49,10 +49,10 @@ type KeyedSource = Exclude<CoverSource, "libretro">;
 // The sources that appear as buttons in the picker, in order. "igdb-shots"
 // is IGDB reused for gameplay screenshots instead of box art. Movies have
 // their own single source (SGDB/IGDB are games-only databases).
-const PICKABLE_GAMES: readonly KeyedSource[] = ["sgdb", "igdb", "igdb-shots"];
-const PICKABLE_MOVIES: readonly KeyedSource[] = ["tmdb"];
+const PICKABLE_GAMES: readonly KeyedSource[] = ["sgdb", "igdb", "igdb-shots", "local"];
+const PICKABLE_MOVIES: readonly KeyedSource[] = ["tmdb", "local"];
 
-const CRED_LINK: Record<KeyedSource, string> = {
+const CRED_LINK: Partial<Record<KeyedSource, string>> = {
   sgdb: "https://www.steamgriddb.com/profile/preferences/api",
   igdb: "https://dev.twitch.tv/console/apps",
   "igdb-shots": "https://dev.twitch.tv/console/apps",
@@ -138,10 +138,12 @@ export function CoverSearchDialog({
 
   const logoMode = kind === "logo";
   const shotMode = kind === "screenshot";
-  // Local logos need no credentials — the whole credentials box goes away.
+  // The local libraries need no credentials — the credentials box goes away.
   const localLogos = logoMode && getLogoSource() === "local";
+  const localCovers = !logoMode && source === "local";
+  const isLocal = localLogos || localCovers;
   const src: KeyedSource = logoMode ? "sgdb" : (source as KeyedSource);
-  const configured = localLogos || isConfigured(src);
+  const configured = isLocal || isConfigured(src);
   const active = logoMode ? "sgdb" : effectiveSource();
   const supported = active !== "libretro" || !!resolveLibretroRepo(consoleName);
   const term = query.trim() || gameTitle;
@@ -229,7 +231,11 @@ export function CoverSearchDialog({
             ))}
           </div>
 
-          {configured && !editing ? (
+          {localCovers ? (
+            <span className="text-muted-foreground">
+              {t("Searching your own covers by file name (Settings ▸ Manage covers …).")}
+            </span>
+          ) : configured && !editing ? (
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">
                 {t("Credentials saved")}
@@ -344,6 +350,8 @@ export function CoverSearchDialog({
           <p className="py-6 text-sm text-muted-foreground">
             {localLogos
               ? t("None of your logos matches \u201c{title}\u201d. Try another search term, or add files under Settings \u25b8 Manage logos \u2026", { title: term })
+              : localCovers
+              ? t("None of your covers matches \u201c{title}\u201d. Try another search term, or add files under Settings \u25b8 Manage covers \u2026", { title: term })
               : logoMode
               ? t("No logos found for \u201c{title}\u201d.", { title: term })
               : shotMode

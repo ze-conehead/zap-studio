@@ -372,6 +372,7 @@ function Shell({
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
   const [manageLogos, setManageLogos] = useState(false);
+  const [manageCovers, setManageCovers] = useState(false);
   const [bleedOpen, setBleedOpen] = useState(false);
   // Opens by itself on a fresh install, then only from Extra ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
@@ -432,6 +433,7 @@ function Shell({
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
     onOpenManageLogos: () => setManageLogos(true),
+    onOpenManageCovers: () => setManageCovers(true),
     onOpenBleed: () => setBleedOpen(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
@@ -512,6 +514,7 @@ function Shell({
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
       <ManageLogosDialog open={manageLogos} onOpenChange={setManageLogos} />
+      <ManageLogosDialog kind="cover" open={manageCovers} onOpenChange={setManageCovers} />
       <BleedDialog
         open={bleedOpen}
         onOpenChange={setBleedOpen}

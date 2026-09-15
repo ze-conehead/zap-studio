@@ -1,7 +1,8 @@
-// Settings ▸ Manage logos: the user's own logo library. Drop image files,
-// whole folders or a .zip (nested folders are fine) — they're kept in the
-// browser's IndexedDB and, with "Logo source: Local", found by file name
-// when a console asks for its logo.
+// Settings ▸ Manage logos / covers: the user's own image libraries. Drop
+// image files, whole folders or a .zip (nested folders are fine) — they're
+// kept in the browser's IndexedDB and, with "Logo source: Local" / "Cover
+// source: Local", found by file name when a console asks for its logo or a
+// card for its cover.
 
 import { FolderOpen, Loader2, Search, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -9,20 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { getLogoSource, normalizeTitle, setLogoSource } from "../covers";
+import { getCoverSource, getLogoSource, normalizeTitle, setCoverSource, setLogoSource } from "../covers";
 import { useT } from "../i18n";
 import {
-  addLocalLogos,
-  ensureLocalLogosLoaded,
-  getLocalLogosVersion,
-  listLocalLogos,
-  localLogoUrl,
+  localCovers,
+  localLogos,
   logosFromDataTransfer,
   logosFromFileList,
-  removeAllLocalLogos,
-  removeLocalLogo,
-  subscribeLocalLogos,
   type AddedLogo,
+  type ImageLibrary,
+  type LibraryKind,
   type LocalLogo,
 } from "../localLogos";
 import { askConfirm } from "./ConfirmDialog";
@@ -32,13 +29,17 @@ const SHOWN = 60; // thumbnails rendered at once — the filter narrows it down
 export function ManageLogosDialog({
   open,
   onOpenChange,
+  kind = "logo",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  kind?: LibraryKind;
 }) {
   const t = useT();
-  useSyncExternalStore(subscribeLocalLogos, getLocalLogosVersion, getLocalLogosVersion);
-  const logos = listLocalLogos();
+  const lib: ImageLibrary = kind === "cover" ? localCovers : localLogos;
+  useSyncExternalStore(lib.subscribe, lib.version, lib.version);
+  const logos = lib.list();
+  const covers = kind === "cover";
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<{ done: number; total: number } | null>(null);
@@ -50,7 +51,7 @@ export function ManageLogosDialog({
 
   useEffect(() => {
     if (open) {
-      void ensureLocalLogosLoaded();
+      void lib.ensureLoaded();
       setError("");
       setNote("");
     }
@@ -70,7 +71,7 @@ export function ManageLogosDialog({
     setNote("");
     setBusy({ done: 0, total: inputs.length });
     try {
-      const r = await addLocalLogos(inputs, (done, total) => setBusy({ done, total }));
+      const r = await lib.add(inputs, (done, total) => setBusy({ done, total }));
       setNote(
         t("{added} added, {replaced} replaced, {skipped} skipped.", {
           added: r.added,
@@ -87,27 +88,33 @@ export function ManageLogosDialog({
 
   const clearAll = async () => {
     const ok = await askConfirm({
-      title: t("Remove all {n} logos?", { n: logos.length }),
+      title: covers ? t("Remove all {n} covers?", { n: logos.length }) : t("Remove all {n} logos?", { n: logos.length }),
       body: t("Cards that already use one of them keep their copy."),
       confirmLabel: t("Remove all"),
       destructive: true,
     });
-    if (ok) await removeAllLocalLogos();
+    if (ok) await lib.removeAll();
   };
 
-  const source = getLogoSource();
+  const source = covers ? getCoverSource() : getLogoSource();
+  const useLocal = () => (covers ? setCoverSource("local") : setLogoSource("local"));
+  const useOnline = () => (covers ? setCoverSource("sgdb") : setLogoSource("sgdb"));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-w-3xl flex-col gap-3">
         <DialogHeader>
-          <DialogTitle>{t("Manage logos")}</DialogTitle>
+          <DialogTitle>{covers ? t("Manage covers") : t("Manage logos")}</DialogTitle>
         </DialogHeader>
 
         <p className="text-xs text-muted-foreground">
-          {t(
-            "Your own logo files, kept in this browser and shared by every project. With “Logo source: Local” the logo search matches them by file name — name each file after its console (“Super Nintendo.png”), folders are fine too.",
-          )}
+          {covers
+            ? t(
+                "Your own cover files, kept in this browser and shared by every project. With “Cover source: Local” the cover search matches them by file name — name each file after its game or movie (“Gran Turismo.jpg”), folders are fine too.",
+              )
+            : t(
+                "Your own logo files, kept in this browser and shared by every project. With “Logo source: Local” the logo search matches them by file name — name each file after its console (“Super Nintendo.png”), folders are fine too.",
+              )}
         </p>
 
         <div
@@ -127,7 +134,7 @@ export function ManageLogosDialog({
           }}
         >
           <Upload className="size-5 text-muted-foreground" />
-          <span>{t("Drop logos, folders or a .zip here")}</span>
+          <span>{covers ? t("Drop covers, folders or a .zip here") : t("Drop logos, folders or a .zip here")}</span>
           <div className="flex flex-wrap justify-center gap-1.5">
             <Button variant="outline" size="sm" disabled={!!busy} onClick={() => fileRef.current?.click()}>
               <Upload /> {t("Add files or .zip …")}
@@ -203,14 +210,14 @@ export function ManageLogosDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto rounded-md border p-2">
           {logos.length === 0 ? (
-            <p className="p-4 text-center text-xs text-muted-foreground">{t("No logos yet.")}</p>
+            <p className="p-4 text-center text-xs text-muted-foreground">{covers ? t("No covers yet.") : t("No logos yet.")}</p>
           ) : shown.total === 0 ? (
             <p className="p-4 text-center text-xs text-muted-foreground">{t("Nothing matches.")}</p>
           ) : (
             <>
               <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
                 {shown.list.map((l) => (
-                  <LogoTile key={l.id} logo={l} onRemove={() => void removeLocalLogo(l.id).then(() => bump((n) => n + 1))} />
+                  <LogoTile key={l.id} logo={l} lib={lib} onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))} />
                 ))}
               </ul>
               {shown.total > SHOWN && (
@@ -224,15 +231,15 @@ export function ManageLogosDialog({
 
         <div className="flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
           <span>
-            {t("Logo source")}: <b>{source === "local" ? t("Local") : "SteamGridDB"}</b>
+            {covers ? t("Cover source") : t("Logo source")}: <b>{source === "local" ? t("Local") : t("Online")}</b>
           </span>
           {source !== "local" ? (
-            <Button variant="outline" size="sm" onClick={() => (setLogoSource("local"), bump((n) => n + 1))}>
-              {t("Use local logos")}
+            <Button variant="outline" size="sm" onClick={() => (useLocal(), bump((n) => n + 1))}>
+              {covers ? t("Use local covers") : t("Use local logos")}
             </Button>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => (setLogoSource("sgdb"), bump((n) => n + 1))}>
-              {t("Use SteamGridDB")}
+            <Button variant="outline" size="sm" onClick={() => (useOnline(), bump((n) => n + 1))}>
+              {t("Search online instead")}
             </Button>
           )}
         </div>
@@ -241,16 +248,16 @@ export function ManageLogosDialog({
   );
 }
 
-function LogoTile({ logo, onRemove }: { logo: LocalLogo; onRemove: () => void }) {
+function LogoTile({ logo, lib, onRemove }: { logo: LocalLogo; lib: ImageLibrary; onRemove: () => void }) {
   const t = useT();
   const [url, setUrl] = useState<string | undefined>();
   useEffect(() => {
     let alive = true;
-    void localLogoUrl(logo.id).then((u) => alive && setUrl(u));
+    void lib.url(logo.id).then((u) => alive && setUrl(u));
     return () => {
       alive = false;
     };
-  }, [logo.id]);
+  }, [logo.id, lib]);
   return (
     <li className="group relative flex flex-col gap-1 rounded-md border p-1.5" title={logo.path ? `${logo.path}/${logo.name}` : logo.name}>
       <div className="canvas-checker flex aspect-[3/2] items-center justify-center overflow-hidden rounded">

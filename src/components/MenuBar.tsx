@@ -19,13 +19,13 @@ import { cn } from "@/lib/utils";
 import { isStale, lastBackupAt, useBackupStatus } from "../autobackup";
 import {
   coverSourceLabel,
+  coverSourcesFor,
   getCoverSource,
   getLogoSource,
   LOGO_SOURCES,
   logoSourceLabel,
   setCoverSource,
   setLogoSource,
-  type CoverSource,
 } from "../covers";
 import { getWorkspace, getWorkspaceKind, setWorkspaceFormat } from "../workspace";
 import { EXPORT_MODES, exportLabel } from "../export";
@@ -70,6 +70,7 @@ interface Props {
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
   onOpenManageLogos: () => void;
+  onOpenManageCovers: () => void;
   onOpenBleed: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
@@ -99,6 +100,7 @@ export function MenuBar({
   onOpenApiKeys,
   onOpenCustomFonts,
   onOpenManageLogos,
+  onOpenManageCovers,
   onOpenBleed,
   onOpenWalkthrough,
   onOpenShortcuts,
@@ -450,19 +452,17 @@ export function MenuBar({
           </DropdownMenuItem>
         </Sub>
 
-        {getWorkspaceKind() === "games" && (
-          <Sub label={t("Cover source")} value={coverSourceLabel(coverSource)}>
-            {(["sgdb", "igdb", "igdb-shots", "libretro"] as CoverSource[]).map((s) => (
-              <DropdownMenuItem
-                key={s}
-                onSelect={(e) => (e.preventDefault(), setCoverSource(s))}
-              >
-                {coverSourceLabel(s)}
-                <Check className={cn("ml-auto size-4", s !== coverSource && "opacity-0")} />
-              </DropdownMenuItem>
-            ))}
-          </Sub>
-        )}
+        <Sub label={t("Cover source")} value={coverSourceLabel(coverSource)}>
+          {coverSourcesFor(getWorkspaceKind()).map((s) => (
+            <DropdownMenuItem
+              key={s}
+              onSelect={(e) => (e.preventDefault(), setCoverSource(s))}
+            >
+              {coverSourceLabel(s)}
+              <Check className={cn("ml-auto size-4", s !== coverSource && "opacity-0")} />
+            </DropdownMenuItem>
+          ))}
+        </Sub>
 
         <Sub label={t("Logo source")} value={logoSourceLabel(logoSource)}>
           {LOGO_SOURCES.map((s) => (
@@ -485,6 +485,9 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenManageLogos}>
           {t("Manage logos …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenManageCovers}>
+          {t("Manage covers …")}
         </DropdownMenuItem>
       </Menu>
 

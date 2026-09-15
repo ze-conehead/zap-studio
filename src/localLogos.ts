@@ -1,8 +1,10 @@
-// The user's own logo library — "Settings ▸ Manage logos …". Files dropped
-// in one by one, as whole folders, or as a .zip (nested folders welcome)
-// land in IndexedDB as Blobs; with "Logo source: Local" the logo search
-// looks them up by file name instead of asking SteamGridDB. Shared by every
-// workspace: a console's wordmark is the same in every project.
+// The user's own image libraries — "Settings ▸ Manage logos / covers …".
+// Files dropped in one by one, as whole folders, or as a .zip (nested
+// folders welcome) land in IndexedDB as Blobs; with "Logo source: Local" /
+// "Cover source: Local" the searches look them up by file name instead of
+// asking SteamGridDB & co. Shared by every workspace: a console's wordmark
+// or a game's box art is the same in every project. One library per kind,
+// built by createLibrary(); the logo one keeps its original export names.
 
 import { del, get, keys, set } from "idb-keyval";
 import { unzipSync } from "fflate";
@@ -18,8 +20,7 @@ export interface LocalLogo {
   addedAt: number;
 }
 
-const INDEX_KEY = "localLogos:index";
-const BLOB_KEY = (id: string) => `localLogo:${id}`;
+export type LibraryKind = "logo" | "cover";
 
 const MAX_BYTES = 8 * 1024 * 1024; // per file
 const EXT_MIME: Record<string, string> = {
@@ -39,65 +40,6 @@ const isImageName = (name: string) => !!EXT_MIME[ext(name)];
 const isJunk = (path: string) =>
   path.split("/").some((seg) => seg === "__MACOSX" || seg.startsWith(".") || seg === "Thumbs.db");
 
-let cache: LocalLogo[] | null = null;
-let version = 0;
-const listeners = new Set<() => void>();
-
-function notify() {
-  version++;
-  for (const l of listeners) l();
-}
-
-export function subscribeLocalLogos(fn: () => void): () => void {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
-}
-
-export function getLocalLogosVersion(): number {
-  return version;
-}
-
-/** Synchronous snapshot — empty until ensureLocalLogosLoaded() resolves. */
-export function listLocalLogos(): LocalLogo[] {
-  return cache ?? [];
-}
-
-let initPromise: Promise<void> | null = null;
-
-export function ensureLocalLogosLoaded(): Promise<void> {
-  if (!initPromise) {
-    initPromise = (async () => {
-      cache = ((await get(INDEX_KEY)) as LocalLogo[] | undefined) ?? [];
-      notify();
-    })().catch(() => {
-      cache = [];
-    });
-  }
-  return initPromise;
-}
-
-async function saveIndex(next: LocalLogo[]): Promise<void> {
-  cache = next;
-  await set(INDEX_KEY, next);
-  notify();
-}
-
-const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-// One object URL per blob, made when first shown and kept for the session —
-// the search results and the manage grid both point at these.
-const urls = new Map<string, string>();
-
-export async function localLogoUrl(id: string): Promise<string | undefined> {
-  const cached = urls.get(id);
-  if (cached) return cached;
-  const blob = (await get(BLOB_KEY(id))) as Blob | undefined;
-  if (!blob) return undefined;
-  const url = URL.createObjectURL(blob);
-  urls.set(id, url);
-  return url;
-}
-
 // ── adding ─────────────────────────────────────────────────────────────────
 
 export interface AddedLogo {
@@ -110,57 +52,6 @@ export interface AddReport {
   added: number;
   replaced: number;
   skipped: number; // not an image, too large, or zip cruft
-}
-
-/** Stores images (replacing any with the same path + name); unpacks zips. */
-export async function addLocalLogos(
-  inputs: AddedLogo[],
-  onProgress?: (done: number, total: number) => void,
-): Promise<AddReport> {
-  await ensureLocalLogosLoaded();
-  // Expand zips first so progress counts real files.
-  const flat: AddedLogo[] = [];
-  for (const input of inputs) {
-    if (ext(input.name) === "zip") {
-      flat.push(...(await unpackZip(input)));
-    } else {
-      flat.push(input);
-    }
-  }
-
-  const report: AddReport = { added: 0, replaced: 0, skipped: 0 };
-  const next = [...(cache ?? [])];
-  let done = 0;
-  for (const f of flat) {
-    done++;
-    onProgress?.(done, flat.length);
-    const full = f.path ? `${f.path}/${f.name}` : f.name;
-    if (!isImageName(f.name) || isJunk(full) || f.file.size > MAX_BYTES || f.file.size === 0) {
-      report.skipped++;
-      continue;
-    }
-    const type = f.file.type?.startsWith("image/") ? f.file.type : EXT_MIME[ext(f.name)];
-    const blob = f.file.type === type ? f.file : new Blob([f.file], { type });
-    const name = f.name.replace(/\.[^.]+$/, "");
-    const existing = next.findIndex((l) => l.path === f.path && l.name === name);
-    const id = existing >= 0 ? next[existing].id : newId();
-    await set(BLOB_KEY(id), blob);
-    const entry: LocalLogo = { id, name, path: f.path, type, size: blob.size, addedAt: Date.now() };
-    if (existing >= 0) {
-      next[existing] = entry;
-      report.replaced++;
-      const old = urls.get(id);
-      if (old) {
-        URL.revokeObjectURL(old);
-        urls.delete(id);
-      }
-    } else {
-      next.push(entry);
-      report.added++;
-    }
-  }
-  await saveIndex(next);
-  return report;
 }
 
 async function unpackZip(input: AddedLogo): Promise<AddedLogo[]> {
@@ -232,67 +123,216 @@ async function walkEntry(entry: FileSystemEntry, path: string, out: AddedLogo[])
   }
 }
 
-// ── removing ───────────────────────────────────────────────────────────────
+export interface ImageLibrary {
+  kind: LibraryKind;
+  subscribe: (fn: () => void) => () => void;
+  version: () => number;
+  list: () => LocalLogo[];
+  ensureLoaded: () => Promise<void>;
+  url: (id: string) => Promise<string | undefined>;
+  add: (inputs: AddedLogo[], onProgress?: (done: number, total: number) => void) => Promise<AddReport>;
+  remove: (id: string) => Promise<void>;
+  removeAll: () => Promise<void>;
+  search: (term: string) => Promise<CoverCandidate[]>;
+}
 
-export async function removeLocalLogo(id: string): Promise<void> {
-  await ensureLocalLogosLoaded();
-  await del(BLOB_KEY(id));
-  const url = urls.get(id);
-  if (url) {
-    URL.revokeObjectURL(url);
-    urls.delete(id);
+function createLibrary(kind: LibraryKind): ImageLibrary {
+  const INDEX_KEY = kind === "logo" ? "localLogos:index" : "localCovers:index";
+  const BLOB_PREFIX = kind === "logo" ? "localLogo:" : "localCover:";
+  const BLOB_KEY = (id: string) => `${BLOB_PREFIX}${id}`;
+
+  let cache: LocalLogo[] | null = null;
+  let version = 0;
+  const listeners = new Set<() => void>();
+
+  function notify() {
+    version++;
+    for (const l of listeners) l();
   }
-  await saveIndex((cache ?? []).filter((l) => l.id !== id));
-}
 
-export async function removeAllLocalLogos(): Promise<void> {
-  const all = (await keys()).filter((k) => typeof k === "string" && k.startsWith("localLogo:"));
-  for (const k of all) await del(k);
-  for (const url of urls.values()) URL.revokeObjectURL(url);
-  urls.clear();
-  await saveIndex([]);
-}
-
-// ── searching ──────────────────────────────────────────────────────────────
-
-const tokens = (s: string) => normalizeTitle(s).split(" ").filter(Boolean);
-
-// How well a stored logo fits a console name: exact file name first, then a
-// file name that contains (or is contained in) the query, then by how many
-// words they share — a folder named after the console counts a little too.
-function score(logo: LocalLogo, q: string, qTokens: string[]): number {
-  const stem = normalizeTitle(logo.name);
-  if (!stem) return 0;
-  let s = 0;
-  if (stem === q) s = 100;
-  else if (stem.includes(q)) s = 80;
-  else if (q.includes(stem) && stem.length >= 3) s = 60;
-  else {
-    const st = tokens(logo.name);
-    const shared = qTokens.filter((tk) => st.includes(tk)).length;
-    if (shared) s = 20 + (40 * shared) / Math.max(qTokens.length, st.length);
+  function subscribe(fn: () => void): () => void {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
   }
-  const folder = normalizeTitle(logo.path.split("/").pop() ?? "");
-  if (folder && (folder === q || qTokens.some((tk) => tk.length > 2 && folder.includes(tk)))) s += 10;
-  return s;
+
+  function getVersion(): number {
+    return version;
+  }
+
+  /** Synchronous snapshot — empty until ensureLoaded() resolves. */
+  function list(): LocalLogo[] {
+    return cache ?? [];
+  }
+
+  let initPromise: Promise<void> | null = null;
+
+  function ensureLoaded(): Promise<void> {
+    if (!initPromise) {
+      initPromise = (async () => {
+        cache = ((await get(INDEX_KEY)) as LocalLogo[] | undefined) ?? [];
+        notify();
+      })().catch(() => {
+        cache = [];
+      });
+    }
+    return initPromise;
+  }
+
+  async function saveIndex(next: LocalLogo[]): Promise<void> {
+    cache = next;
+    await set(INDEX_KEY, next);
+    notify();
+  }
+
+  const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  // One object URL per blob, made when first shown and kept for the session —
+  // the search results and the manage grid both point at these.
+  const urls = new Map<string, string>();
+
+  async function urlOf(id: string): Promise<string | undefined> {
+    const cached = urls.get(id);
+    if (cached) return cached;
+    const blob = (await get(BLOB_KEY(id))) as Blob | undefined;
+    if (!blob) return undefined;
+    const url = URL.createObjectURL(blob);
+    urls.set(id, url);
+    return url;
+  }
+
+
+  /** Stores images (replacing any with the same path + name); unpacks zips. */
+  async function add(
+    inputs: AddedLogo[],
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<AddReport> {
+    await ensureLoaded();
+    // Expand zips first so progress counts real files.
+    const flat: AddedLogo[] = [];
+    for (const input of inputs) {
+      if (ext(input.name) === "zip") {
+        flat.push(...(await unpackZip(input)));
+      } else {
+        flat.push(input);
+      }
+    }
+
+    const report: AddReport = { added: 0, replaced: 0, skipped: 0 };
+    const next = [...(cache ?? [])];
+    let done = 0;
+    for (const f of flat) {
+      done++;
+      onProgress?.(done, flat.length);
+      const full = f.path ? `${f.path}/${f.name}` : f.name;
+      if (!isImageName(f.name) || isJunk(full) || f.file.size > MAX_BYTES || f.file.size === 0) {
+        report.skipped++;
+        continue;
+      }
+      const type = f.file.type?.startsWith("image/") ? f.file.type : EXT_MIME[ext(f.name)];
+      const blob = f.file.type === type ? f.file : new Blob([f.file], { type });
+      const name = f.name.replace(/\.[^.]+$/, "");
+      const existing = next.findIndex((l) => l.path === f.path && l.name === name);
+      const id = existing >= 0 ? next[existing].id : newId();
+      await set(BLOB_KEY(id), blob);
+      const entry: LocalLogo = { id, name, path: f.path, type, size: blob.size, addedAt: Date.now() };
+      if (existing >= 0) {
+        next[existing] = entry;
+        report.replaced++;
+        const old = urls.get(id);
+        if (old) {
+          URL.revokeObjectURL(old);
+          urls.delete(id);
+        }
+      } else {
+        next.push(entry);
+        report.added++;
+      }
+    }
+    await saveIndex(next);
+    return report;
+  }
+
+
+  // ── removing ───────────────────────────────────────────────────────────────
+
+  async function remove(id: string): Promise<void> {
+    await ensureLoaded();
+    await del(BLOB_KEY(id));
+    const url = urls.get(id);
+    if (url) {
+      URL.revokeObjectURL(url);
+      urls.delete(id);
+    }
+    await saveIndex((cache ?? []).filter((l) => l.id !== id));
+  }
+
+  async function removeAll(): Promise<void> {
+    const all = (await keys()).filter((k) => typeof k === "string" && k.startsWith(BLOB_PREFIX));
+    for (const k of all) await del(k);
+    for (const url of urls.values()) URL.revokeObjectURL(url);
+    urls.clear();
+    await saveIndex([]);
+  }
+
+
+  // ── searching ──────────────────────────────────────────────────────────────
+
+  const tokens = (s: string) => normalizeTitle(s).split(" ").filter(Boolean);
+
+  // How well a stored logo fits a console name: exact file name first, then a
+  // file name that contains (or is contained in) the query, then by how many
+  // words they share — a folder named after the console counts a little too.
+  function score(logo: LocalLogo, q: string, qTokens: string[]): number {
+    const stem = normalizeTitle(logo.name);
+    if (!stem) return 0;
+    let s = 0;
+    if (stem === q) s = 100;
+    else if (stem.includes(q)) s = 80;
+    else if (q.includes(stem) && stem.length >= 3) s = 60;
+    else {
+      const st = tokens(logo.name);
+      const shared = qTokens.filter((tk) => st.includes(tk)).length;
+      if (shared) s = 20 + (40 * shared) / Math.max(qTokens.length, st.length);
+    }
+    const folder = normalizeTitle(logo.path.split("/").pop() ?? "");
+    if (folder && (folder === q || qTokens.some((tk) => tk.length > 2 && folder.includes(tk)))) s += 10;
+    return s;
+  }
+
+  async function search(term: string): Promise<CoverCandidate[]> {
+    await ensureLoaded();
+    const q = normalizeTitle(term);
+    if (!q) return [];
+    const qTokens = q.split(" ").filter(Boolean);
+    const ranked = (cache ?? [])
+      .map((l) => ({ l, s: score(l, q, qTokens) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s || a.l.name.localeCompare(b.l.name))
+      .slice(0, 48);
+    const out: CoverCandidate[] = [];
+    for (const { l } of ranked) {
+      const url = await urlOf(l.id);
+      if (!url) continue;
+      // The grid captions `region || title`: the file name is the useful bit.
+      out.push({ title: l.name, region: "", url, thumb: url });
+    }
+    return out;
+  }
+
+  return { kind, subscribe, version: getVersion, list, ensureLoaded, url: urlOf, add, remove, removeAll, search };
 }
 
-export async function searchLocalLogos(term: string): Promise<CoverCandidate[]> {
-  await ensureLocalLogosLoaded();
-  const q = normalizeTitle(term);
-  if (!q) return [];
-  const qTokens = q.split(" ").filter(Boolean);
-  const ranked = (cache ?? [])
-    .map((l) => ({ l, s: score(l, q, qTokens) }))
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s || a.l.name.localeCompare(b.l.name))
-    .slice(0, 48);
-  const out: CoverCandidate[] = [];
-  for (const { l } of ranked) {
-    const url = await localLogoUrl(l.id);
-    if (!url) continue;
-    // The grid captions `region || title`: the file name is the useful bit.
-    out.push({ title: l.name, region: "", url, thumb: url });
-  }
-  return out;
-}
+export const localLogos = createLibrary("logo");
+export const localCovers = createLibrary("cover");
+
+// The logo library under its original names.
+export const subscribeLocalLogos = localLogos.subscribe;
+export const getLocalLogosVersion = localLogos.version;
+export const listLocalLogos = localLogos.list;
+export const ensureLocalLogosLoaded = localLogos.ensureLoaded;
+export const localLogoUrl = localLogos.url;
+export const addLocalLogos = localLogos.add;
+export const removeLocalLogo = localLogos.remove;
+export const removeAllLocalLogos = localLogos.removeAll;
+export const searchLocalLogos = localLogos.search;
+export const searchLocalCovers = localCovers.search;

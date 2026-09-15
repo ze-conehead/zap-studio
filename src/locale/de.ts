@@ -83,7 +83,19 @@ export const de: Record<string, string> = {
   "Nothing matches.": "Nichts passt.",
   "{n} more \u2014 narrow it down with the filter.": "{n} weitere \u2013 grenze sie mit dem Filter ein.",
   "Use local logos": "Lokale Logos verwenden",
-  "Use SteamGridDB": "SteamGridDB verwenden",
+  "Search online instead": "Stattdessen online suchen",
+  Online: "Online",
+  "Manage covers \u2026": "Cover verwalten \u2026",
+  "Manage covers": "Cover verwalten",
+  "Your own cover files, kept in this browser and shared by every project. With \u201cCover source: Local\u201d the cover search matches them by file name \u2014 name each file after its game or movie (\u201cGran Turismo.jpg\u201d), folders are fine too.":
+    "Deine eigenen Cover-Dateien, gespeichert in diesem Browser und für alle Projekte gemeinsam. Mit \u201eCover-Quelle: Lokal\u201c findet die Cover-Suche sie über den Dateinamen \u2013 benenne jede Datei nach ihrem Spiel oder Film (\u201eGran Turismo.jpg\u201c), Ordner sind auch in Ordnung.",
+  "Drop covers, folders or a .zip here": "Cover, Ordner oder eine .zip hier ablegen",
+  "Remove all {n} covers?": "Alle {n} Cover entfernen?",
+  "No covers yet.": "Noch keine Cover.",
+  "Use local covers": "Lokale Cover verwenden",
+  "Searching your own covers by file name (Settings \u25b8 Manage covers \u2026).": "Durchsucht deine eigenen Cover über den Dateinamen (Einstellungen \u25b8 Cover verwalten \u2026).",
+  "None of your covers matches \u201c{title}\u201d. Try another search term, or add files under Settings \u25b8 Manage covers \u2026":
+    "Keines deiner Cover passt zu \u201e{title}\u201c. Probiere einen anderen Suchbegriff oder füge Dateien unter Einstellungen \u25b8 Cover verwalten \u2026 hinzu.",
   "\u201c{name}\u201d is not a readable .zip file.": "\u201e{name}\u201c ist keine lesbare .zip-Datei.",
   "Searching your own logos (Settings \u25b8 Manage logos \u2026). Switch \u201cLogo source\u201d to SteamGridDB to search online.":
     "Durchsucht deine eigenen Logos (Einstellungen \u25b8 Logos verwalten \u2026). Stelle \u201eLogo-Quelle\u201c auf SteamGridDB, um online zu suchen.",

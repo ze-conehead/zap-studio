@@ -15,7 +15,7 @@
 
 import { desktopApiFetch, isDesktop } from "./desktop";
 import { t } from "./i18n";
-import { searchLocalLogos } from "./localLogos";
+import { searchLocalCovers, searchLocalLogos } from "./localLogos";
 import { getWorkspaceKind } from "./workspace";
 export interface CoverCandidate {
   title: string;
@@ -28,13 +28,15 @@ export interface CoverCandidate {
 // screenshots from it instead of box art — see searchCovers(). "tmdb" is The
 // Movie Database — movie posters, used instead of sgdb/igdb/libretro when
 // the active workspace is a movies one (none of the other three index films).
-export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro" | "tmdb";
+// "local" is the user's own cover library (Settings ▸ Manage covers …).
+export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro" | "tmdb" | "local";
 
 export function coverSourceLabel(s: CoverSource): string {
   if (s === "sgdb") return "SteamGridDB";
   if (s === "igdb") return "IGDB";
   if (s === "igdb-shots") return "IGDB (Screenshots)";
   if (s === "tmdb") return "TMDB";
+  if (s === "local") return t("Local");
   return "libretro-thumbnails";
 }
 
@@ -118,8 +120,13 @@ export function isConfigured(s: CoverSource): boolean {
 
 export function getCoverSource(): CoverSource {
   const v = ls.get(SOURCE_KEY);
+  if (v === "local") return "local";
   if (getWorkspaceKind() === "movies") return "tmdb";
   return v === "igdb" || v === "igdb-shots" || v === "libretro" ? v : "sgdb";
+}
+/** The sources the menu offers for this workspace's kind. */
+export function coverSourcesFor(kind: "games" | "movies"): CoverSource[] {
+  return kind === "movies" ? ["tmdb", "local"] : ["sgdb", "igdb", "igdb-shots", "libretro", "local"];
 }
 export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
 
@@ -139,7 +146,7 @@ export const logoSourceLabel = (s: LogoSource) => (s === "local" ? t("Local") : 
 // search dialog shows its credentials form until a key is entered.
 export function effectiveSource(): CoverSource {
   const chosen = getCoverSource();
-  if (chosen === "tmdb") return "tmdb";
+  if (chosen === "tmdb" || chosen === "local") return chosen;
   return isConfigured(chosen) ? chosen : "libretro";
 }
 
@@ -661,6 +668,7 @@ export async function searchCovers(
   const title = gameTitle.trim();
   if (!title) return [];
   const src = effectiveSource();
+  if (src === "local") return searchLocalCovers(title);
   if (src === "sgdb") return searchCoversSGDB(title);
   if (src === "igdb") return searchCoversIGDB(title);
   if (src === "igdb-shots") return searchShotsIGDB(title);
@@ -680,6 +688,9 @@ export async function searchScreenshots(
   const title = gameTitle.trim();
   if (!title) return [];
   const src = effectiveSource();
+  // The local library holds whatever the user dropped in — no separate
+  // screenshot set, so a frame gets the same matches.
+  if (src === "local") return searchLocalCovers(title);
   if (src === "sgdb") return searchShotsSGDB(title);
   if (src === "igdb" || src === "igdb-shots") return searchShotsIGDB(title);
   if (src === "tmdb") return searchShotsTMDB(title);
