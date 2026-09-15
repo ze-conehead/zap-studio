@@ -404,7 +404,9 @@ const CONFETTI = [
 ];
 
 function Burst({ onDone }: { onDone: () => void }) {
-  const bits = useMemo(() => {
+  // Random once, on mount — a state initialiser rather than a memo so the
+  // randomness isn't part of render.
+  const [bits] = useState(() => {
     const n = reduced() ? 0 : 42;
     return Array.from({ length: n }, (_, i) => {
       const a = (i / n) * Math.PI * 2 + Math.random() * 0.5;
@@ -420,7 +422,7 @@ function Burst({ onDone }: { onDone: () => void }) {
         round: i % 3 === 0,
       };
     });
-  }, []);
+  });
   const rays = useMemo(
     () => (reduced() ? [] : Array.from({ length: 14 }, (_, i) => (i / 14) * 360)),
     [],

@@ -420,9 +420,8 @@ export function CutSheetDialog({
                           onCheckedChange={() =>
                             setPicked((p) => {
                               const n = new Set(p);
-                              n.has(g.gameKey)
-                                ? n.delete(g.gameKey)
-                                : n.add(g.gameKey);
+                              if (n.has(g.gameKey)) n.delete(g.gameKey);
+                              else n.add(g.gameKey);
                               return n;
                             })
                           }

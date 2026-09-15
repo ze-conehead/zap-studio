@@ -79,6 +79,100 @@ interface Props {
 
 type MenuId = "file" | "edit" | "view" | "extra" | "settings";
 
+// One top-level menu. modal={false} keeps the rest of the bar clickable
+// while a menu is open, which is what lets the hover hand-off work at all:
+// once one menu is open, hovering a sibling switches to it.
+function Menu({
+  id,
+  label,
+  open,
+  setOpen,
+  children,
+}: {
+  id: MenuId;
+  label: string;
+  open: MenuId | null;
+  setOpen: (id: MenuId | null) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <DropdownMenu
+      modal={false}
+      open={open === id}
+      onOpenChange={(o) => setOpen(o ? id : null)}
+    >
+      <DropdownMenuTrigger
+        onMouseEnter={() => {
+          if (open && open !== id) setOpen(id);
+        }}
+        className={cn(
+          "rounded px-2.5 py-1 text-[13px] outline-none",
+          open === id ? "bg-accent text-foreground" : "hover:bg-accent/70",
+        )}
+      >
+        {label}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={4} className="w-60">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// The shortcut hint on the right of a row.
+const Key = ({ k }: { k: string }) => (
+  <span className="ml-auto pl-6 text-[11px] tabular-nums text-muted-foreground">
+    {k}
+  </span>
+);
+
+// A checkable row — Radix' checkbox item isn't wired up in this project.
+function Toggle({
+  checked,
+  onSelect,
+  children,
+}: {
+  checked: boolean;
+  onSelect: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <DropdownMenuItem onSelect={(e) => (e.preventDefault(), onSelect())}>
+      <Check className={cn("size-4", !checked && "opacity-0")} />
+      {children}
+    </DropdownMenuItem>
+  );
+}
+
+// A nested list rendered inline behind a "›" header, so no extra Radix
+// sub-menu primitive is needed.
+function Sub({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value?: string;
+  children: React.ReactNode;
+}) {
+  const [openSub, setOpenSub] = useState(false);
+  return (
+    <>
+      <DropdownMenuItem
+        onSelect={(e) => (e.preventDefault(), setOpenSub((v) => !v))}
+        className="justify-between"
+      >
+        <span>{label}</span>
+        <span className="flex items-center gap-1 text-muted-foreground">
+          {value}
+          <ChevronRight className={cn("size-3.5 transition-transform", openSub && "rotate-90")} />
+        </span>
+      </DropdownMenuItem>
+      {openSub && <div className="ml-2 border-l pl-1">{children}</div>}
+    </>
+  );
+}
+
 export function MenuBar({
   canvas,
   guides,
@@ -114,6 +208,7 @@ export function MenuBar({
   const { project, past, future, showBleed, selectedId } = state;
   const [open, setOpen] = useState<MenuId | null>(null);
   const file = useFileActions(canvas);
+  const { zipRef, jsonRef } = file;
   const coverSource = getCoverSource();
   const logoSource = getLogoSource();
   const backup = useBackupStatus();
@@ -129,89 +224,9 @@ export function MenuBar({
     };
   }, []);
 
-  // Once one menu is open, hovering a sibling switches to it.
-  const hover = (id: MenuId) => () => {
-    if (open && open !== id) setOpen(id);
-  };
-
-  const Menu = ({ id, label, children }: { id: MenuId; label: string; children: React.ReactNode }) => (
-    // modal={false} keeps the rest of the bar clickable while a menu is open,
-    // which is what lets the hover hand-off below work at all.
-    <DropdownMenu
-      modal={false}
-      open={open === id}
-      onOpenChange={(o) => setOpen(o ? id : null)}
-    >
-      <DropdownMenuTrigger
-        onMouseEnter={hover(id)}
-        className={cn(
-          "rounded px-2.5 py-1 text-[13px] outline-none",
-          open === id ? "bg-accent text-foreground" : "hover:bg-accent/70",
-        )}
-      >
-        {label}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={4} className="w-60">
-        {children}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  // The shortcut hint on the right of a row.
-  const Key = ({ k }: { k: string }) => (
-    <span className="ml-auto pl-6 text-[11px] tabular-nums text-muted-foreground">
-      {k}
-    </span>
-  );
-
-  // A checkable row — Radix' checkbox item isn't wired up in this project.
-  const Toggle = ({
-    checked,
-    onSelect,
-    children,
-  }: {
-    checked: boolean;
-    onSelect: () => void;
-    children: React.ReactNode;
-  }) => (
-    <DropdownMenuItem onSelect={(e) => (e.preventDefault(), onSelect())}>
-      <Check className={cn("size-4", !checked && "opacity-0")} />
-      {children}
-    </DropdownMenuItem>
-  );
-
-  // A nested list rendered inline behind a "›" header, so no extra Radix
-  // sub-menu primitive is needed.
-  const Sub = ({
-    label,
-    value,
-    children,
-  }: {
-    label: string;
-    value?: string;
-    children: React.ReactNode;
-  }) => {
-    const [openSub, setOpenSub] = useState(false);
-    return (
-      <>
-        <DropdownMenuItem
-          onSelect={(e) => (e.preventDefault(), setOpenSub((v) => !v))}
-          className="justify-between"
-        >
-          <span>{label}</span>
-          <span className="flex items-center gap-1 text-muted-foreground">
-            {value}
-            <ChevronRight className={cn("size-3.5 transition-transform", openSub && "rotate-90")} />
-          </span>
-        </DropdownMenuItem>
-        {openSub && <div className="ml-2 border-l pl-1">{children}</div>}
-      </>
-    );
-  };
-
   return (
     <div className="flex items-center gap-0.5 border-b bg-sidebar px-2 py-0.5 text-muted-foreground">
-      <Menu id="file" label={t("File")}>
+      <Menu id="file" open={open} setOpen={setOpen} label={t("File")}>
         <DropdownMenuItem onClick={onOpenWorkspaces}>
           {t("New project …")}
         </DropdownMenuItem>
@@ -282,7 +297,7 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
-      <Menu id="edit" label={t("Edit")}>
+      <Menu id="edit" open={open} setOpen={setOpen} label={t("Edit")}>
         <DropdownMenuItem
           disabled={!past.length}
           onClick={() => dispatch({ type: "UNDO" })}
@@ -314,7 +329,7 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
-      <Menu id="view" label={t("View")}>
+      <Menu id="view" open={open} setOpen={setOpen} label={t("View")}>
         <Toggle
           checked={showBleed}
           onSelect={() => dispatch({ type: "TOGGLE", key: "showBleed" })}
@@ -357,7 +372,7 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
-      <Menu id="extra" label={t("Extra")}>
+      <Menu id="extra" open={open} setOpen={setOpen} label={t("Extra")}>
         <DropdownMenuItem onClick={onOpenWalkthrough}>
           {t("Walkthrough …")}
         </DropdownMenuItem>
@@ -370,7 +385,7 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
-      <Menu id="settings" label={t("Settings")}>
+      <Menu id="settings" open={open} setOpen={setOpen} label={t("Settings")}>
         <Sub label={t("Theme")} value={t(theme.name)}>
           <Toggle checked={getThemeAuto()} onSelect={() => setThemeAuto(!getThemeAuto())}>
             {t("Follow system light / dark")}
@@ -542,7 +557,7 @@ export function MenuBar({
       )}
 
       <input
-        ref={file.zipRef}
+        ref={zipRef}
         type="file"
         accept=".zip,application/zip"
         hidden
@@ -553,7 +568,7 @@ export function MenuBar({
         }}
       />
       <input
-        ref={file.jsonRef}
+        ref={jsonRef}
         type="file"
         accept="application/json,.json"
         hidden

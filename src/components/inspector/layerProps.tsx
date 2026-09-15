@@ -689,17 +689,17 @@ export function AlignButtons({ layer, patch }: { layer: Layer; patch: Patch }) {
     const origin = trimOrigin(axis);
     const span = trimSpan(axis);
     const half = (axis === "x" ? box.w : box.h) / 2;
-    const items: [string, ReactNode, number, boolean][] =
+    const items: [string, () => ReactNode, number, boolean][] =
       axis === "x"
         ? [
-            [t("Left"), <AlignLeft />, origin + half, true],
-            [t("Center"), <MoveHorizontal />, origin + span / 2, true],
-            [t("Right"), <AlignRight />, origin + span - half, true],
+            [t("Left"), () => <AlignLeft />, origin + half, true],
+            [t("Center"), () => <MoveHorizontal />, origin + span / 2, true],
+            [t("Right"), () => <AlignRight />, origin + span - half, true],
           ]
         : [
-            [t("Top"), <AlignLeft className="rotate-90" />, origin + half, hasH],
-            [t("Middle"), <MoveVertical />, origin + span / 2, true],
-            [t("Bottom"), <AlignRight className="rotate-90" />, origin + span - half, hasH],
+            [t("Top"), () => <AlignLeft className="rotate-90" />, origin + half, hasH],
+            [t("Middle"), () => <MoveVertical />, origin + span / 2, true],
+            [t("Bottom"), () => <AlignRight className="rotate-90" />, origin + span - half, hasH],
           ];
     return (
       <div className="flex gap-1">
@@ -713,7 +713,7 @@ export function AlignButtons({ layer, patch }: { layer: Layer; patch: Patch }) {
             disabled={!enabled}
             onClick={() => patch({ [axis]: pos } as Partial<Layer>)}
           >
-            {icon}
+            {icon()}
           </Button>
         ))}
       </div>

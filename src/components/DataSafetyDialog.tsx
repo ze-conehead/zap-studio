@@ -83,8 +83,12 @@ export function DataSafetyDialog({
     setBusy(false);
   };
 
-  const stale =
-    status.lastAt > 0 && Date.now() - status.lastAt > STALE_DAYS * 86_400_000;
+  // "now" is sampled when the dialog opens, not on every render.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (open) setNow(Date.now());
+  }, [open]);
+  const stale = status.lastAt > 0 && now - status.lastAt > STALE_DAYS * 86_400_000;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

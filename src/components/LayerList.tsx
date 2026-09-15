@@ -36,10 +36,10 @@ import type { MaskOption } from "../templates";
 export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
   const t = useT();
   const { state, dispatch } = useStore();
-  const faceLayers =
-    state.side === "back"
-      ? state.project.back?.layers ?? []
-      : state.project.layers;
+  const faceLayers = useMemo(
+    () => (state.side === "back" ? state.project.back?.layers ?? [] : state.project.layers),
+    [state.side, state.project.back?.layers, state.project.layers],
+  );
   const layers = [...faceLayers].reverse(); // top of stack first
 
   // Which condition cases are live for the game this card is for — the rest

@@ -114,10 +114,12 @@ export function EditorCanvas({
     return () => ro.disconnect();
   }, [measure]);
 
-  handleRef.current = {
-    getStage: (s) => stages.current[s ?? side],
-    getStageWidth: () => CANVAS.w * scale,
-  };
+  useLayoutEffect(() => {
+    handleRef.current = {
+      getStage: (s) => stages.current[s ?? side],
+      getStageWidth: () => CANVAS.w * scale,
+    };
+  });
 
   return (
     <div

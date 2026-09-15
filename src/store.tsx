@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -383,7 +384,9 @@ export function StoreProvider({
   // Flush unsaved changes when the editor unmounts (project switch) or the
   // tab goes away, so fast navigation never drops edits.
   const live = useRef({ project: state.project, dirty: state.dirty });
-  live.current = { project: state.project, dirty: state.dirty };
+  useLayoutEffect(() => {
+    live.current = { project: state.project, dirty: state.dirty };
+  });
   useEffect(() => {
     const flush = () => {
       if (live.current.dirty) void saveProject(live.current.project);
@@ -398,7 +401,9 @@ export function StoreProvider({
   // Keyboard shortcuts for the selected layer. View-level keys (bleed,
   // guides, new card) live in the Shell, which owns those.
   const latest = useRef(state);
-  latest.current = state;
+  useLayoutEffect(() => {
+    latest.current = state;
+  });
 
   useEffect(() => {
     const NUDGE = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as const;

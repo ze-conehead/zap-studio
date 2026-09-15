@@ -55,7 +55,7 @@ export function ManageLogosDialog({
       setError("");
       setNote("");
     }
-  }, [open]);
+  }, [open, lib]);
 
   const q = normalizeTitle(filter);
   const shown = useMemo(() => {

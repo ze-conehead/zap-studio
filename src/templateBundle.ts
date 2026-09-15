@@ -166,4 +166,4 @@ export const deleteBundle = (id: string) => del(KEY(id));
 
 /** A filename that survives a round trip through a file manager. */
 export const bundleFileName = (b: TemplateBundle) =>
-  `${(b.name.replace(/[^\w\-]+/g, "_").slice(0, 40) || "template")}.template.json`;
+  `${(b.name.replace(/[^\w-]+/g, "_").slice(0, 40) || "template")}.template.json`;

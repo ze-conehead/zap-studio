@@ -219,7 +219,8 @@ export function ZaparooImportDialog({
     setPicked((prev) => {
       const next = new Set(prev);
       const k = gameKey(g);
-      next.has(k) ? next.delete(k) : next.add(k);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
       return next;
     });
 
