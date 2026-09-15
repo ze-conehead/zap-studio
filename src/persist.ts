@@ -88,6 +88,16 @@ export async function restoreProject(id: string): Promise<Project | undefined> {
   return e.project;
 }
 
+/** Rewrites every trashed project in place (bleed change, see src/bleed.ts). */
+export async function mapTrash(fn: (p: Project) => Project): Promise<void> {
+  const ks = (await keys()) as string[];
+  for (const k of ks) {
+    if (typeof k !== "string" || !k.startsWith(TRASH_PREFIX)) continue;
+    const e = (await get(k)) as TrashEntry | undefined;
+    if (e?.project) await set(k, { ...e, project: fn(e.project) });
+  }
+}
+
 export async function purgeTrashEntry(id: string): Promise<void> {
   await del(TRASH(id));
 }

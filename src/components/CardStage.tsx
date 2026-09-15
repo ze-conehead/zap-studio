@@ -12,8 +12,8 @@ import type { Layer as TLayer } from "../types";
 import {
   CardBackgroundNodes,
   effectiveBgFill,
+  buildFaceLayers,
   LayerInner,
-  withMasks,
 } from "./EditorCanvas";
 
 // A non-interactive copy of the editor's card rendering, used to capture a
@@ -47,10 +47,13 @@ export function CardStage({
   const meta = resolveBadgeMeta(card.project);
   const vars = placeholderContextFor(card.project, meta);
   const resolved = resolveConditions(content, meta);
-  const layers = back
-    ? resolved
-    : withMasks(card.project, resolved, card.masks);
-  const overlay = back ? [] : resolveConditions(card.overlay, meta);
+  // The back is a plain face — no template overlay, no alpha masks.
+  const { layers } = buildFaceLayers(
+    card.project,
+    resolved,
+    back ? [] : resolveConditions(card.overlay, meta),
+    card.masks,
+  );
   // What a flowing text frame breaks around (src/textFlow.ts).
   const obstacles = [...(card.masks ?? []), ...content.filter((l) => l.alphaMask)];
 
@@ -90,14 +93,6 @@ export function CardStage({
               ]}
         </KLayer>
       ))}
-
-      {overlay.length > 0 && (
-        <KLayer listening={false}>
-          {overlay.map((l) => (
-            <StaticLayer key={l.id} layer={l} meta={meta} vars={vars} obstacles={obstacles} />
-          ))}
-        </KLayer>
-      )}
     </Stage>
   );
 }

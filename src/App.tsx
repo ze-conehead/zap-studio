@@ -19,6 +19,7 @@ import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { ManageLogosDialog } from "./components/ManageLogosDialog";
+import { BleedDialog } from "./components/BleedDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import {
@@ -147,7 +148,7 @@ export default function App() {
       const masks = project.isTemplate ? [] : maskOptions(globalP, consoleP);
       const overlayable = (p?: Project) =>
         (p?.layers ?? []).filter(
-          (l) => !l.alphaMask && !l.logoSlot && !isBackground(l),
+          (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
         );
       const globalLayers = overlayable(globalP);
 
@@ -352,7 +353,7 @@ function Shell({
   onOpenProjects: () => void;
   onImportJson: (file: File) => void;
 }) {
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
   const canvas = useRef<CanvasHandle | null>(null);
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -371,6 +372,7 @@ function Shell({
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
   const [manageLogos, setManageLogos] = useState(false);
+  const [bleedOpen, setBleedOpen] = useState(false);
   // Opens by itself on a fresh install, then only from Extra ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
   // switch (see the StoreProvider key), so "seen on close" would show it
@@ -430,6 +432,7 @@ function Shell({
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
     onOpenManageLogos: () => setManageLogos(true),
+    onOpenBleed: () => setBleedOpen(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
   };
@@ -509,6 +512,16 @@ function Shell({
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
       <ManageLogosDialog open={manageLogos} onOpenChange={setManageLogos} />
+      <BleedDialog
+        open={bleedOpen}
+        onOpenChange={setBleedOpen}
+        beforeApply={async () => {
+          // Saved and marked clean, so the unload flush can't write the
+          // pre-move project back over the shifted one.
+          await saveProject(state.project);
+          dispatch({ type: "SAVED" });
+        }}
+      />
       <ShortcutsDialog open={shortcuts} onOpenChange={setShortcuts} />
       <WalkthroughDialog
         open={walkthrough}

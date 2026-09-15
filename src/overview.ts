@@ -26,7 +26,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
   };
   const overlayable = (p?: Project) =>
     (p?.layers ?? []).filter(
-      (l) => !l.alphaMask && !l.logoSlot && !isBackground(l),
+      (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
     );
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);

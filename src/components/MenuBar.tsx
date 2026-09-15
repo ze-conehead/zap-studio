@@ -70,6 +70,7 @@ interface Props {
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
   onOpenManageLogos: () => void;
+  onOpenBleed: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
   onImportJson: (file: File) => void;
@@ -98,6 +99,7 @@ export function MenuBar({
   onOpenApiKeys,
   onOpenCustomFonts,
   onOpenManageLogos,
+  onOpenBleed,
   onOpenWalkthrough,
   onOpenShortcuts,
   onImportJson,
@@ -427,6 +429,11 @@ export function MenuBar({
             </DropdownMenuItem>
           ))}
         </Sub>
+
+        <DropdownMenuItem onClick={onOpenBleed}>
+          {t("Bleed …")}
+          <span className="ml-auto pl-4 text-xs text-muted-foreground">{getFormat().bleedMM} mm</span>
+        </DropdownMenuItem>
 
         <Sub label={t("Language")} value={lang.toUpperCase()}>
           <DropdownMenuItem

@@ -176,10 +176,43 @@ export function getFormatId(): FormatId {
   return "card";
 }
 
-export function getFormat(): CardFormat {
+// The bleed can be changed per workspace (Settings ▸ Bleed …); absent =
+// the format's own. Changing it moves every layer (src/bleed.ts) and
+// reloads, like a format switch, since src/card.ts derives the canvas from
+// it at module load.
+const BLEED_KEY = `stickerstudio:bleed${wsSuffix()}`;
+export const MAX_BLEED_MM = 10;
+
+export function getBleedOverride(): number | undefined {
+  try {
+    const v = Number(localStorage.getItem(BLEED_KEY));
+    if (Number.isFinite(v) && v >= 0 && v <= MAX_BLEED_MM && localStorage.getItem(BLEED_KEY) !== null) return v;
+  } catch {
+    /* unavailable */
+  }
+  return undefined;
+}
+
+export function setBleedOverride(mm: number | undefined): void {
+  try {
+    if (mm === undefined) localStorage.removeItem(BLEED_KEY);
+    else localStorage.setItem(BLEED_KEY, String(mm));
+  } catch {
+    /* unavailable */
+  }
+}
+
+/** The active format with the format's own bleed, ignoring the override. */
+export function getBaseFormat(): CardFormat {
   const id = getFormatId();
   if (id === "custom") return customCardFormat(getCustomFormatSpec());
   return FORMATS[id];
+}
+
+export function getFormat(): CardFormat {
+  const base = getBaseFormat();
+  const bleed = getBleedOverride();
+  return bleed === undefined ? base : { ...base, bleedMM: bleed };
 }
 
 export const isCard = () => getFormatId() === "card";

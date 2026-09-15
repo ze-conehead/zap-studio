@@ -22,6 +22,13 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  "Bleed \u2026": "Beschnitt \u2026",
+  "Bleed (mm)": "Beschnitt (mm)",
+  "How far artwork runs past the trim on every side, so a cut that is slightly off shows no white edge. Print shops usually want 2\u20133 mm; 0 for a plain cut. Everything on your cards keeps its place \u2014 the canvas grows or shrinks around it.":
+    "Wie weit die Gestaltung auf jeder Seite \u00fcber die Schnittkante hinausl\u00e4uft, damit ein leicht versetzter Schnitt keinen wei\u00dfen Rand zeigt. Druckereien wollen meist 2\u20133 mm; 0 f\u00fcr einen einfachen Schnitt. Alles auf deinen Karten bleibt an seinem Platz \u2013 die Arbeitsfl\u00e4che w\u00e4chst oder schrumpft drumherum.",
+  "Format default: {n} mm": "Format-Standard: {n} mm",
+  "0 to {max} mm": "0 bis {max} mm",
+  "Applying reloads the app.": "Beim Anwenden wird die App neu geladen.",
   Local: "Lokal",
   "Logo source": "Logo-Quelle",
   "Manage logos \u2026": "Logos verwalten \u2026",

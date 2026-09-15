@@ -84,27 +84,54 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
-// Splices each alpha mask in as a real mask layer directly above the image
-// that points at it, so segmentLayers()/destination-in clips it like any
-// other mask. Only for game cards.
-export function withMasks(
+// One z-ordered list for a face: the project's own layers, then the
+// console / global template layers it inherits (`overlay`, alpha masks
+// included, in the templates' own stacking order). On a game card each
+// alpha mask is where the card's own image that points at it slots in —
+// spliced there as a clipped run plus a mask layer, so segmentLayers() /
+// destination-in clips it, and the template's layers below the frame stay
+// below the image while those above it (a frame border, say) stay above.
+// The frame itself is never drawn. A template shows only its own layers
+// and its own frames (editable there); the foreign frames are dropped.
+// `foreignIds` names the entries that came from the overlay, so the editor
+// can draw them read-only.
+export function buildFaceLayers(
   project: Project,
-  layers: TLayer[],
+  own: TLayer[],
+  overlay: TLayer[] = [],
   masks: TLayer[] = [],
-): TLayer[] {
-  if (project.isTemplate || !masks.length) return layers;
+): { layers: TLayer[]; foreignIds: Set<string> } {
+  const foreignIds = new Set<string>();
   const out: TLayer[] = [];
-  for (const l of layers) {
-    const m = resolveMask(l, masks);
+  const placed = new Set<string>();
+  const slotsIn = (l: TLayer) => {
+    if (project.isTemplate || !masks.length) return undefined;
     // A layer already wired into a hand-made mask group is left alone.
-    if (!m || !l.visible || l.mask || l.clipped) {
-      out.push(l);
+    if (!l.visible || l.mask || l.clipped) return undefined;
+    return resolveMask(l, masks);
+  };
+  // Own content with no frame to fill sits under the whole template stack,
+  // as it always has.
+  for (const l of own) {
+    if (!slotsIn(l)) out.push(l);
+  }
+  for (const tl of overlay) {
+    if (!isAlphaMask(tl)) {
+      out.push(tl);
+      foreignIds.add(tl.id);
       continue;
     }
-    out.push({ ...l, clipped: true });
+    const clipped = own.filter((l) => !placed.has(l.id) && slotsIn(l)?.id === tl.id);
+    if (!clipped.length) continue;
+    for (const l of clipped) {
+      placed.add(l.id);
+      out.push({ ...l, clipped: true });
+    }
+    const id = `__mask__${tl.id}`;
+    foreignIds.add(id);
     out.push({
-      ...m,
-      id: `__mask__${m.id}__${l.id}`,
+      ...tl,
+      id,
       mask: true,
       clipped: false,
       groupTransform: false,
@@ -117,7 +144,12 @@ export function withMasks(
       visible: true,
     } as TLayer);
   }
-  return out;
+  // An image whose frame isn't in the overlay (hidden, or gone) still draws,
+  // unclipped, under the stack.
+  for (const l of own) {
+    if (slotsIn(l) && !placed.has(l.id)) out.push(l);
+  }
+  return { layers: out, foreignIds };
 }
 
 // The fill a background layer actually paints. The chain is card → console
@@ -329,11 +361,16 @@ function FaceStage({
   const vars = placeholderContextFor(project, badgeMeta);
   const hiddenCases = hiddenCaseIds(layerList, badgeMeta);
   const preview = active && selectedId && hiddenCases.has(selectedId) ? selectedId : null;
-  const cases = resolveConditions(layerList, badgeMeta, preview);
-  const renderLayers = (
-    back ? cases : withMasks(project, cases, masks)
-  ).filter((l: TLayer) => !l.logoSlot || project.isGlobalTemplate);
-  const overlayLayers = back ? [] : resolveConditions(overlay, badgeMeta);
+  const cases = resolveConditions(layerList, badgeMeta, preview).filter(
+    (l: TLayer) => !l.logoSlot || project.isGlobalTemplate,
+  );
+  // The back is a plain face — no template overlay, no alpha masks.
+  const { layers: renderLayers, foreignIds } = buildFaceLayers(
+    project,
+    cases,
+    back ? [] : resolveConditions(overlay, badgeMeta),
+    masks,
+  );
 
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -554,7 +591,16 @@ function FaceStage({
               asMask = false,
               groupChildren?: TLayer[],
             ) =>
-              layer.visible ? (
+              !layer.visible ? null : foreignIds.has(layer.id) ? (
+                <ReadOnlyLayer
+                  key={layer.id}
+                  layer={layer}
+                  asMask={asMask}
+                  meta={badgeMeta}
+                  vars={vars}
+                  obstacles={obstacles}
+                />
+              ) : (
                 <LayerNode
                   key={layer.id}
                   layer={layer}
@@ -597,7 +643,7 @@ function FaceStage({
                     }
                   }}
                 />
-              ) : null;
+              );
 
             return (
               <Layer key={`seg-${i}`}>
@@ -615,22 +661,6 @@ function FaceStage({
               </Layer>
             );
           })}
-
-          {overlayLayers.length > 0 && (
-            <Layer listening={false}>
-              {overlayLayers.map((layer) =>
-                layer.visible ? (
-                  <ReadOnlyLayer
-                    key={layer.id}
-                    layer={layer}
-                    meta={badgeMeta}
-                    vars={vars}
-                    obstacles={obstacles}
-                  />
-                ) : null,
-              )}
-            </Layer>
-          )}
 
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} />
@@ -1394,13 +1424,16 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
 }
 
 // Console-template layer shown on a game card: visible, never interactive.
+// As a mask it clips the card's own image spliced in below it.
 function ReadOnlyLayer({
   layer,
+  asMask = false,
   meta,
   vars,
   obstacles,
 }: {
   layer: TLayer;
+  asMask?: boolean;
   meta?: GameMeta;
   vars?: PlaceholderContext;
   obstacles?: TLayer[];
@@ -1416,7 +1449,7 @@ function ReadOnlyLayer({
   };
   return (
     <Group {...common}>
-      <LayerInner layer={layer} meta={meta} vars={vars} obstacles={obstacles} />
+      <LayerInner layer={layer} asMask={asMask} meta={meta} vars={vars} obstacles={obstacles} />
     </Group>
   );
 }
