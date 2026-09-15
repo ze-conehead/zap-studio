@@ -8,18 +8,27 @@ import {
   type CustomFont,
 } from "./customFonts";
 import { loadAllProjects } from "./persist";
-import { wsIdbPrefix, wsSuffix } from "./workspace";
+import { getWorkspaceKind, setWorkspaceKind, wsIdbPrefix, wsSuffix, type WorkspaceKind } from "./workspace";
+import { localCovers, localLogos, type ImageLibrary, type LocalLogo } from "./localLogos";
 import type { Project } from "./types";
 
-// Full backup: every project + every template + the global settings
-// (guides, game index, catalogue edits), with images stored as real files
-// and deduplicated.
+// Full backup: every project + every template + the workspace's settings
+// (guides, game index, catalogue edits, gamelists, format / custom format /
+// bleed, kind) and the local cover / logo libraries, with images stored
+// as real files and deduplicated.
 
 const BACKUP_FORMAT = "credit-card-sticker-studio-backup";
 // A backup covers the active workspace only — its projects and its settings.
 const GUIDES_KEY = `stickerstudio:guides${wsSuffix()}`;
 const GAME_INDEX_KEY = "stickerstudio:gameIndex";
 const CATALOG_OVERLAY_KEY = `stickerstudio:catalogOverlay${wsSuffix()}`;
+const GAMELIST_PREFIX = "stickerstudio:gamelist:";
+// Plain per-workspace keys copied verbatim: format, custom size, bleed.
+const SETTING_KEYS = ["stickerstudio:format", "stickerstudio:customFormat", "stickerstudio:bleed"];
+const wsKey = (base: string) => `${base}${wsSuffix()}`;
+// A key belongs to this workspace when it carries its suffix — the
+// original workspace's keys carry none, so "--w" must be absent there.
+const mine = (k: string) => (wsSuffix() ? k.endsWith(wsSuffix()) : !k.includes("--w"));
 
 const MIME_EXT: Record<string, string> = {
   "image/png": "png",
@@ -142,6 +151,40 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
     files[`fonts/${f.id}.json`] = strToU8(JSON.stringify(f));
   }
 
+  // Metadata per console, the format settings and the workspace kind.
+  const gamelists: Record<string, string> = {};
+  const settings: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !mine(k)) continue;
+    if (k.startsWith(GAMELIST_PREFIX)) {
+      // Stored without the suffix, so it lands in whichever workspace imports it.
+      gamelists[k.slice(GAMELIST_PREFIX.length, k.length - wsSuffix().length)] = localStorage.getItem(k) ?? "";
+    }
+  }
+  for (const base of SETTING_KEYS) {
+    const v = localStorage.getItem(wsKey(base));
+    if (v !== null) settings[base] = v;
+  }
+  if (Object.keys(gamelists).length) files["settings/gamelists.json"] = strToU8(JSON.stringify(gamelists));
+  files["settings/workspace.json"] = strToU8(JSON.stringify({ kind: getWorkspaceKind(), settings }));
+
+  // The local cover / logo libraries: one file per image plus an index.
+  const libraries: Record<string, LocalLogo[]> = {};
+  for (const lib of [localLogos, localCovers]) {
+    await lib.ensureLoaded();
+    const entries = lib.list();
+    if (!entries.length) continue;
+    libraries[lib.kind] = entries;
+    for (const e of entries) {
+      const url = await lib.url(e.id);
+      if (!url) continue;
+      const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+      files[`${lib.kind}s/${e.id}.${MIME_EXT[e.type] ?? "bin"}`] = bytes;
+    }
+  }
+  if (Object.keys(libraries).length) files["settings/libraries.json"] = strToU8(JSON.stringify(libraries));
+
   files["manifest.json"] = strToU8(
     JSON.stringify(
       {
@@ -151,6 +194,7 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
         projects: np,
         templates: nt,
         fonts: fonts.length,
+        libraries: Object.fromEntries(Object.entries(libraries).map(([k, v]) => [k, v.length])),
         assets: assetMime,
       },
       null,
@@ -248,6 +292,58 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
       CATALOG_OVERLAY_KEY,
       strFromU8(entries["settings/catalogOverlay.json"]),
     );
+  }
+
+  if (entries["settings/gamelists.json"]) {
+    try {
+      const lists = JSON.parse(strFromU8(entries["settings/gamelists.json"])) as Record<string, string>;
+      for (const [consoleId, json] of Object.entries(lists)) {
+        localStorage.setItem(`${GAMELIST_PREFIX}${consoleId}${wsSuffix()}`, json);
+      }
+    } catch {
+      /* skip */
+    }
+  }
+  if (entries["settings/workspace.json"]) {
+    try {
+      const ws = JSON.parse(strFromU8(entries["settings/workspace.json"])) as {
+        kind?: WorkspaceKind;
+        settings?: Record<string, string>;
+      };
+      if (ws.kind === "games" || ws.kind === "movies") setWorkspaceKind(ws.kind);
+      for (const base of SETTING_KEYS) {
+        const v = ws.settings?.[base];
+        if (v === undefined) localStorage.removeItem(wsKey(base));
+        else localStorage.setItem(wsKey(base), v);
+      }
+    } catch {
+      /* skip */
+    }
+  }
+
+  // Libraries: entries with the same folder + name replace what's there.
+  if (entries["settings/libraries.json"]) {
+    try {
+      const libraries = JSON.parse(strFromU8(entries["settings/libraries.json"])) as Record<string, LocalLogo[]>;
+      for (const lib of [localLogos, localCovers] as ImageLibrary[]) {
+        const list = libraries[lib.kind];
+        if (!list?.length) continue;
+        const inputs = [];
+        for (const e of list) {
+          const path = `${lib.kind}s/${e.id}.${MIME_EXT[e.type] ?? "bin"}`;
+          const bytes = entries[path];
+          if (!bytes) continue;
+          inputs.push({
+            file: new Blob([bytes as BlobPart], { type: e.type }),
+            name: `${e.name}.${MIME_EXT[e.type] ?? "png"}`,
+            path: e.path,
+          });
+        }
+        if (inputs.length) await lib.add(inputs);
+      }
+    } catch (e) {
+      console.error("library import failed", e);
+    }
   }
 
   return { projects: np, templates: nt };

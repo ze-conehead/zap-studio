@@ -22,6 +22,7 @@ import {
 } from "../autobackup";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
+import { formatBytes, STORAGE_WARN_RATIO, storageUsage, type StorageUsage } from "../storageUsage";
 import {
   emptyTrash,
   listTrash,
@@ -48,6 +49,10 @@ export function DataSafetyDialog({
   const t = useT();
   const status = useBackupStatus();
   const [trash, setTrash] = useState<TrashEntry[]>([]);
+  const [usage, setUsage] = useState<StorageUsage | null>(null);
+  useEffect(() => {
+    if (open) void storageUsage().then(setUsage);
+  }, [open, trash]);
   const [busy, setBusy] = useState(false);
 
   const reloadTrash = useCallback(() => {
@@ -93,6 +98,42 @@ export function DataSafetyDialog({
             "Everything you design lives in this browser's local database. Clearing the browser's site data deletes it. Point the app at a folder and it keeps a rolling set of backup .zip files there for you.",
           )}
         </p>
+
+        {/* ── storage ───────────────────────────────────────────────── */}
+        {usage && (
+          <section className="flex flex-col gap-2 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label>{t("Storage")}</Label>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {usage.quota
+                  ? t("{used} of {quota} used ({pct} %)", {
+                      used: formatBytes(usage.usage),
+                      quota: formatBytes(usage.quota),
+                      pct: Math.round(usage.ratio * 100),
+                    })
+                  : t("{used} used", { used: formatBytes(usage.usage) })}
+              </span>
+            </div>
+            {usage.quota > 0 && (
+              <div className="h-1.5 overflow-hidden rounded bg-muted">
+                <div
+                  className={usage.ratio >= STORAGE_WARN_RATIO ? "h-full bg-amber-500" : "h-full bg-primary"}
+                  style={{ width: `${Math.min(100, usage.ratio * 100)}%` }}
+                />
+              </div>
+            )}
+            {usage.ratio >= STORAGE_WARN_RATIO ? (
+              <p className="flex items-center gap-1.5 text-xs text-amber-400">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                {t("Storage is getting full — a full quota makes saves fail. Empty the trash, remove unused covers / logos, or back up and delete old projects.")}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {t("Images are stored inside the projects; the trash and the local cover / logo libraries count too.")}
+              </p>
+            )}
+          </section>
+        )}
 
         {/* ── automatic backups ─────────────────────────────────────── */}
         <section className="flex flex-col gap-3 rounded-md border p-3">

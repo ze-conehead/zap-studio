@@ -22,6 +22,13 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  Storage: "Speicher",
+  "{used} of {quota} used ({pct} %)": "{used} von {quota} belegt ({pct} %)",
+  "{used} used": "{used} belegt",
+  "Storage is getting full \u2014 a full quota makes saves fail. Empty the trash, remove unused covers / logos, or back up and delete old projects.":
+    "Der Speicher wird knapp \u2013 ist er voll, schlagen Speichervorgänge fehl. Leere den Papierkorb, entferne ungenutzte Cover / Logos oder sichere und lösche alte Projekte.",
+  "Images are stored inside the projects; the trash and the local cover / logo libraries count too.":
+    "Bilder liegen in den Projekten; Papierkorb und die lokalen Cover-/Logo-Bibliotheken zählen mit.",
   History: "Verlauf",
   Opened: "Geöffnet",
   "Added \u201c{name}\u201d": "\u201e{name}\u201c hinzugefügt",

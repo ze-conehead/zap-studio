@@ -142,6 +142,12 @@ export function setWorkspaceFormat(format: string): void {
   writeList(readList().map((w) => (w.id === active ? { ...w, format } : w)));
 }
 
+/** Restores the kind from a backup (the original workspace has no record). */
+export function setWorkspaceKind(kind: WorkspaceKind): void {
+  if (active === DEFAULT_WS) return;
+  writeList(readList().map((w) => (w.id === active ? { ...w, kind } : w)));
+}
+
 export function renameWorkspace(id: string, name: string): void {
   const clean = name.trim();
   if (!clean) return;
