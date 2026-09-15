@@ -22,6 +22,16 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  "Crop marks": "Schnittmarken",
+  "Short lines at every trim corner, for cutting by hand or at a print shop.": "Kurze Striche an jeder Schnittecke, zum Schneiden von Hand oder in der Druckerei.",
+  "Back sides on a second sheet (mirrored for duplex)": "Rückseiten auf einem zweiten Bogen (gespiegelt für Duplex)",
+  "Duplex offset X": "Duplex-Versatz X",
+  Y: "Y",
+  "Print the front sheet, flip it on the long edge, print the back sheet. If the backs land off-centre, enter the shift here (positive = right / down) and build again.":
+    "Vorderseiten-Bogen drucken, an der langen Kante wenden, Rückseiten-Bogen drucken. Sitzen die Rückseiten versetzt, den Versatz hier eintragen (positiv = rechts / unten) und neu erstellen.",
+  "Show bleed": "Beschnitt zeigen",
+  "print*_back.png = the back sides, mirrored: print the front, flip the sheet on its long edge, print the back on the same sheet at 100 %.":
+    "print*_back.png = die Rückseiten, gespiegelt: Vorderseite drucken, Bogen an der langen Kante wenden, Rückseite auf denselben Bogen bei 100 % drucken.",
   Storage: "Speicher",
   "{used} of {quota} used ({pct} %)": "{used} von {quota} belegt ({pct} %)",
   "{used} used": "{used} belegt",

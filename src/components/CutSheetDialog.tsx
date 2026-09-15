@@ -2,7 +2,9 @@ import type Konva from "konva";
 import { ChevronLeft, ChevronRight, Loader2, Scissors } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { zipSync, strToU8 } from "fflate";
-import { TRIM_RECT } from "../card";
+import { BLEED_MM, TRIM_RECT } from "../card";
+import { parseLocaleNumber } from "@/lib/utils";
+import { getFormat } from "../formats";
 import type { DemoCard } from "../demo";
 import { packImageSources } from "../demo";
 import { downloadBlob } from "../export";
@@ -49,9 +51,12 @@ export function CutSheetDialog({
   const [cards, setCards] = useState<DemoCard[]>([]);
   const [result, setResult] = useState<SheetResult | null>(null);
   const [pageIdx, setPageIdx] = useState(0);
+  const [face, setFace] = useState<"front" | "back">("front");
+  const [showBleed, setShowBleed] = useState(true);
   const [error, setError] = useState("");
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
+  const backStages = useRef<(Konva.Stage | null)[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -79,6 +84,7 @@ export function CutSheetDialog({
       await ensureFontsLoaded();
       await Promise.all(packImageSources(loaded).map(preloadImage));
       stages.current = [];
+      backStages.current = [];
       setCards(loaded);
     } catch (e) {
       setError((e as Error).message);
@@ -99,9 +105,14 @@ export function CutSheetDialog({
               const s = stages.current[i];
               return s ? s.toDataURL({ pixelRatio: 1 }) : "";
             });
+            const backImages = cards.map((c, i) => {
+              const s = backStages.current[i];
+              return c.back && s ? s.toDataURL({ pixelRatio: 1 }) : "";
+            });
             const r = await composeSheet(
               images.filter(Boolean),
               opts,
+              backImages,
             );
             if (!alive) return;
             setResult(r);
@@ -137,6 +148,16 @@ export function CutSheetDialog({
         cutRects: pg.cutRects,
       });
       downloadBlob(blob, "sticker-sheet-wmd.pdf");
+      if (pg.backDataUrl) {
+        const back = await stickerSheetPdf({
+          imageDataUrl: pg.backDataUrl,
+          widthMM: pg.widthMM,
+          heightMM: pg.heightMM,
+          bleedMM: pg.bleedMM,
+          cutRects: [],
+        });
+        downloadBlob(back, "sticker-sheet-wmd-back.pdf");
+      }
       return;
     }
 
@@ -153,6 +174,12 @@ export function CutSheetDialog({
       for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
       files[`print${suffix}.png`] = bytes;
       files[`cut${suffix}.svg`] = strToU8(pg.cutSvg);
+      if (pg.backDataUrl) {
+        const bb = atob(pg.backDataUrl.split(",")[1]);
+        const bbytes = new Uint8Array(bb.length);
+        for (let j = 0; j < bb.length; j++) bbytes[j] = bb.charCodeAt(j);
+        files[`print${suffix}_back.png`] = bbytes;
+      }
       const c = pg.cutBox;
       sizeBlocks.push(
         (multi ? `[${t("Sheet")} ${i + 1}]\n` : "") +
@@ -192,6 +219,12 @@ export function CutSheetDialog({
         t(
           "If Design Space crops the SVG to the cut line, set the image size above, then move the cut layer so its top-left sits at the offset above (left / top) from the image's top-left.",
         ) +
+        (result.pages.some((pg) => pg.backDataUrl)
+          ? "\n\n" +
+            t(
+              "print*_back.png = the back sides, mirrored: print the front, flip the sheet on its long edge, print the back on the same sheet at 100 %.",
+            )
+          : "") +
         "\n",
     );
     const zipped = zipSync(files, { level: 6 });
@@ -233,6 +266,21 @@ export function CutSheetDialog({
                 }}
               />
             ))}
+            {opts.backs &&
+              cards.map(
+                (c, i) =>
+                  c.back && (
+                    <CardStage
+                      key={`${c.key}-back`}
+                      card={c}
+                      face="back"
+                      width={TRIM_RECT.w}
+                      stageRef={(s) => {
+                        backStages.current[i] = s;
+                      }}
+                    />
+                  ),
+              )}
           </div>
         )}
 
@@ -300,7 +348,45 @@ export function CutSheetDialog({
                   {t("White background")}
                 </label>
               )}
+              {!wmd && (
+                <label className="flex items-center gap-1.5" title={t("Short lines at every trim corner, for cutting by hand or at a print shop.")}>
+                  <Checkbox
+                    checked={opts.cropMarks}
+                    onCheckedChange={(v) => setOpts((o) => ({ ...o, cropMarks: !!v }))}
+                  />
+                  {t("Crop marks")}
+                </label>
+              )}
             </div>
+
+            {getFormat().hasBack && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border p-2.5 text-xs">
+                <label className="flex items-center gap-1.5">
+                  <Checkbox
+                    checked={opts.backs}
+                    onCheckedChange={(v) => setOpts((o) => ({ ...o, backs: !!v }))}
+                  />
+                  {t("Back sides on a second sheet (mirrored for duplex)")}
+                </label>
+                {opts.backs && (
+                  <>
+                    <DuplexField
+                      label={t("Duplex offset X")}
+                      value={opts.duplexXMM}
+                      onChange={(v) => setOpts((o) => ({ ...o, duplexXMM: v }))}
+                    />
+                    <DuplexField
+                      label={t("Y")}
+                      value={opts.duplexYMM}
+                      onChange={(v) => setOpts((o) => ({ ...o, duplexYMM: v }))}
+                    />
+                    <span className="basis-full text-muted-foreground">
+                      {t("Print the front sheet, flip it on the long edge, print the back sheet. If the backs land off-centre, enter the shift here (positive = right / down) and build again.")}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             {games.length === 0 ? (
               <p className="py-6 text-sm text-muted-foreground">
@@ -394,6 +480,25 @@ export function CutSheetDialog({
                   h: result.pages[pageIdx].heightMM.toFixed(1),
                 })}
               </span>
+              <span className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5">
+                  <Checkbox checked={showBleed} onCheckedChange={(v) => setShowBleed(!!v)} />
+                  {t("Show bleed")}
+                </label>
+                {result.pages[pageIdx].backDataUrl && (
+                  <span className="flex rounded border text-[11px]">
+                    {(["front", "back"] as const).map((f) => (
+                      <button
+                        key={f}
+                        className={"px-2 py-0.5 " + (face === f ? "bg-primary text-primary-foreground" : "hover:bg-accent")}
+                        onClick={() => setFace(f)}
+                      >
+                        {f === "front" ? t("Front") : t("Back")}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
               {result.pages.length > 1 && (
                 <span className="flex items-center gap-1">
                   <button
@@ -425,16 +530,51 @@ export function CutSheetDialog({
             >
               <div className="relative w-fit shadow-lg">
                 <img
-                  src={result.pages[pageIdx].dataUrl}
+                  src={(face === "back" && result.pages[pageIdx].backDataUrl) || result.pages[pageIdx].dataUrl}
                   alt=""
                   className="block max-h-[46vh] w-auto"
                 />
-                <div
-                  className="pointer-events-none absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
-                  dangerouslySetInnerHTML={{
-                    __html: result.pages[pageIdx].cutSvg,
-                  }}
-                />
+                {face === "front" && (
+                  <div
+                    className="pointer-events-none absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
+                    dangerouslySetInnerHTML={{
+                      __html: result.pages[pageIdx].cutSvg,
+                    }}
+                  />
+                )}
+                {face === "front" && showBleed && (
+                  <svg
+                    className="pointer-events-none absolute inset-0 h-full w-full"
+                    viewBox={`0 0 ${result.pages[pageIdx].widthMM} ${result.pages[pageIdx].heightMM}`}
+                  >
+                    {result.pages[pageIdx].cutRects.map((r, i) => (
+                      <rect
+                        key={i}
+                        x={r.xMM - BLEED_MM}
+                        y={r.yMM - BLEED_MM}
+                        width={r.wMM + BLEED_MM * 2}
+                        height={r.hMM + BLEED_MM * 2}
+                        fill="#e879f9"
+                        fillOpacity="0.18"
+                        stroke="#e879f9"
+                        strokeWidth="0.2"
+                        strokeDasharray="1 1"
+                      />
+                    ))}
+                    {result.pages[pageIdx].cutRects.map((r, i) => (
+                      <rect
+                        key={`t${i}`}
+                        x={r.xMM}
+                        y={r.yMM}
+                        width={r.wMM}
+                        height={r.hMM}
+                        rx={r.rMM}
+                        fill="#000"
+                        fillOpacity="0"
+                      />
+                    ))}
+                  </svg>
+                )}
               </div>
             </div>
 
@@ -487,5 +627,39 @@ export function CutSheetDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// A duplex offset in mm, comma or period, kept as text while typing.
+function DuplexField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [text, setText] = useState(String(value).replace(".", ","));
+  useEffect(() => {
+    setText(String(value).replace(".", ","));
+  }, [value]);
+  return (
+    <label className="flex items-center gap-1.5">
+      {label}
+      <input
+        type="text"
+        inputMode="decimal"
+        className="h-7 w-16 rounded border bg-transparent px-2"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          const v = parseLocaleNumber(text);
+          if (v !== undefined && Math.abs(v) <= 20) onChange(v);
+          else setText(String(value).replace(".", ","));
+        }}
+      />
+      mm
+    </label>
   );
 }

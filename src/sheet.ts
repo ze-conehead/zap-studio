@@ -110,13 +110,32 @@ export interface SheetOptions {
   gapMM: number; // blank space between the full-bleed cards
   background: "transparent" | "white";
   target: SheetTarget;
+  // Printed crop marks at every trim corner, in the gaps and a margin
+  // around the sheet — for cutting by hand or at a print shop.
+  cropMarks: boolean;
+  // A second sheet per page with the cards' back faces, mirrored so a
+  // long-edge duplex print lands each back behind its front …
+  backs: boolean;
+  // … shifted by this much (mm) to cancel the printer's duplex offset.
+  duplexXMM: number;
+  duplexYMM: number;
 }
 
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   gapMM: 3,
   background: "transparent",
   target: "cricut",
+  cropMarks: false,
+  backs: false,
+  duplexXMM: 0,
+  duplexYMM: 0,
 };
+
+// Crop marks: this long, this far off the bleed edge; the sheet gets this
+// much margin so the outer cards get theirs too.
+export const MARK_LEN_MM = 3;
+export const MARK_GAP_MM = 0.5;
+export const MARK_MARGIN_MM = MARK_LEN_MM + MARK_GAP_MM + 1;
 
 export interface CutRect {
   xMM: number; // from the page's top-left (incl. outer bleed)
@@ -128,6 +147,7 @@ export interface CutRect {
 
 export interface SheetPage {
   dataUrl: string;
+  backDataUrl?: string; // the mirrored back sheet, when asked for
   cutSvg: string; // matching cut line: one rounded rect (trim edge) per card
   cutRects: CutRect[];
   // Bounding box of the whole cut line, measured from the page's top-left.
@@ -156,10 +176,13 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// `cardImages` are full-canvas (trim + full bleed) PNGs, one per card.
+// `cardImages` are full-canvas (trim + full bleed) PNGs, one per card;
+// `backImages` (same order, "" for a card without a back) feed the back
+// sheets when opts.backs is on.
 export async function composeSheet(
   cardImages: string[],
   opts: SheetOptions,
+  backImages: string[] = [],
 ): Promise<SheetResult> {
   if (!cardImages.length) throw new Error("no cards");
 
@@ -169,7 +192,8 @@ export async function composeSheet(
   // every side, always visible.
   const cellW = CANVAS.w;
   const cellH = CANVAS.h;
-  const outerBleed = wmd ? WMD_BLEED_MM * PX_PER_MM : 0;
+  // The sheet's margin: the wmd outer bleed, or room for the crop marks.
+  const outerBleed = wmd ? WMD_BLEED_MM * PX_PER_MM : opts.cropMarks ? MARK_MARGIN_MM * PX_PER_MM : 0;
   const whiteBg = wmd || opts.background === "white";
 
   let cols: number;
@@ -183,8 +207,8 @@ export async function composeSheet(
     perPage = cardImages.length;
     pageCount = 1;
   } else {
-    const printW = PRINT_W_MM * PX_PER_MM;
-    const printH = PRINT_H_MM * PX_PER_MM;
+    const printW = PRINT_W_MM * PX_PER_MM - outerBleed * 2;
+    const printH = PRINT_H_MM * PX_PER_MM - outerBleed * 2;
     cols = Math.floor((printW + gap) / (cellW + gap));
     rows = Math.floor((printH + gap) / (cellH + gap));
     if (cols < 1 || rows < 1) throw new Error("card-too-big");
@@ -193,6 +217,9 @@ export async function composeSheet(
   }
 
   const imgs = await Promise.all(cardImages.map(loadImage));
+  const backs = opts.backs
+    ? await Promise.all(backImages.map((src) => (src ? loadImage(src) : Promise.resolve(null))))
+    : [];
   const pages: SheetPage[] = [];
 
   // px → mm, 3 decimals.
@@ -218,9 +245,12 @@ export async function composeSheet(
       ctx.fillRect(0, 0, pageW, pageH);
     }
 
+    const cellPos = (i: number) => ({
+      cx: outerBleed + (i % pcols) * (cellW + gap),
+      cy: outerBleed + Math.floor(i / pcols) * (cellH + gap),
+    });
     slice.forEach((img, i) => {
-      const cx = outerBleed + (i % pcols) * (cellW + gap);
-      const cy = outerBleed + Math.floor(i / pcols) * (cellH + gap);
+      const { cx, cy } = cellPos(i);
       // Print: the full-bleed card, unclipped.
       ctx.drawImage(img, cx, cy, cellW, cellH);
       // Cut: the rounded trim edge inside the bleed.
@@ -232,6 +262,31 @@ export async function composeSheet(
         rMM: rMm,
       });
     });
+    if (opts.cropMarks) drawCropMarks(ctx, slice.length, cellPos, cellW, cellH, gap, outerBleed, pageW, pageH);
+
+    // The back sheet: the same grid mirrored left ↔ right (a long-edge
+    // duplex flip), each back nudged by the duplex offset. No marks — the
+    // front's marks are what gets cut.
+    let backDataUrl: string | undefined;
+    if (opts.backs) {
+      const bc = document.createElement("canvas");
+      bc.width = pageW;
+      bc.height = pageH;
+      const bctx = bc.getContext("2d")!;
+      if (whiteBg) {
+        bctx.fillStyle = "#ffffff";
+        bctx.fillRect(0, 0, pageW, pageH);
+      }
+      const dx = opts.duplexXMM * PX_PER_MM;
+      const dy = opts.duplexYMM * PX_PER_MM;
+      slice.forEach((_, i) => {
+        const back = backs[p * perPage + i];
+        if (!back) return;
+        const { cx, cy } = cellPos(i);
+        bctx.drawImage(back, pageW - cx - cellW + dx, cy + dy, cellW, cellH);
+      });
+      backDataUrl = bc.toDataURL("image/png");
+    }
 
     const cutMinX = Math.min(...cutRects.map((r) => r.xMM));
     const cutMinY = Math.min(...cutRects.map((r) => r.yMM));
@@ -260,6 +315,7 @@ export async function composeSheet(
 
     pages.push({
       dataUrl: canvas.toDataURL("image/png"),
+      backDataUrl,
       cutSvg,
       cutRects,
       cutBox,
@@ -271,4 +327,65 @@ export async function composeSheet(
   }
 
   return { pages, cols, rows, perPage };
+}
+
+// Short lines at every trim corner, pointing away from the card along the
+// trim edges, kept out of the neighbours' bleed: each mark is as long as
+// the room beside it allows (the gap between cells, the sheet margin).
+function drawCropMarks(
+  ctx: CanvasRenderingContext2D,
+  count: number,
+  cellPos: (i: number) => { cx: number; cy: number },
+  cellW: number,
+  cellH: number,
+  gap: number,
+  margin: number,
+  pageW: number,
+  pageH: number,
+): void {
+  const len = MARK_LEN_MM * PX_PER_MM;
+  const off = MARK_GAP_MM * PX_PER_MM;
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = Math.max(1, 0.15 * PX_PER_MM);
+  const line = (x1: number, y1: number, x2: number, y2: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  };
+  for (let i = 0; i < count; i++) {
+    const { cx, cy } = cellPos(i);
+    const left = cx + TRIM_RECT.x;
+    const right = cx + TRIM_RECT.x + TRIM_RECT.w;
+    const top = cy + TRIM_RECT.y;
+    const bottom = cy + TRIM_RECT.y + TRIM_RECT.h;
+    // Room beyond the bleed on each side: the margin at the sheet edge,
+    // else the gap to the next cell.
+    const room = (edge: number, limit: number) => Math.max(0, Math.min(len, Math.abs(limit - edge) - off));
+    const lRoom = room(cx, cx <= margin + 0.5 ? 0 : cx - gap);
+    const rRoom = room(cx + cellW, cx + cellW >= pageW - margin - 0.5 ? pageW : cx + cellW + gap);
+    const tRoom = room(cy, cy <= margin + 0.5 ? 0 : cy - gap);
+    const bRoom = room(cy + cellH, cy + cellH >= pageH - margin - 0.5 ? pageH : cy + cellH + gap);
+    const minLen = 1 * PX_PER_MM;
+    // Horizontal marks (along the top / bottom trim line), left and right.
+    if (lRoom >= minLen) {
+      line(cx - off, top, cx - off - lRoom, top);
+      line(cx - off, bottom, cx - off - lRoom, bottom);
+    }
+    if (rRoom >= minLen) {
+      line(cx + cellW + off, top, cx + cellW + off + rRoom, top);
+      line(cx + cellW + off, bottom, cx + cellW + off + rRoom, bottom);
+    }
+    // Vertical marks (along the left / right trim line), top and bottom.
+    if (tRoom >= minLen) {
+      line(left, cy - off, left, cy - off - tRoom);
+      line(right, cy - off, right, cy - off - tRoom);
+    }
+    if (bRoom >= minLen) {
+      line(left, cy + cellH + off, left, cy + cellH + off + bRoom);
+      line(right, cy + cellH + off, right, cy + cellH + off + bRoom);
+    }
+  }
+  ctx.restore();
 }
