@@ -48,12 +48,20 @@ export function LayerInner({
   meta,
   vars,
   obstacles,
+  combineIndex,
+  onCombineGrab,
 }: {
   layer: TLayer;
   asMask?: boolean;
   meta?: GameMeta;
   vars?: PlaceholderContext;
   obstacles?: TLayer[];
+  combineIndex?: number;
+  onCombineGrab?: (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+    index: number,
+    start: { x: number; y: number },
+  ) => void;
 }) {
   // As a mask, the node paints only its alpha into its Konva layer and keeps
   // (destination-in) the clipped layers drawn before it.
@@ -65,7 +73,10 @@ export function LayerInner({
   // before rendering, and this keeps a stray one invisible.
   if (layer.type === "condition") return null;
   if (layer.type === "image") return <ImageInner layer={layer} gco={gco} />;
-  if (layer.type === "shape") return <ShapeInner layer={layer} gco={gco} />;
+  if (layer.type === "shape")
+    return (
+      <ShapeInner layer={layer} gco={gco} combineIndex={combineIndex} onCombineGrab={onCombineGrab} />
+    );
   if (layer.type === "metabadge") return <MetaBadgeInner layer={layer} meta={meta} />;
   if (layer.type === "qr") return <QrInner layer={layer} gco={gco} vars={vars} />;
   // {title} & co. resolve here, so measuring, flowing and exporting all see
@@ -151,8 +162,30 @@ function QrInner({ layer, gco, vars }: { layer: TQrLayer; gco?: Gco; vars?: Plac
   );
 }
 
-function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
-  if (layer.combine?.length) return <CompoundShapeInner layer={layer} gco={gco} />;
+function ShapeInner({
+  layer,
+  gco,
+  combineIndex,
+  onCombineGrab,
+}: {
+  layer: TShapeLayer;
+  gco?: Gco;
+  combineIndex?: number;
+  onCombineGrab?: (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+    index: number,
+    start: { x: number; y: number },
+  ) => void;
+}) {
+  if (layer.combine?.length)
+    return (
+      <CompoundShapeInner
+        layer={layer}
+        gco={gco}
+        combineIndex={combineIndex}
+        onCombineGrab={onCombineGrab}
+      />
+    );
   const { width: w, height: h, fill } = layer;
   const ellipse = layer.shape === "circle";
   const radius = layer.shape === "capsule" ? Math.min(w, h) / 2 : layer.cornerRadius;
@@ -278,13 +311,80 @@ function OutlineNode({ op, logoSlot }: { op: ShapeOperand; logoSlot?: boolean })
   );
 }
 
+// The on-canvas drag handle for a combine entry selected as a sub-layer in
+// the Layers panel (src/components/LayerList.tsx) — a thin, always-visible
+// outline the user can grab directly, independent of number fields in the
+// Inspector's combine editor. Sits outside the cached silhouette/outline
+// groups so it never becomes part of their compositing or their bitmap
+// cache; it draws in the parent shape's own local space, so its x/y match
+// the combine entry's stored x/y with no extra transform math.
+//
+// Not a native Konva-draggable node: nesting a draggable Group inside the
+// parent shape's own (also draggable-while-selected) Group produced a
+// position it never actually reported on screen, as the two drags' local
+// coordinate spaces stack — one dragged-to-here position several
+// transforms removed from what the other side expected as "one shape's
+// worth of delta". The grab instead hands off to onGrab, which the canvas
+// owns (src/components/EditorCanvas.tsx's startCombineDrag): a manual
+// window-level drag, matching the one it already runs for "move the
+// selected layer from anywhere on the canvas" (see LayerNode's
+// onProxyDragStart) — one predictable coordinate conversion instead of two
+// nested ones.
+function CombineDragHandle({
+  op,
+  index,
+  onGrab,
+}: {
+  op: ShapeOperand;
+  index: number;
+  onGrab: (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+    index: number,
+    start: { x: number; y: number },
+  ) => void;
+}) {
+  const line = {
+    stroke: "#38bdf8",
+    strokeWidth: 2,
+    dash: [4, 3] as number[],
+    fill: "transparent",
+  };
+  const grab = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    e.cancelBubble = true;
+    onGrab(e, index, { x: op.x, y: op.y });
+  };
+  return (
+    <Group x={op.x} y={op.y} rotation={op.rotation} onMouseDown={grab} onTouchStart={grab}>
+      {op.shape === "circle" ? (
+        <Ellipse radiusX={op.width / 2} radiusY={op.height / 2} {...line} />
+      ) : (
+        <Rect x={-op.width / 2} y={-op.height / 2} width={op.width} height={op.height} cornerRadius={op.cornerRadius} {...line} />
+      )}
+    </Group>
+  );
+}
+
 // A shape combined from several operands (ShapeLayer.combine — see
 // src/combineShape.ts): its own box plus each combine entry, unioned or
 // subtracted together. The silhouette is a cached Konva Group so the
 // per-operand composite operations only interact with each other, not
 // with whatever else is on the same canvas — the same trick a single
 // shape's own `gco` mask relies on, just local to this one layer.
-function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
+function CompoundShapeInner({
+  layer,
+  gco,
+  combineIndex,
+  onCombineGrab,
+}: {
+  layer: TShapeLayer;
+  gco?: Gco;
+  combineIndex?: number;
+  onCombineGrab?: (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+    index: number,
+    start: { x: number; y: number },
+  ) => void;
+}) {
   const ops = useMemo(() => operandsOf(layer), [layer]);
   // Hooks run unconditionally — every branch below returns different JSX,
   // but always the same two refs, one of which stays unused (and its
@@ -296,16 +396,27 @@ function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
     outerRef.current?.cache();
   });
 
+  // ops[0] is the parent's own box (edited via width/height, not draggable
+  // here); combineIndex addresses layer.combine, one past that.
+  const selectedOp = combineIndex != null ? ops[combineIndex + 1] : undefined;
+  const handle =
+    selectedOp && onCombineGrab ? (
+      <CombineDragHandle op={selectedOp} index={combineIndex!} onGrab={onCombineGrab} />
+    ) : null;
+
   // As a mask, only the combined alpha matters — the outer cached group's
   // own gco (destination-in, from the caller) cuts it into whatever this
   // segment already drew.
   if (gco) {
     return (
-      <Group ref={silhouetteRef} globalCompositeOperation={gco}>
-        {ops.map((op, i) => (
-          <SilhouetteNode key={i} op={op} />
-        ))}
-      </Group>
+      <>
+        <Group ref={silhouetteRef} globalCompositeOperation={gco}>
+          {ops.map((op, i) => (
+            <SilhouetteNode key={i} op={op} />
+          ))}
+        </Group>
+        {handle}
+      </>
     );
   }
 
@@ -317,6 +428,7 @@ function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
         {ops.map((op, i) => (
           <OutlineNode key={i} op={op} logoSlot={layer.logoSlot} />
         ))}
+        {handle}
       </>
     );
   }
@@ -342,6 +454,7 @@ function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
       : null;
 
   return (
+    <>
     <Group ref={outerRef}>
       <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...paint} {...stroke} {...shadow} />
       {noise && <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...noise} />}
@@ -351,6 +464,8 @@ function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
         ))}
       </Group>
     </Group>
+    {handle}
+    </>
   );
 }
 

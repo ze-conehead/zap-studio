@@ -12,14 +12,16 @@ import {
   Image as ImageIcon,
   Lock,
   LockOpen,
+  MinusCircle,
   PaintBucket,
   Pencil,
+  Plus,
   QrCode,
   Shapes,
   Trash2,
   Type,
 } from "lucide-react";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { activeCases } from "../conditions";
@@ -36,7 +38,7 @@ import {
   subscribeLayerClipboard,
 } from "../layerClipboard";
 import { useStore } from "../store";
-import type { Layer } from "../types";
+import type { CombineShape, Layer, ShapeKind } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { CoverButton } from "./CoverButton";
@@ -68,13 +70,22 @@ function iconFor(l: Layer) {
 const nameOf = (l: Layer, t: ReturnType<typeof useT>) =>
   isImage(l) && l.main ? t("Main image") : l.name;
 
+const COMBINE_SHAPE_LABEL: Record<ShapeKind, string> = {
+  rect: "Square",
+  circle: "Circle",
+  capsule: "Capsule",
+};
+
 export function LayerList({
   masks = [],
   consoleLayers = [],
   globalLayers = [],
   foreignSelectedId,
+  selectedCombine,
   onSelectOwn,
   onSelectForeign,
+  onSelectCombine,
+  onClearCombine,
 }: {
   masks?: MaskOption[];
   // The console's / the global template's own layers, read-only here — see
@@ -83,8 +94,13 @@ export function LayerList({
   consoleLayers?: Layer[];
   globalLayers?: Layer[];
   foreignSelectedId?: string;
+  // A combine entry (ShapeLayer.combine) picked as a sub-layer below its
+  // parent shape — see App.tsx#selectedCombine.
+  selectedCombine?: { parentId: string; index: number } | null;
   onSelectOwn?: (id: string | null) => void;
   onSelectForeign?: (layer: Layer | null) => void;
+  onSelectCombine?: (parentId: string, index: number) => void;
+  onClearCombine?: () => void;
 }) {
   const t = useT();
   const { state, dispatch } = useStore();
@@ -132,6 +148,104 @@ export function LayerList({
     if (after) ti += 1;
     ids.splice(ti, 0, srcId);
     dispatch({ type: "SET_LAYER_ORDER", order: [...ids].reverse() });
+  };
+
+  // Drag-and-drop reordering for a shape's combine entries (union/subtract
+  // sub-layers) — a separate, index-scoped drag session from the main one
+  // above, since these aren't top-level layers.
+  const combineDrag = useRef<{ parentId: string; index: number } | null>(null);
+  const [combineOver, setCombineOver] = useState<{
+    parentId: string;
+    index: number;
+    after: boolean;
+  } | null>(null);
+
+  const combineRow = (parent: Layer, index: number, c: CombineShape) => {
+    if (parent.type !== "shape") return null;
+    const active = selectedCombine?.parentId === parent.id && selectedCombine.index === index;
+    const OpIcon = c.op === "subtract" ? MinusCircle : Plus;
+    const hovered = combineOver?.parentId === parent.id && combineOver.index === index;
+    return (
+      <li
+        key={c.id}
+        draggable
+        onDragStart={(e) => {
+          combineDrag.current = { parentId: parent.id, index };
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        onDragEnd={() => {
+          combineDrag.current = null;
+          setCombineOver(null);
+        }}
+        onDragOver={(e) => {
+          const d = combineDrag.current;
+          if (!d || d.parentId !== parent.id || d.index === index) return;
+          e.preventDefault();
+          const r = e.currentTarget.getBoundingClientRect();
+          setCombineOver({ parentId: parent.id, index, after: e.clientY > r.top + r.height / 2 });
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const d = combineDrag.current;
+          const combine = parent.combine;
+          if (d && d.parentId === parent.id && combine) {
+            const r = e.currentTarget.getBoundingClientRect();
+            const after = e.clientY > r.top + r.height / 2;
+            const list = [...combine];
+            const [moved] = list.splice(d.index, 1);
+            let ti = index;
+            if (d.index < index) ti -= 1;
+            if (after) ti += 1;
+            list.splice(ti, 0, moved);
+            dispatch({ type: "PATCH_LAYER", id: parent.id, patch: { combine: list } });
+            onSelectCombine?.(parent.id, ti);
+          }
+          combineDrag.current = null;
+          setCombineOver(null);
+        }}
+        onContextMenu={(e) => e.preventDefault()}
+        className={cn(
+          "ml-3 flex items-center gap-1 rounded-md border bg-card py-1 pl-1 pr-0.5 text-sm",
+          "border-l-2 border-l-fuchsia-500/60",
+          active ? "border-primary bg-accent" : "hover:bg-accent/50",
+          hovered &&
+            (combineOver!.after
+              ? "border-b-2 border-b-primary"
+              : "border-t-2 border-t-primary"),
+        )}
+      >
+        <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
+        <button
+          className="flex min-w-0 flex-1 items-center gap-1.5"
+          onClick={() => onSelectCombine?.(parent.id, index)}
+        >
+          <CornerDownRight className="size-3.5 shrink-0 text-fuchsia-500" />
+          <Shapes className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="truncate">{t(COMBINE_SHAPE_LABEL[c.shape])}</span>
+          <OpIcon
+            className={cn(
+              "size-3.5 shrink-0",
+              c.op === "subtract" ? "text-rose-500" : "text-primary",
+            )}
+          />
+        </button>
+        <LayerIcon
+          title={t("Delete")}
+          className="hover:text-destructive"
+          onClick={() => {
+            if (!parent.combine) return;
+            dispatch({
+              type: "PATCH_LAYER",
+              id: parent.id,
+              patch: { combine: parent.combine.filter((x) => x.id !== c.id) },
+            });
+            if (active) onClearCombine?.();
+          }}
+        >
+          <Trash2 />
+        </LayerIcon>
+      </li>
+    );
   };
 
   const foreignRow = (l: Layer, source: "console" | "global") => {
@@ -220,104 +334,107 @@ export function LayerList({
           // dim it, but keep it clickable so it can be edited.
           const dimmed = !!l.condId && !live.has(l.id);
           return (
-            <li
-              key={l.id}
-              draggable={!bg}
-              onDragStart={(e) => {
-                dragId.current = l.id;
-                setDragging(l.id);
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              onDragEnd={reset}
-              onDragOver={(e) => {
-                if (!dragId.current || dragId.current === l.id || bg) return;
-                e.preventDefault();
-                const r = e.currentTarget.getBoundingClientRect();
-                setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                const src = dragId.current;
-                const r = e.currentTarget.getBoundingClientRect();
-                if (src && !bg) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
-                reset();
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setMenu({
-                  x: e.clientX,
-                  y: e.clientY,
-                  items: buildLayerMenuItems({ layer: l, faceLayers, dispatch, t }),
-                });
-              }}
-              className={cn(
-                "flex items-center gap-0.5 rounded-md border bg-card px-1 py-1 text-sm",
-                active ? "border-primary bg-accent" : "hover:bg-accent/50",
-                l.clipped && "ml-3 border-l-2 border-l-primary/50",
-                l.condId && "ml-3 border-l-2 border-l-amber-500/60",
-                dimmed && "opacity-50",
-                dragging === l.id && "opacity-40",
-                over?.id === l.id &&
-                  (over.after
-                    ? "border-b-2 border-b-primary"
-                    : "border-t-2 border-t-primary"),
-              )}
-            >
-              {bg ? (
-                <span className="size-3.5 shrink-0" />
-              ) : (
-                <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
-              )}
-
-              <button
-                className="flex min-w-0 flex-1 items-center gap-1.5"
-                onClick={() => onSelectOwn?.(l.id)}
-              >
-                {l.clipped && (
-                  <CornerDownRight className="size-3.5 shrink-0 text-primary" />
+            <Fragment key={l.id}>
+              <li
+                draggable={!bg}
+                onDragStart={(e) => {
+                  dragId.current = l.id;
+                  setDragging(l.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={reset}
+                onDragOver={(e) => {
+                  if (!dragId.current || dragId.current === l.id || bg) return;
+                  e.preventDefault();
+                  const r = e.currentTarget.getBoundingClientRect();
+                  setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const src = dragId.current;
+                  const r = e.currentTarget.getBoundingClientRect();
+                  if (src && !bg) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+                  reset();
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    items: buildLayerMenuItems({ layer: l, faceLayers, dispatch, t }),
+                  });
+                }}
+                className={cn(
+                  "flex items-center gap-0.5 rounded-md border bg-card px-1 py-1 text-sm",
+                  active ? "border-primary bg-accent" : "hover:bg-accent/50",
+                  l.clipped && "ml-3 border-l-2 border-l-primary/50",
+                  l.condId && "ml-3 border-l-2 border-l-amber-500/60",
+                  dimmed && "opacity-50",
+                  dragging === l.id && "opacity-40",
+                  over?.id === l.id &&
+                    (over.after
+                      ? "border-b-2 border-b-primary"
+                      : "border-t-2 border-t-primary"),
                 )}
-                {l.condId && (
-                  <CornerDownRight className="size-3.5 shrink-0 text-amber-500" />
+              >
+                {bg ? (
+                  <span className="size-3.5 shrink-0" />
+                ) : (
+                  <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
                 )}
-                <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate" title={nameOf(l, t)}>
-                  {nameOf(l, t)}
-                </span>
-                {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
-              </button>
 
-              <LayerIcon
-                title={l.visible ? t("Hide") : t("Show")}
-                onClick={() =>
-                  dispatch({ type: "PATCH_LAYER", id: l.id, patch: { visible: !l.visible } })
-                }
-              >
-                {l.visible ? <Eye /> : <EyeOff />}
-              </LayerIcon>
-              <LayerIcon
-                title={l.locked ? t("Unlock") : t("Lock")}
-                onClick={() =>
-                  dispatch({ type: "PATCH_LAYER", id: l.id, patch: { locked: !l.locked } })
-                }
-              >
-                {l.locked ? <Lock /> : <LockOpen />}
-              </LayerIcon>
-              {!bg && (
-                <LayerIcon
-                  title={t("Duplicate")}
-                  onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-1.5"
+                  onClick={() => onSelectOwn?.(l.id)}
                 >
-                  <Copy />
+                  {l.clipped && (
+                    <CornerDownRight className="size-3.5 shrink-0 text-primary" />
+                  )}
+                  {l.condId && (
+                    <CornerDownRight className="size-3.5 shrink-0 text-amber-500" />
+                  )}
+                  <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate" title={nameOf(l, t)}>
+                    {nameOf(l, t)}
+                  </span>
+                  {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
+                </button>
+
+                <LayerIcon
+                  title={l.visible ? t("Hide") : t("Show")}
+                  onClick={() =>
+                    dispatch({ type: "PATCH_LAYER", id: l.id, patch: { visible: !l.visible } })
+                  }
+                >
+                  {l.visible ? <Eye /> : <EyeOff />}
                 </LayerIcon>
-              )}
-              <LayerIcon
-                title={t("Delete")}
-                className="hover:text-destructive"
-                onClick={() => dispatch({ type: "DELETE_LAYER", id: l.id })}
-              >
-                <Trash2 />
-              </LayerIcon>
-            </li>
+                <LayerIcon
+                  title={l.locked ? t("Unlock") : t("Lock")}
+                  onClick={() =>
+                    dispatch({ type: "PATCH_LAYER", id: l.id, patch: { locked: !l.locked } })
+                  }
+                >
+                  {l.locked ? <Lock /> : <LockOpen />}
+                </LayerIcon>
+                {!bg && (
+                  <LayerIcon
+                    title={t("Duplicate")}
+                    onClick={() => dispatch({ type: "DUPLICATE_LAYER", id: l.id })}
+                  >
+                    <Copy />
+                  </LayerIcon>
+                )}
+                <LayerIcon
+                  title={t("Delete")}
+                  className="hover:text-destructive"
+                  onClick={() => dispatch({ type: "DELETE_LAYER", id: l.id })}
+                >
+                  <Trash2 />
+                </LayerIcon>
+              </li>
+              {l.type === "shape" &&
+                l.combine?.map((c, i) => combineRow(l, i, c))}
+            </Fragment>
           );
         })}
       </ul>

@@ -38,7 +38,7 @@ import { buildFaceLayers, effectiveBgFill } from "../faceLayers";
 import { CardBackgroundNodes, ReadOnlyLayer } from "./canvas/layerInner";
 import { LayerNode } from "./canvas/LayerNode";
 import { GuideLine, Guides, MainMaskOutline, PanelGuides, TextFrameOutline } from "./canvas/outlines";
-import { layerBoxSize, type SnapHit, type SnapLines } from "./canvas/snapping";
+import { layerBoxSize, snapNodeToGuides, type SnapHit, type SnapLines } from "./canvas/snapping";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
 // for CardStage.
@@ -59,6 +59,7 @@ export function EditorCanvas({
   masks = [],
   logoSlot,
   guides,
+  selectedCombine,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
@@ -67,6 +68,10 @@ export function EditorCanvas({
   masks?: TLayer[];
   logoSlot?: TLayer;
   guides: GuideApi;
+  // A combine entry (ShapeLayer.combine) picked as a sub-layer in the
+  // Layers panel — shows a draggable handle for just that shape. See
+  // App.tsx#selectedCombine.
+  selectedCombine?: { parentId: string; index: number } | null;
 }) {
   const { state, dispatch } = useStore();
   const { project, side, showBleed } = state;
@@ -150,6 +155,7 @@ export function EditorCanvas({
           badgeMeta={badgeMeta}
           showBleed={showBleed}
           registerStage={registerFront}
+          selectedCombine={selectedCombine}
         />
         {hasBack && (
           <FaceStage
@@ -186,6 +192,7 @@ function FaceStage({
   showBleed,
   registerStage,
   onRemove,
+  selectedCombine,
 }: {
   side: CardSide;
   active: boolean;
@@ -201,6 +208,7 @@ function FaceStage({
   showBleed: boolean;
   registerStage: (s: Konva.Stage | null) => void;
   onRemove?: () => void;
+  selectedCombine?: { parentId: string; index: number } | null;
 }) {
   const t = useT();
   const { state, dispatch } = useStore();
@@ -278,6 +286,63 @@ function FaceStage({
         ? { type: "SELECT", id }
         : { type: "SET_SIDE", side, selectId: id },
     );
+  // Dragging the on-canvas handle for a selected combine entry (a shape's
+  // union/subtract sub-shape) — see src/combineShape.ts and LayerNode's
+  // combineIndex/onCombineGrab.
+  const combineChange = (
+    parentId: string,
+    index: number,
+    patch: { x: number; y: number },
+    history: boolean,
+  ) => {
+    const parent = layerList.find((l) => l.id === parentId);
+    if (!parent || parent.type !== "shape" || !parent.combine) return;
+    const combine = parent.combine.map((c, i) => (i === index ? { ...c, ...patch } : c));
+    dispatch({ type: "PATCH_LAYER", id: parentId, patch: { combine }, history });
+  };
+  // A manual window-level drag (not Konva's native one — see
+  // CombineDragHandle's comment for why) converting screen movement into
+  // the combine entry's local, pre-rotation coordinate space: divide out
+  // the stage's own scale, then un-rotate by the parent's own rotation,
+  // since the entry's x/y are read inside the parent's rotated Group.
+  const startCombineDrag = (
+    parentId: string,
+    index: number,
+    start: { x: number; y: number },
+  ) => {
+    const parent = layerList.find((l) => l.id === parentId);
+    const stage = stageRef.current;
+    const pointer = stage?.getPointerPosition();
+    if (!parent || !stage || !pointer) return;
+    const rad = (-parent.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const apply = (ev: MouseEvent | TouchEvent, history: boolean) => {
+      stage.setPointersPositions(ev);
+      const p = stage.getPointerPosition();
+      if (!p) return;
+      const dx = (p.x - pointer.x) / scale;
+      const dy = (p.y - pointer.y) / scale;
+      combineChange(
+        parentId,
+        index,
+        { x: start.x + (dx * cos - dy * sin), y: start.y + (dx * sin + dy * cos) },
+        history,
+      );
+    };
+    const onMove = (ev: MouseEvent | TouchEvent) => apply(ev, false);
+    const onUp = (ev: MouseEvent | TouchEvent) => {
+      apply(ev, true);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  };
   // Right-click on a layer: the same actions the Layers panel offers,
   // without leaving the canvas.
   const [menu, setMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -392,6 +457,67 @@ function FaceStage({
     });
   }, []);
 
+  // A mousedown that lands on a layer other than the selected one hands off
+  // here instead of stealing the selection: it keeps moving the layer that's
+  // already selected, wherever on the canvas the drag started. Only a
+  // double-click (LayerNode's onDblClick/onDblTap) switches the selection.
+  const proxyDrag = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    startPointer: { x: number; y: number };
+  } | null>(null);
+
+  const startProxyDrag = () => {
+    const id = active ? selectedId : undefined;
+    const node = id ? nodeRefs.current.get(id) : undefined;
+    const layer = id ? layerList.find((l) => l.id === id) : undefined;
+    const stage = stageRef.current;
+    const pointer = stage?.getPointerPosition();
+    if (!id || !node || !layer || layer.locked || !stage || !pointer) return;
+
+    proxyDrag.current = { id, startX: node.x(), startY: node.y(), startPointer: pointer };
+
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      const pd = proxyDrag.current;
+      const st = stageRef.current;
+      if (!pd || !st) return;
+      st.setPointersPositions(ev);
+      const p = st.getPointerPosition();
+      if (!p) return;
+      const n = nodeRefs.current.get(pd.id);
+      if (!n) return;
+      n.x(pd.startX + (p.x - pd.startPointer.x) / scale);
+      n.y(pd.startY + (p.y - pd.startPointer.y) / scale);
+      if (snapLines) reportSnap(snapNodeToGuides(n, snapLines));
+      dispatch({ type: "PATCH_LAYER", id: pd.id, patch: { x: n.x(), y: n.y() }, history: false });
+    };
+    const endDrag = () => {
+      const pd = proxyDrag.current;
+      if (pd) {
+        const n = nodeRefs.current.get(pd.id);
+        if (n) {
+          if (snapLines) snapNodeToGuides(n, snapLines);
+          reportSnap(null);
+          const patch = { x: n.x(), y: n.y() };
+          dispatch({ type: "PATCH_LAYER", id: pd.id, patch, history: true });
+          if (project.isTemplate && isAlphaMask(layer)) {
+            void sweepMaskMove({ ...layer, ...patch } as TShapeLayer, project.id);
+          }
+        }
+      }
+      proxyDrag.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", endDrag);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", endDrag);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", endDrag);
+  };
+
   return (
     <div className="flex flex-col">
       {caption && (
@@ -494,6 +620,13 @@ function FaceStage({
                   previewOnly={layer.id === preview}
                   obstacles={obstacles}
                   selected={active && layer.id === selectedId}
+                  hasOtherSelection={active && !!selectedId && selectedId !== layer.id}
+                  combineIndex={
+                    active && selectedId === layer.id && selectedCombine?.parentId === layer.id
+                      ? selectedCombine.index
+                      : undefined
+                  }
+                  onCombineGrab={(_e, index, start) => startCombineDrag(layer.id, index, start)}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
                   vars={vars}
@@ -504,6 +637,7 @@ function FaceStage({
                     else nodeRefs.current.delete(layer.id);
                   }}
                   onSelect={() => selectLayer(layer.id)}
+                  onProxyDragStart={startProxyDrag}
                   onContextMenu={(e) => layerMenu(layer, e)}
                   onChange={(patch, history) => {
                     dispatch({ type: "PATCH_LAYER", id: layer.id, patch, history });

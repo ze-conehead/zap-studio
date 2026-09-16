@@ -381,13 +381,27 @@ function Shell({
   // only ever names one of this project's own layers. Cleared whenever an
   // own layer is (re)selected, and vice versa.
   const [foreignSelected, setForeignSelected] = useState<Layer | null>(null);
+  // A combine entry (ShapeLayer.combine) picked as a sub-layer in the Layers
+  // panel — lets the canvas show a drag handle for just that shape. Cleared
+  // whenever selection moves elsewhere, same pattern as foreignSelected.
+  const [selectedCombine, setSelectedCombine] = useState<{
+    parentId: string;
+    index: number;
+  } | null>(null);
   const selectOwn = (id: string | null) => {
     setForeignSelected(null);
+    setSelectedCombine(null);
     dispatch({ type: "SELECT", id });
   };
   const selectForeign = (layer: Layer | null) => {
     setForeignSelected(layer);
+    setSelectedCombine(null);
     if (layer) dispatch({ type: "SELECT", id: null });
+  };
+  const selectCombine = (parentId: string, index: number) => {
+    setForeignSelected(null);
+    setSelectedCombine({ parentId, index });
+    dispatch({ type: "SELECT", id: parentId });
   };
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
@@ -494,6 +508,7 @@ function Shell({
           masks={masks.map((m) => m.layer)}
           logoSlot={logoSlot}
           guides={guides}
+          selectedCombine={selectedCombine}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />
@@ -502,8 +517,11 @@ function Shell({
             consoleLayers={consoleLayers}
             globalLayers={globalLayers}
             foreignSelectedId={foreignSelected?.id}
+            selectedCombine={selectedCombine}
             onSelectOwn={selectOwn}
             onSelectForeign={selectForeign}
+            onSelectCombine={selectCombine}
+            onClearCombine={() => setSelectedCombine(null)}
           />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3 flex w-auto">

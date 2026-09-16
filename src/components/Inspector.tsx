@@ -178,10 +178,6 @@ export function Inspector({
 
   return (
     <Panel title={t("Properties")}>
-      <MaskRoleControls patch={patch} masks={masks} />
-      {!isMeta && !isMask && !isLogoSlot && <StyleClipboard layer={selected} patch={patch} />}
-      <ConditionMembership patch={patch} />
-
       {!fixedName && (
         <Field label={t("Name")}>
           <Input
@@ -191,6 +187,10 @@ export function Inspector({
           />
         </Field>
       )}
+
+      <MaskRoleControls patch={patch} masks={masks} />
+      {!isMeta && !isMask && !isLogoSlot && <StyleClipboard layer={selected} patch={patch} />}
+      <ConditionMembership patch={patch} />
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="X" value={round(selected.x)} onChange={(v) => patch({ x: v })} />

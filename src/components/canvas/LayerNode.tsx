@@ -33,6 +33,7 @@ export function LayerNode({
   layer,
   asMask = false,
   selected = false,
+  hasOtherSelection = false,
   previewOnly = false,
   groupChildren,
   meta,
@@ -42,13 +43,21 @@ export function LayerNode({
   onSnap,
   register,
   onSelect,
+  onProxyDragStart,
   onContextMenu,
   onChange,
   onGroupChange,
+  combineIndex,
+  onCombineGrab,
 }: {
   layer: TLayer;
   asMask?: boolean;
   selected?: boolean;
+  // Some other layer is selected right now: a mousedown here shouldn't
+  // steal the selection or start its own drag — it hands off to
+  // onProxyDragStart so the already-selected layer keeps moving instead.
+  // Only a double-click switches the selection to this layer.
+  hasOtherSelection?: boolean;
   // A condition case the metadata doesn't select: drawn so it can be
   // edited, named so exports leave it out.
   previewOnly?: boolean;
@@ -60,11 +69,20 @@ export function LayerNode({
   onSnap?: (hit: SnapHit | null) => void;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
+  onProxyDragStart?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
   onContextMenu?: (e: MouseEvent) => void;
   onChange: (patch: Partial<TLayer>, history?: boolean) => void;
   onGroupChange: (
     patches: { id: string; patch: Partial<TLayer> }[],
     history?: boolean,
+  ) => void;
+  // The index into layer.combine picked as a sub-layer in the Layers panel
+  // (shape layers only) — draws a draggable handle for just that entry.
+  combineIndex?: number;
+  onCombineGrab?: (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+    index: number,
+    start: { x: number; y: number },
   ) => void;
 }) {
   const ref = useRef<Konva.Group>(null);
@@ -146,9 +164,28 @@ export function LayerNode({
     // canvas clicks (so clicking the visible area selects the clipped
     // content). Once selected from the layer list it becomes draggable again.
     listening: !asMask || selected,
-    draggable: !layer.locked && (!asMask || selected),
-    onMouseDown: onSelect,
-    onTap: onSelect,
+    // A selected combine sub-shape (combineIndex) gets its own drag handle
+    // (CompoundShapeInner) nested inside this same Group — disable this
+    // layer's own drag while one is active so a single gesture can't drag
+    // both at once.
+    draggable: !layer.locked && (!asMask || selected) && !hasOtherSelection && combineIndex == null,
+    onMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (hasOtherSelection) {
+        e.evt.preventDefault();
+        onProxyDragStart?.(e);
+        return;
+      }
+      onSelect();
+    },
+    onTap: (e: Konva.KonvaEventObject<TouchEvent>) => {
+      if (hasOtherSelection) {
+        onProxyDragStart?.(e);
+        return;
+      }
+      onSelect();
+    },
+    onDblClick: onSelect,
+    onDblTap: onSelect,
     onContextMenu: (e: Konva.KonvaEventObject<MouseEvent>) => {
       e.evt.preventDefault();
       onSelect();
@@ -237,6 +274,8 @@ export function LayerNode({
         meta={meta}
         vars={vars}
         obstacles={obstacles}
+        combineIndex={combineIndex}
+        onCombineGrab={onCombineGrab}
       />
     </Group>
   );
