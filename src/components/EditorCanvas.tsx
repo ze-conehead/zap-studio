@@ -474,6 +474,18 @@ function FaceStage({
   } | null>(null);
 
   const startProxyDrag = () => {
+    // A combine entry picked in the Layers panel (or grabbed directly on
+    // canvas — see CombineOperandHandle) is the thing a drag anywhere
+    // should move, same as a plain layer: it stays "selected" even though
+    // the store's own selectedId still names its parent shape.
+    if (active && selectedCombine) {
+      const parent = layerList.find((l) => l.id === selectedCombine.parentId);
+      const c = parent?.type === "shape" ? parent.combine?.[selectedCombine.index] : undefined;
+      if (parent && c) {
+        startCombineDrag(selectedCombine.parentId, selectedCombine.index, { x: c.x, y: c.y });
+        return;
+      }
+    }
     const id = active ? selectedId : undefined;
     const node = id ? nodeRefs.current.get(id) : undefined;
     const layer = id ? layerList.find((l) => l.id === id) : undefined;
