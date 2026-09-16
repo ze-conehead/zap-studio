@@ -82,12 +82,15 @@ export function useFileActions(
     if (!ok) return;
     try {
       setBusy(t("Loading backup …"));
-      const { projects, templates } = await importBackup(file);
+      const { projects, templates, includesApiKeys } = await importBackup(file);
       alert(
         t("{projects} project(s) and {templates} template(s) imported.", {
           projects,
           templates,
-        }),
+        }) +
+          (includesApiKeys
+            ? " " + t("API keys from the backup were restored too.")
+            : ""),
       );
       location.reload();
     } catch (e) {

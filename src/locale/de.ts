@@ -22,6 +22,13 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+  "Backup contents": "Backup-Inhalt",
+  "A backup (manual or automatic) always has your designs, templates, metadata and settings. Your SteamGridDB / IGDB / TMDB API keys are never included unless you turn this on — they'd otherwise sit in the .zip as plain text.":
+    "Ein Backup (manuell oder automatisch) enthält immer deine Entwürfe, Vorlagen, Metadaten und Einstellungen. Deine SteamGridDB-/IGDB-/TMDB-API-Schlüssel werden nur mit aufgenommen, wenn du das hier einschaltest \u2013 sonst lägen sie unverschlüsselt in der .zip-Datei.",
+  "Include API keys in backups": "API-Schlüssel in Backups aufnehmen",
+  "On — back up somewhere only you can access, especially for the automatic folder backup below.":
+    "Eingeschaltet \u2013 sichere nur an einen Ort, auf den ausschließlich du Zugriff hast, besonders beim automatischen Backup-Ordner unten.",
+  "API keys from the backup were restored too.": "Die API-Schlüssel aus dem Backup wurden ebenfalls wiederhergestellt.",
   Crop: "Zuschneiden",
   "Shows {w}\u00d7{h} px": "Zeigt {w}\u00d7{h} px",
   "Reset crop": "Zuschnitt zurücksetzen",

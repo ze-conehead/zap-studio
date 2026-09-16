@@ -23,6 +23,7 @@ import {
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
 import { formatBytes, STORAGE_WARN_RATIO, storageUsage, type StorageUsage } from "../storageUsage";
+import { getIncludeKeysInBackup, setIncludeKeysInBackup } from "../backup";
 import {
   emptyTrash,
   listTrash,
@@ -53,6 +54,10 @@ export function DataSafetyDialog({
   useEffect(() => {
     if (open) void storageUsage().then(setUsage);
   }, [open, trash]);
+  const [includeKeys, setIncludeKeys] = useState(getIncludeKeysInBackup);
+  useEffect(() => {
+    if (open) setIncludeKeys(getIncludeKeysInBackup());
+  }, [open]);
   const [busy, setBusy] = useState(false);
 
   const reloadTrash = useCallback(() => {
@@ -138,6 +143,33 @@ export function DataSafetyDialog({
             )}
           </section>
         )}
+
+        {/* ── backup contents ──────────────────────────────────────── */}
+        <section className="flex flex-col gap-2 rounded-md border p-3">
+          <Label>{t("Backup contents")}</Label>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "A backup (manual or automatic) always has your designs, templates, metadata and settings. Your SteamGridDB / IGDB / TMDB API keys are never included unless you turn this on — they'd otherwise sit in the .zip as plain text.",
+            )}
+          </p>
+          <label className="flex items-center gap-1.5 text-sm">
+            <Checkbox
+              checked={includeKeys}
+              onCheckedChange={(v) => {
+                const next = !!v;
+                setIncludeKeys(next);
+                setIncludeKeysInBackup(next);
+              }}
+            />
+            {t("Include API keys in backups")}
+          </label>
+          {includeKeys && (
+            <p className="flex items-center gap-1.5 text-xs text-amber-400">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              {t("On — back up somewhere only you can access, especially for the automatic folder backup below.")}
+            </p>
+          )}
+        </section>
 
         {/* ── automatic backups ─────────────────────────────────────── */}
         <section className="flex flex-col gap-3 rounded-md border p-3">

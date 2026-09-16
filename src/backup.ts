@@ -7,6 +7,7 @@ import {
   listCustomFonts,
   type CustomFont,
 } from "./customFonts";
+import { getIgdbCreds, getSgdbKey, getTmdbKey, setIgdbCreds, setSgdbKey, setTmdbKey } from "./covers";
 import { loadAllProjects } from "./persist";
 import { getWorkspaceKind, setWorkspaceKind, wsIdbPrefix, wsSuffix, type WorkspaceKind } from "./workspace";
 import { localCovers, localLogos, type ImageLibrary, type LocalLogo } from "./localLogos";
@@ -23,6 +24,16 @@ const GUIDES_KEY = `stickerstudio:guides${wsSuffix()}`;
 const GAME_INDEX_KEY = "stickerstudio:gameIndex";
 const CATALOG_OVERLAY_KEY = `stickerstudio:catalogOverlay${wsSuffix()}`;
 const GAMELIST_PREFIX = "stickerstudio:gamelist:";
+// Off by default — API keys are secrets, so a backup only carries them
+// along when the user explicitly opts in (Data safety ▸ "Include API
+// keys"). Global, not per-workspace: the keys themselves aren't either.
+const INCLUDE_KEYS_KEY = "stickerstudio:backupIncludeKeys";
+export const getIncludeKeysInBackup = (): boolean =>
+  localStorage.getItem(INCLUDE_KEYS_KEY) === "1";
+export function setIncludeKeysInBackup(v: boolean): void {
+  if (v) localStorage.setItem(INCLUDE_KEYS_KEY, "1");
+  else localStorage.removeItem(INCLUDE_KEYS_KEY);
+}
 // Plain per-workspace keys copied verbatim: format, custom size, bleed.
 const SETTING_KEYS = ["stickerstudio:format", "stickerstudio:customFormat", "stickerstudio:bleed"];
 const wsKey = (base: string) => `${base}${wsSuffix()}`;
@@ -185,6 +196,22 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   }
   if (Object.keys(libraries).length) files["settings/libraries.json"] = strToU8(JSON.stringify(libraries));
 
+  // API keys: only when the user opted in — see getIncludeKeysInBackup().
+  // They land in the zip as plain text, so a synced/shared backup folder
+  // would expose them; the manifest flags it either way.
+  const includesKeys = getIncludeKeysInBackup();
+  if (includesKeys) {
+    const creds = getIgdbCreds();
+    files["settings/keys.json"] = strToU8(
+      JSON.stringify({
+        sgdbKey: getSgdbKey(),
+        igdbClientId: creds.clientId,
+        igdbClientSecret: creds.clientSecret,
+        tmdbKey: getTmdbKey(),
+      }),
+    );
+  }
+
   files["manifest.json"] = strToU8(
     JSON.stringify(
       {
@@ -195,6 +222,7 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
         templates: nt,
         fonts: fonts.length,
         libraries: Object.fromEntries(Object.entries(libraries).map(([k, v]) => [k, v.length])),
+        includesApiKeys: includesKeys,
         assets: assetMime,
       },
       null,
@@ -209,7 +237,9 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   };
 }
 
-export async function importBackup(file: File): Promise<{ projects: number; templates: number }> {
+export async function importBackup(
+  file: File,
+): Promise<{ projects: number; templates: number; includesApiKeys: boolean }> {
   const entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
 
   const manifestRaw = entries["manifest.json"];
@@ -217,6 +247,7 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
   const manifest = JSON.parse(strFromU8(manifestRaw)) as {
     format?: string;
     assets?: Record<string, string>;
+    includesApiKeys?: boolean;
   };
   if (manifest.format !== BACKUP_FORMAT) throw new Error(t("Unknown backup format."));
 
@@ -346,5 +377,26 @@ export async function importBackup(file: File): Promise<{ projects: number; temp
     }
   }
 
-  return { projects: np, templates: nt };
+  // API keys: only present when the backup's author opted in at export
+  // time (see getIncludeKeysInBackup()) — restoring one then carries them
+  // over here too, the same as every other setting.
+  if (entries["settings/keys.json"]) {
+    try {
+      const keys = JSON.parse(strFromU8(entries["settings/keys.json"])) as {
+        sgdbKey?: string;
+        igdbClientId?: string;
+        igdbClientSecret?: string;
+        tmdbKey?: string;
+      };
+      if (keys.sgdbKey) setSgdbKey(keys.sgdbKey);
+      if (keys.tmdbKey) setTmdbKey(keys.tmdbKey);
+      if (keys.igdbClientId || keys.igdbClientSecret) {
+        setIgdbCreds(keys.igdbClientId ?? "", keys.igdbClientSecret ?? "");
+      }
+    } catch {
+      /* skip */
+    }
+  }
+
+  return { projects: np, templates: nt, includesApiKeys: !!manifest.includesApiKeys };
 }

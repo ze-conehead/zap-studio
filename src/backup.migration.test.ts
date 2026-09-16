@@ -119,7 +119,7 @@ beforeEach(async () => {
 describe("a v1.0.0 backup still loads", () => {
   it("imports both projects and restores the settings", async () => {
     const r = await importBackup(v1Backup());
-    expect(r).toEqual({ projects: 1, templates: 1 });
+    expect(r).toEqual({ projects: 1, templates: 1, includesApiKeys: false });
     expect(loadGuides().items[0].pos).toBe(100);
     expect(JSON.parse(localStorage.getItem("stickerstudio:gameIndex") ?? "{}")["playstation/gran-turismo"]).toBe("card-1");
   });
