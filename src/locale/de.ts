@@ -27,6 +27,10 @@ export const de: Record<string, string> = {
   Copy: "Kopieren",
   Paste: "Einfügen",
 
+  // ── Layers panel: hide the inherited template rows ──────────────────────
+  "Hide the global / console template layers": "Globale / Konsolen-Vorlagenebenen ausblenden",
+  "Show the global / console template layers": "Globale / Konsolen-Vorlagenebenen einblenden",
+
   // ── Combine shapes (#1) ──────────────────────────────────────────────────
   "Combine shapes": "Formen kombinieren",
   "Add another shape to union or subtract onto this one – several simple shapes can combine into one alpha mask (or one visual shape) this way.":

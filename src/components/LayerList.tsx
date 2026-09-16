@@ -114,6 +114,10 @@ export function LayerList({
   const showForeign = state.side !== "back";
   const foreignGlobal = [...globalLayers].reverse();
   const foreignConsole = [...consoleLayers].reverse();
+  const hasForeign = showForeign && (foreignGlobal.length > 0 || foreignConsole.length > 0);
+  // A view-only toggle (not persisted) for when the global/console template
+  // rows crowd out the card's own layers.
+  const [hideForeign, setHideForeign] = useState(false);
 
   // Which condition cases are live for the game this card is for — the rest
   // are dimmed, so it's clear at a glance which branch prints.
@@ -312,6 +316,21 @@ export function LayerList({
             </Button>
           )}
           <CoverButton masks={masks.map((m) => m.layer)} />
+          {hasForeign && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title={
+                hideForeign
+                  ? t("Show the global / console template layers")
+                  : t("Hide the global / console template layers")
+              }
+              className="size-7 text-muted-foreground"
+              onClick={() => setHideForeign((v) => !v)}
+            >
+              {hideForeign ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </Button>
+          )}
           <AddLayerMenu />
         </div>
       </div>
@@ -324,8 +343,8 @@ export function LayerList({
           setMenu({ x: e.clientX, y: e.clientY, items: buildEmptyMenuItems({ dispatch, t }) });
         }}
       >
-        {showForeign && foreignGlobal.map((l) => foreignRow(l, "global"))}
-        {showForeign && foreignConsole.map((l) => foreignRow(l, "console"))}
+        {showForeign && !hideForeign && foreignGlobal.map((l) => foreignRow(l, "global"))}
+        {showForeign && !hideForeign && foreignConsole.map((l) => foreignRow(l, "console"))}
         {layers.map((l) => {
           const active = l.id === state.selectedId;
           const bg = isBackground(l);
