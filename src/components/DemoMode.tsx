@@ -101,9 +101,18 @@ export function DemoMode({ onClose }: { onClose: () => void }) {
       requestAnimationFrame(() => {
         if (!alive) return;
         setImages(
-          cards.map((_, i) => {
+          cards.map((c, i) => {
             const s = stages.current[i];
-            return s ? captureTrim(s, THUMB_W) : "";
+            if (!s) return "";
+            // toDataURL() can throw (a tainted canvas, say) — one bad card
+            // must not leave the whole pack stuck loading forever; it
+            // falls back to the title-only card face below.
+            try {
+              return captureTrim(s, THUMB_W);
+            } catch (e) {
+              console.error("Demo pack: couldn't render", c.gameTitle, e);
+              return "";
+            }
           }),
         );
         setPhase("pack");

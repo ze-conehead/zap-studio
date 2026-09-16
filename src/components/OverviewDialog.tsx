@@ -4,7 +4,7 @@
 // grid fills in progressively instead of freezing the tab.
 
 import type Konva from "konva";
-import { Loader2, Search, X } from "lucide-react";
+import { ImageOff, Loader2, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { packImageSources } from "../demo";
 import { ensureFontsLoaded } from "../fonts";
@@ -37,6 +37,7 @@ export function OverviewDialog({
   const t = useT();
   const [cards, setCards] = useState<OverviewCard[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [failed, setFailed] = useState<Set<string>>(new Set());
   const [done, setDone] = useState(0); // how many have been captured
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -50,6 +51,7 @@ export function OverviewDialog({
     let alive = true;
     setCards([]);
     setThumbs({});
+    setFailed(new Set());
     setDone(0);
     setError("");
     (async () => {
@@ -77,20 +79,34 @@ export function OverviewDialog({
     let alive = true;
     stages.current = [];
     (async () => {
-      await Promise.all(
-        packImageSources(batch.map((c) => c.card)).map(preloadImage),
-      );
+      try {
+        await Promise.all(
+          packImageSources(batch.map((c) => c.card)).map(preloadImage),
+        );
+      } catch (e) {
+        console.error("Overview: preloading images failed", e);
+      }
       if (!alive) return;
       // Two frames: one for Konva to mount, one for it to paint.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           if (!alive) return;
           const shot: Record<string, string> = {};
-          batch.forEach((c, i) => {
+          const bad = new Set<string>();
+          for (const [i, c] of batch.entries()) {
             const s = stages.current[i];
-            if (s) shot[c.key] = captureTrim(s, THUMB_W);
-          });
+            if (!s) continue;
+            // toDataURL() can throw (a tainted canvas, say) — one bad card
+            // must not leave the rest stuck behind it spinning forever.
+            try {
+              shot[c.key] = captureTrim(s, THUMB_W);
+            } catch (e) {
+              console.error("Overview: couldn't render", c.gameTitle, e);
+              bad.add(c.key);
+            }
+          }
           setThumbs((prev) => ({ ...prev, ...shot }));
+          if (bad.size) setFailed((prev) => new Set([...prev, ...bad]));
           setDone((n) => n + batch.length);
         }),
       );
@@ -237,6 +253,13 @@ export function OverviewDialog({
                             draggable={false}
                             className="size-full object-cover"
                           />
+                        ) : failed.has(c.key) ? (
+                          <span
+                            className="grid size-full place-items-center"
+                            title={t("Couldn't render a preview for this card.")}
+                          >
+                            <ImageOff className="size-4 text-muted-foreground" />
+                          </span>
                         ) : (
                           <span className="grid size-full place-items-center">
                             <Loader2 className="size-4 animate-spin text-muted-foreground" />

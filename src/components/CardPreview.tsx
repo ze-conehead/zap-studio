@@ -152,12 +152,16 @@ function CardBrowserPreview({
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           if (!alive) return;
-          if (!showingLive) {
-            if (offFront.current) setImg(captureTrim(offFront.current, RENDER_W));
-            else setErr(t("No card to show."));
-          }
-          if (current.card.back && offBack.current) {
-            setBackImg(captureTrim(offBack.current, RENDER_W));
+          try {
+            if (!showingLive) {
+              if (offFront.current) setImg(captureTrim(offFront.current, RENDER_W));
+              else setErr(t("No card to show."));
+            }
+            if (current.card.back && offBack.current) {
+              setBackImg(captureTrim(offBack.current, RENDER_W));
+            }
+          } catch (e) {
+            fail(e);
           }
         }),
       );

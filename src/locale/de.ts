@@ -780,6 +780,7 @@ export const de: Record<string, string> = {
     "Zieh ein Booster-Pack mit {n} zufälligen Karten – aus einer Konsole oder aus allen.",
   "Draw pack": "Pack ziehen",
   "Rendering cards …": "Karten werden gerendert …",
+  "Couldn't render a preview for this card.": "Für diese Karte konnte keine Vorschau erstellt werden.",
   "Open pack": "Pack öffnen",
   "{n} cards": "{n} Karten",
   " · {n} cards": " · {n} Karten",
