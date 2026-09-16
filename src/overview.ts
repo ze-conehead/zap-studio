@@ -4,6 +4,7 @@
 
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, newProject, templateId } from "./factory";
+import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -20,19 +21,20 @@ export interface OverviewCard {
 }
 
 export async function loadOverviewCards(): Promise<OverviewCard[]> {
-  const bgFill = (p?: Project) => {
+  // A console's / a card's own pick for an ancestor's editableFill shape or
+  // background — see src/fillOverrides.ts. Global overrides are per
+  // console; console overrides per card (when it has a saved design).
+  const bgFill = (p?: Project, descendant?: Project) => {
     const bg = p?.layers.find(isBackground);
-    return bg?.visible ? bg.fill : undefined;
+    return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter(
-      (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
-    );
+  const overlayable = (p?: Project, descendant?: Project) =>
+    (p?.layers ?? [])
+      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
+      .map((l) => withFillOverride(l, descendant));
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
-  const globalBg = bgFill(globalP);
   const globalMasks = alphaMasksOf(globalP);
-  const globalLayers = overlayable(globalP);
   const globalBack = globalP?.back;
 
   const tplCache = new Map<string, Project | undefined>();
@@ -43,8 +45,8 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
       tplCache.set(c.id, await loadProject(templateId(c.id)));
     }
     const consoleP = tplCache.get(c.id);
-    const overlay = [...overlayable(consoleP), ...globalLayers];
-    const consoleBg = bgFill(consoleP);
+    const globalLayers = overlayable(globalP, consoleP);
+    const globalBg = bgFill(globalP, consoleP);
     // A game with no back of its own borrows the console template's, then
     // the global one's.
     const inheritedBack = consoleP?.back ?? globalBack;
@@ -67,8 +69,8 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
           // No design yet: an empty project still renders the console and
           // global templates, which is exactly what that card looks like.
           project: saved ?? newProject(g.title),
-          overlay,
-          consoleBg,
+          overlay: [...overlayable(consoleP, saved), ...globalLayers],
+          consoleBg: bgFill(consoleP, saved),
           globalBg,
           masks: [...globalMasks, ...alphaMasksOf(consoleP)],
           back: saved?.back ?? inheritedBack,

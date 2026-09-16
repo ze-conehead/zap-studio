@@ -17,9 +17,9 @@ import {
 } from "../factory";
 import type { MaskOption } from "../templates";
 import { useStore } from "../store";
-import { type CardBackground } from "../types";
+import { type CardBackground, type Layer } from "../types";
 
-import { Field, NumberField, Panel, SliderField, type Patch, round } from "./inspector/fields";
+import { Field, FillEditor, NumberField, Panel, SliderField, type Patch, round } from "./inspector/fields";
 import { AlignButtons, EffectsControls, ImageProps, MetaBadgeProps, QrProps, ShapeProps, StyleClipboard, TextProps } from "./inspector/layerProps";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
@@ -29,14 +29,73 @@ interface InspectorProps {
   globalBg?: CardBackground;
   masks?: MaskOption[];
   guides: GuideApi;
+  // A read-only console/global layer picked in the Layers panel — only
+  // possible when it's flagged editableFill, so this is always just the
+  // fill editor. See src/fillOverrides.ts.
+  foreignSelected?: Layer | null;
+  onCloseForeign?: () => void;
 }
 
-export function Inspector({ consoleBg, globalBg, masks = [], guides }: InspectorProps) {
+export function Inspector({
+  consoleBg,
+  globalBg,
+  masks = [],
+  guides,
+  foreignSelected,
+  onCloseForeign,
+}: InspectorProps) {
   const t = useT();
   const { state, selected, dispatch } = useStore();
-
-  // Follow console renames from the tree without a reload.
+  // Follow console renames from the tree without a reload. Runs
+  // unconditionally, before the early return below, so hook order stays
+  // stable regardless of foreignSelected.
   useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
+
+  if (foreignSelected && "fill" in foreignSelected) {
+    const fill = foreignSelected.fill as CardBackground;
+    const isOwnOverride = !!state.project.fillOverrides?.[foreignSelected.id];
+    return (
+      <Panel title={foreignSelected.name}>
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "Inherited from a template. Everything but its fill stays as defined there — pick your own fill for it here.",
+          )}
+        </p>
+        <Field label={t("Fill")}>
+          <FillEditor
+            value={state.project.fillOverrides?.[foreignSelected.id] ?? fill}
+            onChange={(fp, history) =>
+              dispatch({
+                type: "SET_FILL_OVERRIDE",
+                layerId: foreignSelected.id,
+                fill: { ...(state.project.fillOverrides?.[foreignSelected.id] ?? fill), ...fp },
+                history,
+              })
+            }
+          />
+        </Field>
+        <div className="flex justify-between gap-2">
+          {isOwnOverride && (
+            <button
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+              onClick={() =>
+                dispatch({ type: "SET_FILL_OVERRIDE", layerId: foreignSelected.id, fill: undefined })
+              }
+            >
+              {t("Reset to the template's own fill")}
+            </button>
+          )}
+          <button
+            className="ml-auto text-xs text-muted-foreground underline hover:text-foreground"
+            onClick={onCloseForeign}
+          >
+            {t("Close")}
+          </button>
+        </div>
+      </Panel>
+    );
+  }
+
   const consoleLabel =
     (state.project.consoleId &&
       getCatalog().find((c) => c.id === state.project.consoleId)?.name) ||

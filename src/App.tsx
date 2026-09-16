@@ -47,6 +47,7 @@ import { ensureCustomFontsLoaded } from "./customFonts";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
+import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { getFormatId } from "./formats";
 import {
   lastProjectId,
@@ -62,6 +63,11 @@ import type { CardBackground, Layer, Project } from "./types";
 
 interface Templates {
   overlay: Layer[];
+  // `overlay` split back into its two pieces, for the Layers panel (which
+  // labels each row "console" / "global" and doesn't need the alpha-mask
+  // splicing buildFaceLayers does for the canvas) — see src/App.tsx#L149.
+  consoleLayers: Layer[];
+  globalLayers: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
   logoSlot?: Layer; // "All consoles" placement frame for logos
@@ -80,7 +86,6 @@ export interface GuideApi {
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
-  const [templates, setTemplates] = useState<Templates>({ overlay: [], masks: [] });
   const [showProjects, setShowProjects] = useState(false);
 
   // Global guide lines: same set on every card, on/off remembered.
@@ -112,66 +117,6 @@ export default function App() {
     setGuides((g) =>
       g.locked ? g : { ...g, items: g.items.filter((x) => x.id !== id) },
     );
-
-  // Load the console + global template projects for the current view and
-  // derive the read-only overlay layers and their backgrounds:
-  // - game sticker → console layers + global layers (global on top)
-  // - console template edit → global layers as context underlay
-  // - global template edit → nothing
-  useEffect(() => {
-    let alive = true;
-    if (!project) return;
-    (async () => {
-      const consoleId = project.isGlobalTemplate
-        ? undefined
-        : project.gameKey?.split("/")[0] ?? project.consoleId;
-      const [globalP, consoleP] = await Promise.all([
-        loadProject(GLOBAL_TEMPLATE_ID),
-        consoleId ? loadProject(templateId(consoleId)) : Promise.resolve(undefined),
-      ]);
-      if (!alive) return;
-
-      // A template's own (visible) background layer is what a card inherits
-      // when its background source is "console" / "global".
-      const bgFill = (p?: Project) => {
-        const bg = p?.layers.find(isBackground);
-        return bg?.visible ? bg.fill : undefined;
-      };
-      const globalBg = bgFill(globalP);
-      const consoleBg = bgFill(consoleP);
-
-      // The global "main alpha mask" clips each card's main image; it never
-      // paints as an overlay layer itself. Background layers never overlay.
-      const logoSlot = globalP?.layers.find((l) => l.logoSlot);
-      // A card can point at any frame from the global template or its own
-      // console; the template that owns one edits it in place instead.
-      const masks = project.isTemplate ? [] : maskOptions(globalP, consoleP);
-      const overlayable = (p?: Project) =>
-        (p?.layers ?? []).filter(
-          (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
-        );
-      const globalLayers = overlayable(globalP);
-
-      let overlay: Layer[] = [];
-      if (project.isGlobalTemplate) {
-        overlay = [];
-      } else if (project.isTemplate) {
-        overlay = globalLayers;
-      } else {
-        overlay = [...overlayable(consoleP), ...globalLayers];
-      }
-      setTemplates({
-        overlay,
-        consoleBg,
-        globalBg,
-        logoSlot: project.isGlobalTemplate ? undefined : logoSlot,
-        masks,
-      });
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [project]);
 
   // Boot: restore whatever was last open (a design, a console template or
   // the global one). There must always be something selected — never a
@@ -289,11 +234,6 @@ export default function App() {
     <>
     <StoreProvider key={project.id} initial={project}>
       <Shell
-        overlay={templates.overlay}
-        consoleBg={templates.consoleBg}
-        globalBg={templates.globalBg}
-        logoSlot={templates.logoSlot}
-        masks={templates.masks}
         guides={guideApi}
         activeGameKey={project.gameKey}
         activeConsoleId={project.isGlobalTemplate ? undefined : project.consoleId}
@@ -319,11 +259,6 @@ export default function App() {
 }
 
 function Shell({
-  overlay,
-  consoleBg,
-  globalBg,
-  logoSlot,
-  masks,
   guides,
   activeGameKey,
   activeConsoleId,
@@ -336,11 +271,6 @@ function Shell({
   onOpenProjects,
   onImportJson,
 }: {
-  overlay: Layer[];
-  consoleBg?: CardBackground;
-  globalBg?: CardBackground;
-  logoSlot?: Layer;
-  masks: MaskOption[];
   guides: GuideApi;
   activeGameKey?: string;
   activeConsoleId?: string;
@@ -354,7 +284,111 @@ function Shell({
   onImportJson: (file: File) => void;
 }) {
   const { state, dispatch } = useStore();
+  const project = state.project;
   const canvas = useRef<CanvasHandle | null>(null);
+
+  // Load the console + global template projects for the current view and
+  // derive the read-only overlay layers and their backgrounds:
+  // - game sticker → console layers + global layers (global on top)
+  // - console template edit → global layers as context underlay
+  // - global template edit → nothing
+  // Re-runs on navigation (a different project) and whenever this project's
+  // own fillOverrides change (SET_FILL_OVERRIDE) — it's the live store's
+  // state.project, not a snapshot, so an override the user just picked
+  // shows immediately instead of only after the next navigation.
+  const [tpl, setTpl] = useState<Templates>({
+    overlay: [],
+    consoleLayers: [],
+    globalLayers: [],
+    masks: [],
+  });
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const consoleId = project.isGlobalTemplate
+        ? undefined
+        : project.gameKey?.split("/")[0] ?? project.consoleId;
+      const [globalP, consoleP] = await Promise.all([
+        loadProject(GLOBAL_TEMPLATE_ID),
+        consoleId ? loadProject(templateId(consoleId)) : Promise.resolve(undefined),
+      ]);
+      if (!alive) return;
+
+      // A shape/background flagged "editable in descendants" (src/fillOverrides.ts)
+      // shows the fill the level right below its owner picked for it: a
+      // console's own pick for a global layer, or a card's for a console
+      // one. Editing the console template itself counts as "right below
+      // global" too — descendantOfGlobal is then this live project, not a
+      // second, possibly-stale copy reloaded from disk.
+      const descendantOfGlobal = project.isTemplate ? project : consoleP;
+      const descendantOfConsole = project.isTemplate ? undefined : project;
+
+      // A template's own (visible) background layer is what a card inherits
+      // when its background source is "console" / "global".
+      const bgFill = (p?: Project, descendant?: Project) => {
+        const bg = p?.layers.find(isBackground);
+        return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
+      };
+      const globalBg = bgFill(globalP, descendantOfGlobal);
+      const consoleBg = bgFill(consoleP, descendantOfConsole);
+
+      // The global "main alpha mask" clips each card's main image; it never
+      // paints as an overlay layer itself. Background layers never overlay.
+      const logoSlot = globalP?.layers.find((l) => l.logoSlot);
+      // A card can point at any frame from the global template or its own
+      // console; the template that owns one edits it in place instead.
+      const masks = project.isTemplate ? [] : maskOptions(globalP, consoleP);
+      const overlayable = (p?: Project, descendant?: Project) =>
+        (p?.layers ?? [])
+          .filter(
+            (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
+          )
+          .map((l) => withFillOverride(l, descendant));
+      const globalLayers = overlayable(globalP, descendantOfGlobal);
+
+      let consoleLayers: Layer[] = [];
+      let overlay: Layer[] = [];
+      if (project.isGlobalTemplate) {
+        overlay = [];
+      } else if (project.isTemplate) {
+        overlay = globalLayers;
+      } else {
+        consoleLayers = overlayable(consoleP, descendantOfConsole);
+        overlay = [...consoleLayers, ...globalLayers];
+      }
+      setTpl({
+        overlay,
+        consoleLayers,
+        globalLayers: project.isGlobalTemplate ? [] : globalLayers,
+        consoleBg,
+        globalBg,
+        logoSlot: project.isGlobalTemplate ? undefined : logoSlot,
+        masks,
+      });
+    })();
+    return () => {
+      alive = false;
+    };
+    // Deliberately narrow: project.id covers navigation, fillOverrides
+    // covers a live override edit — the rest of `project` (isTemplate,
+    // gameKey, …) only ever changes together with the id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, project.fillOverrides]);
+  const { overlay, consoleLayers, globalLayers, consoleBg, globalBg, logoSlot, masks } = tpl;
+
+  // A read-only layer picked from the Layers panel (a console's or the
+  // global template's own) — its own state, since the store's selectedId
+  // only ever names one of this project's own layers. Cleared whenever an
+  // own layer is (re)selected, and vice versa.
+  const [foreignSelected, setForeignSelected] = useState<Layer | null>(null);
+  const selectOwn = (id: string | null) => {
+    setForeignSelected(null);
+    dispatch({ type: "SELECT", id });
+  };
+  const selectForeign = (layer: Layer | null) => {
+    setForeignSelected(layer);
+    if (layer) dispatch({ type: "SELECT", id: null });
+  };
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
   // Dialogs the menu bar and the toolbar both open.
@@ -463,7 +497,14 @@ function Shell({
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />
-          <LayerList masks={masks} />
+          <LayerList
+            masks={masks}
+            consoleLayers={consoleLayers}
+            globalLayers={globalLayers}
+            foreignSelectedId={foreignSelected?.id}
+            onSelectOwn={selectOwn}
+            onSelectForeign={selectForeign}
+          />
           <Tabs defaultValue="props">
             <TabsList className="mx-3 mt-3 flex w-auto">
               <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
@@ -475,6 +516,8 @@ function Shell({
                 globalBg={globalBg}
                 masks={masks}
                 guides={guides}
+                foreignSelected={foreignSelected}
+                onCloseForeign={() => setForeignSelected(null)}
               />
             </TabsContent>
             {showMeta && (

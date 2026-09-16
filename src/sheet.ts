@@ -6,6 +6,7 @@
 import { CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
+import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { getGameProject } from "./gameIndex";
 import { loadAllProjects, loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -42,19 +43,19 @@ export async function listGameDesigns(): Promise<SheetGame[]> {
 // Load the finished design + its console/global template context for each
 // selected game, shaped like a demo card so <CardStage> can render it.
 export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
-  const bgFill = (p?: Project) => {
+  // A console's / a card's own pick for an ancestor's editableFill shape or
+  // background — see src/fillOverrides.ts.
+  const bgFill = (p?: Project, descendant?: Project) => {
     const bg = p?.layers.find(isBackground);
-    return bg?.visible ? bg.fill : undefined;
+    return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter(
-      (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
-    );
+  const overlayable = (p?: Project, descendant?: Project) =>
+    (p?.layers ?? [])
+      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
+      .map((l) => withFillOverride(l, descendant));
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
-  const globalBg = bgFill(globalP);
   const globalMasks = alphaMasksOf(globalP);
-  const globalLayers = overlayable(globalP);
 
   const meta = new Map<
     string,
@@ -87,9 +88,9 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       consoleName: m.consoleName,
       gameTitle: m.gameTitle,
       project,
-      overlay: [...overlayable(consoleP), ...globalLayers],
-      consoleBg: bgFill(consoleP),
-      globalBg,
+      overlay: [...overlayable(consoleP, project), ...overlayable(globalP, consoleP)],
+      consoleBg: bgFill(consoleP, project),
+      globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       // Own back, else the console template's, else the global one's —
       // same fallback as the overview. The cut sheet ignores it; the

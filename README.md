@@ -47,6 +47,11 @@ global template ("All consoles") add layers to every card beneath them.
 - **Templates**: "All consoles" (global) and each console name open a
   shared layer set. On a card, template layers are read-only and drawn in
   the template's own stacking order.
+- **Layers panel**: also lists the layers a card or console inherits from
+  its console / the global template, dashed and read-only, in the same
+  order they're drawn. A shape or background flagged *editable per
+  console/game* (see below) is the one exception — click it there to give
+  it its own fill without touching the template.
 
 ### Layers
 
@@ -69,8 +74,23 @@ Every layer has opacity, a drop shadow / glow, lock and visibility. Any
 layer can also be a **clipping mask** for the layers directly below it
 ("As mask" / "Into mask"), optionally moving them as a group.
 
+**Combining shapes**: a shape (plain or an alpha mask) can union or
+subtract other shapes onto its own outline — "Combine shapes" in its
+Inspector, add a square/circle/capsule per entry and mark it *Add* or
+*Subtract*. Several simple shapes become one alpha mask, or one visual
+shape, this way; it composites live, including as an active mask.
+
+**Editable per console / game**: a shape or the background layer on a
+template gets a checkbox — *Fill editable per console* on the global
+template, *per game* on a console one. A console (or a card) can then
+pick its own fill for that layer from the Layers panel, without touching
+the template or duplicating the shape; everything else about it (size,
+stroke, combine…) stays inherited.
+
 The Inspector offers *Align to card* (left / centre / right, top / middle /
-bottom), *Copy style* / *Paste style*, recent colours under every colour
+bottom), *Copy* / *Paste* and *Copy style* / *Paste style* (also from the
+canvas's right-click menu — carries a layer, with everything on it,
+between consoles or onto a card), recent colours under every colour
 field, and — for text — fonts (system, Google Fonts, your own files),
 auto-fit and flowing around alpha masks.
 
@@ -196,7 +216,7 @@ CORS, so the browser version proxies them through Vite
 | Formats, geometry | `src/formats.ts`, `src/card.ts`, `src/bleed.ts` |
 | Editor | `src/store.tsx` (reducer, history, shortcuts), `src/components/EditorCanvas.tsx` + `components/canvas/` (layer drawing, interaction, snapping, outlines), `src/faceLayers.ts` (what a face draws, in what order) |
 | Inspector | `src/components/Inspector.tsx` + `components/inspector/` (fields, per-kind props, masks & conditions, panels) |
-| Layers | `src/factory.ts`, `src/masking.ts`, `src/templates.ts`, `src/maskSweep.ts`, `src/layerStyle.ts`, `src/textFlow.ts`, `src/textFit.ts` |
+| Layers | `src/factory.ts`, `src/masking.ts`, `src/templates.ts`, `src/maskSweep.ts`, `src/layerStyle.ts`, `src/layerClipboard.ts` (whole-layer copy/paste), `src/combineShape.ts` (union / subtract), `src/fillOverrides.ts` (editable-per-descendant fill), `src/textFlow.ts`, `src/textFit.ts` |
 | Catalogue & metadata | `src/data/catalog.ts`, `src/gamelist.ts`, `src/metaFetch.ts`, `src/placeholders.ts`, `src/conditions.ts` |
 | Covers, logos | `src/covers.ts`, `src/localLogos.ts` (both local libraries), `src/consoleLogos.ts`, `src/quickImport.ts`, `components/CoverSearchDialog.tsx` |
 | Output | `src/export.ts`, `src/sheet.ts`, `src/pdf.ts`, `components/CardStage.tsx`, `components/CutSheetDialog.tsx`, `components/ExportAllDialog.tsx` |

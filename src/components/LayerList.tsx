@@ -1,5 +1,6 @@
 import {
   Award,
+  ClipboardPaste,
   Copy,
   CornerDownRight,
   Crop,
@@ -12,6 +13,7 @@ import {
   Lock,
   LockOpen,
   PaintBucket,
+  Pencil,
   QrCode,
   Shapes,
   Trash2,
@@ -28,12 +30,62 @@ import {
   subscribeGamelists,
 } from "../gamelist";
 import { useT } from "../i18n";
+import {
+  getLayerClipboardVersion,
+  layerClipboard,
+  subscribeLayerClipboard,
+} from "../layerClipboard";
 import { useStore } from "../store";
+import type { Layer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
+import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { CoverButton } from "./CoverButton";
+import {
+  buildEmptyMenuItems,
+  buildForeignMenuItems,
+  buildLayerMenuItems,
+} from "./layerContextMenu";
 import type { MaskOption } from "../templates";
 
-export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
+function iconFor(l: Layer) {
+  return isBackground(l)
+    ? PaintBucket
+    : isCondition(l)
+      ? GitBranch
+      : isImage(l)
+        ? ImageIcon
+        : isShape(l)
+          ? Shapes
+          : isMetaBadge(l)
+            ? Award
+            : l.type === "qr"
+              ? QrCode
+              : l.type === "text" && l.metaField
+                ? Database
+                : Type;
+}
+
+const nameOf = (l: Layer, t: ReturnType<typeof useT>) =>
+  isImage(l) && l.main ? t("Main image") : l.name;
+
+export function LayerList({
+  masks = [],
+  consoleLayers = [],
+  globalLayers = [],
+  foreignSelectedId,
+  onSelectOwn,
+  onSelectForeign,
+}: {
+  masks?: MaskOption[];
+  // The console's / the global template's own layers, read-only here — see
+  // App.tsx#Templates. Shown above the project's own so the list matches
+  // what's actually drawn (own layers, then console overlay, then global).
+  consoleLayers?: Layer[];
+  globalLayers?: Layer[];
+  foreignSelectedId?: string;
+  onSelectOwn?: (id: string | null) => void;
+  onSelectForeign?: (layer: Layer | null) => void;
+}) {
   const t = useT();
   const { state, dispatch } = useStore();
   const faceLayers = useMemo(
@@ -41,6 +93,11 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
     [state.side, state.project.back?.layers, state.project.layers],
   );
   const layers = [...faceLayers].reverse(); // top of stack first
+  // Only the front face inherits from templates — the back is its own
+  // plain face, so no foreign rows there (matches the canvas).
+  const showForeign = state.side !== "back";
+  const foreignGlobal = [...globalLayers].reverse();
+  const foreignConsole = [...consoleLayers].reverse();
 
   // Which condition cases are live for the game this card is for — the rest
   // are dimmed, so it's clear at a glance which branch prints.
@@ -54,9 +111,12 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
     return ids;
   }, [faceLayers, meta]);
 
+  useSyncExternalStore(subscribeLayerClipboard, getLayerClipboardVersion, getLayerClipboardVersion);
+
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<{ id: string; after: boolean } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   const reset = () => {
     dragId.current = null;
@@ -74,6 +134,49 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
     dispatch({ type: "SET_LAYER_ORDER", order: [...ids].reverse() });
   };
 
+  const foreignRow = (l: Layer, source: "console" | "global") => {
+    const Icon = iconFor(l);
+    const editable = !!l.editableFill;
+    const active = foreignSelectedId === l.id;
+    return (
+      <li
+        key={l.id}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY, items: buildForeignMenuItems({ layer: l, t }) });
+        }}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md border border-dashed px-1.5 py-1 text-sm text-muted-foreground",
+          active ? "border-primary bg-accent" : "bg-muted/30",
+        )}
+      >
+        <span className="size-3.5 shrink-0" />
+        <button
+          className={cn("flex min-w-0 flex-1 items-center gap-1.5 text-left", !editable && "cursor-default")}
+          disabled={!editable}
+          onClick={() => editable && onSelectForeign?.(l)}
+          title={
+            editable
+              ? t("From the {source} template – click to pick your own fill for it here.", {
+                  source: source === "global" ? t("global") : t("console"),
+                })
+              : t("From the {source} template – edit it there.", {
+                  source: source === "global" ? t("global") : t("console"),
+                })
+          }
+        >
+          <Icon className="size-3.5 shrink-0" />
+          <span className="truncate">{nameOf(l, t)}</span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider">
+            {source === "global" ? t("global") : t("console")}
+          </span>
+          {editable && <Pencil className="size-3 shrink-0 text-primary" />}
+        </button>
+        <Lock className="size-3.5 shrink-0 opacity-60" />
+      </li>
+    );
+  };
+
   return (
     <section className="border-b p-3">
       <div className="mb-2.5 flex items-center justify-between">
@@ -81,30 +184,38 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
           {t("Layers")}
         </h2>
         <div className="flex items-center gap-1">
+          {layerClipboard() && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title={t("Paste")}
+              className="size-7 text-muted-foreground"
+              onClick={(e) =>
+                setMenu({ x: e.clientX, y: e.clientY, items: buildEmptyMenuItems({ dispatch, t }) })
+              }
+            >
+              <ClipboardPaste className="size-4" />
+            </Button>
+          )}
           <CoverButton masks={masks.map((m) => m.layer)} />
           <AddLayerMenu />
         </div>
       </div>
 
-      <ul className="flex flex-col gap-1">
+      <ul
+        className="flex flex-col gap-1"
+        onContextMenu={(e) => {
+          if (e.target !== e.currentTarget) return; // a row handles its own menu
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY, items: buildEmptyMenuItems({ dispatch, t }) });
+        }}
+      >
+        {showForeign && foreignGlobal.map((l) => foreignRow(l, "global"))}
+        {showForeign && foreignConsole.map((l) => foreignRow(l, "console"))}
         {layers.map((l) => {
           const active = l.id === state.selectedId;
           const bg = isBackground(l);
-          const Icon = bg
-            ? PaintBucket
-            : isCondition(l)
-              ? GitBranch
-              : isImage(l)
-                ? ImageIcon
-                : isShape(l)
-                  ? Shapes
-                  : isMetaBadge(l)
-                    ? Award
-                    : l.type === "qr"
-                      ? QrCode
-                      : l.type === "text" && l.metaField
-                        ? Database
-                        : Type;
+          const Icon = iconFor(l);
           // A case that the metadata doesn't select still prints nothing —
           // dim it, but keep it clickable so it can be edited.
           const dimmed = !!l.condId && !live.has(l.id);
@@ -131,6 +242,14 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
                 if (src && !bg) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
                 reset();
               }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  items: buildLayerMenuItems({ layer: l, faceLayers, dispatch, t }),
+                });
+              }}
               className={cn(
                 "flex items-center gap-0.5 rounded-md border bg-card px-1 py-1 text-sm",
                 active ? "border-primary bg-accent" : "hover:bg-accent/50",
@@ -152,7 +271,7 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
 
               <button
                 className="flex min-w-0 flex-1 items-center gap-1.5"
-                onClick={() => dispatch({ type: "SELECT", id: l.id })}
+                onClick={() => onSelectOwn?.(l.id)}
               >
                 {l.clipped && (
                   <CornerDownRight className="size-3.5 shrink-0 text-primary" />
@@ -161,11 +280,8 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
                   <CornerDownRight className="size-3.5 shrink-0 text-amber-500" />
                 )}
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span
-                  className="truncate"
-                  title={isImage(l) && l.main ? t("Main image") : l.name}
-                >
-                  {isImage(l) && l.main ? t("Main image") : l.name}
+                <span className="truncate" title={nameOf(l, t)}>
+                  {nameOf(l, t)}
                 </span>
                 {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
               </button>
@@ -205,6 +321,7 @@ export function LayerList({ masks = [] }: { masks?: MaskOption[] }) {
           );
         })}
       </ul>
+      {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
     </section>
   );
 }

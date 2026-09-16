@@ -11,8 +11,11 @@ import {
   ClipboardPaste,
   Italic,
   Loader2,
+  MinusCircle,
   MoveHorizontal,
   MoveVertical,
+  Plus,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -51,6 +54,8 @@ import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAd
 import { DEFAULT_FLOW_GAP, DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import {
   DEFAULT_SHADOW,
+  type CombineOp,
+  type CombineShape,
   type ImageCrop,
   type ImageLayer,
   type Layer,
@@ -59,9 +64,12 @@ import {
   type PlayersIconStyle,
   type QrEcLevel,
   type QrLayer,
+  type ShapeKind,
   type ShapeLayer,
   type TextLayer,
 } from "../../types";
+import { makeCombineShape } from "../../combineShape";
+import { useStore } from "../../store";
 
 import { ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
 
@@ -344,6 +352,7 @@ export function ShapeProps({
   frame?: boolean;
 }) {
   const t = useT();
+  const { state } = useStore();
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
@@ -366,6 +375,8 @@ export function ShapeProps({
           onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
         />
       )}
+
+      <CombineEditor layer={layer} patch={patch} />
 
       {frame ? (
         <p className="text-xs text-muted-foreground">
@@ -395,9 +406,151 @@ export function ShapeProps({
               onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
             />
           </div>
+
+          {state.project.isTemplate && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={!!layer.editableFill}
+                onCheckedChange={(v) => patch({ editableFill: !!v })}
+              />
+              {state.project.isGlobalTemplate
+                ? t("Fill editable per console")
+                : t("Fill editable per game")}
+            </label>
+          )}
         </>
       )}
     </>
+  );
+}
+
+const COMBINE_SHAPES: { id: ShapeKind; label: string }[] = [
+  { id: "rect", label: "Square" },
+  { id: "circle", label: "Circle" },
+  { id: "capsule", label: "Capsule" },
+];
+
+// Extra shapes unioned / subtracted onto this one's own outline — see
+// src/combineShape.ts. Works the same for a plain shape and an alpha mask
+// (frame) or a "As mask" clipping shape: whatever consumes this layer's
+// alpha sees the combined result.
+function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
+  const t = useT();
+  const combine = layer.combine ?? [];
+
+  const update = (id: string, p: Partial<CombineShape>) =>
+    patch({ combine: combine.map((c) => (c.id === id ? { ...c, ...p } : c)) });
+  const remove = (id: string) => patch({ combine: combine.filter((c) => c.id !== id) });
+  const add = (shape: ShapeKind, op: CombineOp) =>
+    patch({ combine: [...combine, makeCombineShape(shape, op, layer.width, layer.height)] });
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label>{t("Combine shapes")}</Label>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs">
+              <Plus className="size-3.5" /> {t("Add shape")}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {COMBINE_SHAPES.map((s) => (
+              <DropdownMenuItem key={s.id} onClick={() => add(s.id, "add")}>
+                {t(s.label)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {combine.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "Add another shape to union or subtract onto this one – several simple shapes can combine into one alpha mask (or one visual shape) this way.",
+          )}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {combine.map((c) => (
+            <li key={c.id} className="flex flex-col gap-1.5 rounded-md border p-2">
+              <div className="flex items-center gap-1.5">
+                <Select value={c.shape} onValueChange={(v) => update(c.id, { shape: v as ShapeKind })}>
+                  <SelectTrigger className="h-7 flex-1 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMBINE_SHAPES.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {t(s.label)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex rounded-md border">
+                  <button
+                    className={cn(
+                      "px-2 py-1 text-xs",
+                      c.op === "add" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    )}
+                    onClick={() => update(c.id, { op: "add" })}
+                    title={t("Add")}
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                  <button
+                    className={cn(
+                      "border-l px-2 py-1 text-xs",
+                      c.op === "subtract" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    )}
+                    onClick={() => update(c.id, { op: "subtract" })}
+                    title={t("Subtract")}
+                  >
+                    <MinusCircle className="size-3.5" />
+                  </button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  title={t("Remove")}
+                  onClick={() => remove(c.id)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                <NumberField label="X" value={round(c.x)} onChange={(v) => update(c.id, { x: v })} />
+                <NumberField label="Y" value={round(c.y)} onChange={(v) => update(c.id, { y: v })} />
+                <NumberField
+                  label={t("W")}
+                  value={round(c.width)}
+                  onChange={(v) => update(c.id, { width: Math.max(4, v) })}
+                />
+                <NumberField
+                  label={t("H")}
+                  value={round(c.height)}
+                  onChange={(v) => update(c.id, { height: Math.max(4, v) })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <NumberField
+                  label={t("Rotation °")}
+                  value={round(c.rotation)}
+                  onChange={(v) => update(c.id, { rotation: v })}
+                />
+                {c.shape === "rect" && (
+                  <NumberField
+                    label={t("Radius")}
+                    value={round(c.cornerRadius)}
+                    onChange={(v) => update(c.id, { cornerRadius: Math.max(0, v) })}
+                  />
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

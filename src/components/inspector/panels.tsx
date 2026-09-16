@@ -98,6 +98,17 @@ export function BackgroundLayerProps({
           }
         />
       )}
+      {state.project.isTemplate && (
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={!!layer.editableFill}
+            onCheckedChange={(v) => patch({ editableFill: !!v })}
+          />
+          {state.project.isGlobalTemplate
+            ? t("Fill editable per console")
+            : t("Fill editable per game")}
+        </label>
+      )}
     </Panel>
   );
 }

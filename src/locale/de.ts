@@ -22,6 +22,27 @@ export const de: Record<string, string> = {
   "Find cover": "Cover suchen",
   "Find covers": "Cover suchen",
   "Find logo": "Logo suchen",
+
+  // ── Layer context menu (Copy/Paste a whole layer, #2) ───────────────────────
+  Copy: "Kopieren",
+  Paste: "Einfügen",
+
+  // ── Combine shapes (#1) ──────────────────────────────────────────────────
+  "Combine shapes": "Formen kombinieren",
+  "Add another shape to union or subtract onto this one – several simple shapes can combine into one alpha mask (or one visual shape) this way.":
+    "Füge eine weitere Form hinzu, die mit dieser vereinigt oder von ihr subtrahiert wird – so lassen sich mehrere einfache Formen zu einer Alpha-Maske (oder einer sichtbaren Form) kombinieren.",
+  "Add shape": "Form hinzufügen",
+  Subtract: "Subtrahieren",
+
+  // ── Editable per console / game (#4) ────────────────────────────────────
+  "Fill editable per console": "Füllung pro Konsole bearbeitbar",
+  "Fill editable per game": "Füllung pro Spiel bearbeitbar",
+  "Inherited from a template. Everything but its fill stays as defined there — pick your own fill for it here.":
+    "Von einer Vorlage geerbt. Bis auf die Füllung bleibt alles wie dort definiert – wähle hier deine eigene Füllung dafür.",
+  "Reset to the template's own fill": "Auf die Füllung der Vorlage zurücksetzen",
+  "From the {source} template – click to pick your own fill for it here.":
+    "Aus der {source}-Vorlage – klicke, um hier deine eigene Füllung dafür zu wählen.",
+  "From the {source} template – edit it there.": "Aus der {source}-Vorlage – dort bearbeiten.",
   "Backup contents": "Backup-Inhalt",
   "A backup (manual or automatic) always has your designs, templates, metadata and settings. Your SteamGridDB / IGDB / TMDB API keys are never included unless you turn this on — they'd otherwise sit in the .zip as plain text.":
     "Ein Backup (manuell oder automatisch) enthält immer deine Entwürfe, Vorlagen, Metadaten und Einstellungen. Deine SteamGridDB-/IGDB-/TMDB-API-Schlüssel werden nur mit aufgenommen, wenn du das hier einschaltest \u2013 sonst lägen sie unverschlüsselt in der .zip-Datei.",

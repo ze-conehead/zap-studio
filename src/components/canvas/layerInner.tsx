@@ -17,6 +17,7 @@ import {
 import qrcode from "qrcode-generator";
 import { gradientFill, noiseTile } from "../../background";
 import { CANVAS } from "../../card";
+import { combinedBounds, operandsOf, type ShapeOperand } from "../../combineShape";
 import type { GameMeta } from "../../gamelist";
 import { ratingOutOfFive, releaseYear } from "../../gamelist";
 import { useImage } from "../../hooks/useImage";
@@ -151,6 +152,7 @@ function QrInner({ layer, gco, vars }: { layer: TQrLayer; gco?: Gco; vars?: Plac
 }
 
 function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
+  if (layer.combine?.length) return <CompoundShapeInner layer={layer} gco={gco} />;
   const { width: w, height: h, fill } = layer;
   const ellipse = layer.shape === "circle";
   const radius = layer.shape === "capsule" ? Math.min(w, h) / 2 : layer.cornerRadius;
@@ -228,6 +230,127 @@ function ShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
       <Rect {...box} {...paint} {...stroke} {...shadow} />
       {noise && <Rect {...box} {...noise} />}
     </>
+  );
+}
+
+// One operand (the shape's own box, or a `combine` entry) drawn as an
+// opaque silhouette node, composited "add" (source-over) or "subtract"
+// (destination-out) onto whatever the group already holds.
+function SilhouetteNode({ op }: { op: ShapeOperand }) {
+  const gco = op.op === "subtract" ? "destination-out" : "source-over";
+  return (
+    <Group x={op.x} y={op.y} rotation={op.rotation}>
+      {op.shape === "circle" ? (
+        <Ellipse radiusX={op.width / 2} radiusY={op.height / 2} fill="#000" globalCompositeOperation={gco} />
+      ) : (
+        <Rect
+          x={-op.width / 2}
+          y={-op.height / 2}
+          width={op.width}
+          height={op.height}
+          cornerRadius={op.cornerRadius}
+          fill="#000"
+          globalCompositeOperation={gco}
+        />
+      )}
+    </Group>
+  );
+}
+
+// One operand drawn as a dashed outline — the editing-time preview for a
+// compound alpha mask / logo slot, which (like a plain one) never shows a
+// fill. A subtract operand gets a different colour so its role is legible.
+function OutlineNode({ op, logoSlot }: { op: ShapeOperand; logoSlot?: boolean }) {
+  const line = {
+    stroke: logoSlot ? "#38bdf8" : op.op === "subtract" ? "#fb7185" : "#a78bfa",
+    strokeWidth: 1.5,
+    dash: [7, 5] as number[],
+    fill: "transparent",
+  };
+  return (
+    <Group x={op.x} y={op.y} rotation={op.rotation}>
+      {op.shape === "circle" ? (
+        <Ellipse radiusX={op.width / 2} radiusY={op.height / 2} {...line} />
+      ) : (
+        <Rect x={-op.width / 2} y={-op.height / 2} width={op.width} height={op.height} cornerRadius={op.cornerRadius} {...line} />
+      )}
+    </Group>
+  );
+}
+
+// A shape combined from several operands (ShapeLayer.combine — see
+// src/combineShape.ts): its own box plus each combine entry, unioned or
+// subtracted together. The silhouette is a cached Konva Group so the
+// per-operand composite operations only interact with each other, not
+// with whatever else is on the same canvas — the same trick a single
+// shape's own `gco` mask relies on, just local to this one layer.
+function CompoundShapeInner({ layer, gco }: { layer: TShapeLayer; gco?: Gco }) {
+  const ops = useMemo(() => operandsOf(layer), [layer]);
+  // Hooks run unconditionally — every branch below returns different JSX,
+  // but always the same two refs, one of which stays unused (and its
+  // .cache() a no-op, since the ref never attaches to anything then).
+  const silhouetteRef = useRef<Konva.Group>(null);
+  const outerRef = useRef<Konva.Group>(null);
+  useLayoutEffect(() => {
+    silhouetteRef.current?.cache();
+    outerRef.current?.cache();
+  });
+
+  // As a mask, only the combined alpha matters — the outer cached group's
+  // own gco (destination-in, from the caller) cuts it into whatever this
+  // segment already drew.
+  if (gco) {
+    return (
+      <Group ref={silhouetteRef} globalCompositeOperation={gco}>
+        {ops.map((op, i) => (
+          <SilhouetteNode key={i} op={op} />
+        ))}
+      </Group>
+    );
+  }
+
+  // Alpha masks and logo slots never show a fill — outline every operand
+  // instead, same as a single placement frame.
+  if (layer.alphaMask || layer.logoSlot) {
+    return (
+      <>
+        {ops.map((op, i) => (
+          <OutlineNode key={i} op={op} logoSlot={layer.logoSlot} />
+        ))}
+      </>
+    );
+  }
+
+  // A decorative compound shape: paint the fill over the union's full
+  // bounding box, then cut it down to the combined silhouette — the same
+  // fill-then-cut the mask/content pair uses, just self-contained in one
+  // layer instead of across the stack.
+  const { fill } = layer;
+  const box = combinedBounds(ops);
+  const paint = fill.kind === "gradient" ? gradientFill(fill, box.w, box.h, false) : { fill: fill.color };
+  const stroke = layer.strokeWidth > 0 ? { stroke: layer.stroke, strokeWidth: layer.strokeWidth } : {};
+  const shadow = shadowProps(layer.shadow);
+  const noise =
+    fill.noise > 0
+      ? {
+          listening: false,
+          opacity: fill.noise,
+          fillPatternImage: noiseTile() as unknown as HTMLImageElement,
+          fillPatternRepeat: "repeat" as const,
+          globalCompositeOperation: "overlay" as const,
+        }
+      : null;
+
+  return (
+    <Group ref={outerRef}>
+      <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...paint} {...stroke} {...shadow} />
+      {noise && <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...noise} />}
+      <Group ref={silhouetteRef} globalCompositeOperation="destination-in">
+        {ops.map((op, i) => (
+          <SilhouetteNode key={i} op={op} />
+        ))}
+      </Group>
+    </Group>
   );
 }
 

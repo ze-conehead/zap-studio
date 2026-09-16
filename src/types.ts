@@ -102,6 +102,11 @@ export interface BaseLayer {
   condId?: string;
   // Layer effect: a drop shadow / glow (image, text and shape layers).
   shadow?: LayerShadow;
+  // Shapes/backgrounds only, template layers only: descendants (a console
+  // below the global template, a card below its console) may give this
+  // layer's `fill` their own value — see `Project.fillOverrides`. Every
+  // other property (geometry, stroke, combine …) stays inherited as-is.
+  editableFill?: boolean;
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -168,6 +173,29 @@ export interface ShapeLayer extends BaseLayer {
   fill: CardBackground; // solid / gradient + noise, same model as the card
   stroke: string;
   strokeWidth: number;
+  // Extra shapes unioned / subtracted onto this one's own outline, so
+  // several simple shapes can combine into one alpha mask or one visual
+  // shape — see src/combineShape.ts. Absent/empty = just this one shape.
+  combine?: CombineShape[];
+}
+
+export type CombineOp = "add" | "subtract";
+
+// One shape combined into its parent's outline (ShapeLayer.combine). A
+// light, self-contained descriptor rather than a full layer, so it travels
+// with the parent on copy/paste and export with no id-linking to keep in
+// sync. x/y/rotation are in the parent's own local space (its centre is
+// 0,0) — the whole compound moves and scales together as the parent layer.
+export interface CombineShape {
+  id: string; // stable key for the editor list — not a layer id
+  shape: ShapeKind;
+  op: CombineOp;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number; // degrees
+  cornerRadius: number; // rect only
 }
 
 // Console-level "smart" badge: shows the rating, release year and player
@@ -258,6 +286,10 @@ export interface Project {
   isTemplate?: boolean; // true => shared layer set (console or global)
   consoleId?: string; // set on a per-console template
   isGlobalTemplate?: boolean; // true => layers shown on every card of every console
+  // This project's own value for an ancestor's `editableFill` layer — a
+  // console's pick for a global shape/background, or a card's pick for a
+  // console one — keyed by that layer's id. See src/fillOverrides.ts.
+  fillOverrides?: Record<string, CardBackground>;
 }
 
 export interface ProjectMeta {

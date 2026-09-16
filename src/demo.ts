@@ -11,6 +11,7 @@ import {
   newProject,
   templateId,
 } from "./factory";
+import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -75,19 +76,21 @@ export async function drawPack(
   const picks: typeof pool = [];
   while (picks.length < size) picks.push(...shuffle(pool).slice(0, size - picks.length));
 
-  const bgFill = (p?: Project) => {
+  // A console's / a card's own pick for an ancestor's editableFill shape or
+  // background — see src/fillOverrides.ts. Global overrides are per
+  // console (descendant = consoleP), console overrides per card
+  // (descendant = the card's own saved project, when it has one).
+  const bgFill = (p?: Project, descendant?: Project) => {
     const bg = p?.layers.find(isBackground);
-    return bg?.visible ? bg.fill : undefined;
+    return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project) =>
-    (p?.layers ?? []).filter(
-      (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
-    );
+  const overlayable = (p?: Project, descendant?: Project) =>
+    (p?.layers ?? [])
+      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
+      .map((l) => withFillOverride(l, descendant));
 
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
-  const globalBg = bgFill(globalP);
   const globalMasks = alphaMasksOf(globalP);
-  const globalLayers = overlayable(globalP);
 
   const tplCache = new Map<string, Project | undefined>();
   const cards: DemoCard[] = [];
@@ -108,9 +111,9 @@ export async function drawPack(
       gameTitle: pick.game.title,
       project:
         saved ?? placeholderProject(gameKey, pick.console.name, pick.game.title),
-      overlay: [...overlayable(consoleP), ...globalLayers],
-      consoleBg: bgFill(consoleP),
-      globalBg,
+      overlay: [...overlayable(consoleP, saved), ...overlayable(globalP, consoleP)],
+      consoleBg: bgFill(consoleP, saved),
+      globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       holo: false,
     });
