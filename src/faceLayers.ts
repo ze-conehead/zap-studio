@@ -51,6 +51,15 @@ export function buildOverlay(
 // and its own frames (editable there); the foreign frames are dropped.
 // `foreignIds` names the entries that came from the overlay, so the editor
 // can draw them read-only.
+//
+// A console template being edited directly sees its own logo image the
+// same way: `own` is the console's own layers (the logo among them, still
+// fully editable — never added to foreignIds), `overlay` is the global
+// template's, logoSlot included this time so its own stacking position is
+// there to slot the logo into. A game card never has this happen twice —
+// buildOverlay() already resolves the console/global logoSlot splice
+// before either side ever reaches here, so by the time `own`/`overlay`
+// arrive for a card, no logoSlot layer is left in `overlay` to match.
 export function buildFaceLayers(
   project: Project,
   own: Layer[],
@@ -66,12 +75,20 @@ export function buildFaceLayers(
     if (!l.visible || l.mask || l.clipped) return undefined;
     return resolveMask(l, masks);
   };
+  const logoLayer = own.find((l) => l.type === "image" && l.logo && l.visible);
   // Own content with no frame to fill sits under the whole template stack,
   // as it always has.
   for (const l of own) {
-    if (!slotsIn(l)) out.push(l);
+    if (!slotsIn(l) && l.id !== logoLayer?.id) out.push(l);
   }
   for (const tl of overlay) {
+    if (tl.logoSlot) {
+      if (logoLayer) {
+        placed.add(logoLayer.id);
+        out.push(logoLayer);
+      }
+      continue;
+    }
     if (!isAlphaMask(tl)) {
       out.push(tl);
       foreignIds.add(tl.id);

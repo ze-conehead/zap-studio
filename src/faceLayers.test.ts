@@ -109,6 +109,23 @@ describe("buildFaceLayers", () => {
     const { layers } = buildFaceLayers(g, [mask, img("X")], [], [mask]);
     expect(names(layers)).toEqual([mask.name, "X"]);
   });
+
+  it("slots a console template's own logo into the global logo frame's position, still editable", () => {
+    const tpl = newConsoleTemplate("ps", "PlayStation");
+    const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+    const slot = makeLogoSlotLayer(); // above the shape in the global stack
+    const logo = img("Logo", { logo: true });
+    const { layers, foreignIds } = buildFaceLayers(tpl, [logo], [shape, slot], []);
+    expect(names(layers)).toEqual(["Shape", "Logo"]);
+    expect(foreignIds.has(logo.id)).toBe(false);
+  });
+
+  it("never draws the logo frame itself, template edit or not", () => {
+    const tpl = newConsoleTemplate("ps", "PlayStation");
+    const slot = makeLogoSlotLayer();
+    const { layers } = buildFaceLayers(tpl, [], [img("BildX"), slot], []);
+    expect(names(layers)).toEqual(["BildX"]);
+  });
 });
 
 describe("buildOverlay", () => {

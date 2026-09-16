@@ -339,11 +339,12 @@ function Shell({
       // A card can point at any frame from the global template or its own
       // console; the template that owns one edits it in place instead.
       const masks = project.isTemplate ? [] : maskOptions(globalP, consoleP);
+      // alpha masks AND the logo slot stay in: buildFaceLayers resolves
+      // where each one's content actually slots in (or drops the frame
+      // itself, if nothing fills it) — see its own comment.
       const overlayable = (p?: Project, descendant?: Project) =>
         (p?.layers ?? [])
-          .filter(
-            (l) => !l.logoSlot && !isBackground(l), // alpha masks stay: they mark where a card's image slots in
-          )
+          .filter((l) => !isBackground(l))
           .map((l) => withFillOverride(l, descendant));
       const globalLayers = overlayable(globalP, descendantOfGlobal);
 
