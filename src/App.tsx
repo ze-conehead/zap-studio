@@ -509,6 +509,7 @@ function Shell({
           logoSlot={logoSlot}
           guides={guides}
           selectedCombine={selectedCombine}
+          onSelectCombine={selectCombine}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />

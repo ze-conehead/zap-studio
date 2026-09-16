@@ -60,6 +60,7 @@ export function EditorCanvas({
   logoSlot,
   guides,
   selectedCombine,
+  onSelectCombine,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
@@ -72,6 +73,7 @@ export function EditorCanvas({
   // Layers panel — shows a draggable handle for just that shape. See
   // App.tsx#selectedCombine.
   selectedCombine?: { parentId: string; index: number } | null;
+  onSelectCombine?: (parentId: string, index: number) => void;
 }) {
   const { state, dispatch } = useStore();
   const { project, side, showBleed } = state;
@@ -156,6 +158,7 @@ export function EditorCanvas({
           showBleed={showBleed}
           registerStage={registerFront}
           selectedCombine={selectedCombine}
+          onSelectCombine={onSelectCombine}
         />
         {hasBack && (
           <FaceStage
@@ -193,6 +196,7 @@ function FaceStage({
   registerStage,
   onRemove,
   selectedCombine,
+  onSelectCombine,
 }: {
   side: CardSide;
   active: boolean;
@@ -209,6 +213,7 @@ function FaceStage({
   registerStage: (s: Konva.Stage | null) => void;
   onRemove?: () => void;
   selectedCombine?: { parentId: string; index: number } | null;
+  onSelectCombine?: (parentId: string, index: number) => void;
 }) {
   const t = useT();
   const { state, dispatch } = useStore();
@@ -626,6 +631,7 @@ function FaceStage({
                       ? selectedCombine.index
                       : undefined
                   }
+                  onCombineSelect={(index) => onSelectCombine?.(layer.id, index)}
                   onCombineGrab={(_e, index, start) => startCombineDrag(layer.id, index, start)}
                   groupChildren={groupChildren}
                   meta={badgeMeta}
