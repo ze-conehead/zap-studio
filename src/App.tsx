@@ -48,6 +48,7 @@ import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
 import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
+import { buildOverlay } from "./faceLayers";
 import { getFormatId } from "./formats";
 import {
   lastProjectId,
@@ -354,7 +355,7 @@ function Shell({
         overlay = globalLayers;
       } else {
         consoleLayers = overlayable(consoleP, descendantOfConsole);
-        overlay = [...consoleLayers, ...globalLayers];
+        overlay = buildOverlay(consoleP, descendantOfConsole, globalP, descendantOfGlobal);
       }
       setTpl({
         overlay,

@@ -4,7 +4,8 @@
 
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, newProject, templateId } from "./factory";
-import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
+import { backgroundFillOverride } from "./fillOverrides";
+import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -28,11 +29,6 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
     const bg = p?.layers.find(isBackground);
     return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project, descendant?: Project) =>
-    (p?.layers ?? [])
-      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
-      .map((l) => withFillOverride(l, descendant));
-
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalMasks = alphaMasksOf(globalP);
   const globalBack = globalP?.back;
@@ -45,7 +41,6 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
       tplCache.set(c.id, await loadProject(templateId(c.id)));
     }
     const consoleP = tplCache.get(c.id);
-    const globalLayers = overlayable(globalP, consoleP);
     const globalBg = bgFill(globalP, consoleP);
     // A game with no back of its own borrows the console template's, then
     // the global one's.
@@ -69,7 +64,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
           // No design yet: an empty project still renders the console and
           // global templates, which is exactly what that card looks like.
           project: saved ?? newProject(g.title),
-          overlay: [...overlayable(consoleP, saved), ...globalLayers],
+          overlay: buildOverlay(consoleP, saved, globalP, consoleP),
           consoleBg: bgFill(consoleP, saved),
           globalBg,
           masks: [...globalMasks, ...alphaMasksOf(consoleP)],

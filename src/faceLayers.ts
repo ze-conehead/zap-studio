@@ -2,8 +2,43 @@
 // order, and which background fill it paints. Shared by the editor
 // (EditorCanvas), the static renderer (CardStage) and the unit tests.
 
+import { isBackground } from "./factory";
+import { withFillOverride } from "./fillOverrides";
 import { isAlphaMask, resolveMask } from "./templates";
 import type { BackgroundLayer, CardBackground, Layer, Project } from "./types";
+
+// A console's own overlay-eligible layers plus the global template's, one
+// z-ordered list (global on top — see buildFaceLayers) for a game card to
+// draw. The console's logo image (Manage Logos / "Find logo", ImageLayer
+// with `logo: true`) is the one console layer that doesn't just land below
+// the whole global stack: it slots into the global template's own logo
+// frame (`logoSlot`, never drawn itself) at that frame's own position, so
+// where the template author put the frame in their stack — above a
+// decorative shape, say — is where the logo actually draws. Every other
+// console layer keeps the plain "console below global" rule.
+export function buildOverlay(
+  consoleP: Project | undefined,
+  descendantOfConsole: Project | undefined,
+  globalP: Project | undefined,
+  descendantOfGlobal: Project | undefined,
+): Layer[] {
+  const overlayable = (p: Project | undefined, descendant: Project | undefined) =>
+    (p?.layers ?? [])
+      .filter((l) => !l.logoSlot && !isBackground(l))
+      .map((l) => withFillOverride(l, descendant));
+
+  const logo = consoleP?.layers.find((l) => l.type === "image" && l.logo);
+  const consoleLayers = overlayable(consoleP, descendantOfConsole).filter(
+    (l) => l.id !== logo?.id,
+  );
+  const globalLayers = (globalP?.layers ?? []).flatMap((l): Layer[] => {
+    if (isBackground(l)) return [];
+    if (l.logoSlot) return logo ? [withFillOverride(logo, descendantOfConsole)] : [];
+    return [withFillOverride(l, descendantOfGlobal)];
+  });
+
+  return [...consoleLayers, ...globalLayers];
+}
 
 // One z-ordered list for a face: the project's own layers, then the
 // console / global template layers it inherits (`overlay`, alpha masks

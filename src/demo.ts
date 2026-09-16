@@ -11,7 +11,8 @@ import {
   newProject,
   templateId,
 } from "./factory";
-import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
+import { backgroundFillOverride } from "./fillOverrides";
+import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -84,11 +85,6 @@ export async function drawPack(
     const bg = p?.layers.find(isBackground);
     return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project, descendant?: Project) =>
-    (p?.layers ?? [])
-      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
-      .map((l) => withFillOverride(l, descendant));
-
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalMasks = alphaMasksOf(globalP);
 
@@ -111,7 +107,7 @@ export async function drawPack(
       gameTitle: pick.game.title,
       project:
         saved ?? placeholderProject(gameKey, pick.console.name, pick.game.title),
-      overlay: [...overlayable(consoleP, saved), ...overlayable(globalP, consoleP)],
+      overlay: buildOverlay(consoleP, saved, globalP, consoleP),
       consoleBg: bgFill(consoleP, saved),
       globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],

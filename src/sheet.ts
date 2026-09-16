@@ -6,7 +6,8 @@
 import { CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
-import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
+import { backgroundFillOverride } from "./fillOverrides";
+import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadAllProjects, loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
@@ -49,11 +50,6 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
     const bg = p?.layers.find(isBackground);
     return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
   };
-  const overlayable = (p?: Project, descendant?: Project) =>
-    (p?.layers ?? [])
-      .filter((l) => !l.logoSlot && !isBackground(l)) // alpha masks stay: they mark where a card's image slots in
-      .map((l) => withFillOverride(l, descendant));
-
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalMasks = alphaMasksOf(globalP);
 
@@ -88,7 +84,7 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       consoleName: m.consoleName,
       gameTitle: m.gameTitle,
       project,
-      overlay: [...overlayable(consoleP, project), ...overlayable(globalP, consoleP)],
+      overlay: buildOverlay(consoleP, project, globalP, consoleP),
       consoleBg: bgFill(consoleP, project),
       globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],

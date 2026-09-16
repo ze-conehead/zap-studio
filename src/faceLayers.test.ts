@@ -3,12 +3,14 @@ import {
   makeAlphaMaskLayer,
   makeBackgroundLayer,
   makeImageLayer,
+  makeLogoSlotLayer,
+  makeShapeLayer,
   makeTextLayer,
   newConsoleTemplate,
   newGlobalTemplate,
   newProject,
 } from "./factory";
-import { buildFaceLayers, effectiveBgFill } from "./faceLayers";
+import { buildFaceLayers, buildOverlay, effectiveBgFill } from "./faceLayers";
 import type { CardBackground, ImageLayer, Layer } from "./types";
 
 const img = (name: string, extra: Partial<ImageLayer> = {}): ImageLayer => ({
@@ -106,6 +108,38 @@ describe("buildFaceLayers", () => {
     const mask = makeAlphaMaskLayer(1);
     const { layers } = buildFaceLayers(g, [mask, img("X")], [], [mask]);
     expect(names(layers)).toEqual([mask.name, "X"]);
+  });
+});
+
+describe("buildOverlay", () => {
+  it("slots the console's logo into the global logo frame's own stacking position", () => {
+    const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+    const slot = makeLogoSlotLayer(); // above the shape — logos should draw on top of it
+    const globalP = { ...newGlobalTemplate(), layers: [shape, slot] };
+    const logo = img("Logo", { logo: true });
+    const consoleP = { ...newConsoleTemplate("ps", "PlayStation"), layers: [logo] };
+
+    const layers = buildOverlay(consoleP, undefined, globalP, undefined);
+    expect(names(layers)).toEqual(["Shape", "Logo"]);
+  });
+
+  it("still draws the shape when there is no logo yet, and never draws the frame itself", () => {
+    const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+    const globalP = { ...newGlobalTemplate(), layers: [shape, makeLogoSlotLayer()] };
+    const consoleP = newConsoleTemplate("ps", "PlayStation");
+
+    const layers = buildOverlay(consoleP, undefined, globalP, undefined);
+    expect(names(layers)).toEqual(["Shape"]);
+  });
+
+  it("keeps every other console layer below the whole global stack", () => {
+    const banner = img("Banner");
+    const consoleP = { ...newConsoleTemplate("ps", "PlayStation"), layers: [banner] };
+    const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+    const globalP = { ...newGlobalTemplate(), layers: [shape] };
+
+    const layers = buildOverlay(consoleP, undefined, globalP, undefined);
+    expect(names(layers)).toEqual(["Banner", "Shape"]);
   });
 });
 
