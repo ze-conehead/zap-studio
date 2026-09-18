@@ -4,7 +4,9 @@
 import { useRef, useState } from "react";
 import { exportBackup, importBackup } from "../backup";
 import { downloadBlob, downloadDataUrl, exportPng, type ExportMode } from "../export";
+import { getFormat } from "../formats";
 import { useT } from "../i18n";
+import { cardTrayPdf, type CardPdfPage } from "../pdf";
 import { askConfirm } from "./ConfirmDialog";
 import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
@@ -13,6 +15,7 @@ import type { CanvasHandle } from "./EditorCanvas";
 export interface FileActions {
   busy: string | null;
   runExport: (mode: ExportMode) => Promise<void>;
+  runCoverPdf: () => Promise<void>;
   saveJson: () => void;
   saveBackup: () => Promise<void>;
   loadBackup: (file: File) => Promise<void>;
@@ -45,6 +48,33 @@ export function useFileActions(
       const url = await exportPng({ stage, stageWidth: w, mode });
       const face = project.back ? (side === "back" ? "_back" : "_front") : "";
       downloadDataUrl(url, `${safeName()}${face}_${mode}.png`);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // A double-sided print file for formats with both panels (a folded wrap)
+  // and a back face (the wrap's inside) — one page per side, at trim+bleed
+  // size, so a print shop can lay them out back-to-back.
+  const runCoverPdf = async () => {
+    const front = canvas.current?.getStage("front");
+    const back = canvas.current?.getStage("back");
+    const w = canvas.current?.getStageWidth() ?? 0;
+    if (!front || !back || !w) return;
+    try {
+      setBusy(t("Generating PDF …"));
+      const f = getFormat();
+      const cardWidthMM = f.trimMM.w + f.bleedMM * 2;
+      const cardHeightMM = f.trimMM.h + f.bleedMM * 2;
+      const page = async (stage: typeof front): Promise<CardPdfPage> => ({
+        imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
+        cardWidthMM,
+        cardHeightMM,
+      });
+      const blob = await cardTrayPdf([await page(front), await page(back)]);
+      downloadBlob(blob, `${safeName()}_cover.pdf`);
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -102,6 +132,7 @@ export function useFileActions(
   return {
     busy,
     runExport,
+    runCoverPdf,
     saveJson,
     saveBackup,
     loadBackup,

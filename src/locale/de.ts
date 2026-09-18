@@ -227,6 +227,7 @@ export const de: Record<string, string> = {
   "Generating PNG …": "PNG wird erzeugt …",
   "Generating PDF …": "PDF wird erzeugt …",
   "PDF – card-tray printer …": "PDF – Kartenfach-Drucker …",
+  "PDF – cover, double-sided (front + inside)": "PDF – Cover, doppelseitig (Vorderseite + Innenseite)",
   "Card-tray printing": "Kartenfach-Druck",
   "For a printer's disc/card tray (e.g. Canon's). The tray is usually bigger than the card, and exactly where the card sits on it depends on your printer — print a test page, measure the offset from a corner against the real card, and adjust it below. Remembered per tray type.":
     "Für das Disc-/Kartenfach eines Druckers (z. B. Canon). Das Fach ist meist größer als die Karte, und wo genau die Karte darauf sitzt, hängt vom Drucker ab – drucke eine Testseite, miss den Versatz ab einer Ecke an der echten Karte und passe ihn unten an. Wird je Fach-Typ gemerkt.",
@@ -466,6 +467,7 @@ export const de: Record<string, string> = {
   "Floppy disk label": "Disketten-Label",
   "DVD case wrap": "DVD-Hüllen-Wrap",
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
+  "Nintendo Switch case": "Nintendo-Switch-Hülle",
   Custom: "Benutzerdefiniert",
   Width: "Breite",
   Height: "Höhe",

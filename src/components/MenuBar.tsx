@@ -262,6 +262,11 @@ export function MenuBar({
               {t("PDF – card-tray printer …")}
             </DropdownMenuItem>
           )}
+          {getFormat().hasBack && !!getFormat().panels?.length && (
+            <DropdownMenuItem onClick={() => void file.runCoverPdf()}>
+              {t("PDF – cover, double-sided (front + inside)")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
           <DropdownMenuItem onClick={onOpenExportAll}>
             {t("All cards as PNG (.zip) …")}

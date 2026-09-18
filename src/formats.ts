@@ -12,6 +12,7 @@ export type FormatId =
   | "floppy-label"
   | "dvd-insert"
   | "cassette-jcard"
+  | "switch-case"
   | "custom";
 
 // A multi-panel format (DVD wrap, cassette J-card) is one artboard split
@@ -29,7 +30,7 @@ export interface CardFormat {
   bleedMM: number;
   cornerRadiusMM: number; // preview mask only
   thickRatio: number; // 3D preview thickness ÷ trim height
-  hasBack: boolean; // only the credit card has a separate back
+  hasBack: boolean; // a separate, independently designed reverse side
   panels?: FormatPanel[]; // absent = a single print area
 }
 
@@ -93,6 +94,21 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Spine", wMM: 12 },
       { name: "Back", wMM: 64 },
       { name: "Flap", wMM: 14 },
+    ],
+  },
+  "switch-case": {
+    id: "switch-case",
+    name: "Nintendo Switch case",
+    // front 99 + spine 10 + back 99; back face = the case's inside.
+    trimMM: { w: 208, h: 160.5 },
+    bleedMM: 3,
+    cornerRadiusMM: 0,
+    thickRatio: 0.0008,
+    hasBack: true,
+    panels: [
+      { name: "Front", wMM: 99 },
+      { name: "Spine", wMM: 10 },
+      { name: "Back", wMM: 99 },
     ],
   },
   // Placeholder geometry — a project created with this format stores its own
