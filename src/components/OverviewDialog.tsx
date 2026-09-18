@@ -208,7 +208,11 @@ export function OverviewDialog({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="min-h-0 flex-1 overflow-y-auto" style={previewCssVars()}>
+        {/* p-1: the card ring (box-shadow) draws outside the border box, and
+            this scroller's forced `overflow-x: auto` (a side effect of
+            overflow-y: auto) clips anything past its own edge — without
+            this margin the leftmost column's ring got shaved off. */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-1" style={previewCssVars()}>
           {!cards.length && !error ? (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" /> {t("Rendering cards …")}
