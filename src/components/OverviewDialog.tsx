@@ -77,7 +77,11 @@ export function OverviewDialog({
   useEffect(() => {
     if (!open || !batch.length) return;
     let alive = true;
-    stages.current = [];
+    // No `stages.current = []` reset here: the batch's <CardStage> refs
+    // already fired during the commit that mounted them (refs run before
+    // effects), so clearing the array now would only wipe what was just
+    // written. Stale entries from a previous, longer batch are harmless —
+    // the capture loop below only ever reads up to `batch.length`.
     (async () => {
       try {
         await Promise.all(
