@@ -1,0 +1,161 @@
+// Export a double-sided print PDF for a wrap-style cover (DVD case, Switch
+// case, …): the cover's own trim+bleed size, centered on an A4 sheet in
+// whichever orientation fits, one page per side (front, then the inside).
+// Same page size and offset on both pages, so a duplex printer lands the
+// cover in exactly the same spot front and back.
+
+import { FileDown, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { downloadBlob, exportPng } from "../export";
+import { getFormat } from "../formats";
+import { useT } from "../i18n";
+import { cardTrayPdf, type CardPdfPage } from "../pdf";
+import { useStore } from "../store";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import type { CanvasHandle } from "./EditorCanvas";
+
+const A4_MM = { w: 210, h: 297 };
+
+export function CoverPdfDialog({
+  open,
+  onOpenChange,
+  canvas,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  canvas: React.MutableRefObject<CanvasHandle | null>;
+}) {
+  const t = useT();
+  const { state } = useStore();
+  const { project } = state;
+  const f = getFormat();
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) setError("");
+  }, [open]);
+
+  const cardWidthMM = f.trimMM.w + f.bleedMM * 2;
+  const cardHeightMM = f.trimMM.h + f.bleedMM * 2;
+  const fitsPortrait = cardWidthMM <= A4_MM.w && cardHeightMM <= A4_MM.h;
+  const fitsLandscape = cardWidthMM <= A4_MM.h && cardHeightMM <= A4_MM.w;
+  const fits = fitsPortrait || fitsLandscape;
+  const pageWidthMM = fitsPortrait ? A4_MM.w : A4_MM.h;
+  const pageHeightMM = fitsPortrait ? A4_MM.h : A4_MM.w;
+  const offsetXMM = (pageWidthMM - cardWidthMM) / 2;
+  const offsetYMM = (pageHeightMM - cardHeightMM) / 2;
+
+  const safeName = () =>
+    project.name.replace(/[^\w-]+/g, "_").slice(0, 40) || "sticker";
+
+  const run = async () => {
+    const front = canvas.current?.getStage("front");
+    const back = canvas.current?.getStage("back");
+    const w = canvas.current?.getStageWidth() ?? 0;
+    if (!front || !back || !w || !fits) return;
+    setBusy(true);
+    setError("");
+    try {
+      const page = async (stage: typeof front): Promise<CardPdfPage> => ({
+        imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
+        cardWidthMM,
+        cardHeightMM,
+        pageWidthMM,
+        pageHeightMM,
+        offsetXMM,
+        offsetYMM,
+      });
+      const blob = await cardTrayPdf([await page(front), await page(back)]);
+      downloadBlob(blob, `${safeName()}_cover.pdf`);
+      onOpenChange(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A to-scale preview: the A4 page, and the cover centered on it.
+  const BOX = 200;
+  const PAD = 10;
+  const scale = Math.min(
+    (BOX - PAD * 2) / pageWidthMM,
+    (BOX - PAD * 2) / pageHeightMM,
+  );
+  const pw = pageWidthMM * scale;
+  const ph = pageHeightMM * scale;
+  const px = (BOX - pw) / 2;
+  const py = (BOX - ph) / 2;
+  const cw = cardWidthMM * scale;
+  const ch = cardHeightMM * scale;
+  const cx = px + offsetXMM * scale;
+  const cy = py + offsetYMM * scale;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => (busy ? null : onOpenChange(o))}>
+      <DialogContent className="flex max-h-[88vh] max-w-md flex-col gap-4">
+        <DialogHeader>
+          <DialogTitle>{t("Cover PDF – double-sided")}</DialogTitle>
+        </DialogHeader>
+
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "Two pages, front then inside, each the cover at {w} × {h} mm (with bleed) centered on an A4 sheet — print both sides at “actual size / 100 %”, never “fit to page”.",
+            { w: cardWidthMM, h: cardHeightMM },
+          )}
+        </p>
+
+        <svg
+          width={BOX}
+          height={BOX}
+          role="img"
+          aria-label={t("Cover position on the A4 page")}
+          className="mx-auto shrink-0 rounded-md border bg-muted/30"
+        >
+          <rect
+            x={px}
+            y={py}
+            width={pw}
+            height={ph}
+            fill="var(--muted)"
+            stroke="var(--border)"
+            strokeWidth={1}
+          />
+          <rect
+            x={cx}
+            y={cy}
+            width={cw}
+            height={ch}
+            fill="var(--primary)"
+            fillOpacity={0.25}
+            stroke="var(--primary)"
+            strokeWidth={1.5}
+          />
+        </svg>
+
+        {!fits && (
+          <span className="text-xs text-destructive">
+            {t("The cover ({w} × {h} mm) doesn't fit on an A4 sheet.", {
+              w: Math.round(cardWidthMM),
+              h: Math.round(cardHeightMM),
+            })}
+          </span>
+        )}
+        {error && <span className="text-xs text-destructive">{error}</span>}
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("Cancel")}
+          </Button>
+          <Button size="sm" disabled={busy || !fits} onClick={() => void run()}>
+            {busy ? <Loader2 className="animate-spin" /> : <FileDown />}
+            {t("Export PDF")}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

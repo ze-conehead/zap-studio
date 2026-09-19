@@ -59,6 +59,7 @@ interface Props {
   onOpenCutSheet: () => void;
   onOpenExportAll: () => void;
   onOpenCardTray: () => void;
+  onOpenCoverPdf: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
   onOpenZaparoo: () => void;
@@ -183,6 +184,7 @@ export function MenuBar({
   onOpenCutSheet,
   onOpenExportAll,
   onOpenCardTray,
+  onOpenCoverPdf,
   onOpenBaseImport,
   onOpenQuickImport,
   onOpenZaparoo,
@@ -263,7 +265,7 @@ export function MenuBar({
             </DropdownMenuItem>
           )}
           {getFormat().hasBack && !!getFormat().panels?.length && (
-            <DropdownMenuItem onClick={() => void file.runCoverPdf()}>
+            <DropdownMenuItem onClick={onOpenCoverPdf}>
               {t("PDF – cover, double-sided (front + inside)")}
             </DropdownMenuItem>
           )}
