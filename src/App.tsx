@@ -33,6 +33,7 @@ import { CutSheetDialog } from "./components/CutSheetDialog";
 import { ExportAllDialog } from "./components/ExportAllDialog";
 import { CardTrayDialog } from "./components/CardTrayDialog";
 import { CoverPdfDialog } from "./components/CoverPdfDialog";
+import { ExportDialog } from "./components/ExportDialog";
 import { QuickImportDialog } from "./components/QuickImportDialog";
 import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
 import {
@@ -413,6 +414,7 @@ function Shell({
   const [exportAll, setExportAll] = useState(false);
   const [cardTray, setCardTray] = useState(false);
   const [coverPdf, setCoverPdf] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
   const [zaparoo, setZaparoo] = useState(false);
@@ -471,6 +473,7 @@ function Shell({
     onOpenPreview: () => setPreview(true),
     onOpenDemo: () => setDemo(true),
     onImportJson,
+    onOpenExport: () => setExportOpen(true),
     onOpenCutSheet: () => setCutSheet(true),
     onOpenExportAll: () => setExportAll(true),
     onOpenCardTray: () => setCardTray(true),
@@ -608,6 +611,15 @@ function Shell({
       <ExportAllDialog open={exportAll} onOpenChange={setExportAll} />
       <CardTrayDialog open={cardTray} onOpenChange={setCardTray} canvas={canvas} />
       <CoverPdfDialog open={coverPdf} onOpenChange={setCoverPdf} canvas={canvas} />
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        canvas={canvas}
+        onOpenCardTray={bar.onOpenCardTray}
+        onOpenCoverPdf={bar.onOpenCoverPdf}
+        onOpenExportAll={bar.onOpenExportAll}
+        onOpenCutSheet={bar.onOpenCutSheet}
+      />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />
       <QuickImportDialog

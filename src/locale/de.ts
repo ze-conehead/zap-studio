@@ -361,6 +361,7 @@ export const de: Record<string, string> = {
   "Base set \u2026": "Basis-Set \u2026",
   "Load backup \u2026": "Backup laden \u2026",
   Export: "Export",
+  "Export …": "Export …",
   Import: "Import",
   "Duplicate layer": "Ebene duplizieren",
   "Delete layer": "Ebene l\u00f6schen",

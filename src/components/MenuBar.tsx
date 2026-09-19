@@ -28,8 +28,7 @@ import {
   setLogoSource,
 } from "../covers";
 import { getWorkspace, getWorkspaceKind, setWorkspaceFormat } from "../workspace";
-import { EXPORT_MODES, exportLabel } from "../export";
-import { FORMAT_IDS, FORMATS, getFormat, getFormatId, isCard, setFormat } from "../formats";
+import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
 import { useLang, useT } from "../i18n";
 import { useStore } from "../store";
 import {
@@ -56,10 +55,7 @@ interface Props {
   onOpenProjects: () => void;
   onOpenPreview: () => void;
   onOpenDemo: () => void;
-  onOpenCutSheet: () => void;
-  onOpenExportAll: () => void;
-  onOpenCardTray: () => void;
-  onOpenCoverPdf: () => void;
+  onOpenExport: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
   onOpenZaparoo: () => void;
@@ -181,10 +177,7 @@ export function MenuBar({
   onOpenProjects,
   onOpenPreview,
   onOpenDemo,
-  onOpenCutSheet,
-  onOpenExportAll,
-  onOpenCardTray,
-  onOpenCoverPdf,
+  onOpenExport,
   onOpenBaseImport,
   onOpenQuickImport,
   onOpenZaparoo,
@@ -252,31 +245,7 @@ export function MenuBar({
         <DropdownMenuItem onClick={onOpenPreflight}>
           {t("Preflight check …")}
         </DropdownMenuItem>
-        <Sub label={t("Export")}>
-          <DropdownMenuLabel>{t("This card")}</DropdownMenuLabel>
-          {EXPORT_MODES.map((m) => (
-            <DropdownMenuItem key={m} onClick={() => void file.runExport(m)}>
-              {exportLabel(m)}
-            </DropdownMenuItem>
-          ))}
-          {isCard() && (
-            <DropdownMenuItem onClick={onOpenCardTray}>
-              {t("PDF – card-tray printer …")}
-            </DropdownMenuItem>
-          )}
-          {getFormat().hasBack && !!getFormat().panels?.length && (
-            <DropdownMenuItem onClick={onOpenCoverPdf}>
-              {t("PDF – cover, double-sided (front + inside)")}
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuLabel>{t("Multiple cards")}</DropdownMenuLabel>
-          <DropdownMenuItem onClick={onOpenExportAll}>
-            {t("All cards as PNG (.zip) …")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onOpenCutSheet}>
-            {t("Print / cut sheet (Cricut · wir-machen-druck) …")}
-          </DropdownMenuItem>
-        </Sub>
+        <DropdownMenuItem onClick={onOpenExport}>{t("Export …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenTemplates}>
           {t("Templates …")}
