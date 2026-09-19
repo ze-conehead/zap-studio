@@ -426,7 +426,7 @@ function Shell({
   const [manageLogos, setManageLogos] = useState(false);
   const [manageCovers, setManageCovers] = useState(false);
   const [bleedOpen, setBleedOpen] = useState(false);
-  // Opens by itself on a fresh install, then only from Extra ▸ Walkthrough.
+  // Opens by itself on a fresh install, then only from Help ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
   // switch (see the StoreProvider key), so "seen on close" would show it
   // again after the tour's own jump buttons navigate away.

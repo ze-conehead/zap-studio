@@ -257,10 +257,11 @@ export const de: Record<string, string> = {
 
   // ── Menu bar ─────────────────────────────────────────────────────────────
   File: "Datei",
+  Project: "Projekt",
   Edit: "Bearbeiten",
   View: "Ansicht",
-  Extra: "Extra",
   Settings: "Einstellungen",
+  Help: "Hilfe",
   "Demo mode (card packs)": "Demo-Modus (Kartenpacks)",
 
   // ── WalkthroughDialog ─────────────────────────────────────
@@ -269,8 +270,8 @@ export const de: Record<string, string> = {
   Next: "Weiter",
   "{n} of {total}": "{n} von {total}",
   "Welcome to Zap-Studio": "Willkommen bei Zap-Studio",
-  "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Extra ▸ Walkthrough.":
-    "Dieser kurze Rundgang zeigt die App einmal der Reihe nach – so, wie die Schritte aufeinander aufbauen. Du kannst ihn überspringen und jederzeit unter Extra ▸ Rundgang wieder öffnen.",
+  "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Help ▸ Walkthrough.":
+    "Dieser kurze Rundgang zeigt die App einmal der Reihe nach – so, wie die Schritte aufeinander aufbauen. Du kannst ihn überspringen und jederzeit unter Hilfe ▸ Rundgang wieder öffnen.",
   "1. Enter your API keys": "1. API-Schlüssel eintragen",
   "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ API keys …":
     "Die Cover-Suche läuft über einen kostenlosen API-Schlüssel: SteamGridDB oder IGDB für Spiele, TMDB für Filme. Ohne Schlüssel bleibt nur libretro-thumbnails – und das deckt nur Retro-Konsolen ab. Einstellungen ▸ API-Schlüssel …",

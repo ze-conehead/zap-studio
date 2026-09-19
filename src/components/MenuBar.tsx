@@ -78,7 +78,7 @@ interface Props {
   onImportJson: (file: File) => void;
 }
 
-type MenuId = "file" | "edit" | "view" | "extra" | "settings";
+type MenuId = "file" | "project" | "edit" | "view" | "settings" | "help";
 
 // One top-level menu. modal={false} keeps the rest of the bar clickable
 // while a menu is open, which is what lets the hover hand-off work at all:
@@ -304,6 +304,33 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
+      <Menu id="project" open={open} setOpen={setOpen} label={t("Project")}>
+        <Sub label={t("Format")} value={t(getFormat().name)}>
+          {FORMAT_IDS.map((id) => (
+            <DropdownMenuItem
+              key={id}
+              disabled={id === getFormatId()}
+              onClick={() => {
+                setWorkspaceFormat(id);
+                setFormat(id); // reloads
+              }}
+            >
+              {t(FORMATS[id].name)}
+            </DropdownMenuItem>
+          ))}
+        </Sub>
+
+        <DropdownMenuItem onClick={onOpenBleed}>
+          {t("Bleed …")}
+          <span className="ml-auto pl-4 text-xs text-muted-foreground">{getFormat().bleedMM} mm</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenDemo}>
+          {t("Demo mode (card packs)")}
+        </DropdownMenuItem>
+      </Menu>
+
       <Menu id="edit" open={open} setOpen={setOpen} label={t("Edit")}>
         <DropdownMenuItem
           disabled={!past.length}
@@ -379,19 +406,6 @@ export function MenuBar({
         </DropdownMenuItem>
       </Menu>
 
-      <Menu id="extra" open={open} setOpen={setOpen} label={t("Extra")}>
-        <DropdownMenuItem onClick={onOpenWalkthrough}>
-          {t("Walkthrough …")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenShortcuts} className="justify-between">
-          {t("Keyboard shortcuts …")}
-          <span className="text-xs text-muted-foreground">?</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenDemo}>
-          {t("Demo mode (card packs)")}
-        </DropdownMenuItem>
-      </Menu>
-
       <Menu id="settings" open={open} setOpen={setOpen} label={t("Settings")}>
         <Sub label={t("Theme")} value={t(theme.name)}>
           <Toggle checked={getThemeAuto()} onSelect={() => setThemeAuto(!getThemeAuto())}>
@@ -438,26 +452,6 @@ export function MenuBar({
             </DropdownMenuItem>
           ))}
         </Sub>
-
-        <Sub label={t("Format")} value={t(getFormat().name)}>
-          {FORMAT_IDS.map((id) => (
-            <DropdownMenuItem
-              key={id}
-              disabled={id === getFormatId()}
-              onClick={() => {
-                setWorkspaceFormat(id);
-                setFormat(id); // reloads
-              }}
-            >
-              {t(FORMATS[id].name)}
-            </DropdownMenuItem>
-          ))}
-        </Sub>
-
-        <DropdownMenuItem onClick={onOpenBleed}>
-          {t("Bleed …")}
-          <span className="ml-auto pl-4 text-xs text-muted-foreground">{getFormat().bleedMM} mm</span>
-        </DropdownMenuItem>
 
         <Sub label={t("Language")} value={lang.toUpperCase()}>
           <DropdownMenuItem
@@ -510,6 +504,16 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenManageCovers}>
           {t("Manage covers …")}
+        </DropdownMenuItem>
+      </Menu>
+
+      <Menu id="help" open={open} setOpen={setOpen} label={t("Help")}>
+        <DropdownMenuItem onClick={onOpenWalkthrough}>
+          {t("Walkthrough …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenShortcuts} className="justify-between">
+          {t("Keyboard shortcuts …")}
+          <span className="text-xs text-muted-foreground">?</span>
         </DropdownMenuItem>
       </Menu>
 

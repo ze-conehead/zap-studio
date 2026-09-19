@@ -1,6 +1,6 @@
 // A short, optional first-run tour: the order things build on each other in,
 // from API keys through to a backup. Shown once on a fresh install (the flag
-// below is app-level, not per workspace) and reopenable from Extra ▸
+// below is app-level, not per workspace) and reopenable from Help ▸
 // Walkthrough. Each step's action button jumps to the real thing and closes
 // the tour — some targets (the global template, the 3D preview) replace what
 // is behind the dialog, so staying open would only hide them.
@@ -89,7 +89,7 @@ export function WalkthroughDialog({
       icon: Sparkles,
       title: t("Welcome to Zap-Studio"),
       body: t(
-        "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Extra ▸ Walkthrough.",
+        "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Help ▸ Walkthrough.",
       ),
     },
     {

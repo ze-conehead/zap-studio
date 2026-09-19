@@ -1,4 +1,4 @@
-// Settings ▸ Bleed …: change how much the canvas extends past the trim.
+// Project ▸ Bleed …: change how much the canvas extends past the trim.
 // Layer positions are canvas px with the origin at the canvas corner, so a
 // different bleed would shift every layer relative to the trim — every
 // project and guide in the workspace is moved by the difference before the

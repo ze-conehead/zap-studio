@@ -192,7 +192,7 @@ export function getFormatId(): FormatId {
   return "card";
 }
 
-// The bleed can be changed per workspace (Settings ▸ Bleed …); absent =
+// The bleed can be changed per workspace (Project ▸ Bleed …); absent =
 // the format's own. Changing it moves every layer (src/bleed.ts) and
 // reloads, like a format switch, since src/card.ts derives the canvas from
 // it at module load.

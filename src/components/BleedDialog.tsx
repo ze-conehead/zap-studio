@@ -1,4 +1,4 @@
-// Settings ▸ Bleed …: how far the canvas extends past the trim, in mm.
+// Project ▸ Bleed …: how far the canvas extends past the trim, in mm.
 // Applying moves every layer so nothing shifts on the printed card, then
 // reloads (the canvas geometry is fixed at load, like the format).
 
