@@ -71,7 +71,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     bleedMM: 3,
     cornerRadiusMM: 0,
     thickRatio: 0.0008,
-    hasBack: false,
+    hasBack: true,
     panels: [
       { name: "Flap", wMM: 7 },
       { name: "Back", wMM: 130.5 },

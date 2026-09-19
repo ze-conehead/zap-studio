@@ -57,7 +57,11 @@ export function useFileActions(
 
   // A double-sided print file for formats with both panels (a folded wrap)
   // and a back face (the wrap's inside) — one page per side, at trim+bleed
-  // size, so a print shop can lay them out back-to-back.
+  // size, centered on an A4 sheet (whichever orientation fits) so a home
+  // or shop duplex printer lands the cover in exactly the same spot on
+  // both sides.
+  const A4_MM = { w: 210, h: 297 };
+
   const runCoverPdf = async () => {
     const front = canvas.current?.getStage("front");
     const back = canvas.current?.getStage("back");
@@ -68,10 +72,28 @@ export function useFileActions(
       const f = getFormat();
       const cardWidthMM = f.trimMM.w + f.bleedMM * 2;
       const cardHeightMM = f.trimMM.h + f.bleedMM * 2;
+      const fitsPortrait = cardWidthMM <= A4_MM.w && cardHeightMM <= A4_MM.h;
+      const fitsLandscape = cardWidthMM <= A4_MM.h && cardHeightMM <= A4_MM.w;
+      if (!fitsPortrait && !fitsLandscape) {
+        throw new Error(
+          t("The cover ({w} × {h} mm) doesn't fit on an A4 sheet.", {
+            w: Math.round(cardWidthMM),
+            h: Math.round(cardHeightMM),
+          }),
+        );
+      }
+      const pageWidthMM = fitsPortrait ? A4_MM.w : A4_MM.h;
+      const pageHeightMM = fitsPortrait ? A4_MM.h : A4_MM.w;
+      const offsetXMM = (pageWidthMM - cardWidthMM) / 2;
+      const offsetYMM = (pageHeightMM - cardHeightMM) / 2;
       const page = async (stage: typeof front): Promise<CardPdfPage> => ({
         imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
         cardWidthMM,
         cardHeightMM,
+        pageWidthMM,
+        pageHeightMM,
+        offsetXMM,
+        offsetYMM,
       });
       const blob = await cardTrayPdf([await page(front), await page(back)]);
       downloadBlob(blob, `${safeName()}_cover.pdf`);

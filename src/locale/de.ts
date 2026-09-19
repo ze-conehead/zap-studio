@@ -228,6 +228,8 @@ export const de: Record<string, string> = {
   "Generating PDF …": "PDF wird erzeugt …",
   "PDF – card-tray printer …": "PDF – Kartenfach-Drucker …",
   "PDF – cover, double-sided (front + inside)": "PDF – Cover, doppelseitig (Vorderseite + Innenseite)",
+  "The cover ({w} × {h} mm) doesn't fit on an A4 sheet.":
+    "Das Cover ({w} × {h} mm) passt nicht auf ein A4-Blatt.",
   "Card-tray printing": "Kartenfach-Druck",
   "For a printer's disc/card tray (e.g. Canon's). The tray is usually bigger than the card, and exactly where the card sits on it depends on your printer — print a test page, measure the offset from a corner against the real card, and adjust it below. Remembered per tray type.":
     "Für das Disc-/Kartenfach eines Druckers (z. B. Canon). Das Fach ist meist größer als die Karte, und wo genau die Karte darauf sitzt, hängt vom Drucker ab – drucke eine Testseite, miss den Versatz ab einer Ecke an der echten Karte und passe ihn unten an. Wird je Fach-Typ gemerkt.",
