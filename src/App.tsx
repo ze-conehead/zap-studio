@@ -51,7 +51,7 @@ import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
 import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
-import { getFormatId } from "./formats";
+import { getFormatId, setFormat } from "./formats";
 import {
   lastProjectId,
   lastViewId,
@@ -62,6 +62,7 @@ import {
 import { parseProject } from "./projectFile";
 import { StoreProvider, useStore } from "./store";
 import { t, useT } from "./i18n";
+import { setWorkspaceFormat } from "./workspace";
 import type { CardBackground, Layer, Project } from "./types";
 
 interface Templates {
@@ -176,6 +177,16 @@ export default function App() {
       const text = await file.text();
       const p = parseProject(text);
       await swap(p);
+      // The design was made for a different sticker format — switch the
+      // workspace to match so its canvas is the right size, same as
+      // picking it from Project ▸ Format. setFormat() reloads; the swap()
+      // above already made this the last-viewed project, so it reopens
+      // right here once the new geometry is in place.
+      const fmt = p.format ?? "card";
+      if (fmt !== getFormatId()) {
+        setWorkspaceFormat(fmt);
+        setFormat(fmt);
+      }
     } catch (e) {
       alert((e as Error).message);
     }

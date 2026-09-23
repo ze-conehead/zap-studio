@@ -48,6 +48,7 @@ export function ExportAllDialog({
   const [games, setGames] = useState<SheetGame[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<ExportMode>("trim");
+  const [dedupeBacks, setDedupeBacks] = useState(true);
   const [cards, setCards] = useState<DemoCard[]>([]);
   const [count, setCount] = useState(0);
   const [error, setError] = useState("");
@@ -94,6 +95,11 @@ export function ExportAllDialog({
         (async () => {
           try {
             const files: Record<string, Uint8Array> = {};
+            // Most cards inherit their back from the console or global
+            // template, so the same image would otherwise be written once
+            // per card — dedupeBacks keeps just the first file for each
+            // distinct back (by its actual rendered pixels).
+            const backPaths = new Map<string, string>(); // dataUrl -> path already written
             let n = 0;
             for (let i = 0; i < cards.length; i++) {
               const c = cards[i];
@@ -108,8 +114,17 @@ export function ExportAllDialog({
               const back = stages.current[cards.length + i];
               if (back) {
                 const png = await exportPng({ stage: back, stageWidth: CANVAS.w, mode });
-                files[`${folder}/${name} (back).png`] = dataUrlToBytes(png);
-                n++;
+                if (dedupeBacks) {
+                  if (!backPaths.has(png)) {
+                    const path = `Backs/${folder} – ${name}.png`;
+                    backPaths.set(png, path);
+                    files[path] = dataUrlToBytes(png);
+                    n++;
+                  }
+                } else {
+                  files[`${folder}/${name} (back).png`] = dataUrlToBytes(png);
+                  n++;
+                }
               }
             }
             if (!alive) return;
@@ -135,7 +150,7 @@ export function ExportAllDialog({
       alive = false;
       cancelAnimationFrame(id);
     };
-  }, [phase, cards, mode, t]);
+  }, [phase, cards, mode, dedupeBacks, t]);
 
   const toggle = (key: string) =>
     setPicked((p) => {
@@ -187,7 +202,7 @@ export function ExportAllDialog({
           <>
             <p className="text-xs text-muted-foreground">
               {t(
-                "One PNG per card, sorted into a folder per console. A card with a back side gets a second file. Same three variants as the single export.",
+                "One PNG per card, sorted into a folder per console. Same three variants as the single export.",
               )}
             </p>
 
@@ -205,6 +220,14 @@ export function ExportAllDialog({
                 </button>
               ))}
             </div>
+
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={dedupeBacks}
+                onCheckedChange={(v) => setDedupeBacks(!!v)}
+              />
+              {t("One file per distinct back (most cards share the console's or global back)")}
+            </label>
 
             {games.length === 0 ? (
               <p className="text-sm text-muted-foreground">

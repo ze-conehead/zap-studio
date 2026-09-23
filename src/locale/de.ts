@@ -345,8 +345,10 @@ export const de: Record<string, string> = {
   // ── ExportAllDialog ───────────────────────────────────────
   "All cards as PNG (.zip) …": "Alle Karten als PNG (.zip) …",
   "All cards as PNG": "Alle Karten als PNG",
-  "One PNG per card, sorted into a folder per console. A card with a back side gets a second file. Same three variants as the single export.":
-    "Ein PNG pro Karte, sortiert in einen Ordner je Konsole. Eine Karte mit Rückseite bekommt eine zweite Datei. Dieselben drei Varianten wie beim Einzelexport.",
+  "One PNG per card, sorted into a folder per console. Same three variants as the single export.":
+    "Ein PNG pro Karte, sortiert in einen Ordner je Konsole. Dieselben drei Varianten wie beim Einzelexport.",
+  "One file per distinct back (most cards share the console's or global back)":
+    "Eine Datei je unterschiedlicher Rückseite (die meisten Karten teilen sich die Konsolen- oder globale Rückseite)",
   "No card has a design yet.": "Noch keine Karte hat ein Design.",
   "{n} of {total} selected": "{n} von {total} ausgewählt",
   "Export .zip": ".zip exportieren",
