@@ -1,7 +1,7 @@
-// "Quick Import": a table of every game that still has no image, one row
-// per game with a URL field. On confirm, each URL is fetched, embedded and
-// added as an image layer to that game's sticker design (creating the
-// design if it doesn't exist yet) — the bulk version of "Find cover".
+// Shared helpers for inserting a cover into a game's sticker design as its
+// main image — creating the design first if it doesn't exist yet — used by
+// the game-tree context menu and by CoverSweepDialog's per-game walk
+// through every card that has no image.
 
 import { getCatalog, gameKeyOf } from "./data/catalog";
 import { fitImageToMask, makeImageLayer, newProject } from "./factory";
@@ -10,17 +10,11 @@ import { t } from "./i18n";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
 import { loadMainMask } from "./templates";
-import type { ImageLayer } from "./types";
 
 export interface QuickImportRow {
   gameKey: string;
   consoleName: string;
   gameTitle: string;
-}
-
-export interface QuickImportResult extends QuickImportRow {
-  ok: boolean;
-  error?: string;
 }
 
 const hasImageLayer = (layers: { type: string }[]) =>
@@ -65,15 +59,6 @@ export async function findGamesWithoutImage(
   return rows;
 }
 
-interface ApplyOptions {
-  // The gameKey of the design currently open in the editor, if any. Its row
-  // is handed back through `addToCurrent` so the live store stays in sync
-  // instead of being overwritten on disk.
-  currentGameKey?: string;
-  addToCurrent: (layer: ImageLayer) => void;
-  onProgress?: (done: number, total: number) => void;
-}
-
 // Fetches `url`, embeds it and adds it as the main image of `row`'s design
 // on disk — creating and linking the design if it doesn't exist yet. Throws
 // on a failed fetch (CORS, 404, not an image).
@@ -102,35 +87,4 @@ export async function insertCover(
     linkGameProject(row.gameKey, p.id);
     await saveProject(p);
   }
-}
-
-// Fetches every row's URL and adds it as an image layer to that game's
-// design. Rows are processed one by one; a failed fetch (CORS, 404, not an
-// image) is recorded and the rest continue.
-export async function applyQuickImport(
-  entries: (QuickImportRow & { url: string })[],
-  { currentGameKey, addToCurrent, onProgress }: ApplyOptions,
-): Promise<QuickImportResult[]> {
-  const mask = await loadMainMask();
-  const results: QuickImportResult[] = [];
-  for (const e of entries) {
-    try {
-      if (e.gameKey === currentGameKey) {
-        const img = await urlToLayerSource(e.url);
-        addToCurrent(
-          fitImageToMask(
-            { ...makeImageLayer({ ...img, name: t("Main image") }), main: true },
-            mask,
-          ),
-        );
-      } else {
-        await insertCover(e, e.url);
-      }
-      results.push({ ...e, ok: true });
-    } catch (err) {
-      results.push({ ...e, ok: false, error: (err as Error).message });
-    }
-    onProgress?.(results.length, entries.length);
-  }
-  return results;
 }

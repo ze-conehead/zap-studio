@@ -58,13 +58,11 @@ interface Props {
   onOpenExport: () => void;
   onOpenExportProject: () => void;
   onOpenBaseImport: () => void;
-  onOpenQuickImport: () => void;
   onOpenZaparoo: () => void;
   onOpenOverview: () => void;
   onOpenDataSafety: () => void;
   onOpenWorkspaces: () => void;
   onOpenPreflight: () => void;
-  onOpenTemplates: () => void;
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
   onOpenManageLogos: () => void;
@@ -180,13 +178,11 @@ export function MenuBar({
   onOpenExport,
   onOpenExportProject,
   onOpenBaseImport,
-  onOpenQuickImport,
   onOpenZaparoo,
   onOpenOverview,
   onOpenDataSafety,
   onOpenWorkspaces,
   onOpenPreflight,
-  onOpenTemplates,
   onOpenApiKeys,
   onOpenCustomFonts,
   onOpenManageLogos,
@@ -242,20 +238,15 @@ export function MenuBar({
           {t("Preflight check …")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenExport}>{t("Export to print …")}</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onOpenTemplates}>
-          {t("Templates …")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
         {getWorkspaceKind() === "games" && (
-          <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
-        )}
-        <DropdownMenuItem onClick={onOpenQuickImport}>Quick Import …</DropdownMenuItem>
-        {getWorkspaceKind() === "games" && (
-          <DropdownMenuItem onClick={onOpenZaparoo}>
-            {t("Zaparoo (MiSTer) …")}
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpenZaparoo}>
+              {t("Zaparoo (MiSTer) …")}
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>

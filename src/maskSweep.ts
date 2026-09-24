@@ -9,8 +9,8 @@
 // An image can point at a mask three ways — resolveMask() in templates.ts
 // is the one place that already knows all of them: an explicit `maskId`
 // (what "Find cover" on the open card writes), or the legacy `main`/`shot`
-// index-into-the-mask-list flags (what the bulk "Quick Import" / cover-sweep
-// insert path still writes). Resolving `main`/`shot` needs the same ordered
+// index-into-the-mask-list flags (what the cover-sweep / game-tree insert
+// path still writes). Resolving `main`/`shot` needs the same ordered
 // [global masks…, console masks…] list the live editor builds per card (see
 // App.tsx) — so this rebuilds that list per project instead of only
 // matching on `maskId`, or every image inserted via a sweep would be missed.

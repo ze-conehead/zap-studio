@@ -15,7 +15,6 @@ import { OverviewDialog } from "./components/OverviewDialog";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
-import { TemplateDialog } from "./components/TemplateDialog";
 import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { ManageLogosDialog } from "./components/ManageLogosDialog";
@@ -35,7 +34,6 @@ import { CardTrayDialog } from "./components/CardTrayDialog";
 import { CoverPdfDialog } from "./components/CoverPdfDialog";
 import { ExportDialog } from "./components/ExportDialog";
 import { ExportProjectDialog } from "./components/ExportProjectDialog";
-import { QuickImportDialog } from "./components/QuickImportDialog";
 import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
 import {
   GLOBAL_TEMPLATE_ID,
@@ -404,13 +402,11 @@ function Shell({
   const [exportOpen, setExportOpen] = useState(false);
   const [exportProjectOpen, setExportProjectOpen] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
-  const [quickImport, setQuickImport] = useState(false);
   const [zaparoo, setZaparoo] = useState(false);
   const [overview, setOverview] = useState(false);
   const [dataSafety, setDataSafety] = useState(false);
   const [workspaces, setWorkspaces] = useState(false);
   const [preflight, setPreflight] = useState(false);
-  const [templates, setTemplates] = useState(false);
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
   const [manageLogos, setManageLogos] = useState(false);
@@ -467,13 +463,11 @@ function Shell({
     onOpenCardTray: () => setCardTray(true),
     onOpenCoverPdf: () => setCoverPdf(true),
     onOpenBaseImport: () => setBaseImport(true),
-    onOpenQuickImport: () => setQuickImport(true),
     onOpenZaparoo: () => setZaparoo(true),
     onOpenOverview: () => setOverview(true),
     onOpenDataSafety: () => setDataSafety(true),
     onOpenWorkspaces: () => setWorkspaces(true),
     onOpenPreflight: () => setPreflight(true),
-    onOpenTemplates: () => setTemplates(true),
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
     onOpenManageLogos: () => setManageLogos(true),
@@ -568,7 +562,6 @@ function Shell({
         overlay={overlay}
         onPick={onPickGame}
       />
-      <TemplateDialog open={templates} onOpenChange={setTemplates} />
       <ApiKeysDialog open={apiKeys} onOpenChange={setApiKeys} />
       <CustomFontsDialog open={customFonts} onOpenChange={setCustomFonts} />
       <ManageLogosDialog open={manageLogos} onOpenChange={setManageLogos} />
@@ -611,12 +604,6 @@ function Shell({
       <ExportProjectDialog open={exportProjectOpen} onOpenChange={setExportProjectOpen} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />
-      <QuickImportDialog
-        open={quickImport}
-        onOpenChange={setQuickImport}
-        currentGameKey={activeGameKey}
-        onAddLayerToCurrent={(layer) => dispatch({ type: "ADD_LAYER", layer })}
-      />
     </div>
   );
 }

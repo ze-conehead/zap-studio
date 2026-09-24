@@ -591,7 +591,6 @@ export const de: Record<string, string> = {
   "Every game has an image.": "Alle Spiele haben ein Bild.",
   "{title} (right-click: rename / remove)": "{title} (Rechtsklick: umbenennen / entfernen)",
   Console: "Konsole",
-  Game: "Spiel",
   "Collections & movies": "Sammlungen & Filme",
   "All collections": "Alle Sammlungen",
   "Add collection": "Sammlung hinzuf\u00fcgen",
@@ -1044,41 +1043,9 @@ export const de: Record<string, string> = {
   "get a key": "Schl\u00fcssel anlegen",
   "Saved.": "Gespeichert.",
 
-  // ── QuickImportDialog ────────────────────────────────────────────────────
-  "Games without an image. Enter one image URL each and click “Done” – the images are loaded and added as a layer to each design.":
-    "Spiele ohne Bild. Trage je eine Bild-URL ein und klick „Fertig“ – die Bilder werden geladen und als Ebene ins jeweilige Design gelegt.",
-  "Checking games …": "Spiele werden geprüft …",
-  "Every game already has an image.": "Alle Spiele haben bereits ein Bild.",
-  loaded: "geladen",
-  "Loading … {done}/{total}": "Lädt … {done}/{total}",
-  "{ok} loaded": "{ok} geladen",
-  ", {fail} failed": ", {fail} fehlgeschlagen",
-  "{filled} of {total} filled in": "{filled} von {total} ausgefüllt",
   Done: "Fertig",
-  // \u2500\u2500 Templates (import / export / viewer) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  Templates: "Vorlagen",
-  "Templates \u2026": "Vorlagen \u2026",
-  "A template is the whole shared look: the \u201cAll consoles\u201d layers plus every console template. Applying one leaves your cards' own layers alone.":
-    "Eine Vorlage ist das komplette gemeinsame Aussehen: die Ebenen aus \u201eAlle Konsolen\u201c plus jede Konsolen-Vorlage. Beim Anwenden bleiben die eigenen Ebenen deiner Karten unber\u00fchrt.",
-  "Save the current templates as \u2026": "Aktuelle Vorlagen speichern als \u2026",
-  "Name, e.g. \u201cNeon arcade\u201d": "Name, z. B. \u201eNeon Arcade\u201c",
-  "Import JSON \u2026": "JSON importieren \u2026",
-  "Export JSON": "Als JSON exportieren",
-  "Rendering preview \u2026": "Vorschau wird gerendert \u2026",
-  "Reading \u2026": "Wird gelesen \u2026",
-  "Applying \u2026": "Wird angewendet \u2026",
   Apply: "Anwenden",
-  "no preview": "keine Vorschau",
-  "{n} console template(s)": "{n} Konsolen-Vorlage(n)",
-  "No templates yet. Save the current one above, or import a JSON file.":
-    "Noch keine Vorlagen. Speichere oben die aktuelle oder importiere eine JSON-Datei.",
-  "Apply \u201c{name}\u201d?": "\u201e{name}\u201c anwenden?",
-  "It replaces the global template and {n} console template(s). Your cards keep their own layers.":
-    "Ersetzt die globale Vorlage und {n} Konsolen-Vorlage(n). Deine Karten behalten ihre eigenen Ebenen.",
-  "That file isn't valid JSON.": "Diese Datei ist kein g\u00fcltiges JSON.",
-  "Not a template file.": "Keine Vorlagen-Datei.",
-  "The template is empty.": "Die Vorlage ist leer.",
-  // \u2500\u2500 Condition layers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // \u2500\u2500 Condition layers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   Condition: "Bedingung",
   Title: "Titel",
   "Metadata field": "Metadaten-Feld",
