@@ -45,6 +45,28 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # GitHub's own release-notes generator groups by merged PR, which this
+      # repo doesn't use (commits land on main directly) — it would just
+      # print the compare link with nothing above it. List the commits
+      # since the previous tag instead; their subject lines are already
+      # written as changelog entries.
+      - name: Build changelog from commits since the previous tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          RANGE="${PREV_TAG:+$PREV_TAG..}${GITHUB_REF_NAME}"
+          {
+            echo "## What's changed"
+            echo
+            git log "$RANGE" --no-merges --pretty=format:'- %s' | grep -v '^- Bump version to '
+            if [ -n "$PREV_TAG" ]; then
+              echo
+              echo
+              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG}...${GITHUB_REF_NAME}"
+            fi
+          } > /tmp/release-notes.md
       - uses: actions/download-artifact@v4
         with:
           pattern: desktop-*
@@ -53,5 +75,5 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
-          generate_release_notes: true
+          body_path: /tmp/release-notes.md
           files: release/*
