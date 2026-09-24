@@ -34,6 +34,7 @@ import { ExportAllDialog } from "./components/ExportAllDialog";
 import { CardTrayDialog } from "./components/CardTrayDialog";
 import { CoverPdfDialog } from "./components/CoverPdfDialog";
 import { ExportDialog } from "./components/ExportDialog";
+import { ExportProjectDialog } from "./components/ExportProjectDialog";
 import { QuickImportDialog } from "./components/QuickImportDialog";
 import { ZaparooImportDialog } from "./components/ZaparooImportDialog";
 import {
@@ -51,7 +52,7 @@ import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
 import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
-import { getFormatId, setFormat } from "./formats";
+import { getFormatId } from "./formats";
 import {
   lastProjectId,
   lastViewId,
@@ -59,10 +60,8 @@ import {
   saveProject,
   setLastViewId,
 } from "./persist";
-import { parseProject } from "./projectFile";
 import { StoreProvider, useStore } from "./store";
 import { t, useT } from "./i18n";
-import { setWorkspaceFormat } from "./workspace";
 import type { CardBackground, Layer, Project } from "./types";
 
 interface Templates {
@@ -172,26 +171,6 @@ export default function App() {
     }
   };
 
-  const importJson = async (file: File) => {
-    try {
-      const text = await file.text();
-      const p = parseProject(text);
-      await swap(p);
-      // The design was made for a different sticker format — switch the
-      // workspace to match so its canvas is the right size, same as
-      // picking it from Project ▸ Format. setFormat() reloads; the swap()
-      // above already made this the last-viewed project, so it reopens
-      // right here once the new geometry is in place.
-      const fmt = p.format ?? "card";
-      if (fmt !== getFormatId()) {
-        setWorkspaceFormat(fmt);
-        setFormat(fmt);
-      }
-    } catch (e) {
-      alert((e as Error).message);
-    }
-  };
-
   const pickGame = async (consoleName: string, gameTitle: string, gameKey: string) => {
     if (project?.gameKey === gameKey) return;
 
@@ -258,7 +237,6 @@ export default function App() {
         onOpenGlobal={openGlobalTemplate}
         onNewProject={() => swap(newProject())}
         onOpenProjects={() => setShowProjects(true)}
-        onImportJson={importJson}
       />
       <ProjectsDialog
         open={showProjects}
@@ -283,7 +261,6 @@ function Shell({
   onOpenGlobal,
   onNewProject,
   onOpenProjects,
-  onImportJson,
 }: {
   guides: GuideApi;
   activeGameKey?: string;
@@ -295,7 +272,6 @@ function Shell({
   onOpenGlobal: () => void;
   onNewProject: () => void;
   onOpenProjects: () => void;
-  onImportJson: (file: File) => void;
 }) {
   const { state, dispatch } = useStore();
   const project = state.project;
@@ -426,6 +402,7 @@ function Shell({
   const [cardTray, setCardTray] = useState(false);
   const [coverPdf, setCoverPdf] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportProjectOpen, setExportProjectOpen] = useState(false);
   const [baseImport, setBaseImport] = useState(false);
   const [quickImport, setQuickImport] = useState(false);
   const [zaparoo, setZaparoo] = useState(false);
@@ -483,8 +460,8 @@ function Shell({
     onOpenProjects,
     onOpenPreview: () => setPreview(true),
     onOpenDemo: () => setDemo(true),
-    onImportJson,
     onOpenExport: () => setExportOpen(true),
+    onOpenExportProject: () => setExportProjectOpen(true),
     onOpenCutSheet: () => setCutSheet(true),
     onOpenExportAll: () => setExportAll(true),
     onOpenCardTray: () => setCardTray(true),
@@ -631,6 +608,7 @@ function Shell({
         onOpenExportAll={bar.onOpenExportAll}
         onOpenCutSheet={bar.onOpenCutSheet}
       />
+      <ExportProjectDialog open={exportProjectOpen} onOpenChange={setExportProjectOpen} />
       <BaseImportDialog open={baseImport} onOpenChange={setBaseImport} />
       <ZaparooImportDialog open={zaparoo} onOpenChange={setZaparoo} />
       <QuickImportDialog

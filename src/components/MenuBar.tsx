@@ -56,6 +56,7 @@ interface Props {
   onOpenPreview: () => void;
   onOpenDemo: () => void;
   onOpenExport: () => void;
+  onOpenExportProject: () => void;
   onOpenBaseImport: () => void;
   onOpenQuickImport: () => void;
   onOpenZaparoo: () => void;
@@ -71,7 +72,6 @@ interface Props {
   onOpenBleed: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
-  onImportJson: (file: File) => void;
 }
 
 type MenuId = "file" | "project" | "edit" | "view" | "settings" | "help";
@@ -178,6 +178,7 @@ export function MenuBar({
   onOpenPreview,
   onOpenDemo,
   onOpenExport,
+  onOpenExportProject,
   onOpenBaseImport,
   onOpenQuickImport,
   onOpenZaparoo,
@@ -193,7 +194,6 @@ export function MenuBar({
   onOpenBleed,
   onOpenWalkthrough,
   onOpenShortcuts,
-  onImportJson,
 }: Props) {
   const t = useT();
   const [lang, setLang] = useLang();
@@ -203,7 +203,7 @@ export function MenuBar({
   const { project, past, future, showBleed, selectedId } = state;
   const [open, setOpen] = useState<MenuId | null>(null);
   const file = useFileActions(canvas);
-  const { zipRef, jsonRef } = file;
+  const { zipRef } = file;
   const coverSource = getCoverSource();
   const logoSource = getLogoSource();
   const backup = useBackupStatus();
@@ -238,14 +238,10 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenProjects}>{t("Open design …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>{t("Design file")}</DropdownMenuLabel>
-        <DropdownMenuItem onClick={file.saveJson}>{t("Save as JSON")}</DropdownMenuItem>
-        <DropdownMenuItem onClick={file.openJson}>{t("Load JSON …")}</DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenPreflight}>
           {t("Preflight check …")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenExport}>{t("Export …")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenExport}>{t("Export to print …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenTemplates}>
           {t("Templates …")}
@@ -263,10 +259,10 @@ export function MenuBar({
         )}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => void file.saveBackup()}>
-          {t("Save backup (.zip)")}
+        <DropdownMenuItem onClick={onOpenExportProject}>
+          {t("Export project as .zip")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={file.openZip}>{t("Load backup …")}</DropdownMenuItem>
+        <DropdownMenuItem onClick={file.openZip}>{t("Import project …")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenDataSafety}>
           {t("Data safety …")}
           {backupStale && <AlertTriangle className="ml-auto size-4 text-amber-400" />}
@@ -544,17 +540,6 @@ export function MenuBar({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) void file.loadBackup(f);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={jsonRef}
-        type="file"
-        accept="application/json,.json"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onImportJson(f);
           e.target.value = "";
         }}
       />

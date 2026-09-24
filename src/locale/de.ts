@@ -201,10 +201,13 @@ export const de: Record<string, string> = {
   "Horizontal guide": "Horizontale Hilfslinie",
   "3D preview": "3D-Vorschau",
   "Project file": "Projektdatei",
-  "Save as JSON": "Als JSON speichern",
   "Open JSON project …": "JSON-Projekt öffnen …",
   "Full backup": "Komplett-Backup",
-  "Save backup (.zip)": "Backup (.zip) speichern",
+  "Export project as .zip": "Projekt als .zip exportieren",
+  "Everything in this workspace, bundled as one .zip — settings, fonts and the local libraries included.":
+    "Alles in dieser Workspace, gebündelt als eine .zip-Datei – inklusive Einstellungen, Schriften und den lokalen Bibliotheken.",
+  "Templates only — the global and console layers, no individual cards":
+    "Nur Vorlagen – die globalen und Konsolen-Ebenen, keine einzelnen Karten",
   "Load backup (.zip) …": "Backup (.zip) laden …",
   "Import consoles & games from the base list (base_game_list.csv)":
     "Konsolen & Spiele aus der Basis-Liste (base_game_list.csv) übernehmen",
@@ -220,8 +223,8 @@ export const de: Record<string, string> = {
   "Remove back side": "Rückseite entfernen",
   "Remove the back side?": "Rückseite entfernen?",
   "Its layers are deleted.": "Ihre Ebenen werden gelöscht.",
-  "Packing backup …": "Backup wird gepackt …",
-  "Loading backup …": "Backup wird geladen …",
+  "Exporting project …": "Projekt wird exportiert …",
+  "Importing project …": "Projekt wird importiert …",
   "Loading image …": "Bild wird geladen …",
   "Loading cover …": "Cover wird geladen …",
   "Generating PNG …": "PNG wird erzeugt …",
@@ -247,8 +250,8 @@ export const de: Record<string, string> = {
   "Card offset Y (mm)": "Karten-Versatz Y (mm)",
   "Export PDF (front + back)": "PDF exportieren (Vorder- + Rückseite)",
   "Export PDF": "PDF exportieren",
-  "Load backup?": "Backup laden?",
-  "Load backup": "Backup laden",
+  "Import project?": "Projekt importieren?",
+  "Import project": "Projekt importieren",
   "Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.":
     "Projekte und Vorlagen aus der Datei werden übernommen (vorhandene mit gleicher ID überschrieben). Die Seite wird danach neu geladen.",
   "{projects} project(s) and {templates} template(s) imported.":
@@ -361,10 +364,9 @@ export const de: Record<string, string> = {
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
   "New card": "Neue Karte",
-  "Load JSON \u2026": "JSON laden \u2026",
   "Base set \u2026": "Basis-Set \u2026",
-  "Load backup \u2026": "Backup laden \u2026",
-  Export: "Export",
+  "Import project \u2026": "Projekt importieren \u2026",
+  "Export to print": "Export zum Drucken",
   "Export …": "Export …",
   Import: "Import",
   "Duplicate layer": "Ebene duplizieren",
@@ -379,7 +381,6 @@ export const de: Record<string, string> = {
   "Switch project \u2026": "Projekt wechseln \u2026",
   "Open design \u2026": "Design \u00f6ffnen \u2026",
   Designs: "Designs",
-  "Design file": "Design-Datei",
   "Main project": "Hauptprojekt",
   "A project is its own library: its own consoles, cards, templates and guides. Nothing is shared between them, so a new one is a clean slate.":
     "Ein Projekt ist eine eigene Sammlung: eigene Konsolen, Karten, Vorlagen und Hilfslinien. Nichts wird geteilt \u2013 ein neues f\u00e4ngt also bei null an.",

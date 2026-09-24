@@ -69,7 +69,7 @@ export function ExportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-w-sm flex-col gap-1 p-3">
         <DialogHeader className="px-1 pt-1">
-          <DialogTitle>{t("Export")}</DialogTitle>
+          <DialogTitle>{t("Export to print")}</DialogTitle>
         </DialogHeader>
 
         <Section>{t("This card")}</Section>

@@ -2,24 +2,19 @@
 // by the menu bar and the toolbar, so both drive exactly the same code.
 
 import { useRef, useState } from "react";
-import { exportBackup, importBackup } from "../backup";
-import { downloadBlob, downloadDataUrl, exportPng, type ExportMode } from "../export";
+import { importBackup } from "../backup";
+import { downloadDataUrl, exportPng, type ExportMode } from "../export";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
-import { serializeProject } from "../projectFile";
 import { useStore } from "../store";
 import type { CanvasHandle } from "./EditorCanvas";
 
 export interface FileActions {
   busy: string | null;
   runExport: (mode: ExportMode) => Promise<void>;
-  saveJson: () => void;
-  saveBackup: () => Promise<void>;
   loadBackup: (file: File) => Promise<void>;
-  /** Hidden <input type="file"> refs — render them once via `pickers`. */
-  jsonRef: React.RefObject<HTMLInputElement | null>;
+  /** Hidden <input type="file"> ref — rendered once via `pickers`. */
   zipRef: React.RefObject<HTMLInputElement | null>;
-  openJson: () => void;
   openZip: () => void;
 }
 
@@ -30,7 +25,6 @@ export function useFileActions(
   const t = useT();
   const { project, side } = state;
   const [busy, setBusy] = useState<string | null>(null);
-  const jsonRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
 
   const safeName = () =>
@@ -52,36 +46,17 @@ export function useFileActions(
     }
   };
 
-  const saveJson = () => {
-    const blob = new Blob([serializeProject(project)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    downloadDataUrl(url, `${safeName()}.json`);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const saveBackup = async () => {
-    try {
-      setBusy(t("Packing backup …"));
-      const { blob, name } = await exportBackup();
-      downloadBlob(blob, name);
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const loadBackup = async (file: File) => {
     const ok = await askConfirm({
-      title: t("Load backup?"),
+      title: t("Import project?"),
       body: t(
         "Projects and templates from the file are imported (existing ones with the same ID are overwritten). The page then reloads.",
       ),
-      confirmLabel: t("Load backup"),
+      confirmLabel: t("Import project"),
     });
     if (!ok) return;
     try {
-      setBusy(t("Loading backup …"));
+      setBusy(t("Importing project …"));
       const { projects, templates, includesApiKeys } = await importBackup(file);
       alert(
         t("{projects} project(s) and {templates} template(s) imported.", {
@@ -102,12 +77,8 @@ export function useFileActions(
   return {
     busy,
     runExport,
-    saveJson,
-    saveBackup,
     loadBackup,
-    jsonRef,
     zipRef,
-    openJson: () => jsonRef.current?.click(),
     openZip: () => zipRef.current?.click(),
   };
 }

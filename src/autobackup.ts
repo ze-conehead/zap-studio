@@ -1,6 +1,6 @@
 // Automatic backups. The app keeps everything in IndexedDB, which a cleared
 // browser profile wipes without warning, so this writes the same .zip that
-// File ▸ Save backup produces into a real folder on disk — picked once, then
+// File ▸ Export project as .zip produces into a real folder on disk — picked once, then
 // refreshed on its own and rotated so the folder never grows without bound.
 //
 // Needs the File System Access API (Chromium). Where it is missing everything

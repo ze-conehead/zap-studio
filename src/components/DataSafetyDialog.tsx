@@ -178,7 +178,7 @@ export function DataSafetyDialog({
           {!isSupported() ? (
             <p className="text-xs text-muted-foreground">
               {t(
-                "This browser can't write to a folder (needs the File System Access API — Chrome, Edge or Opera). Use File ▸ Save backup (.zip) regularly instead.",
+                "This browser can't write to a folder (needs the File System Access API — Chrome, Edge or Opera). Use File ▸ Export project as .zip regularly instead.",
               )}
             </p>
           ) : (

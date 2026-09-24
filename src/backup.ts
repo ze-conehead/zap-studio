@@ -98,8 +98,17 @@ function bytesToDataUrl(bytes: Uint8Array, mime: string): string {
   return `data:${mime};base64,${btoa(bin)}`;
 }
 
-export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
-  const projects = await loadAllProjects();
+export interface ExportBackupOptions {
+  // Skip individual card designs — only the global + console templates
+  // (and everything else: settings, fonts, libraries) go into the zip.
+  templatesOnly?: boolean;
+}
+
+export async function exportBackup(
+  opts: ExportBackupOptions = {},
+): Promise<{ blob: Blob; name: string }> {
+  const allProjects = await loadAllProjects();
+  const projects = opts.templatesOnly ? allProjects.filter((p) => p.isTemplate) : allProjects;
   await ensureCustomFontsLoaded();
   const fonts = listCustomFonts();
   const files: Record<string, Uint8Array> = {};
@@ -233,7 +242,7 @@ export async function exportBackup(): Promise<{ blob: Blob; name: string }> {
   const zipped = zipSync(files, { level: 6 });
   return {
     blob: new Blob([zipped], { type: "application/zip" }),
-    name: `zap-studio-backup_${new Date().toISOString().slice(0, 10)}.zip`,
+    name: `zap-studio-${opts.templatesOnly ? "templates" : "backup"}_${new Date().toISOString().slice(0, 10)}.zip`,
   };
 }
 

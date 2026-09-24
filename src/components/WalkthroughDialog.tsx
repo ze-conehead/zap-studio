@@ -139,7 +139,7 @@ export function WalkthroughDialog({
       icon: FileDown,
       title: t("6. Export"),
       body: t(
-        "File ▸ Export writes a PNG — trimmed, with bleed, or with bleed and crop marks. For printing there is a cut sheet with several cards per page, and a card-tray PDF for printers that take PVC cards directly.",
+        "File ▸ Export to print writes a PNG — trimmed, with bleed, or with bleed and crop marks. For printing there is a cut sheet with several cards per page, and a card-tray PDF for printers that take PVC cards directly.",
       ),
     },
     {
