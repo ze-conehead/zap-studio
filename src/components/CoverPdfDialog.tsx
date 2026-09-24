@@ -9,9 +9,10 @@ import { useEffect, useState } from "react";
 import { downloadBlob, exportPng } from "../export";
 import { getFormat } from "../formats";
 import { useT } from "../i18n";
-import { cardTrayPdf, type CardPdfPage } from "../pdf";
+import { cardTrayPdf, type CardPdfPage, type PdfCutRect } from "../pdf";
 import { useStore } from "../store";
 import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -33,6 +34,7 @@ export function CoverPdfDialog({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [cutLine, setCutLine] = useState(true);
 
   useEffect(() => {
     if (open) setError("");
@@ -59,6 +61,17 @@ export function CoverPdfDialog({
     setBusy(true);
     setError("");
     try {
+      // The trim edge, inset from the bleed-sized cover by the format's
+      // own bleed — same rect on both pages, since both share one offset.
+      const cutRect: PdfCutRect | undefined = cutLine
+        ? {
+            xMM: offsetXMM + f.bleedMM,
+            yMM: offsetYMM + f.bleedMM,
+            wMM: f.trimMM.w,
+            hMM: f.trimMM.h,
+            rMM: f.cornerRadiusMM,
+          }
+        : undefined;
       const page = async (stage: typeof front): Promise<CardPdfPage> => ({
         imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
         cardWidthMM,
@@ -67,6 +80,7 @@ export function CoverPdfDialog({
         pageHeightMM,
         offsetXMM,
         offsetYMM,
+        cutRect,
       });
       const blob = await cardTrayPdf([await page(front), await page(back)]);
       downloadBlob(blob, `${safeName()}_cover.pdf`);
@@ -135,6 +149,11 @@ export function CoverPdfDialog({
             strokeWidth={1.5}
           />
         </svg>
+
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox checked={cutLine} onCheckedChange={(v) => setCutLine(!!v)} />
+          {t("Cut line as a vector path (kiss_cut, 100 % magenta spot colour)")}
+        </label>
 
         {!fits && (
           <span className="text-xs text-destructive">

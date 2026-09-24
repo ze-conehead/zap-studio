@@ -182,6 +182,10 @@ export interface CardPdfPage {
   pageHeightMM?: number;
   offsetXMM?: number;
   offsetYMM?: number;
+  // An optional kiss_cut vector path (same spot colour as the sticker-sheet
+  // PDF below), page-relative mm — for a page that needs trimming after
+  // print, unlike the tray use case this file was originally built for.
+  cutRect?: PdfCutRect;
 }
 
 export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
@@ -194,6 +198,23 @@ export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
   // (Page, Image, Content), filled in as they're rendered.
   const objects: Uint8Array[] = [enc(""), enc("")];
   const kids: string[] = [];
+
+  // Shared across every page that has a cutRect, added once up front so
+  // their object numbers are fixed before the per-page loop below (which
+  // numbers its own objects off objects.length as it goes).
+  let gsNum = 0;
+  let csNum = 0;
+  if (pages.some((p) => p.cutRect)) {
+    gsNum = objects.length + 1;
+    objects.push(enc("<< /Type /ExtGState /OP true /op true /OPM 1 >>"));
+    csNum = objects.length + 1;
+    objects.push(
+      enc(
+        "[/Separation /kiss_cut /DeviceCMYK " +
+          "<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [0 1 0 0] /N 1 >>]",
+      ),
+    );
+  }
 
   for (const p of pages) {
     const img = await loadImg(p.imageDataUrl);
@@ -227,19 +248,30 @@ export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
     const x = offXMM * MM_TO_PT;
     // flip: mm-from-top-left of the page → pt-from-bottom (PDF space)
     const y = pageH - (offYMM * MM_TO_PT + cardH);
-    const content = enc(
-      `q ${cardW.toFixed(3)} 0 0 ${cardH.toFixed(3)} ${x.toFixed(3)} ${y.toFixed(3)} cm /Im0 Do Q`,
-    );
 
     const pageNum = objects.length + 1;
     const imageNum = pageNum + 1;
     const contentNum = pageNum + 2;
     kids.push(`${pageNum} 0 R`);
 
+    let contentStr = `q ${cardW.toFixed(3)} 0 0 ${cardH.toFixed(3)} ${x.toFixed(3)} ${y.toFixed(3)} cm /Im0 Do Q`;
+    let resources = `/XObject << /Im0 ${imageNum} 0 R >>`;
+    if (p.cutRect) {
+      const r = p.cutRect;
+      const rx = r.xMM * MM_TO_PT;
+      const ryBottom = pageH - (r.yMM + r.hMM) * MM_TO_PT;
+      contentStr +=
+        `\nq /GScut gs /CScut CS 1 SCN 0.25 w ` +
+        roundedRectOps(rx, ryBottom, r.wMM * MM_TO_PT, r.hMM * MM_TO_PT, r.rMM * MM_TO_PT) +
+        ` Q`;
+      resources += ` /ExtGState << /GScut ${gsNum} 0 R >> /ColorSpace << /CScut ${csNum} 0 R >>`;
+    }
+    const content = enc(contentStr);
+
     objects.push(
       enc(
         `<< /Type /Page /Parent 2 0 R /MediaBox ${box(0, 0, pageW, pageH)} ` +
-          `/Resources << /XObject << /Im0 ${imageNum} 0 R >> >> ` +
+          `/Resources << ${resources} >> ` +
           `/Contents ${contentNum} 0 R >>`,
       ),
       concat(
