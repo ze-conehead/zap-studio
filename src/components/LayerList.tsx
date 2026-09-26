@@ -7,7 +7,9 @@ import {
   Database,
   Eye,
   EyeOff,
+  Gamepad2,
   GitBranch,
+  Globe,
   GripVertical,
   Image as ImageIcon,
   Lock,
@@ -287,8 +289,8 @@ export function LayerList({
           {nested && <CornerDownRight className="size-3.5 shrink-0 text-sky-500" />}
           <Icon className="size-3.5 shrink-0" />
           <span className="truncate">{nameOf(l, t)}</span>
-          <span className="shrink-0 text-[10px] uppercase tracking-wider">
-            {source === "global" ? t("global") : t("console")}
+          <span className="shrink-0" title={source === "global" ? t("global") : t("console")}>
+            {source === "global" ? <Globe className="size-3" /> : <Gamepad2 className="size-3" />}
           </span>
           {editable && <Pencil className="size-3 shrink-0 text-primary" />}
         </button>
