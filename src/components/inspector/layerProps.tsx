@@ -492,18 +492,19 @@ export function ShapeProps({
             }
           />
 
-          <div className="grid grid-cols-2 gap-2">
-            <ColorField
-              label={t("Stroke")}
-              value={layer.stroke}
-              onChange={(v) => patch({ stroke: v })}
-            />
-            <NumberField
-              label={t("Stroke width")}
-              value={round(layer.strokeWidth)}
-              onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
-            />
-          </div>
+          <ColorField
+            label={t("Stroke")}
+            value={layer.stroke}
+            onChange={(v) => patch({ stroke: v })}
+          />
+          <SliderField
+            label={t("Stroke width {n}", { n: Math.round(layer.strokeWidth) })}
+            min={0}
+            max={100}
+            step={1}
+            value={layer.strokeWidth}
+            onChange={(v, done) => patch({ strokeWidth: v }, done)}
+          />
         </div>
       )}
     </>
@@ -956,10 +957,13 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
           onChange={(v) => patch({ stroke: v })}
         />
       </div>
-      <NumberField
-        label={t("Stroke width")}
-        value={round(layer.strokeWidth)}
-        onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
+      <SliderField
+        label={t("Stroke width {n}", { n: Math.round(layer.strokeWidth) })}
+        min={0}
+        max={100}
+        step={1}
+        value={layer.strokeWidth}
+        onChange={(v, done) => patch({ strokeWidth: v }, done)}
       />
     </>
   );

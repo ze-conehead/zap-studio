@@ -22,7 +22,7 @@ import type { MaskOption } from "../templates";
 import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
-import { ColorField, Field, FillEditor, NumberField, Panel, round, type Patch } from "./inspector/fields";
+import { ColorField, Field, FillEditor, Panel, SliderField, type Patch } from "./inspector/fields";
 import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, TextProps } from "./inspector/layerProps";
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
@@ -80,18 +80,23 @@ export function Inspector({
             onChange={(fp, history) => patchOverride({ fill: { ...(override?.fill ?? fill), ...fp } }, history)}
           />
           {isShapeSel && (
-            <div className="grid grid-cols-2 gap-2">
+            <>
               <ColorField
                 label={t("Stroke")}
                 value={override?.stroke ?? foreignSelected.stroke}
                 onChange={(v) => patchOverride({ stroke: v })}
               />
-              <NumberField
-                label={t("Stroke width")}
-                value={round(override?.strokeWidth ?? foreignSelected.strokeWidth)}
-                onChange={(v) => patchOverride({ strokeWidth: Math.max(0, v) })}
+              <SliderField
+                label={t("Stroke width {n}", {
+                  n: Math.round(override?.strokeWidth ?? foreignSelected.strokeWidth),
+                })}
+                min={0}
+                max={100}
+                step={1}
+                value={override?.strokeWidth ?? foreignSelected.strokeWidth}
+                onChange={(v, done) => patchOverride({ strokeWidth: v }, done)}
               />
-            </div>
+            </>
           )}
         </div>
         <div className="flex justify-between gap-2">

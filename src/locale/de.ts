@@ -713,7 +713,7 @@ export const de: Record<string, string> = {
   "Revert to original size": "Auf Originalgröße zurücksetzen",
   Fill: "Füllung",
   Stroke: "Kontur",
-  "Stroke width": "Konturstärke",
+  "Stroke width {n}": "Konturstärke {n}",
   "A placement frame — it always shows as a dashed outline.":
     "Ein Platzierungsrahmen – wird immer als gestrichelte Umrandung angezeigt.",
   "Shows the rating, release year and player count of the currently open game from its gamelist.xml. Best placed in a console or the global template.":
