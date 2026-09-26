@@ -46,11 +46,25 @@ const OI_CONDITION = "ISO Coated v2 300% (ECI)";
 // Escape a PDF literal string: (, ) and \ must be backslashed.
 const pdfStr = (s: string) => `(${s.replace(/[\\()]/g, "\\$&")})`;
 
+const LOAD_IMG_TIMEOUT_MS = 8000;
+
 function loadImg(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
     const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = () => rej(new Error("image failed to load"));
+    // A request can end up stuck with neither load nor error ever firing
+    // (seen in the packaged app even for a data: URL) — without this, one
+    // bad image hangs the whole PDF build forever with no feedback at all.
+    const timer = setTimeout(() => {
+      rej(new Error("image timed out loading"));
+    }, LOAD_IMG_TIMEOUT_MS);
+    i.onload = () => {
+      clearTimeout(timer);
+      res(i);
+    };
+    i.onerror = () => {
+      clearTimeout(timer);
+      rej(new Error("image failed to load"));
+    };
     i.src = src;
   });
 }
