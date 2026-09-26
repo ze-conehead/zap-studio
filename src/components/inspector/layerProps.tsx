@@ -295,7 +295,7 @@ function CropControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
   return (
     <div className="flex flex-col gap-2 rounded-md border p-2.5">
       <Label>{t("Crop")}</Label>
-      <div className="grid grid-cols-2 gap-x-3">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4">
         {(["l", "r", "t", "b"] as const).map((side) => (
           <SliderField
             key={side}
