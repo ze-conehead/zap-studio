@@ -21,6 +21,7 @@ import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { buildLayerMenuItems } from "./layerContextMenu";
 import type { GameMeta } from "../gamelist";
 import { getGamelistVersion, resolveBadgeMeta, subscribeGamelists } from "../gamelist";
+import { getCatalogVersion, subscribeCatalog } from "../data/catalog";
 import { hiddenCaseIds, resolveConditions } from "../conditions";
 import { segmentLayers } from "../masking";
 import { isAlphaMask } from "../templates";
@@ -80,6 +81,10 @@ export function EditorCanvas({
   // Re-render whenever a gamelist.xml is uploaded/removed, even without
   // navigating away, so MetaBadge layers stay live.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
+  // Re-render on a catalogue change (e.g. renaming a game/console), so a
+  // template's {title}/{console} placeholder text stays live even when no
+  // matching gamelist.xml entry exists to also trigger the sync above.
+  useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
   const badgeMeta = resolveBadgeMeta(project);
 
   const hasBack = !!project.back;
