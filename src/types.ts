@@ -112,6 +112,13 @@ export interface BaseLayer {
   shadow?: LayerShadow;
   /** @deprecated every template shape/background is overridable now — see `Project.fillOverrides`. Kept so old projects still load. */
   editableFill?: boolean;
+  // Image / shape only: sizing mode for the width/height fields in the
+  // Inspector's Sizing box — "px" (default) or "%" (relative to the card
+  // trim size).
+  sizeMode?: "px" | "%";
+  // Image / shape only: lock aspect ratio when resizing in the Sizing box
+  // — when true, changing one dimension scales the other to match.
+  lockAspectRatio?: boolean;
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -130,10 +137,6 @@ export interface ImageLayer extends BaseLayer {
   // Trimmed off each side, as fractions (0..1) of the natural size, so the
   // crop survives any resize. width / height describe the cropped area.
   crop?: ImageCrop;
-  // Sizing mode: "px" (default) or "%" (relative to card trim size)
-  sizeMode?: "px" | "%";
-  // Lock aspect ratio when resizing — when true, changing one dimension scales the other
-  lockAspectRatio?: boolean;
 }
 
 export interface ImageCrop {

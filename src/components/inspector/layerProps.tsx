@@ -135,17 +135,51 @@ export function EffectsControls({ layer, patch }: { layer: Layer; patch: Patch }
 }
 
 export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
+  const t = useT();
+  const revertToNaturalSize = () => patch({ width: layer.naturalWidth, height: layer.naturalHeight });
   return (
     <>
-      <SizingControls layer={layer} patch={patch} />
+      <div className="flex flex-col gap-2 rounded-md border p-2.5">
+        <SizeFields layer={layer} patch={patch} />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {t("Original: {w}×{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5"
+            title={t("Revert to original size")}
+            onClick={revertToNaturalSize}
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+        </div>
+        <NumberField
+          label={t("Corner radius")}
+          value={round(layer.cornerRadius)}
+          onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
+        />
+      </div>
       <CropControls layer={layer} patch={patch} />
       <AdjustControls layer={layer} patch={patch} />
     </>
   );
 }
 
-// Image layer sizing with pixel/percentage support and aspect ratio locking.
-function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
+// Width/height fields shared by the image and shape Sizing boxes: a px/%
+// toggle (percent relative to the card trim size) and an aspect-ratio
+// lock. `min` floors both dimensions — shapes can't collapse to 0 px,
+// images have no such floor.
+function SizeFields({
+  layer,
+  patch,
+  min = 0,
+}: {
+  layer: { width: number; height: number; sizeMode?: "px" | "%"; lockAspectRatio?: boolean };
+  patch: Patch;
+  min?: number;
+}) {
   const t = useT();
   const sizeMode = layer.sizeMode ?? "px";
   const lockAspect = layer.lockAspectRatio ?? true;
@@ -165,33 +199,25 @@ function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
   const displayHeight = sizeMode === "%" ? toPercent(layer.height, false) : round(layer.height);
 
   const handleWidthChange = (v: number) => {
-    const actualWidth = sizeMode === "%" ? fromPercent(v, true) : v;
-    const changes: Partial<ImageLayer> = { width: actualWidth };
-    if (lockAspect) {
-      changes.height = actualWidth * ratio;
-    }
-    patch(changes);
+    const actualWidth = Math.max(min, sizeMode === "%" ? fromPercent(v, true) : v);
+    const changes: Record<string, number> = { width: actualWidth };
+    if (lockAspect) changes.height = Math.max(min, actualWidth * ratio);
+    patch(changes as Partial<Layer>);
   };
 
   const handleHeightChange = (v: number) => {
-    const actualHeight = sizeMode === "%" ? fromPercent(v, false) : v;
-    const changes: Partial<ImageLayer> = { height: actualHeight };
-    if (lockAspect) {
-      changes.width = actualHeight / ratio;
-    }
-    patch(changes);
+    const actualHeight = Math.max(min, sizeMode === "%" ? fromPercent(v, false) : v);
+    const changes: Record<string, number> = { height: actualHeight };
+    if (lockAspect) changes.width = Math.max(min, actualHeight / ratio);
+    patch(changes as Partial<Layer>);
   };
 
   const toggleSizeMode = (mode: "px" | "%") => {
     patch({ sizeMode: mode });
   };
 
-  const revertToNaturalSize = () => {
-    patch({ width: layer.naturalWidth, height: layer.naturalHeight });
-  };
-
   return (
-    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+    <>
       <div className="flex items-center justify-between">
         <Label>{t("Sizing")}</Label>
         <div className="flex gap-1 rounded border">
@@ -242,28 +268,7 @@ function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
         />
         {t("Lock aspect ratio")}
       </label>
-
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {t("Original: {w}×{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-1.5"
-          title={t("Revert to original size")}
-          onClick={revertToNaturalSize}
-        >
-          <RotateCcw className="size-3.5" />
-        </Button>
-      </div>
-
-      <NumberField
-        label={t("Corner radius")}
-        value={round(layer.cornerRadius)}
-        onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
-      />
-    </div>
+    </>
   );
 }
 
@@ -460,26 +465,16 @@ export function ShapeProps({
   const t = useT();
   return (
     <>
-      <div className="grid grid-cols-2 gap-2">
-        <NumberField
-          label={t("Width px")}
-          value={round(layer.width)}
-          onChange={(v) => patch({ width: Math.max(4, v) })}
-        />
-        <NumberField
-          label={t("Height px")}
-          value={round(layer.height)}
-          onChange={(v) => patch({ height: Math.max(4, v) })}
-        />
+      <div className="flex flex-col gap-2 rounded-md border p-2.5">
+        <SizeFields layer={layer} patch={patch} min={4} />
+        {layer.shape === "rect" && (
+          <NumberField
+            label={t("Corner radius")}
+            value={round(layer.cornerRadius)}
+            onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
+          />
+        )}
       </div>
-
-      {layer.shape === "rect" && (
-        <NumberField
-          label={t("Corner radius")}
-          value={round(layer.cornerRadius)}
-          onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
-        />
-      )}
 
       <CombineEditor layer={layer} patch={patch} />
 
@@ -536,7 +531,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
     patch({ combine: [...combine, makeCombineShape(shape, op, layer.width, layer.height)] });
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 rounded-md border p-2.5">
       <div className="flex items-center justify-between">
         <Label>{t("Combine shapes")}</Label>
         <DropdownMenu>
