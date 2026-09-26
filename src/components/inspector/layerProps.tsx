@@ -991,15 +991,13 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
 // Align the layer to the trimmed card: its edges or its middle. A layer's
 // box is its width × height times scale; a plain text layer has no fixed
 // height (it wraps), so it only aligns horizontally and to the middle.
-// Position & Visibility controls: X, Y, Rotation, Size %, alignment, and opacity — grouped in one border.
+// Position & Visibility controls: X, Y, Rotation, alignment, and opacity — grouped in one border.
 export function PositionControls({
   layer,
   patch,
-  hideSize = false,
 }: {
   layer: Layer;
   patch: Patch;
-  hideSize?: boolean;
 }) {
   const t = useT();
   return (
@@ -1014,13 +1012,6 @@ export function PositionControls({
           value={round(layer.rotation)}
           onChange={(v) => patch({ rotation: v })}
         />
-        {!hideSize && (
-          <NumberField
-            label={t("Size %")}
-            value={round(layer.scaleX * 100)}
-            onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
-          />
-        )}
       </div>
 
       <SliderField

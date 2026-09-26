@@ -175,7 +175,6 @@ export function Inspector({
   const isMeta = isMetaBadge(selected);
   const isMask = !!selected.alphaMask;
   const isLogoSlot = !!selected.logoSlot;
-  const isShapeSel = isShape(selected);
   const isImageSel = isImage(selected);
   const fixedName = isMeta || isLogoSlot;
 
@@ -226,7 +225,7 @@ export function Inspector({
       <MaskRoleControls patch={patch} masks={masks} />
       <ConditionMembership patch={patch} />
 
-      <PositionControls layer={selected} patch={patch} hideSize={isShapeSel} />
+      <PositionControls layer={selected} patch={patch} />
 
       {!isMeta && !isMask && !isLogoSlot && !isImageSel && (
         <MaskControls patch={patch} />
