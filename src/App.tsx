@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CANVAS } from "./card";
+import { CANVAS, TRIM_RECT } from "./card";
 import { CardPreview } from "./components/CardPreview";
 import { DemoMode } from "./components/DemoMode";
 import { EditorCanvas, type CanvasHandle } from "./components/EditorCanvas";
@@ -82,6 +82,7 @@ export interface GuideApi {
   setLocked: (locked: boolean) => void;
   setSnap: (snap: boolean) => void;
   add: (axis: "x" | "y") => void;
+  addEqually: (axis: "x" | "y", count: number) => void;
   update: (id: string, pos: number) => void;
   remove: (id: string) => void;
 }
@@ -109,6 +110,19 @@ export default function App() {
         { id: newGuideId(), axis, pos: axis === "x" ? CANVAS.w / 2 : CANVAS.h / 2 },
       ],
     }));
+  // `count` guides spaced evenly across the trim box, e.g. 3 guides quarter
+  // it (at 25/50/75 %) the way a design tool's "add columns/rows" would.
+  const addGuidesEqually = (axis: "x" | "y", count: number) =>
+    setGuides((g) => {
+      const origin = axis === "x" ? TRIM_RECT.x : TRIM_RECT.y;
+      const span = axis === "x" ? TRIM_RECT.w : TRIM_RECT.h;
+      const added = Array.from({ length: count }, (_, i) => ({
+        id: newGuideId(),
+        axis,
+        pos: origin + ((i + 1) / (count + 1)) * span,
+      }));
+      return { ...g, on: true, items: [...g.items, ...added] };
+    });
   const updateGuide = (id: string, pos: number) =>
     setGuides((g) =>
       g.locked
@@ -218,6 +232,7 @@ export default function App() {
     setLocked: setGuidesLocked,
     setSnap: setGuidesSnap,
     add: addGuide,
+    addEqually: addGuidesEqually,
     update: updateGuide,
     remove: removeGuide,
   };

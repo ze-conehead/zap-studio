@@ -658,6 +658,8 @@ export const de: Record<string, string> = {
     "»Als Maske« macht diese Ebene zum Alpha-Kanal für die Ebene(n) darunter. »In Maske« legt sie in die Maske darüber.",
   "+ Vertical": "+ Vertikal",
   "+ Horizontal": "+ Horizontal",
+  "Add several, evenly spaced": "Mehrere hinzufügen, gleichmäßig verteilt",
+  "Add equally": "Gleichmäßig hinzufügen",
   "Show guides": "Hilfslinien anzeigen",
   "Snap layers to guides": "Ebenen an Hilfslinien einrasten",
   "Lock guides": "Hilfslinien sperren",

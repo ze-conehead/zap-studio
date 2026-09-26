@@ -2,6 +2,7 @@
 // background layer, the back face, the guides, the console gamelist.
 
 import {
+  ChevronDown,
   Lock,
   LockOpen,
   Trash2,
@@ -10,6 +11,14 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -159,24 +168,8 @@ export function GuidesPanel({ guides }: { guides: GuideApi }) {
   return (
     <Panel title={t("Guides")}>
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          disabled={locked}
-          onClick={() => guides.add("x")}
-        >
-          {t("+ Vertical")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          disabled={locked}
-          onClick={() => guides.add("y")}
-        >
-          {t("+ Horizontal")}
-        </Button>
+        <AddGuideGroup axis="x" label={t("+ Vertical")} guides={guides} locked={locked} />
+        <AddGuideGroup axis="y" label={t("+ Horizontal")} guides={guides} locked={locked} />
       </div>
 
       {items.length > 0 && (
@@ -238,6 +231,59 @@ export function GuidesPanel({ guides }: { guides: GuideApi }) {
         </div>
       )}
     </Panel>
+  );
+}
+
+const EQUAL_COUNTS = [2, 3, 4, 5];
+
+// A "+ Vertical" / "+ Horizontal" button with an attached dropdown for
+// adding several guides at once, evenly spaced across the trim box.
+function AddGuideGroup({
+  axis,
+  label,
+  guides,
+  locked,
+}: {
+  axis: "x" | "y";
+  label: string;
+  guides: GuideApi;
+  locked: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-1">
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex-1 rounded-r-none border-r-0"
+        disabled={locked}
+        onClick={() => guides.add(axis)}
+      >
+        {label}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-l-none px-1.5"
+            disabled={locked}
+            title={t("Add several, evenly spaced")}
+          >
+            <ChevronDown className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>{t("Add equally")}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {EQUAL_COUNTS.map((n) => (
+            <DropdownMenuItem key={n} onClick={() => guides.addEqually(axis, n)}>
+              {`+${n}`}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
