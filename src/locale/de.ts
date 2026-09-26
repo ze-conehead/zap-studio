@@ -703,6 +703,7 @@ export const de: Record<string, string> = {
   "Height {unit}": "Höhe {unit}",
   "Lock aspect ratio": "Seitenverhältnis sperren",
   Position: "Position",
+  "Position & Visibility": "Position & Sichtbarkeit",
   "Corner radius": "Ecken-Radius",
   "Original: {w}×{h} px": "Original: {w}×{h} px",
   "Revert to original size": "Auf Originalgröße zurücksetzen",

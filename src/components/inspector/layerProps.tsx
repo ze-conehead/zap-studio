@@ -293,7 +293,8 @@ function CropControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
   const nat = croppedNatural(layer);
   const pct = (v: number) => Math.round(v * 100);
   return (
-    <Field label={t("Crop")}>
+    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+      <Label>{t("Crop")}</Label>
       <div className="grid grid-cols-2 gap-x-3">
         {(["l", "r", "t", "b"] as const).map((side) => (
           <SliderField
@@ -317,7 +318,7 @@ function CropControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
           </Button>
         ) : null}
       </div>
-    </Field>
+    </div>
   );
 }
 
@@ -990,7 +991,7 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
 // Align the layer to the trimmed card: its edges or its middle. A layer's
 // box is its width × height times scale; a plain text layer has no fixed
 // height (it wraps), so it only aligns horizontally and to the middle.
-// Position controls: X, Y, Rotation, Size %, and alignment — grouped in one border.
+// Position & Visibility controls: X, Y, Rotation, Size %, alignment, and opacity — grouped in one border.
 export function PositionControls({
   layer,
   patch,
@@ -1003,7 +1004,7 @@ export function PositionControls({
   const t = useT();
   return (
     <div className="flex flex-col gap-2 rounded-md border p-2.5">
-      <Label>{t("Position")}</Label>
+      <Label>{t("Position & Visibility")}</Label>
 
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="X" value={round(layer.x)} onChange={(v) => patch({ x: v })} />
@@ -1021,6 +1022,15 @@ export function PositionControls({
           />
         )}
       </div>
+
+      <SliderField
+        label={t("Opacity {n}%", { n: Math.round(layer.opacity * 100) })}
+        min={0}
+        max={1}
+        step={0.01}
+        value={layer.opacity}
+        onChange={(v, done) => patch({ opacity: v }, done)}
+      />
 
       <AlignButtons layer={layer} patch={patch} />
     </div>

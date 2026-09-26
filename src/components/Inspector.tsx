@@ -19,7 +19,7 @@ import type { MaskOption } from "../templates";
 import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
-import { Field, FillEditor, Panel, SliderField, type Patch } from "./inspector/fields";
+import { Field, FillEditor, Panel, type Patch } from "./inspector/fields";
 import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, StyleClipboard, TextProps } from "./inspector/layerProps";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
@@ -193,15 +193,6 @@ export function Inspector({
       <ConditionMembership patch={patch} />
 
       <PositionControls layer={selected} patch={patch} hideSize={isShapeSel} />
-
-      <SliderField
-        label={t("Opacity {n}%", { n: Math.round(selected.opacity * 100) })}
-        min={0}
-        max={1}
-        step={0.01}
-        value={selected.opacity}
-        onChange={(v, done) => patch({ opacity: v }, done)}
-      />
 
       {!isMeta && !isMask && !isLogoSlot && !isImageSel && (
         <MaskControls patch={patch} />
