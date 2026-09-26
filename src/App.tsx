@@ -22,6 +22,7 @@ import { SpotColorDialog } from "./components/SpotColorDialog";
 import { BleedDialog } from "./components/BleedDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
+import { AboutDialog } from "./components/AboutDialog";
 import {
   WalkthroughDialog,
   walkthroughSeen,
@@ -435,6 +436,7 @@ function Shell({
   // again after the tour's own jump buttons navigate away.
   const [walkthrough, setWalkthrough] = useState(() => !walkthroughSeen());
   const [shortcuts, setShortcuts] = useState(false);
+  const [about, setAbout] = useState(false);
   useEffect(() => {
     if (walkthrough) markWalkthroughSeen();
   }, [walkthrough]);
@@ -493,6 +495,7 @@ function Shell({
     onOpenBleed: () => setBleedOpen(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
+    onOpenAbout: () => setAbout(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -598,6 +601,7 @@ function Shell({
         }}
       />
       <ShortcutsDialog open={shortcuts} onOpenChange={setShortcuts} />
+      <AboutDialog open={about} onOpenChange={setAbout} />
       <WalkthroughDialog
         open={walkthrough}
         onOpenChange={setWalkthrough}

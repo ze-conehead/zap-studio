@@ -340,6 +340,12 @@ export const de: Record<string, string> = {
   "Open the release page": "Release-Seite öffnen",
   Dismiss: "Ausblenden",
 
+  // ── AboutDialog ──────────────────────────────────────
+  "About Zap-Studio": "Über Zap-Studio",
+  "Version {v}": "Version {v}",
+  "Design and export credit-card-sized console/game stickers, locally in your browser.":
+    "Gestalte und exportiere kreditkartengroße Konsolen-/Spiele-Sticker, lokal in deinem Browser.",
+
   // ── metaFetch.ts / MetadataPanel fetch button ───────────────────────
   "Fetch from TMDB": "Aus TMDB übernehmen",
   "Fetch from IGDB": "Aus IGDB übernehmen",

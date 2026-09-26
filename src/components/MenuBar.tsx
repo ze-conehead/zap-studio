@@ -71,6 +71,7 @@ interface Props {
   onOpenBleed: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
+  onOpenAbout: () => void;
 }
 
 type MenuId = "file" | "project" | "edit" | "view" | "settings" | "help";
@@ -192,6 +193,7 @@ export function MenuBar({
   onOpenBleed,
   onOpenWalkthrough,
   onOpenShortcuts,
+  onOpenAbout,
 }: Props) {
   const t = useT();
   const [lang, setLang] = useLang();
@@ -475,6 +477,10 @@ export function MenuBar({
         <DropdownMenuItem onClick={onOpenShortcuts} className="justify-between">
           {t("Keyboard shortcuts …")}
           <span className="text-xs text-muted-foreground">?</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenAbout}>
+          {t("About Zap-Studio")}
         </DropdownMenuItem>
       </Menu>
 
