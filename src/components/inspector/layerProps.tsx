@@ -136,14 +136,9 @@ export function EffectsControls({ layer, patch }: { layer: Layer; patch: Patch }
 }
 
 export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
-  const t = useT();
   return (
     <>
       <SizingControls layer={layer} patch={patch} />
-      <p className="text-xs text-muted-foreground">
-        {t("Original: {w}\u00d7{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
-      </p>
-
       <CropControls layer={layer} patch={patch} />
       <AdjustControls layer={layer} patch={patch} />
     </>
@@ -995,6 +990,43 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
 // Align the layer to the trimmed card: its edges or its middle. A layer's
 // box is its width × height times scale; a plain text layer has no fixed
 // height (it wraps), so it only aligns horizontally and to the middle.
+// Position controls: X, Y, Rotation, Size %, and alignment — grouped in one border.
+export function PositionControls({
+  layer,
+  patch,
+  hideSize = false,
+}: {
+  layer: Layer;
+  patch: Patch;
+  hideSize?: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+      <Label>{t("Position")}</Label>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField label="X" value={round(layer.x)} onChange={(v) => patch({ x: v })} />
+        <NumberField label="Y" value={round(layer.y)} onChange={(v) => patch({ y: v })} />
+        <NumberField
+          label={t("Rotation °")}
+          value={round(layer.rotation)}
+          onChange={(v) => patch({ rotation: v })}
+        />
+        {!hideSize && (
+          <NumberField
+            label={t("Size %")}
+            value={round(layer.scaleX * 100)}
+            onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
+          />
+        )}
+      </div>
+
+      <AlignButtons layer={layer} patch={patch} />
+    </div>
+  );
+}
+
 export function AlignButtons({ layer, patch }: { layer: Layer; patch: Patch }) {
   const t = useT();
   const box =

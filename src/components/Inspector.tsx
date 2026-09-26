@@ -19,8 +19,8 @@ import type { MaskOption } from "../templates";
 import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
-import { Field, FillEditor, NumberField, Panel, SliderField, type Patch, round } from "./inspector/fields";
-import { AlignButtons, EffectsControls, ImageProps, MetaBadgeProps, QrProps, ShapeProps, StyleClipboard, TextProps } from "./inspector/layerProps";
+import { Field, FillEditor, Panel, SliderField, type Patch } from "./inspector/fields";
+import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, StyleClipboard, TextProps } from "./inspector/layerProps";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
 
@@ -192,22 +192,7 @@ export function Inspector({
       {!isMeta && !isMask && !isLogoSlot && <StyleClipboard layer={selected} patch={patch} />}
       <ConditionMembership patch={patch} />
 
-      <div className="grid grid-cols-2 gap-2">
-        <NumberField label="X" value={round(selected.x)} onChange={(v) => patch({ x: v })} />
-        <NumberField label="Y" value={round(selected.y)} onChange={(v) => patch({ y: v })} />
-        <NumberField
-          label={t("Rotation \u00b0")}
-          value={round(selected.rotation)}
-          onChange={(v) => patch({ rotation: v })}
-        />
-        {!isShapeSel && (
-          <NumberField
-            label={t("Size %")}
-            value={round(selected.scaleX * 100)}
-            onChange={(v) => patch({ scaleX: v / 100, scaleY: v / 100 })}
-          />
-        )}
-      </div>
+      <PositionControls layer={selected} patch={patch} hideSize={isShapeSel} />
 
       <SliderField
         label={t("Opacity {n}%", { n: Math.round(selected.opacity * 100) })}
@@ -217,8 +202,6 @@ export function Inspector({
         value={selected.opacity}
         onChange={(v, done) => patch({ opacity: v }, done)}
       />
-
-      <AlignButtons layer={selected} patch={patch} />
 
       {!isMeta && !isMask && !isLogoSlot && !isImageSel && (
         <MaskControls patch={patch} />
