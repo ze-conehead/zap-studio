@@ -114,16 +114,16 @@ export function WalkthroughDialog({
       icon: Layers,
       title: t("3. How the levels stack"),
       body: t(
-        "Three levels, bottom to top: “All consoles” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.",
+        "Three levels, bottom to top: “Global Layout” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.",
       ),
     },
     {
       icon: SquareDashed,
       title: t("4. Add an alpha mask"),
       body: t(
-        "In “All consoles”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.",
+        "In “Global Layout”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.",
       ),
-      actionLabel: t("Open “All consoles”"),
+      actionLabel: t("Open “Global Layout”"),
       action: () => jump(targets.onOpenGlobal),
     },
     {

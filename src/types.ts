@@ -102,10 +102,7 @@ export interface BaseLayer {
   condId?: string;
   // Layer effect: a drop shadow / glow (image, text and shape layers).
   shadow?: LayerShadow;
-  // Shapes/backgrounds only, template layers only: descendants (a console
-  // below the global template, a card below its console) may give this
-  // layer's `fill` their own value — see `Project.fillOverrides`. Every
-  // other property (geometry, stroke, combine …) stays inherited as-is.
+  /** @deprecated every template shape/background is overridable now — see `Project.fillOverrides`. Kept so old projects still load. */
   editableFill?: boolean;
 }
 
@@ -290,10 +287,20 @@ export interface Project {
   isTemplate?: boolean; // true => shared layer set (console or global)
   consoleId?: string; // set on a per-console template
   isGlobalTemplate?: boolean; // true => layers shown on every card of every console
-  // This project's own value for an ancestor's `editableFill` layer — a
-  // console's pick for a global shape/background, or a card's pick for a
-  // console one — keyed by that layer's id. See src/fillOverrides.ts.
-  fillOverrides?: Record<string, CardBackground>;
+  // This project's own value for an ancestor's shape/background layer — a
+  // console's pick for a global one, or a card's pick for a console one —
+  // keyed by that layer's id. Every template shape/background can be
+  // overridden this way. See src/fillOverrides.ts.
+  fillOverrides?: Record<string, LayerStyleOverride>;
+}
+
+// A descendant's own pick for one of an ancestor template's shape/background
+// layers — fill (incl. gradient/noise) and, for shapes, stroke. Any field
+// left out falls back to the ancestor layer's own value.
+export interface LayerStyleOverride {
+  fill?: CardBackground;
+  stroke?: string;
+  strokeWidth?: number;
 }
 
 export interface ProjectMeta {

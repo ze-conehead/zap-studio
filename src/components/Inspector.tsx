@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { ClipboardCopy, ClipboardPaste } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 import {
@@ -21,7 +22,7 @@ import type { MaskOption } from "../templates";
 import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
-import { Field, FillEditor, Panel, type Patch } from "./inspector/fields";
+import { ColorField, Field, FillEditor, NumberField, Panel, round, type Patch } from "./inspector/fields";
 import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, TextProps } from "./inspector/layerProps";
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
@@ -32,9 +33,9 @@ interface InspectorProps {
   globalBg?: CardBackground;
   masks?: MaskOption[];
   guides: GuideApi;
-  // A read-only console/global layer picked in the Layers panel — only
-  // possible when it's flagged editableFill, so this is always just the
-  // fill editor. See src/fillOverrides.ts.
+  // A read-only console/global shape/background picked in the Layers
+  // panel — always just the fill/stroke override editor. See
+  // src/fillOverrides.ts.
   foreignSelected?: Layer | null;
   onCloseForeign?: () => void;
 }
@@ -49,43 +50,59 @@ export function Inspector({
 }: InspectorProps) {
   const t = useT();
   const { state, selected, dispatch } = useStore();
-  // Follow console renames from the tree without a reload. Runs
-  // unconditionally, before the early return below, so hook order stays
-  // stable regardless of foreignSelected.
+  // Both run unconditionally, before any early return below, so hook order
+  // stays stable regardless of foreignSelected / selected.
   useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
+  useSyncExternalStore(subscribeStyleClipboard, getStyleClipboardVersion, getStyleClipboardVersion);
 
   if (foreignSelected && "fill" in foreignSelected) {
     const fill = foreignSelected.fill as CardBackground;
-    const isOwnOverride = !!state.project.fillOverrides?.[foreignSelected.id];
+    const isShapeSel = foreignSelected.type === "shape";
+    const override = state.project.fillOverrides?.[foreignSelected.id];
+    const isOwnOverride = !!override;
+    const patchOverride = (p: { fill?: CardBackground; stroke?: string; strokeWidth?: number }, history?: boolean) =>
+      dispatch({ type: "SET_FILL_OVERRIDE", layerId: foreignSelected.id, patch: p, history });
     return (
       <Panel title={foreignSelected.name}>
         <p className="text-xs text-muted-foreground">
-          {t(
-            "Inherited from a template. Everything but its fill stays as defined there — pick your own fill for it here.",
-          )}
+          {isShapeSel
+            ? t(
+                "Inherited from a template. Everything but its fill and stroke stays as defined there — pick your own here.",
+              )
+            : t(
+                "Inherited from a template. Everything but its fill stays as defined there — pick your own here.",
+              )}
         </p>
-        <Field label={t("Fill")}>
+        <div className="flex flex-col gap-2 rounded-md border p-2.5">
+          <Label>{t("Color")}</Label>
           <FillEditor
-            value={state.project.fillOverrides?.[foreignSelected.id] ?? fill}
-            onChange={(fp, history) =>
-              dispatch({
-                type: "SET_FILL_OVERRIDE",
-                layerId: foreignSelected.id,
-                fill: { ...(state.project.fillOverrides?.[foreignSelected.id] ?? fill), ...fp },
-                history,
-              })
-            }
+            value={override?.fill ?? fill}
+            onChange={(fp, history) => patchOverride({ fill: { ...(override?.fill ?? fill), ...fp } }, history)}
           />
-        </Field>
+          {isShapeSel && (
+            <div className="grid grid-cols-2 gap-2">
+              <ColorField
+                label={t("Stroke")}
+                value={override?.stroke ?? foreignSelected.stroke}
+                onChange={(v) => patchOverride({ stroke: v })}
+              />
+              <NumberField
+                label={t("Stroke width")}
+                value={round(override?.strokeWidth ?? foreignSelected.strokeWidth)}
+                onChange={(v) => patchOverride({ strokeWidth: Math.max(0, v) })}
+              />
+            </div>
+          )}
+        </div>
         <div className="flex justify-between gap-2">
           {isOwnOverride && (
             <button
               className="text-xs text-muted-foreground underline hover:text-foreground"
               onClick={() =>
-                dispatch({ type: "SET_FILL_OVERRIDE", layerId: foreignSelected.id, fill: undefined })
+                dispatch({ type: "SET_FILL_OVERRIDE", layerId: foreignSelected.id, patch: undefined })
               }
             >
-              {t("Reset to the template's own fill")}
+              {t("Reset to the template's own")}
             </button>
           )}
           <button
@@ -178,8 +195,7 @@ export function Inspector({
   const isImageSel = isImage(selected);
   const fixedName = isMeta || isLogoSlot;
 
-  // Style clipboard state and buttons
-  useSyncExternalStore(subscribeStyleClipboard, getStyleClipboardVersion, getStyleClipboardVersion);
+  // Style clipboard state and buttons (subscribed above, unconditionally)
   const clip = styleClipboard();
   const canPaste = !!clip && Object.keys(pasteStyle(selected)).length > 0;
   const showStyleButtons = !isMeta && !isMask && !isLogoSlot;

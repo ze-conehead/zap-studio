@@ -254,7 +254,7 @@ export function LayerList({
 
   const foreignRow = (l: Layer, source: "console" | "global", nested = false) => {
     const Icon = iconFor(l);
-    const editable = !!l.editableFill;
+    const editable = l.type === "shape" || l.type === "background";
     const active = foreignSelectedId === l.id;
     return (
       <li

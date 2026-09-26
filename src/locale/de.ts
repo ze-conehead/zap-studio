@@ -39,11 +39,11 @@ export const de: Record<string, string> = {
   Subtract: "Subtrahieren",
 
   // ── Editable per console / game (#4) ────────────────────────────────────
-  "Fill editable per console": "Füllung pro Konsole bearbeitbar",
-  "Fill editable per game": "Füllung pro Spiel bearbeitbar",
-  "Inherited from a template. Everything but its fill stays as defined there — pick your own fill for it here.":
-    "Von einer Vorlage geerbt. Bis auf die Füllung bleibt alles wie dort definiert – wähle hier deine eigene Füllung dafür.",
-  "Reset to the template's own fill": "Auf die Füllung der Vorlage zurücksetzen",
+  "Inherited from a template. Everything but its fill stays as defined there — pick your own here.":
+    "Von einer Vorlage geerbt. Bis auf die Füllung bleibt alles wie dort definiert – wähle hier deine eigene.",
+  "Inherited from a template. Everything but its fill and stroke stays as defined there — pick your own here.":
+    "Von einer Vorlage geerbt. Bis auf Füllung und Kontur bleibt alles wie dort definiert – wähle hier deine eigenen.",
+  "Reset to the template's own": "Auf die Werte der Vorlage zurücksetzen",
   "From the {source} template – click to pick your own fill for it here.":
     "Aus der {source}-Vorlage – klicke, um hier deine eigene Füllung dafür zu wählen.",
   "From the {source} template – edit it there.": "Aus der {source}-Vorlage – dort bearbeiten.",
@@ -297,12 +297,12 @@ export const de: Record<string, string> = {
     "Ein Projekt ist eine eigene Sammlung – eigene Konsolen, Karten und Vorlagen, nichts davon wird geteilt. Beim Anlegen wählst du Spiele oder Filme und das Format: Kreditkarte, Kassetten-Label, DVD-Wrap oder eine eigene Größe in mm. Datei ▸ Neues Projekt …",
   "Open projects …": "Projekte öffnen …",
   "3. How the levels stack": "3. Wie die Ebenen aufeinander liegen",
-  "Three levels, bottom to top: “All consoles” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.":
-    "Drei Ebenen, von unten nach oben: „Alle Konsolen“ ist die globale Vorlage und erscheint auf jeder Karte, jede Konsole hat ihre eigene Vorlage, und jedes Spiel hat seine eigene Karte. Jede Ebene trägt Layer – Bilder, Text, Formen, Metadaten-Badges aus der gamelist und Bedingungen, die Layer nach Genre, Jahr oder Wertung austauschen.",
+  "Three levels, bottom to top: “Global Layout” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.":
+    "Drei Ebenen, von unten nach oben: „Global Layout“ ist die globale Vorlage und erscheint auf jeder Karte, jede Konsole hat ihre eigene Vorlage, und jedes Spiel hat seine eigene Karte. Jede Ebene trägt Layer – Bilder, Text, Formen, Metadaten-Badges aus der gamelist und Bedingungen, die Layer nach Genre, Jahr oder Wertung austauschen.",
   "4. Add an alpha mask": "4. Alpha-Maske anlegen",
-  "In “All consoles”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.":
-    "Lege in „Alle Konsolen“ einen „Alpha-Maske“-Layer an und schiebe ihn dorthin, wo das Artwork sitzen soll. Er ist der Rahmen, in den jedes Spielecover fällt: Cover werden daran zugeschnitten und auf seine Größe gebracht – auf allen Karten gleichzeitig. Verschiebst du ihn später, ziehen die Cover mit.",
-  "Open “All consoles”": "„Alle Konsolen“ öffnen",
+  "In “Global Layout”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.":
+    "Lege in „Global Layout“ einen „Alpha-Maske“-Layer an und schiebe ihn dorthin, wo das Artwork sitzen soll. Er ist der Rahmen, in den jedes Spielecover fällt: Cover werden daran zugeschnitten und auf seine Größe gebracht – auf allen Karten gleichzeitig. Verschiebst du ihn später, ziehen die Cover mit.",
+  "Open “Global Layout”": "„Global Layout“ öffnen",
   "5. Check it in the preview": "5. In der Vorschau prüfen",
   "“Preview” shows the card in 3D — drag to tilt it, and turn it over if it has a back side. “Preview all” lays out every card of the project side by side.":
     "„Vorschau“ zeigt die Karte in 3D – ziehen zum Kippen, und umdrehen, wenn sie eine Rückseite hat. „Alle anzeigen“ legt alle Karten des Projekts nebeneinander.",
@@ -574,6 +574,7 @@ export const de: Record<string, string> = {
   "Without image only": "Nur ohne Bild",
   "Consoles & games": "Konsolen & Spiele",
   "All consoles": "Alle Konsolen",
+  "Global Layout": "Global Layout",
   "Global template – appears on every card": "Globale Vorlage – erscheint auf allen Karten",
   "Filter games: {label}": "Spiele filtern: {label}",
   "Show games": "Spiele anzeigen",
@@ -659,8 +660,8 @@ export const de: Record<string, string> = {
   "Show guides": "Hilfslinien anzeigen",
   "Snap layers to guides": "Ebenen an Hilfslinien einrasten",
   "Lock guides": "Hilfslinien sperren",
-  "Editable only here (“All consoles”), but they appear on every card. Drag on the card to position, drag past the edge to delete.":
-    "Nur hier („Alle Konsolen“) bearbeitbar, erscheinen aber auf allen Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus ziehen zum Löschen.",
+  "Editable only here (“Global Layout”), but they appear on every card. Drag on the card to position, drag past the edge to delete.":
+    "Nur hier („Global Layout“) bearbeitbar, erscheinen aber auf allen Karten. Auf der Karte ziehen zum Positionieren, über den Rand hinaus ziehen zum Löschen.",
   Vertical: "Vertikal",
   "Horiz.": "Horiz.",
   Delete: "Löschen",
@@ -945,8 +946,8 @@ export const de: Record<string, string> = {
   "Alpha mask {n}": "Alpha-Maske {n}",
   "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.":
     "Karten k\u00f6nnen ein Bild in diesen Rahmen legen: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Gr\u00f6\u00dfe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
-  "No alpha masks yet — add one in a console template or \u201cAll consoles\u201d.":
-    "Noch keine Alpha-Masken \u2013 leg eine in einer Konsolen-Vorlage oder in \u201eAlle Konsolen\u201c an.",
+  "No alpha masks yet — add one in a console template or \u201cGlobal Layout\u201d.":
+    "Noch keine Alpha-Masken \u2013 leg eine in einer Konsolen-Vorlage oder in \u201eGlobal Layout\u201c an.",
   None: "Keine",
   global: "global",
   console: "Konsole",

@@ -5,7 +5,7 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { gradientStops } from "../../background";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,16 +224,24 @@ export function NumberField({
   onChange: (v: number) => void;
   step?: number;
 }) {
+  // While typing, show exactly what was typed instead of the (possibly
+  // clamped, e.g. Math.max(4, v)) committed value — otherwise typing "1"
+  // toward "100" gets immediately overwritten by the min and can never be
+  // finished. The draft is dropped on blur, falling back to the real value.
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? String(Number.isFinite(value) ? value : 0);
   return (
     <Field label={label}>
       <Input
         type="number"
         step={step}
-        value={Number.isFinite(value) ? value : 0}
+        value={shown}
         onChange={(e) => {
+          setDraft(e.target.value);
           const v = Number(e.target.value);
-          if (Number.isFinite(v)) onChange(v);
+          if (e.target.value.trim() !== "" && Number.isFinite(v)) onChange(v);
         }}
+        onBlur={() => setDraft(null)}
       />
     </Field>
   );

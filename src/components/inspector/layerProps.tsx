@@ -70,7 +70,6 @@ import {
   type TextLayer,
 } from "../../types";
 import { makeCombineShape } from "../../combineShape";
-import { useStore } from "../../store";
 import { TRIM_RECT } from "../../card";
 
 import { ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
@@ -459,7 +458,6 @@ export function ShapeProps({
   frame?: boolean;
 }) {
   const t = useT();
-  const { state } = useStore();
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
@@ -490,16 +488,14 @@ export function ShapeProps({
           {t("A placement frame — it always shows as a dashed outline.")}
         </p>
       ) : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <Label>{t("Fill")}</Label>
-            <FillEditor
-              value={layer.fill}
-              onChange={(fp, history) =>
-                patch({ fill: { ...layer.fill, ...fp } }, history)
-              }
-            />
-          </div>
+        <div className="flex flex-col gap-2 rounded-md border p-2.5">
+          <Label>{t("Color")}</Label>
+          <FillEditor
+            value={layer.fill}
+            onChange={(fp, history) =>
+              patch({ fill: { ...layer.fill, ...fp } }, history)
+            }
+          />
 
           <div className="grid grid-cols-2 gap-2">
             <ColorField
@@ -513,19 +509,7 @@ export function ShapeProps({
               onChange={(v) => patch({ strokeWidth: Math.max(0, v) })}
             />
           </div>
-
-          {state.project.isTemplate && (
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={!!layer.editableFill}
-                onCheckedChange={(v) => patch({ editableFill: !!v })}
-              />
-              {state.project.isGlobalTemplate
-                ? t("Fill editable per console")
-                : t("Fill editable per game")}
-            </label>
-          )}
-        </>
+        </div>
       )}
     </>
   );

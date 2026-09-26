@@ -14,7 +14,7 @@ import { isBackground, isCondition, makeBackFace, newProject } from "./factory";
 import { setFillOverride } from "./fillOverrides";
 import { getFormat } from "./formats";
 import { saveProject } from "./persist";
-import type { CardBackground, CardSide, Layer, Project } from "./types";
+import type { CardSide, Layer, LayerStyleOverride, Project } from "./types";
 
 interface State {
   project: Project;
@@ -52,9 +52,10 @@ type Action =
   | { type: "REDO" }
   // Jump to a point in the history list: `to` indexes [...past, current, ...future].
   | { type: "JUMP"; to: number }
-  // This project's own value for an ancestor's editableFill layer (see
-  // src/fillOverrides.ts) — `fill: undefined` clears it, back to inherited.
-  | { type: "SET_FILL_OVERRIDE"; layerId: string; fill?: CardBackground; history?: boolean }
+  // This project's own value for an ancestor template's shape/background
+  // layer (see src/fillOverrides.ts) — `patch: undefined` clears it, back
+  // to fully inherited; an object merges into whatever's already set.
+  | { type: "SET_FILL_OVERRIDE"; layerId: string; patch?: LayerStyleOverride; history?: boolean }
   | { type: "SAVED" };
 
 const HISTORY_LIMIT = 60;
@@ -344,7 +345,7 @@ function reducer(state: State, action: Action): State {
     }
 
     case "SET_FILL_OVERRIDE": {
-      const next = setFillOverride(project, action.layerId, action.fill);
+      const next = setFillOverride(project, action.layerId, action.patch);
       return action.history === false ? touch(state, next) : commit(state, next);
     }
 

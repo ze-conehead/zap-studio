@@ -416,6 +416,31 @@ export function GameTree({
         {isMovies ? t("Collections & movies") : t("Consoles & games")}
       </h2>
 
+      <div className="relative mx-2 mb-1">
+        <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={searchRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            if (query) setQuery("");
+            else e.currentTarget.blur();
+          }}
+          placeholder={t("Search …")}
+          className="h-7 pl-7 pr-7 text-xs"
+        />
+        {query && (
+          <button
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+            title={t("Clear")}
+            onClick={() => setQuery("")}
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
       <div className="mx-2 mb-1 flex min-w-0 items-center gap-1">
         <button
           className={cn(
@@ -431,7 +456,7 @@ export function GameTree({
         >
           <Globe className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-left">
-            {isMovies ? t("All collections") : t("All consoles")}
+            {isMovies ? t("All collections") : t("Global Layout")}
           </span>
           <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">
             {countText(shownGames, totalGames)}
@@ -466,31 +491,6 @@ export function GameTree({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-
-      <div className="relative mx-2 mb-1">
-        <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          ref={searchRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== "Escape") return;
-            if (query) setQuery("");
-            else e.currentTarget.blur();
-          }}
-          placeholder={t("Search …")}
-          className="h-7 pl-7 pr-7 text-xs"
-        />
-        {query && (
-          <button
-            className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
-            title={t("Clear")}
-            onClick={() => setQuery("")}
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">

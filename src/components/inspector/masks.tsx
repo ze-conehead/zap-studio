@@ -244,7 +244,7 @@ export function MaskRoleControls({
     <Field label={t("Alpha mask")}>
       {masks.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {t("No alpha masks yet — add one in a console template or “All consoles”.")}
+          {t("No alpha masks yet — add one in a console template or “Global Layout”.")}
         </p>
       ) : (
         <Select

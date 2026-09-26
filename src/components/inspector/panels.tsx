@@ -88,26 +88,18 @@ export function BackgroundLayerProps({
             : globalBg
               ? t("The background comes from the ") + t("global template")
               : t("Neither template has a background yet.")}
-          {t(". Edit it there (click the console / “All consoles” in the tree).")}
+          {t(". Edit it there (click the console / “Global Layout” in the tree).")}
         </p>
       ) : (
-        <FillEditor
-          value={layer.fill}
-          onChange={(fp, history) =>
-            patch({ fill: { ...layer.fill, ...fp } }, history)
-          }
-        />
-      )}
-      {state.project.isTemplate && (
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Checkbox
-            checked={!!layer.editableFill}
-            onCheckedChange={(v) => patch({ editableFill: !!v })}
+        <div className="flex flex-col gap-2 rounded-md border p-2.5">
+          <Label>{t("Color")}</Label>
+          <FillEditor
+            value={layer.fill}
+            onChange={(fp, history) =>
+              patch({ fill: { ...layer.fill, ...fp } }, history)
+            }
           />
-          {state.project.isGlobalTemplate
-            ? t("Fill editable per console")
-            : t("Fill editable per game")}
-        </label>
+        </div>
       )}
     </Panel>
   );
@@ -231,7 +223,7 @@ export function GuidesPanel({ guides }: { guides: GuideApi }) {
 
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {t("Editable only here (\u201cAll consoles\u201d), but they appear on every card. Drag on the card to position, drag past the edge to delete.")}
+          {t("Editable only here (\u201cGlobal Layout\u201d), but they appear on every card. Drag on the card to position, drag past the edge to delete.")}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
