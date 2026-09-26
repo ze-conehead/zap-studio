@@ -45,7 +45,13 @@ type Action =
     }
   | { type: "DELETE_LAYER"; id: string }
   | { type: "DUPLICATE_LAYER"; id: string }
-  | { type: "SET_LAYER_ORDER"; order: string[] }
+  // `stackAnchor` additionally sets (or clears, with `afterId: undefined`)
+  // the dragged layer's `stackAfterId` — see src/faceLayers.ts.
+  | {
+      type: "SET_LAYER_ORDER";
+      order: string[];
+      stackAnchor?: { id: string; afterId: string | undefined };
+    }
   | { type: "SELECT"; id: string | null }
   | { type: "TOGGLE"; key: "showBleed" }
   | { type: "UNDO" }
@@ -274,11 +280,15 @@ function reducer(state: State, action: Action): State {
         .map((id) => byId.get(id))
         .filter((l): l is Layer => !!l);
       if (next.length !== layers.length) return state;
+      if (action.stackAnchor) {
+        const { id, afterId } = action.stackAnchor;
+        next = next.map((l) => (l.id === id ? ({ ...l, stackAfterId: afterId } as Layer) : l));
+      }
       // The background layer stays pinned to the bottom.
       if (next.some(isBackground) && !isBackground(next[0])) {
         next = [...next.filter(isBackground), ...next.filter((l) => !isBackground(l))];
       }
-      const same = next.every((l, i) => l === layers[i]);
+      const same = !action.stackAnchor && next.every((l, i) => l === layers[i]);
       return same ? state : commit(state, write(project, next));
     }
 

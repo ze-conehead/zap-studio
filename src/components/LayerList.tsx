@@ -121,6 +121,14 @@ export function LayerList({
   // rows crowd out the card's own layers.
   const [hideForeign, setHideForeign] = useState(false);
 
+  // The console's logo image slots into the global template's logo frame
+  // and draws there (src/faceLayers.ts#buildFaceLayers) — shown nested
+  // under that frame's row instead of its own normal spot, matching where
+  // it actually draws. It's an own (editable) layer while editing the
+  // console template that owns it, a foreign (console) one on a card.
+  const ownLogo = layers.find((l) => l.type === "image" && l.logo);
+  const foreignLogo = foreignConsole.find((l) => l.type === "image" && l.logo);
+
   // Which condition cases are live for the game this card is for — the rest
   // are dimmed, so it's clear at a glance which branch prints.
   useSyncExternalStore(subscribeGamelists, getGamelistVersion, getGamelistVersion);
@@ -146,14 +154,80 @@ export function LayerList({
     setOver(null);
   };
 
+  // One combined, top-of-stack-first row list: own layers slot in right
+  // above whichever foreign (console/global) layer they're anchored to
+  // (`stackAfterId`, set by dragging them there — see applyDrop below),
+  // or at the very bottom (the old fixed behaviour) when unanchored. Only
+  // active while the foreign rows are actually shown — hidden or on the
+  // back face, it's just the plain own list, as it always was. A layer
+  // clipped into a mask never anchors — its position there always wins.
+  type MergedRow =
+    | { kind: "own" | "own-logo"; layer: Layer }
+    | { kind: "foreign-global" | "foreign-console" | "foreign-console-logo"; layer: Layer };
+  const foreignIdSet = new Set([...foreignGlobal, ...foreignConsole].map((l) => l.id));
+  const buildMerged = (): MergedRow[] => {
+    const interleave = showForeign && !hideForeign;
+    const anchoredOwn = new Map<string, Layer[]>();
+    const unanchored: Layer[] = [];
+    for (const l of layers) {
+      if (l.id === ownLogo?.id) continue; // placed specially below, nested under the logo slot
+      if (interleave && !l.mask && !l.clipped && l.stackAfterId && foreignIdSet.has(l.stackAfterId)) {
+        const arr = anchoredOwn.get(l.stackAfterId) ?? [];
+        arr.push(l);
+        anchoredOwn.set(l.stackAfterId, arr);
+      } else {
+        unanchored.push(l);
+      }
+    }
+    const rows: MergedRow[] = [];
+    if (interleave) {
+      for (const l of foreignGlobal) {
+        for (const al of anchoredOwn.get(l.id) ?? []) rows.push({ kind: "own", layer: al });
+        rows.push({ kind: "foreign-global", layer: l });
+        if (l.logoSlot) {
+          if (ownLogo) rows.push({ kind: "own-logo", layer: ownLogo });
+          else if (foreignLogo) rows.push({ kind: "foreign-console-logo", layer: foreignLogo });
+        }
+      }
+      for (const l of foreignConsole) {
+        if (l.id === foreignLogo?.id) continue;
+        for (const al of anchoredOwn.get(l.id) ?? []) rows.push({ kind: "own", layer: al });
+        rows.push({ kind: "foreign-console", layer: l });
+      }
+    }
+    for (const l of unanchored) rows.push({ kind: "own", layer: l });
+    return rows;
+  };
+
   const applyDrop = (srcId: string, tgtId: string, after: boolean) => {
     if (srcId === tgtId) return;
-    const ids = layers.map((l) => l.id).filter((id) => id !== srcId);
+    const merged = buildMerged();
+    const ids = merged.map((r) => r.layer.id).filter((id) => id !== srcId);
     let ti = ids.indexOf(tgtId);
     if (ti < 0) return;
     if (after) ti += 1;
     ids.splice(ti, 0, srcId);
-    dispatch({ type: "SET_LAYER_ORDER", order: [...ids].reverse() });
+    const ownOrder = ids.filter((id) => !foreignIdSet.has(id));
+    // A layer clipped into a mask keeps its stacking anchor untouched —
+    // it's ignored for rendering either way — only its relative order
+    // among its own siblings (still meaningful for its mask group) moves.
+    const srcLayer = layers.find((l) => l.id === srcId);
+    const masked = !!(srcLayer?.mask || srcLayer?.clipped);
+    let afterId: string | undefined;
+    if (!masked) {
+      const srcIndex = ids.indexOf(srcId);
+      for (let i = srcIndex + 1; i < ids.length; i++) {
+        if (foreignIdSet.has(ids[i])) {
+          afterId = ids[i];
+          break;
+        }
+      }
+    }
+    dispatch({
+      type: "SET_LAYER_ORDER",
+      order: [...ownOrder].reverse(),
+      stackAnchor: masked ? undefined : { id: srcId, afterId },
+    });
   };
 
   // Drag-and-drop reordering for a shape's combine entries (union/subtract
@@ -258,9 +332,31 @@ export function LayerList({
     const Icon = iconFor(l);
     const editable = l.type === "shape" || l.type === "background";
     const active = foreignSelectedId === l.id;
+    // A card/console layer can be dragged to stack right above this one —
+    // except a layer clipped into a mask, whose position there always wins.
+    const canDropHere = () => {
+      const src = dragId.current;
+      if (!src) return false;
+      const srcLayer = layers.find((sl) => sl.id === src);
+      return !!srcLayer && !srcLayer.mask && !srcLayer.clipped;
+    };
     return (
       <li
         key={l.id}
+        onDragOver={(e) => {
+          if (!canDropHere()) return;
+          e.preventDefault();
+          const r = e.currentTarget.getBoundingClientRect();
+          setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
+        }}
+        onDrop={(e) => {
+          if (!canDropHere()) return;
+          e.preventDefault();
+          const src = dragId.current;
+          const r = e.currentTarget.getBoundingClientRect();
+          if (src) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+          reset();
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           setMenu({ x: e.clientX, y: e.clientY, items: buildForeignMenuItems({ layer: l, t }) });
@@ -269,6 +365,10 @@ export function LayerList({
           "flex items-center gap-1.5 rounded-md border border-dashed px-1.5 py-1 text-sm text-muted-foreground",
           active ? "border-primary bg-accent" : "bg-muted/30",
           nested && "ml-3 border-l-2 border-l-sky-500/60",
+          over?.id === l.id &&
+            (over.after
+              ? "border-b-2 border-b-primary"
+              : "border-t-2 border-t-primary"),
         )}
       >
         <span className="size-3.5 shrink-0" />
@@ -301,14 +401,6 @@ export function LayerList({
       </li>
     );
   };
-
-  // The console's logo image slots into the global template's logo frame
-  // and draws there (src/faceLayers.ts#buildFaceLayers) — shown nested
-  // under that frame's row instead of its own normal spot, matching where
-  // it actually draws. It's an own (editable) layer while editing the
-  // console template that owns it, a foreign (console) one on a card.
-  const ownLogo = layers.find((l) => l.type === "image" && l.logo);
-  const foreignLogo = foreignConsole.find((l) => l.type === "image" && l.logo);
 
   const ownRow = (l: Layer, nested = false) => {
     const active = l.id === state.selectedId;
@@ -469,30 +561,26 @@ export function LayerList({
           setMenu({ x: e.clientX, y: e.clientY, items: buildEmptyMenuItems({ dispatch, t }) });
         }}
       >
-        {showForeign &&
-          !hideForeign &&
-          foreignGlobal.map((l) => (
-            <Fragment key={l.id}>
-              {foreignRow(l, "global")}
-              {l.logoSlot &&
-                (ownLogo
-                  ? ownRow(ownLogo, true)
-                  : foreignLogo && foreignRow(foreignLogo, "console", true))}
-            </Fragment>
-          ))}
-        {showForeign &&
-          !hideForeign &&
-          foreignConsole
-            .filter((l) => l.id !== foreignLogo?.id)
-            .map((l) => foreignRow(l, "console"))}
-        {layers
-          .filter((l) => l.id !== ownLogo?.id)
-          .map((l) => (
-            <Fragment key={l.id}>
-              {ownRow(l)}
-              {l.type === "shape" && l.combine?.map((c, i) => combineRow(l, i, c))}
-            </Fragment>
-          ))}
+        {buildMerged().map((r) => {
+          switch (r.kind) {
+            case "own":
+              return (
+                <Fragment key={r.layer.id}>
+                  {ownRow(r.layer)}
+                  {r.layer.type === "shape" &&
+                    r.layer.combine?.map((c, i) => combineRow(r.layer, i, c))}
+                </Fragment>
+              );
+            case "own-logo":
+              return <Fragment key={r.layer.id}>{ownRow(r.layer, true)}</Fragment>;
+            case "foreign-global":
+              return <Fragment key={r.layer.id}>{foreignRow(r.layer, "global")}</Fragment>;
+            case "foreign-console":
+              return <Fragment key={r.layer.id}>{foreignRow(r.layer, "console")}</Fragment>;
+            case "foreign-console-logo":
+              return <Fragment key={r.layer.id}>{foreignRow(r.layer, "console", true)}</Fragment>;
+          }
+        })}
       </ul>
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
     </section>

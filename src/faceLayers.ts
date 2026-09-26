@@ -42,7 +42,9 @@ export function buildOverlay(
 
 // One z-ordered list for a face: the project's own layers, then the
 // console / global template layers it inherits (`overlay`, alpha masks
-// included, in the templates' own stacking order). On a game card each
+// included, in the templates' own stacking order) — except an own layer
+// with `stackAfterId` set, which slots in right above that overlay layer
+// instead (dragged there in the Layers panel). On a game card each
 // alpha mask is where the card's own image that points at it slots in —
 // spliced there as a clipped run plus a mask layer, so segmentLayers() /
 // destination-in clips it, and the template's layers below the frame stay
@@ -76,10 +78,21 @@ export function buildFaceLayers(
     return resolveMask(l, masks);
   };
   const logoLayer = own.find((l) => l.type === "image" && l.logo && l.visible);
-  // Own content with no frame to fill sits under the whole template stack,
-  // as it always has.
+  // An own layer with `stackAfterId` set (dragged there in the Layers
+  // panel — see LayerList.tsx) draws immediately above that overlay
+  // layer instead of under the whole stack. A layer clipped into a mask
+  // ignores it — that position always wins — and so does a stale id that
+  // no longer names a layer actually in this overlay.
+  const overlayIds = new Set(overlay.map((l) => l.id));
+  const anchored = (l: Layer) =>
+    !l.mask && !l.clipped && !!l.stackAfterId && overlayIds.has(l.stackAfterId);
+  const anchoredAt = (id: string) =>
+    own.filter((l) => l.id !== logoLayer?.id && !slotsIn(l) && anchored(l) && l.stackAfterId === id);
+
+  // Own content with no frame to fill and no stacking anchor sits under
+  // the whole template stack, as it always has.
   for (const l of own) {
-    if (!slotsIn(l) && l.id !== logoLayer?.id) out.push(l);
+    if (!slotsIn(l) && l.id !== logoLayer?.id && !anchored(l)) out.push(l);
   }
   for (const tl of overlay) {
     if (tl.logoSlot) {
@@ -87,35 +100,39 @@ export function buildFaceLayers(
         placed.add(logoLayer.id);
         out.push(logoLayer);
       }
+      out.push(...anchoredAt(tl.id));
       continue;
     }
     if (!isAlphaMask(tl)) {
       out.push(tl);
       foreignIds.add(tl.id);
+      out.push(...anchoredAt(tl.id));
       continue;
     }
     const clipped = own.filter((l) => !placed.has(l.id) && slotsIn(l)?.id === tl.id);
-    if (!clipped.length) continue;
-    for (const l of clipped) {
-      placed.add(l.id);
-      out.push({ ...l, clipped: true });
+    if (clipped.length) {
+      for (const l of clipped) {
+        placed.add(l.id);
+        out.push({ ...l, clipped: true });
+      }
+      const id = `__mask__${tl.id}`;
+      foreignIds.add(id);
+      out.push({
+        ...tl,
+        id,
+        mask: true,
+        clipped: false,
+        groupTransform: false,
+        main: false,
+        alphaMask: false,
+        mainMask: undefined,
+        shotMask: undefined,
+        logoSlot: false,
+        locked: true,
+        visible: true,
+      } as Layer);
     }
-    const id = `__mask__${tl.id}`;
-    foreignIds.add(id);
-    out.push({
-      ...tl,
-      id,
-      mask: true,
-      clipped: false,
-      groupTransform: false,
-      main: false,
-      alphaMask: false,
-      mainMask: undefined,
-      shotMask: undefined,
-      logoSlot: false,
-      locked: true,
-      visible: true,
-    } as Layer);
+    out.push(...anchoredAt(tl.id));
   }
   // An image whose frame isn't in the overlay (hidden, or gone) still draws,
   // unclipped, under the stack.

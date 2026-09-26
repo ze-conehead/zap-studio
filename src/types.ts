@@ -100,6 +100,14 @@ export interface BaseLayer {
   // Belongs to the condition layer with this id: the layer is one of its
   // cases, and its `name` is the metadata value it stands for.
   condId?: string;
+  // Own layer only (a card below its console/global, or a console below
+  // global): draws immediately above the inherited (console/global overlay)
+  // layer with this id, instead of the default spot under the whole
+  // inherited stack. Set by dragging it there in the Layers panel. Ignored
+  // for a layer that's clipped into an alpha mask (mask / clipped) — its
+  // position there always wins — or when no layer with this id is in the
+  // current overlay. See src/faceLayers.ts#buildFaceLayers.
+  stackAfterId?: string;
   // Layer effect: a drop shadow / glow (image, text and shape layers).
   shadow?: LayerShadow;
   /** @deprecated every template shape/background is overridable now — see `Project.fillOverrides`. Kept so old projects still load. */

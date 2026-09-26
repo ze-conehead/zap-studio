@@ -126,6 +126,56 @@ describe("buildFaceLayers", () => {
     const { layers } = buildFaceLayers(tpl, [], [img("BildX"), slot], []);
     expect(names(layers)).toEqual(["BildX"]);
   });
+
+  describe("stackAfterId — dragging an own layer above a template one", () => {
+    it("draws the own layer directly above the overlay layer it's anchored to", () => {
+      const frame = makeTextLayer("frame");
+      const own = { ...makeTextLayer("own"), stackAfterId: frame.id };
+      const { layers } = buildFaceLayers(card(), [own], [frame], []);
+      expect(names(layers)).toEqual(["frame", "own"]);
+    });
+
+    it("stacks several own layers above the same anchor in their own relative order", () => {
+      const frame = makeTextLayer("frame");
+      const a = { ...makeTextLayer("a"), stackAfterId: frame.id };
+      const b = { ...makeTextLayer("b"), stackAfterId: frame.id };
+      const { layers } = buildFaceLayers(card(), [a, b], [frame], []);
+      expect(names(layers)).toEqual(["frame", "a", "b"]);
+    });
+
+    it("still respects the overlay's own stacking order between two anchors", () => {
+      const below = makeTextLayer("below");
+      const above = makeTextLayer("above");
+      const onBelow = { ...makeTextLayer("on-below"), stackAfterId: below.id };
+      const onAbove = { ...makeTextLayer("on-above"), stackAfterId: above.id };
+      const { layers } = buildFaceLayers(card(), [onBelow, onAbove], [below, above], []);
+      expect(names(layers)).toEqual(["below", "on-below", "above", "on-above"]);
+    });
+
+    it("falls back to the default bottom spot when the anchor id isn't in the overlay", () => {
+      const own = { ...makeTextLayer("own"), stackAfterId: "gone" };
+      const frame = makeTextLayer("frame");
+      const { layers } = buildFaceLayers(card(), [own], [frame], []);
+      expect(names(layers)).toEqual(["own", "frame"]);
+    });
+
+    it("ignores the anchor for a layer clipped into a mask — its mask position wins", () => {
+      const mask = makeAlphaMaskLayer(1);
+      const other = makeTextLayer("other");
+      const cover = img("Cover", { maskId: mask.id, stackAfterId: other.id });
+      const { layers } = buildFaceLayers(card(), [cover], [mask, other], [mask]);
+      // Clipped under the mask, not floated up next to "other".
+      expect(names(layers)).toEqual(["Cover", mask.name, "other"]);
+    });
+
+    it("anchors to the logo slot's own stacking position", () => {
+      const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+      const slot = makeLogoSlotLayer();
+      const own = { ...makeTextLayer("own"), stackAfterId: slot.id };
+      const { layers } = buildFaceLayers(card(), [own], [shape, slot], []);
+      expect(names(layers)).toEqual(["Shape", "own"]);
+    });
+  });
 });
 
 describe("buildOverlay", () => {
