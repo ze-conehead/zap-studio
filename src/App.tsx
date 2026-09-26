@@ -518,10 +518,12 @@ function Shell({
             onClearCombine={() => setSelectedCombine(null)}
           />
           <Tabs defaultValue="props">
-            <TabsList className="mx-3 mt-3 flex w-auto">
-              <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
-              {showMeta && <TabsTrigger value="meta">{t("Metadata")}</TabsTrigger>}
-            </TabsList>
+            {showMeta && (
+              <TabsList className="mx-3 mt-3 flex w-auto">
+                <TabsTrigger value="props">{t("Properties")}</TabsTrigger>
+                <TabsTrigger value="meta">{t("Metadata")}</TabsTrigger>
+              </TabsList>
+            )}
             <TabsContent value="props" className="mt-0">
               <Inspector
                 consoleBg={consoleBg}

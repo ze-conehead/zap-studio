@@ -182,12 +182,23 @@ export function GradientStops({
   );
 }
 
-export function Panel({ title, children }: { title: string; children: ReactNode }) {
+export function Panel({
+  title,
+  children,
+  headerActions,
+}: {
+  title: string;
+  children: ReactNode;
+  headerActions?: ReactNode;
+}) {
   return (
     <section className="flex flex-col gap-3 border-b p-3">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h2>
+        {headerActions && <div className="flex gap-1">{headerActions}</div>}
+      </div>
       {children}
     </section>
   );

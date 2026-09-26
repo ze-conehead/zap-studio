@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { ClipboardCopy, ClipboardPaste } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 import {
@@ -20,7 +22,8 @@ import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
 import { Field, FillEditor, Panel, type Patch } from "./inspector/fields";
-import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, StyleClipboard, TextProps } from "./inspector/layerProps";
+import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, TextProps } from "./inspector/layerProps";
+import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
 
@@ -176,8 +179,40 @@ export function Inspector({
   const isImageSel = isImage(selected);
   const fixedName = isMeta || isLogoSlot;
 
+  // Style clipboard state and buttons
+  useSyncExternalStore(subscribeStyleClipboard, getStyleClipboardVersion, getStyleClipboardVersion);
+  const clip = styleClipboard();
+  const canPaste = !!clip && Object.keys(pasteStyle(selected)).length > 0;
+  const showStyleButtons = !isMeta && !isMask && !isLogoSlot;
+
+  const headerActions = showStyleButtons && (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-1.5"
+        title={t("Copy style")}
+        onClick={() => copyStyle(selected)}
+      >
+        <ClipboardCopy className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-1.5"
+        disabled={!canPaste}
+        title={
+          clip && !canPaste ? t("Nothing in the copied style applies to this layer.") : t("Paste style")
+        }
+        onClick={() => patch(pasteStyle(selected))}
+      >
+        <ClipboardPaste className="size-3.5" />
+      </Button>
+    </>
+  );
+
   return (
-    <Panel title={t("Properties")}>
+    <Panel title={t("Properties")} headerActions={headerActions}>
       {!fixedName && (
         <Field label={t("Name")}>
           <Input
@@ -189,7 +224,6 @@ export function Inspector({
       )}
 
       <MaskRoleControls patch={patch} masks={masks} />
-      {!isMeta && !isMask && !isLogoSlot && <StyleClipboard layer={selected} patch={patch} />}
       <ConditionMembership patch={patch} />
 
       <PositionControls layer={selected} patch={patch} hideSize={isShapeSel} />
