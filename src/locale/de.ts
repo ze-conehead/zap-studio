@@ -704,6 +704,7 @@ export const de: Record<string, string> = {
   "Lock aspect ratio": "Seitenverhältnis sperren",
   "Corner radius": "Ecken-Radius",
   "Original: {w}×{h} px": "Original: {w}×{h} px",
+  "Revert to original size": "Auf Originalgröße zurücksetzen",
   Fill: "Füllung",
   Stroke: "Kontur",
   "Stroke width": "Konturstärke",

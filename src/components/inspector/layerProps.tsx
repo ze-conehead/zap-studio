@@ -15,6 +15,7 @@ import {
   MoveHorizontal,
   MoveVertical,
   Plus,
+  RotateCcw,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -153,7 +154,7 @@ export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }
 function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
   const t = useT();
   const sizeMode = layer.sizeMode ?? "px";
-  const lockAspect = layer.lockAspectRatio ?? false;
+  const lockAspect = layer.lockAspectRatio ?? true;
   const ratio = layer.height / layer.width;
 
   const toPercent = (val: number, isWidth: boolean) => {
@@ -189,6 +190,10 @@ function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
 
   const toggleSizeMode = (mode: "px" | "%") => {
     patch({ sizeMode: mode });
+  };
+
+  const revertToNaturalSize = () => {
+    patch({ width: layer.naturalWidth, height: layer.naturalHeight });
   };
 
   return (
@@ -243,6 +248,21 @@ function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
         />
         {t("Lock aspect ratio")}
       </label>
+
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {t("Original: {w}×{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-1.5"
+          title={t("Revert to original size")}
+          onClick={revertToNaturalSize}
+        >
+          <RotateCcw className="size-3.5" />
+        </Button>
+      </div>
 
       <NumberField
         label={t("Corner radius")}
