@@ -575,6 +575,7 @@ export const de: Record<string, string> = {
   "Consoles & games": "Konsolen & Spiele",
   "All consoles": "Alle Konsolen",
   "Global Layout": "Global Layout",
+  "Console Layout": "Console Layout",
   "Global template – appears on every card": "Globale Vorlage – erscheint auf allen Karten",
   "Filter games: {label}": "Spiele filtern: {label}",
   "Show games": "Spiele anzeigen",

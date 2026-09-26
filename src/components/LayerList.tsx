@@ -287,11 +287,14 @@ export function LayerList({
           }
         >
           {nested && <CornerDownRight className="size-3.5 shrink-0 text-sky-500" />}
-          <Icon className="size-3.5 shrink-0" />
-          <span className="truncate">{nameOf(l, t)}</span>
-          <span className="shrink-0" title={source === "global" ? t("global") : t("console")}>
+          <span
+            className="shrink-0"
+            title={source === "global" ? t("Global Layout") : t("Console Layout")}
+          >
             {source === "global" ? <Globe className="size-3" /> : <Gamepad2 className="size-3" />}
           </span>
+          <Icon className="size-3.5 shrink-0" />
+          <span className="truncate">{nameOf(l, t)}</span>
           {editable && <Pencil className="size-3 shrink-0 text-primary" />}
         </button>
         <Lock className="size-3.5 shrink-0 opacity-60" />
