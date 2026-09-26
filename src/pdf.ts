@@ -4,6 +4,7 @@
 // library — the file is assembled by hand.
 
 import { zlibSync } from "fflate";
+import type { SpotColor } from "./spotColors";
 
 const MM_TO_PT = 72 / 25.4;
 const KAPPA = 0.5522847498307936; // circle → cubic-bézier control offset
@@ -14,6 +15,21 @@ export interface PdfCutRect {
   wMM: number;
   hMM: number;
   rMM: number; // corner radius
+}
+
+// A PDF /Separation name may not contain whitespace or the delimiter
+// characters — anything a user might type into the settings field gets
+// collapsed to something safe instead of producing a broken file.
+function pdfName(name: string): string {
+  return name.replace(/[^A-Za-z0-9_.-]+/g, "_").replace(/^$/, "spot");
+}
+
+function separationObj(spot: SpotColor): string {
+  return (
+    `[/Separation /${pdfName(spot.name)} /DeviceCMYK ` +
+    `<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] ` +
+    `/C1 [${spot.c} ${spot.m} ${spot.y} ${spot.k}] /N 1 >>]`
+  );
 }
 
 interface PdfOptions {
@@ -148,10 +164,9 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
       enc("\nendstream"),
     ),
     enc("<< /Type /ExtGState /OP true /op true /OPM 1 >>"),
-    enc(
-      "[/Separation /kiss_cut /DeviceCMYK " +
-        "<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [0 1 0 0] /N 1 >>]",
-    ),
+    // Fixed, not user-configurable: this is wir-machen-druck's own required
+    // spot name and tint, not the cover PDF's configurable cut/score lines.
+    enc(separationObj({ name: "kiss_cut", c: 0, m: 1, y: 0, k: 0 })),
     concat(
       enc(`<< /Length ${content.length} >>\nstream\n`),
       content,
@@ -171,6 +186,15 @@ export async function stickerSheetPdf(opts: PdfOptions): Promise<Blob> {
 // drawn at whatever offset that tray places it — everything else on the
 // page stays white. Print at "actual size / 100 %" with the matching media
 // picked in the print dialog — never "fit to page", which would rescale it.
+// A straight score/fold line — one or more vertical cuts at fixed x
+// positions, spanning the same y range (a wrap format's panel boundaries
+// all run the card's full height).
+export interface PdfScoreLines {
+  xsMM: number[];
+  yMM: number;
+  hMM: number;
+}
+
 export interface CardPdfPage {
   imageDataUrl: string; // the face, already at physical px size (no bleed)
   cardWidthMM: number;
@@ -182,10 +206,13 @@ export interface CardPdfPage {
   pageHeightMM?: number;
   offsetXMM?: number;
   offsetYMM?: number;
-  // An optional kiss_cut vector path (same spot colour as the sticker-sheet
-  // PDF below), page-relative mm — for a page that needs trimming after
-  // print, unlike the tray use case this file was originally built for.
+  // Optional vector marks, page-relative mm, each on its own configurable
+  // spot colour — for a page that needs trimming/folding after print,
+  // unlike the tray use case this file was originally built for.
   cutRect?: PdfCutRect;
+  cutSpot?: SpotColor;
+  scoreLines?: PdfScoreLines;
+  scoreSpot?: SpotColor;
 }
 
 export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
@@ -199,21 +226,41 @@ export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
   const objects: Uint8Array[] = [enc(""), enc("")];
   const kids: string[] = [];
 
-  // Shared across every page that has a cutRect, added once up front so
-  // their object numbers are fixed before the per-page loop below (which
-  // numbers its own objects off objects.length as it goes).
+  // Shared across every page that has a cut/score mark, added once up
+  // front so their object numbers are fixed before the per-page loop below
+  // (which numbers its own objects off objects.length as it goes). The
+  // overprint ExtGState doesn't reference a colour, so cut and score marks
+  // share the same one; each spot colour still gets its own /Separation.
+  const anyCut = pages.some((p) => p.cutRect);
+  const anyScore = pages.some((p) => p.scoreLines);
   let gsNum = 0;
-  let csNum = 0;
-  if (pages.some((p) => p.cutRect)) {
+  let cutCsNum = 0;
+  let scoreCsNum = 0;
+  if (anyCut || anyScore) {
     gsNum = objects.length + 1;
     objects.push(enc("<< /Type /ExtGState /OP true /op true /OPM 1 >>"));
-    csNum = objects.length + 1;
-    objects.push(
-      enc(
-        "[/Separation /kiss_cut /DeviceCMYK " +
-          "<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [0 1 0 0] /N 1 >>]",
-      ),
-    );
+  }
+  if (anyCut) {
+    cutCsNum = objects.length + 1;
+    const spot = pages.find((p) => p.cutRect)!.cutSpot ?? {
+      name: "kiss_cut",
+      c: 0,
+      m: 1,
+      y: 0,
+      k: 0,
+    };
+    objects.push(enc(separationObj(spot)));
+  }
+  if (anyScore) {
+    scoreCsNum = objects.length + 1;
+    const spot = pages.find((p) => p.scoreLines)!.scoreSpot ?? {
+      name: "kiss_score",
+      c: 1,
+      m: 0,
+      y: 0,
+      k: 0,
+    };
+    objects.push(enc(separationObj(spot)));
   }
 
   for (const p of pages) {
@@ -256,16 +303,32 @@ export async function cardTrayPdf(pages: CardPdfPage[]): Promise<Blob> {
 
     let contentStr = `q ${cardW.toFixed(3)} 0 0 ${cardH.toFixed(3)} ${x.toFixed(3)} ${y.toFixed(3)} cm /Im0 Do Q`;
     let resources = `/XObject << /Im0 ${imageNum} 0 R >>`;
+    const colorSpaces: string[] = [];
     if (p.cutRect) {
       const r = p.cutRect;
       const rx = r.xMM * MM_TO_PT;
       const ryBottom = pageH - (r.yMM + r.hMM) * MM_TO_PT;
       contentStr +=
-        `\nq /GScut gs /CScut CS 1 SCN 0.25 w ` +
+        `\nq /GS0 gs /CScut CS 1 SCN 0.25 w ` +
         roundedRectOps(rx, ryBottom, r.wMM * MM_TO_PT, r.hMM * MM_TO_PT, r.rMM * MM_TO_PT) +
         ` Q`;
-      resources += ` /ExtGState << /GScut ${gsNum} 0 R >> /ColorSpace << /CScut ${csNum} 0 R >>`;
+      colorSpaces.push(`/CScut ${cutCsNum} 0 R`);
     }
+    if (p.scoreLines) {
+      const s = p.scoreLines;
+      const yTop = pageH - s.yMM * MM_TO_PT;
+      const yBottom = pageH - (s.yMM + s.hMM) * MM_TO_PT;
+      let ops = "q /GS0 gs /CSscore CS 1 SCN 0.25 w";
+      for (const xMM of s.xsMM) {
+        const lx = (xMM * MM_TO_PT).toFixed(3);
+        ops += ` ${lx} ${yTop.toFixed(3)} m ${lx} ${yBottom.toFixed(3)} l S`;
+      }
+      ops += " Q";
+      contentStr += `\n${ops}`;
+      colorSpaces.push(`/CSscore ${scoreCsNum} 0 R`);
+    }
+    if (p.cutRect || p.scoreLines) resources += ` /ExtGState << /GS0 ${gsNum} 0 R >>`;
+    if (colorSpaces.length) resources += ` /ColorSpace << ${colorSpaces.join(" ")} >>`;
     const content = enc(contentStr);
 
     objects.push(

@@ -9,7 +9,8 @@ import { useEffect, useState } from "react";
 import { downloadBlob, exportPng } from "../export";
 import { getFormat } from "../formats";
 import { useT } from "../i18n";
-import { cardTrayPdf, type CardPdfPage, type PdfCutRect } from "../pdf";
+import { cardTrayPdf, type CardPdfPage, type PdfCutRect, type PdfScoreLines } from "../pdf";
+import { getCutLineSpot, getScoreLineSpot, spotColorCss } from "../spotColors";
 import { useStore } from "../store";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -17,6 +18,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { CanvasHandle } from "./EditorCanvas";
 
 const A4_MM = { w: 210, h: 297 };
+
+// Internal panel boundaries (trim-relative mm, left to right) — where a
+// wrap format's fold/score lines go. Empty for a single-panel format.
+function foldXsMM(panels: { wMM: number }[] | undefined): number[] {
+  if (!panels || panels.length < 2) return [];
+  const xs: number[] = [];
+  let acc = 0;
+  for (let i = 0; i < panels.length - 1; i++) {
+    acc += panels[i].wMM;
+    xs.push(acc);
+  }
+  return xs;
+}
 
 export function CoverPdfDialog({
   open,
@@ -31,13 +45,21 @@ export function CoverPdfDialog({
   const { state } = useStore();
   const { project } = state;
   const f = getFormat();
+  const cutSpot = getCutLineSpot();
+  const scoreSpot = getScoreLineSpot();
+  const folds = foldXsMM(f.panels);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [cutLine, setCutLine] = useState(true);
+  const [cutLine, setCutLine] = useState(false);
+  const [scoreLine, setScoreLine] = useState(false);
 
   useEffect(() => {
-    if (open) setError("");
+    if (open) {
+      setError("");
+      setCutLine(false);
+      setScoreLine(false);
+    }
   }, [open]);
 
   const cardWidthMM = f.trimMM.w + f.bleedMM * 2;
@@ -62,7 +84,8 @@ export function CoverPdfDialog({
     setError("");
     try {
       // The trim edge, inset from the bleed-sized cover by the format's
-      // own bleed — same rect on both pages, since both share one offset.
+      // own bleed — same rect/lines on both pages, since both share one
+      // offset.
       const cutRect: PdfCutRect | undefined = cutLine
         ? {
             xMM: offsetXMM + f.bleedMM,
@@ -72,6 +95,14 @@ export function CoverPdfDialog({
             rMM: f.cornerRadiusMM,
           }
         : undefined;
+      const scoreLines: PdfScoreLines | undefined =
+        scoreLine && folds.length
+          ? {
+              xsMM: folds.map((x) => offsetXMM + f.bleedMM + x),
+              yMM: offsetYMM + f.bleedMM,
+              hMM: f.trimMM.h,
+            }
+          : undefined;
       const page = async (stage: typeof front): Promise<CardPdfPage> => ({
         imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
         cardWidthMM,
@@ -81,6 +112,9 @@ export function CoverPdfDialog({
         offsetXMM,
         offsetYMM,
         cutRect,
+        cutSpot,
+        scoreLines,
+        scoreSpot,
       });
       const blob = await cardTrayPdf([await page(front), await page(back)]);
       downloadBlob(blob, `${safeName()}_cover.pdf`);
@@ -92,7 +126,8 @@ export function CoverPdfDialog({
     }
   };
 
-  // A to-scale preview: the A4 page, and the cover centered on it.
+  // A to-scale preview: the A4 page, the cover centered on it, and the
+  // cut/fold lines exactly where the PDF will draw them.
   const BOX = 200;
   const PAD = 10;
   const scale = Math.min(
@@ -107,6 +142,10 @@ export function CoverPdfDialog({
   const ch = cardHeightMM * scale;
   const cx = px + offsetXMM * scale;
   const cy = py + offsetYMM * scale;
+  const trimX = cx + f.bleedMM * scale;
+  const trimY = cy + f.bleedMM * scale;
+  const trimW = f.trimMM.w * scale;
+  const trimH = f.trimMM.h * scale;
 
   return (
     <Dialog open={open} onOpenChange={(o) => (busy ? null : onOpenChange(o))}>
@@ -148,12 +187,47 @@ export function CoverPdfDialog({
             stroke="var(--primary)"
             strokeWidth={1.5}
           />
+          {cutLine && (
+            <rect
+              x={trimX}
+              y={trimY}
+              width={trimW}
+              height={trimH}
+              rx={f.cornerRadiusMM * scale}
+              fill="none"
+              stroke={spotColorCss(cutSpot)}
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+          )}
+          {scoreLine &&
+            folds.map((x) => {
+              const lx = trimX + x * scale;
+              return (
+                <line
+                  key={x}
+                  x1={lx}
+                  y1={trimY}
+                  x2={lx}
+                  y2={trimY + trimH}
+                  stroke={spotColorCss(scoreSpot)}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                />
+              );
+            })}
         </svg>
 
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <Checkbox checked={cutLine} onCheckedChange={(v) => setCutLine(!!v)} />
-          {t("Cut line as a vector path (kiss_cut, 100 % magenta spot colour)")}
+          {t("Cut line as a vector path ({name}, spot colour)", { name: cutSpot.name })}
         </label>
+        {folds.length > 0 && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox checked={scoreLine} onCheckedChange={(v) => setScoreLine(!!v)} />
+            {t("Fold line as a vector path ({name}, spot colour)", { name: scoreSpot.name })}
+          </label>
+        )}
 
         {!fits && (
           <span className="text-xs text-destructive">

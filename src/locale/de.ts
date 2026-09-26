@@ -143,6 +143,13 @@ export const de: Record<string, string> = {
   Online: "Online",
   "Manage covers \u2026": "Cover verwalten \u2026",
   "Manage covers": "Cover verwalten",
+  "Cut & fold lines \u2026": "Schnitt- & Falzlinien \u2026",
+  "Cut & fold lines": "Schnitt- & Falzlinien",
+  "Spot colours for the cover PDF's optional cut and fold lines (Export to print \u25b8 the double-sided cover PDF). Each is a Separation colour in CMYK, 0\u2013100 % per channel.":
+    "Schmuckfarben f\u00fcr die optionalen Schnitt- und Falzlinien im Cover-PDF (Export zum Drucken \u25b8 das doppelseitige Cover-PDF). Jede ist eine Separation-Farbe in CMYK, 0\u2013100 % je Kanal.",
+  "Cut line": "Schnittlinie",
+  "Fold line": "Falzlinie",
+  "Reset to default": "Auf Standard zur\u00fccksetzen",
   "Your own cover files, kept in this browser and shared by every project. With \u201cCover source: Local\u201d the cover search matches them by file name \u2014 name each file after its game or movie (\u201cGran Turismo.jpg\u201d), folders are fine too.":
     "Deine eigenen Cover-Dateien, gespeichert in diesem Browser und für alle Projekte gemeinsam. Mit \u201eCover-Quelle: Lokal\u201c findet die Cover-Suche sie über den Dateinamen \u2013 benenne jede Datei nach ihrem Spiel oder Film (\u201eGran Turismo.jpg\u201c), Ordner sind auch in Ordnung.",
   "Drop covers, folders or a .zip here": "Cover, Ordner oder eine .zip hier ablegen",
@@ -237,8 +244,10 @@ export const de: Record<string, string> = {
   "Two pages, front then inside, each the cover at {w} × {h} mm (with bleed) centered on an A4 sheet — print both sides at “actual size / 100 %”, never “fit to page”.":
     "Zwei Seiten, erst Vorderseite dann Innenseite, jeweils das Cover in {w} × {h} mm (mit Beschnitt), mittig auf einem A4-Blatt — beide Seiten in „Originalgröße / 100 %“ drucken, niemals „An Seite anpassen“.",
   "Cover position on the A4 page": "Cover-Position auf der A4-Seite",
-  "Cut line as a vector path (kiss_cut, 100 % magenta spot colour)":
-    "Schnittlinie als Pfad (kiss_cut, 100 % Magenta Schmuckfarbe)",
+  "Cut line as a vector path ({name}, spot colour)":
+    "Schnittlinie als Pfad ({name}, Schmuckfarbe)",
+  "Fold line as a vector path ({name}, spot colour)":
+    "Falzlinie als Pfad ({name}, Schmuckfarbe)",
   "Card-tray printing": "Kartenfach-Druck",
   "For a printer's disc/card tray (e.g. Canon's). The tray is usually bigger than the card, and exactly where the card sits on it depends on your printer — print a test page, measure the offset from a corner against the real card, and adjust it below. Remembered per tray type.":
     "Für das Disc-/Kartenfach eines Druckers (z. B. Canon). Das Fach ist meist größer als die Karte, und wo genau die Karte darauf sitzt, hängt vom Drucker ab – drucke eine Testseite, miss den Versatz ab einer Ecke an der echten Karte und passe ihn unten an. Wird je Fach-Typ gemerkt.",
