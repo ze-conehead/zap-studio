@@ -244,6 +244,8 @@ export const de: Record<string, string> = {
   "Two pages, front then inside, each the cover at {w} × {h} mm (with bleed) centered on an A4 sheet — print both sides at “actual size / 100 %”, never “fit to page”.":
     "Zwei Seiten, erst Vorderseite dann Innenseite, jeweils das Cover in {w} × {h} mm (mit Beschnitt), mittig auf einem A4-Blatt — beide Seiten in „Originalgröße / 100 %“ drucken, niemals „An Seite anpassen“.",
   "Cover position on the A4 page": "Cover-Position auf der A4-Seite",
+  "This card has no back side yet — add one first (+ Add back side).":
+    "Diese Karte hat noch keine Rückseite — füge zuerst eine hinzu (+ Rückseite hinzufügen).",
   "Cut line as a vector path ({name}, spot colour)":
     "Schnittlinie als Pfad ({name}, Schmuckfarbe)",
   "Fold line as a vector path ({name}, spot colour)":

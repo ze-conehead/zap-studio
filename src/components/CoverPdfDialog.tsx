@@ -96,6 +96,14 @@ export function CoverPdfDialog({
   const offsetXMM = (pageWidthMM - cardWidthMM) / 2;
   const offsetYMM = (pageHeightMM - cardHeightMM) / 2;
 
+  // The menu item shows whenever the *format* supports a back (dvd-insert,
+  // switch-case, …) — but the live canvas only mounts a "back" stage once
+  // *this* card actually has one (see EditorCanvas's hasBack = !!project.back).
+  // Without this, a card that never got "+ Add back side" clicked makes
+  // getStage("back") return null and run() silently no-op: a click that
+  // visibly does nothing and never sets an error.
+  const hasBack = !!project.back;
+
   const safeName = () =>
     project.name.replace(/[^\w-]+/g, "_").slice(0, 40) || "sticker";
 
@@ -103,7 +111,11 @@ export function CoverPdfDialog({
     const front = canvas.current?.getStage("front");
     const back = canvas.current?.getStage("back");
     const w = canvas.current?.getStageWidth() ?? 0;
-    if (!front || !back || !w || !fits) return;
+    if (!fits) return;
+    if (!front || !back || !w) {
+      setError(t("This card has no back side yet — add one first (+ Add back side)."));
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -271,13 +283,18 @@ export function CoverPdfDialog({
             })}
           </span>
         )}
+        {!hasBack && (
+          <span className="text-xs text-destructive">
+            {t("This card has no back side yet — add one first (+ Add back side).")}
+          </span>
+        )}
         {error && <span className="text-xs text-destructive">{error}</span>}
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             {t("Cancel")}
           </Button>
-          <Button size="sm" disabled={busy || !fits} onClick={() => void run()}>
+          <Button size="sm" disabled={busy || !fits || !hasBack} onClick={() => void run()}>
             {busy ? <Loader2 className="animate-spin" /> : <FileDown />}
             {t("Export PDF")}
           </Button>
