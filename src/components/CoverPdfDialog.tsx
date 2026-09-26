@@ -19,6 +19,30 @@ import type { CanvasHandle } from "./EditorCanvas";
 
 const A4_MM = { w: 210, h: 297 };
 
+// Belt-and-suspenders: whatever step is actually stuck (a canvas call some
+// browser privacy setting silently alters, an image that never fires load
+// or error, …), the dialog must not sit there forever with no feedback —
+// it should say which step, so a report of "nothing happens" turns into an
+// actionable error instead.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+      ms,
+    );
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e as Error);
+      },
+    );
+  });
+}
+
 // Internal panel boundaries (trim-relative mm, left to right) — where a
 // wrap format's fold/score lines go. Empty for a single-panel format.
 function foldXsMM(panels: { wMM: number }[] | undefined): number[] {
@@ -103,8 +127,12 @@ export function CoverPdfDialog({
               hMM: f.trimMM.h,
             }
           : undefined;
-      const page = async (stage: typeof front): Promise<CardPdfPage> => ({
-        imageDataUrl: await exportPng({ stage, stageWidth: w, mode: "bleed" }),
+      const page = async (stage: typeof front, label: string): Promise<CardPdfPage> => ({
+        imageDataUrl: await withTimeout(
+          exportPng({ stage, stageWidth: w, mode: "bleed" }),
+          15000,
+          `Capturing the ${label}`,
+        ),
         cardWidthMM,
         cardHeightMM,
         pageWidthMM,
@@ -116,7 +144,13 @@ export function CoverPdfDialog({
         scoreLines,
         scoreSpot,
       });
-      const blob = await cardTrayPdf([await page(front), await page(back)]);
+      const frontPage = await page(front, "front");
+      const backPage = await page(back, "inside");
+      const blob = await withTimeout(
+        cardTrayPdf([frontPage, backPage]),
+        15000,
+        "Building the PDF",
+      );
       downloadBlob(blob, `${safeName()}_cover.pdf`);
       onOpenChange(false);
     } catch (e) {
