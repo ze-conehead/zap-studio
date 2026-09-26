@@ -70,6 +70,7 @@ import {
 } from "../../types";
 import { makeCombineShape } from "../../combineShape";
 import { useStore } from "../../store";
+import { TRIM_RECT } from "../../card";
 
 import { ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
 
@@ -137,21 +138,7 @@ export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }
   const t = useT();
   return (
     <>
-      <div className="grid grid-cols-2 gap-2">
-        <NumberField
-          label={t("Width px")}
-          value={round(layer.width)}
-          onChange={(v) => {
-            const ratio = layer.height / layer.width;
-            patch({ width: v, height: v * ratio });
-          }}
-        />
-        <NumberField
-          label={t("Corner radius")}
-          value={round(layer.cornerRadius)}
-          onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
-        />
-      </div>
+      <SizingControls layer={layer} patch={patch} />
       <p className="text-xs text-muted-foreground">
         {t("Original: {w}\u00d7{h} px", { w: layer.naturalWidth, h: layer.naturalHeight })}
       </p>
@@ -159,6 +146,110 @@ export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }
       <CropControls layer={layer} patch={patch} />
       <AdjustControls layer={layer} patch={patch} />
     </>
+  );
+}
+
+// Image layer sizing with pixel/percentage support and aspect ratio locking.
+function SizingControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
+  const t = useT();
+  const sizeMode = layer.sizeMode ?? "px";
+  const lockAspect = layer.lockAspectRatio ?? false;
+  const ratio = layer.height / layer.width;
+
+  const toPercent = (val: number, isWidth: boolean) => {
+    const ref = isWidth ? TRIM_RECT.w : TRIM_RECT.h;
+    return Math.round((val / ref) * 100);
+  };
+
+  const fromPercent = (val: number, isWidth: boolean) => {
+    const ref = isWidth ? TRIM_RECT.w : TRIM_RECT.h;
+    return (val / 100) * ref;
+  };
+
+  const displayWidth = sizeMode === "%" ? toPercent(layer.width, true) : round(layer.width);
+  const displayHeight = sizeMode === "%" ? toPercent(layer.height, false) : round(layer.height);
+
+  const handleWidthChange = (v: number) => {
+    const actualWidth = sizeMode === "%" ? fromPercent(v, true) : v;
+    const changes: Partial<ImageLayer> = { width: actualWidth };
+    if (lockAspect) {
+      changes.height = actualWidth * ratio;
+    }
+    patch(changes);
+  };
+
+  const handleHeightChange = (v: number) => {
+    const actualHeight = sizeMode === "%" ? fromPercent(v, false) : v;
+    const changes: Partial<ImageLayer> = { height: actualHeight };
+    if (lockAspect) {
+      changes.width = actualHeight / ratio;
+    }
+    patch(changes);
+  };
+
+  const toggleSizeMode = (mode: "px" | "%") => {
+    patch({ sizeMode: mode });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+      <div className="flex items-center justify-between">
+        <Label>{t("Sizing")}</Label>
+        <div className="flex gap-1 rounded border">
+          <button
+            type="button"
+            onClick={() => toggleSizeMode("px")}
+            className={cn(
+              "px-2 py-1 text-xs",
+              sizeMode === "px"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent",
+            )}
+          >
+            px
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleSizeMode("%")}
+            className={cn(
+              "border-l px-2 py-1 text-xs",
+              sizeMode === "%"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent",
+            )}
+          >
+            %
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField
+          label={t("Width {unit}", { unit: sizeMode === "%" ? "%" : "px" })}
+          value={displayWidth}
+          onChange={handleWidthChange}
+        />
+        <NumberField
+          label={t("Height {unit}", { unit: sizeMode === "%" ? "%" : "px" })}
+          value={displayHeight}
+          onChange={handleHeightChange}
+        />
+      </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={lockAspect}
+          onCheckedChange={(v) => patch({ lockAspectRatio: !!v })}
+        />
+        {t("Lock aspect ratio")}
+      </label>
+
+      <NumberField
+        label={t("Corner radius")}
+        value={round(layer.cornerRadius)}
+        onChange={(v) => patch({ cornerRadius: Math.max(0, v) })}
+      />
+    </div>
   );
 }
 

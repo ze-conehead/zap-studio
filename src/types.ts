@@ -125,6 +125,10 @@ export interface ImageLayer extends BaseLayer {
   // Trimmed off each side, as fractions (0..1) of the natural size, so the
   // crop survives any resize. width / height describe the cropped area.
   crop?: ImageCrop;
+  // Sizing mode: "px" (default) or "%" (relative to card trim size)
+  sizeMode?: "px" | "%";
+  // Lock aspect ratio when resizing — when true, changing one dimension scales the other
+  lockAspectRatio?: boolean;
 }
 
 export interface ImageCrop {
