@@ -861,8 +861,20 @@ export const de: Record<string, string> = {
   "Overlay color (paint the rest instead of leaving it transparent)":
     "Overlay-Farbe (färbt den Rest ein, statt ihn transparent zu lassen)",
   "Overlay color": "Overlay-Farbe",
-  White: "Wei\u00df",
+  White: "Weiß",
   Black: "Schwarz",
+
+  // ── Repeating image pattern ──────────────────────────────────────────
+  "Repeating image": "Wiederholendes Bild",
+  "Size {n} px": "Größe {n} px",
+  "Spacing {n} px": "Abstand {n} px",
+  "Rotation {n}°": "Rotation {n}°",
+  "Stagger {n}%": "Versatz {n}%",
+  "No logos yet — add some in Settings ▸ Manage logos …":
+    "Noch keine Logos – füge welche unter Einstellungen ▸ Logos verwalten … hinzu.",
+  "Pick a logo …": "Logo auswählen …",
+  "Pick a logo": "Logo auswählen",
+  "Search logos …": "Logos durchsuchen …",
 
   // ── Layer effects (shadow / glow) ──
   "Shadow / glow": "Schatten / Schein",

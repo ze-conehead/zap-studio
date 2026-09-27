@@ -4,6 +4,7 @@
 import {
   Minus,
   Plus,
+  Search,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { gradientStops } from "../../background";
@@ -11,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../../recentColors";
 import { cn } from "@/lib/utils";
@@ -35,6 +29,7 @@ import {
   type CardBackground,
   type Layer,
 } from "../../types";
+import { LogoPickerDialog } from "../LogoPickerDialog";
 
 export type Patch = (p: Partial<Layer>, history?: boolean) => void;
 
@@ -393,6 +388,8 @@ export function RepeatingPatternControls({
   const p = { ...DEFAULT_PATTERN, ...(value.pattern ?? {}) };
   const set = (fp: Partial<typeof p>, history = true) =>
     onChange({ pattern: { ...p, ...fp } }, history);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickedName = logos.find((l) => l.id === p.logoId)?.name;
 
   const [thumb, setThumb] = useState<string | undefined>(undefined);
   useEffect(() => {
@@ -424,30 +421,33 @@ export function RepeatingPatternControls({
             </p>
           ) : (
             <Field label={t("Logo")}>
-              <div className="flex items-center gap-2">
-                {thumb && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-9 justify-start gap-2 px-2 py-1.5 font-normal"
+                onClick={() => setPickerOpen(true)}
+              >
+                {thumb ? (
                   <img
                     src={thumb}
                     alt=""
                     className="size-8 shrink-0 rounded border bg-muted/30 object-contain"
                   />
+                ) : (
+                  <Search className="size-4 shrink-0 text-muted-foreground" />
                 )}
-                <Select
-                  value={p.logoId ?? ""}
-                  onValueChange={(v) => set({ logoId: v })}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={t("Pick a logo …")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {logos.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <span className="min-w-0 flex-1 truncate text-left">
+                  {pickedName ?? t("Pick a logo …")}
+                </span>
+              </Button>
+              <LogoPickerDialog
+                open={pickerOpen}
+                onOpenChange={setPickerOpen}
+                onPick={(logoId) => {
+                  set({ logoId });
+                  setPickerOpen(false);
+                }}
+              />
             </Field>
           )}
 
