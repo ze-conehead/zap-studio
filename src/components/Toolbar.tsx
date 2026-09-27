@@ -135,7 +135,7 @@ export function Toolbar({
             <LayoutGrid /> {t("Preview all")}
           </Button>
           <Separator orientation="vertical" className="h-6" />
-          <div className="flex items-center gap-2 px-1" title={t("Zoom — Ctrl/Cmd + scroll, or middle-drag to pan")}>
+          <div className="flex items-center gap-2 px-1" title={t("Zoom — scroll, or middle-drag to pan")}>
             <Slider
               className="w-28"
               min={MIN_ZOOM * 100}

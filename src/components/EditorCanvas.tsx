@@ -147,10 +147,10 @@ export function EditorCanvas({
     };
   });
 
-  // Ctrl/Cmd + wheel zooms, anchored on the pointer so the point under the
-  // cursor stays put. A plain wheel is left alone (native scroll/pan).
-  // React makes wheel listeners passive, so preventDefault needs a real DOM
-  // listener rather than an onWheel prop.
+  // The wheel zooms, anchored on the pointer so the point under the cursor
+  // stays put — panning is middle-mouse-drag instead (see startPan) or the
+  // wrap's own scrollbars. React makes wheel listeners passive, so
+  // preventDefault needs a real DOM listener rather than an onWheel prop.
   const zoomAnchor = useRef<{ mx: number; my: number; contentX: number; contentY: number; ratio: number } | null>(
     null,
   );
@@ -158,7 +158,6 @@ export function EditorCanvas({
     const el = wrapRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       const rect = el.getBoundingClientRect();
       const mx = e.clientX - rect.left;
@@ -187,11 +186,15 @@ export function EditorCanvas({
     zoomAnchor.current = null;
   }, [zoom]);
 
-  // Middle-mouse drag pans by scrolling the wrapper directly.
+  // Middle-mouse drag pans by scrolling the wrapper directly. Intercepted in
+  // the capture phase — before bubbling reaches the Stage's own canvas — so
+  // Konva never sees the mousedown and doesn't also start dragging (or
+  // selecting) whatever layer is under the cursor.
   const [panning, setPanning] = useState(false);
   const startPan = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 1) return;
     e.preventDefault();
+    e.stopPropagation();
     const el = wrapRef.current;
     if (!el) return;
     const startX = e.clientX;
@@ -219,7 +222,7 @@ export function EditorCanvas({
         panning && "cursor-grabbing",
       )}
       ref={wrapRef}
-      onMouseDown={startPan}
+      onMouseDownCapture={startPan}
       // Swallow file drops that miss a face so the browser doesn't open them.
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();

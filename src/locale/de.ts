@@ -391,7 +391,7 @@ export const de: Record<string, string> = {
   cards: "Karten",
   Preview: "Vorschau",
   "Preview all": "Gesamtvorschau",
-  "Zoom — Ctrl/Cmd + scroll, or middle-drag to pan": "Zoom – Strg/Cmd + Scrollen, oder mit der mittleren Maustaste ziehen zum Verschieben",
+  "Zoom — scroll, or middle-drag to pan": "Zoom – Scrollen, oder mit der mittleren Maustaste ziehen zum Verschieben",
   "Reset zoom to fit": "Zoom auf Einpassen zurücksetzen",
   "New card": "Neue Karte",
   "Base set \u2026": "Basis-Set \u2026",
