@@ -143,6 +143,9 @@ export const de: Record<string, string> = {
     "Klicke auf eine Stelle, um alles Verbundene mit ähnlicher Farbe zu löschen oder zu füllen – praktisch für einen störenden Kreis, einen quadratischen Logo-Hintergrund oder einen unerwünschten Farbfleck.",
   "Erase (transparent)": "Löschen (transparent)",
   "Fill with color": "Mit Farbe füllen",
+  Rectangle: "Rechteck",
+  "Drag a box over the area to erase — exactly that rectangle, no colour matching.":
+    "Ziehe ein Rechteck über den zu löschenden Bereich – genau dieses Rechteck, ohne Farbabgleich.",
   "Tolerance {n}%": "Toleranz {n}%",
   "Nothing matches.": "Nichts passt.",
   "{n} more \u2014 narrow it down with the filter.": "{n} weitere \u2013 grenze sie mit dem Filter ein.",
