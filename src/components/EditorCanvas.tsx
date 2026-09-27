@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import { isBackground, makeImageLayer } from "../factory";
-import { fileToLayerSource } from "../image";
+import { fileToLayerSource, nameFromUrl, urlFromDataTransfer, urlToLayerSource } from "../image";
 import { CANVAS, CORNER_RADIUS_PX, TRIM_RECT } from "../card";
 import { useT } from "../i18n";
 import { askConfirm } from "./ConfirmDialog";
@@ -57,6 +57,19 @@ export interface CanvasHandle {
 // fit); exports always use the fit scale itself, unaffected by it.
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 4;
+
+// Whether a drag looks like it'll resolve to an image — an OS file, or an
+// <img>/URL dragged from another browser window. dataTransfer.getData() is
+// only readable on "drop" (dragover only exposes the type list), so this
+// checks presence, not content — good enough to decide whether to
+// preventDefault and accept the drop at all.
+function isDroppableImageDrag(dt: DataTransfer): boolean {
+  return (
+    dt.types.includes("Files") ||
+    dt.types.includes("text/uri-list") ||
+    dt.types.includes("text/html")
+  );
+}
 
 export function EditorCanvas({
   handleRef,
@@ -228,12 +241,13 @@ export function EditorCanvas({
       className={cn("canvas-checker flex-1", panning && "cursor-grabbing")}
       viewportRef={wrapRef}
       onMouseDownCapture={startPan}
-      // Swallow file drops that miss a face so the browser doesn't open them.
+      // Swallow file/image drops that miss a face so the browser doesn't
+      // navigate to them.
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+        if (isDroppableImageDrag(e.dataTransfer)) e.preventDefault();
       }}
       onDrop={(e) => {
-        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+        if (isDroppableImageDrag(e.dataTransfer)) e.preventDefault();
       }}
     >
       <div
@@ -471,13 +485,16 @@ function FaceStage({
   const viewH = (cropped ? TRIM_RECT.h : CANVAS.h) * scale;
 
   // Drag image files straight from the OS onto a face → added as plain
-  // image layers at the drop point (never the card's main image).
+  // image layers at the drop point (never the card's main image). An image
+  // dragged from another browser window/tab has no File — just a URL — so
+  // that's fetched and embedded the same way "Add from URL" does.
   const [dropActive, setDropActive] = useState(false);
   const dropImages = async (e: React.DragEvent<HTMLDivElement>) => {
     const files = Array.from(e.dataTransfer.files).filter((f) =>
       f.type.startsWith("image/"),
     );
-    if (!files.length) return;
+    const url = files.length ? null : urlFromDataTransfer(e.dataTransfer);
+    if (!files.length && !url) return;
     if (!active) dispatch({ type: "SET_SIDE", side });
 
     const boxRect = e.currentTarget.getBoundingClientRect();
@@ -496,6 +513,17 @@ function FaceStage({
         });
         cx += 24;
         cy += 24;
+      } catch (err) {
+        alert((err as Error).message);
+      }
+    }
+    if (url) {
+      try {
+        const img = await urlToLayerSource(url);
+        dispatch({
+          type: "ADD_LAYER",
+          layer: { ...makeImageLayer({ ...img, name: nameFromUrl(url) }), x: cx, y: cy },
+        });
       } catch (err) {
         alert((err as Error).message);
       }
@@ -676,7 +704,7 @@ function FaceStage({
           borderRadius: cropped ? CORNER_RADIUS_PX * scale : 3,
         }}
         onDragOver={(e) => {
-          if (!e.dataTransfer.types.includes("Files")) return;
+          if (!isDroppableImageDrag(e.dataTransfer)) return;
           e.preventDefault();
           e.dataTransfer.dropEffect = "copy";
           setDropActive(true);
@@ -687,7 +715,7 @@ function FaceStage({
           }
         }}
         onDrop={(e) => {
-          if (!e.dataTransfer.types.includes("Files")) return;
+          if (!isDroppableImageDrag(e.dataTransfer)) return;
           e.preventDefault();
           setDropActive(false);
           void dropImages(e);

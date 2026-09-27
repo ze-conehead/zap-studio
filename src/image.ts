@@ -97,6 +97,24 @@ export async function urlToLayerSource(url: string): Promise<LoadedImage> {
   return fileToLayerSource(new File([blob], name, { type }));
 }
 
+// Dragging an image from another browser window/tab (as opposed to a file
+// from the OS) never populates dataTransfer.files — the payload is a URL
+// instead, as "text/uri-list" (one per line, "#" = comment), or "text/html"
+// (the dragged <img> itself) if the source page didn't set the former.
+export function urlFromDataTransfer(dt: DataTransfer): string | null {
+  const uriList = dt.getData("text/uri-list");
+  if (uriList) {
+    const url = uriList.split(/\r?\n/).find((l) => l && !l.startsWith("#"));
+    if (url) return url.trim();
+  }
+  const html = dt.getData("text/html");
+  if (html) {
+    const m = /<img[^>]+src=["']([^"']+)["']/i.exec(html);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 export function nameFromUrl(url: string): string {
   try {
     const p = new URL(url).pathname.split("/").pop() || "";
