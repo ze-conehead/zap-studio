@@ -3,6 +3,7 @@
 
 import {
   Minus,
+  Pipette,
   Plus,
   Search,
 } from "lucide-react";
@@ -287,15 +288,39 @@ export function ColorField({
     el.addEventListener("change", done);
     return () => el.removeEventListener("change", done);
   }, []);
+  const pickFromScreen = async () => {
+    if (!window.EyeDropper) return;
+    try {
+      const { sRGBHex } = await new window.EyeDropper().open();
+      onChange(sRGBHex);
+      rememberColor(sRGBHex);
+    } catch {
+      // Cancelled (Escape or a stray click) — leave the colour as it was.
+    }
+  };
   return (
     <Field label={label}>
-      <input
-        ref={ref}
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-8 w-full cursor-pointer rounded-md border border-input bg-transparent p-1"
-      />
+      <div className="flex gap-1">
+        <input
+          ref={ref}
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-input bg-transparent p-1"
+        />
+        {typeof window !== "undefined" && window.EyeDropper && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            title={t("Pick a color from anywhere on screen")}
+            onClick={() => void pickFromScreen()}
+          >
+            <Pipette className="size-4" />
+          </Button>
+        )}
+      </div>
       {recent.length > 0 && (
         <div className="flex flex-wrap gap-1" title={t("Recent colors")}>
           {recent.map((c) => (

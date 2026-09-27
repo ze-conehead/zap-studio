@@ -109,6 +109,7 @@ export const de: Record<string, string> = {
   Middle: "Mitte",
   Bottom: "Unten",
   "Recent colors": "Zuletzt verwendete Farben",
+  "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
   "Copy style": "Stil kopieren",
   "Paste style": "Stil einfügen",
   "Nothing in the copied style applies to this layer.": "Nichts aus dem kopierten Stil passt auf diese Ebene.",
