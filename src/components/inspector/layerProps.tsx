@@ -51,7 +51,6 @@ import {
   subscribeCustomFonts,
 } from "../../customFonts";
 import { allFontOptions } from "../../fonts";
-import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAdjust";
 import { DEFAULT_FLOW_GAP, DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import {
   DEFAULT_SHADOW,
@@ -72,7 +71,7 @@ import {
 import { makeCombineShape } from "../../combineShape";
 import { TRIM_RECT } from "../../card";
 
-import { ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
+import { AdjustControls, ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
 
 // Drop shadow / glow for image, text and shape layers. Renders through the
 // same Konva props in the editor and the export (src/layerEffects.ts).
@@ -162,7 +161,10 @@ export function ImageProps({ layer, patch }: { layer: ImageLayer; patch: Patch }
         />
       </div>
       <CropControls layer={layer} patch={patch} />
-      <AdjustControls layer={layer} patch={patch} />
+      <AdjustControls
+        value={layer.adjust}
+        onChange={(adjust, history) => patch({ adjust }, history)}
+      />
     </>
   );
 }
@@ -322,148 +324,6 @@ function CropControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
           </Button>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-// Greyscale / threshold. Lets a colourful cover or logo be reduced to pure
-// black and white, or to a one-colour silhouette on transparency.
-export function AdjustControls({ layer, patch }: { layer: ImageLayer; patch: Patch }) {
-  const t = useT();
-  const adj: ImageAdjust = { ...DEFAULT_ADJUST, ...(layer.adjust ?? {}) };
-  const set = (p: Partial<ImageAdjust>, history = true) =>
-    patch({ adjust: { ...adj, ...p } }, history);
-
-  const modes: [AdjustMode, string][] = [
-    ["none", t("Original")],
-    ["grayscale", t("Greyscale")],
-    ["threshold", t("Threshold")],
-  ];
-
-  return (
-    <div className="flex flex-col gap-2 rounded-md border p-2.5">
-      <Label>{t("Color reduction")}</Label>
-      <div className="flex gap-1">
-        {modes.map(([m, label]) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => set({ mode: m })}
-            className={cn(
-              "flex-1 rounded px-2 py-1 text-xs font-medium",
-              adj.mode === m
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {adj.mode === "threshold" && (
-        <SliderField
-          label={t("Threshold {n}", { n: adj.threshold })}
-          min={1}
-          max={254}
-          step={1}
-          value={adj.threshold}
-          onChange={(v, done) => set({ threshold: Math.round(v) }, done)}
-        />
-      )}
-
-      {adj.mode !== "none" && (
-        <>
-          <SliderField
-            label={t("Brightness {n}", { n: adj.brightness })}
-            min={-100}
-            max={100}
-            step={1}
-            value={adj.brightness}
-            onChange={(v, done) => set({ brightness: Math.round(v) }, done)}
-          />
-          <SliderField
-            label={t("Contrast {n}", { n: adj.contrast })}
-            min={-100}
-            max={100}
-            step={1}
-            value={adj.contrast}
-            onChange={(v, done) => set({ contrast: Math.round(v) }, done)}
-          />
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={adj.invert}
-              onCheckedChange={(v) => set({ invert: !!v })}
-            />
-            {t("Invert")}
-          </label>
-        </>
-      )}
-
-      {adj.mode === "threshold" && (
-        <>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={adj.silhouette}
-              onCheckedChange={(v) => set({ silhouette: !!v })}
-            />
-            {t("Silhouette (one colour, rest transparent)")}
-          </label>
-          {adj.silhouette && (
-            <>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <ColorField
-                    label={t("Color")}
-                    value={adj.color}
-                    onChange={(v) => set({ color: v })}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => set({ color: "#ffffff" })}
-                >
-                  {t("White")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => set({ color: "#000000" })}
-                >
-                  {t("Black")}
-                </Button>
-              </div>
-
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={adj.overlay}
-                  onCheckedChange={(v) => set({ overlay: !!v })}
-                />
-                {t("Overlay color (paint the rest instead of leaving it transparent)")}
-              </label>
-              {adj.overlay && (
-                <ColorField
-                  label={t("Overlay color")}
-                  value={adj.overlayColor}
-                  onChange={(v) => set({ overlayColor: v })}
-                />
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {adj.mode !== "none" && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          onClick={() => patch({ adjust: undefined })}
-        >
-          {t("Reset")}
-        </Button>
-      )}
     </div>
   );
 }

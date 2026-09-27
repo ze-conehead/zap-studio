@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useImage } from "./hooks/useImage";
+import { useAdjustedImage, type ImageAdjust } from "./imageAdjust";
 import { localLogoUrl } from "./localLogos";
 
 export interface RepeatingImagePattern {
@@ -15,6 +16,9 @@ export interface RepeatingImagePattern {
   rotation: number; // degrees, applied to each repeated instance in place
   opacity: number; // 0..1
   stagger: number; // 0..100 (%) — horizontal offset of every other row; 0 = plain grid, 50 = brick pattern
+  // Greyscale / threshold recolouring, applied to the logo before it's
+  // tiled — see src/imageAdjust.ts.
+  adjust?: ImageAdjust;
 }
 
 export const DEFAULT_PATTERN: RepeatingImagePattern = {
@@ -28,10 +32,14 @@ export const DEFAULT_PATTERN: RepeatingImagePattern = {
 };
 
 /** Draws `img` into a seamlessly tileable canvas per `p` — pass as Konva's
- * `fillPatternImage` with `fillPatternRepeat: "repeat"`. */
-export function buildPatternTile(img: HTMLImageElement, p: RepeatingImagePattern): HTMLCanvasElement {
-  const naturalW = img.naturalWidth || img.width || 1;
-  const naturalH = img.naturalHeight || img.height || 1;
+ * `fillPatternImage` with `fillPatternRepeat: "repeat"`. `img` may already
+ * be colour-adjusted (see useAdjustedImage), hence the canvas option. */
+export function buildPatternTile(
+  img: HTMLImageElement | HTMLCanvasElement,
+  p: RepeatingImagePattern,
+): HTMLCanvasElement {
+  const naturalW = (img instanceof HTMLCanvasElement ? img.width : img.naturalWidth || img.width) || 1;
+  const naturalH = (img instanceof HTMLCanvasElement ? img.height : img.naturalHeight || img.height) || 1;
   const drawW = Math.max(1, p.size);
   const drawH = Math.max(1, drawW * (naturalH / naturalW));
   const cellW = Math.max(1, drawW + p.spacing);
@@ -82,9 +90,10 @@ function useLogoImage(logoId: string | undefined): HTMLImageElement | undefined 
 export function usePatternTile(pattern: RepeatingImagePattern | undefined): HTMLCanvasElement | undefined {
   const enabled = !!pattern?.enabled && !!pattern.logoId;
   const img = useLogoImage(enabled ? pattern!.logoId : undefined);
+  const adjusted = useAdjustedImage(img, pattern?.adjust);
   return useMemo(() => {
-    if (!enabled || !img) return undefined;
-    return buildPatternTile(img, pattern!);
+    if (!enabled || !adjusted) return undefined;
+    return buildPatternTile(adjusted, pattern!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [img, enabled, pattern?.size, pattern?.spacing, pattern?.rotation, pattern?.stagger]);
+  }, [adjusted, enabled, pattern?.size, pattern?.spacing, pattern?.rotation, pattern?.stagger]);
 }
