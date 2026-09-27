@@ -84,6 +84,7 @@ export interface GuideApi {
   setSnap: (snap: boolean) => void;
   add: (axis: "x" | "y") => void;
   addEqually: (axis: "x" | "y", count: number) => void;
+  addAt: (axis: "x" | "y", pos: number) => void;
   update: (id: string, pos: number) => void;
   remove: (id: string) => void;
 }
@@ -123,6 +124,14 @@ export default function App() {
         pos: origin + ((i + 1) / (count + 1)) * span,
       }));
       return { ...g, on: true, items: [...g.items, ...added] };
+    });
+  // A guide at a specific, known-useful position (e.g. FaceControl's spine
+  // lines) — skips adding if one is already sitting there, so re-triggering
+  // this (another back added in the same workspace) doesn't pile up dupes.
+  const addGuideAt = (axis: "x" | "y", pos: number) =>
+    setGuides((g) => {
+      if (g.items.some((it) => it.axis === axis && Math.abs(it.pos - pos) < 0.5)) return g;
+      return { ...g, on: true, items: [...g.items, { id: newGuideId(), axis, pos }] };
     });
   const updateGuide = (id: string, pos: number) =>
     setGuides((g) =>
@@ -234,6 +243,7 @@ export default function App() {
     setSnap: setGuidesSnap,
     add: addGuide,
     addEqually: addGuidesEqually,
+    addAt: addGuideAt,
     update: updateGuide,
     remove: removeGuide,
   };
@@ -530,7 +540,7 @@ function Shell({
           onZoomChange={setZoom}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
-          <FaceControl />
+          <FaceControl guides={guides} />
           <LayerList
             masks={masks}
             consoleLayers={consoleLayers}

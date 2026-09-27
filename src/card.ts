@@ -59,3 +59,11 @@ export const PANELS: CanvasPanel[] = (() => {
 // x of every internal fold (panel boundary).
 export const FOLD_X: number[] = PANELS.slice(1).map((p) => p.x);
 
+// The two folds bounding the "Spine" panel (Switch case, DVD wrap) — where
+// FaceControl offers to pre-populate guides once a back side is added.
+// null for a format with no spine panel (or no panels at all).
+export const SPINE_FOLD_X: [number, number] | null = (() => {
+  const spine = PANELS.find((p) => p.name === "Spine");
+  return spine ? [spine.x, spine.x + spine.w] : null;
+})();
+
