@@ -45,7 +45,7 @@ import {
   type CardBackground,
 } from "../../types";
 
-import { Field, FillEditor, mmToPxGuide, Panel, pctToPxGuide, pxToMm, pxToPct, SliderField, type Patch, round } from "./fields";
+import { Field, FillEditor, mmToPxGuide, Panel, pctToPxGuide, pxToMm, pxToPct, RepeatingPatternControls, SliderField, type Patch, round } from "./fields";
 
 // The pinned bottom "Background" layer: fill (or inherit from a template on
 // a game card) + opacity.
@@ -100,15 +100,23 @@ export function BackgroundLayerProps({
           {t(". Edit it there (click the console / “Global Layout” in the tree).")}
         </p>
       ) : (
-        <div className="flex flex-col gap-2 rounded-md border p-2.5">
-          <Label>{t("Color")}</Label>
-          <FillEditor
+        <>
+          <div className="flex flex-col gap-2 rounded-md border p-2.5">
+            <Label>{t("Color")}</Label>
+            <FillEditor
+              value={layer.fill}
+              onChange={(fp, history) =>
+                patch({ fill: { ...layer.fill, ...fp } }, history)
+              }
+            />
+          </div>
+          <RepeatingPatternControls
             value={layer.fill}
             onChange={(fp, history) =>
               patch({ fill: { ...layer.fill, ...fp } }, history)
             }
           />
-        </div>
+        </>
       )}
     </Panel>
   );

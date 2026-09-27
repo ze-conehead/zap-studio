@@ -16,9 +16,14 @@ export interface ImageAdjust {
   threshold: number;
   /** Swap light and dark. */
   invert: boolean;
-  /** threshold mode: paint the kept side in `color`, drop the rest to alpha 0. */
+  /** threshold mode: paint the kept side in `color`, drop the rest to alpha 0
+   * (or, with `overlay`, paint it in `overlayColor` instead). */
   silhouette: boolean;
   color: string; // "#ffffff" / "#000000" / anything CSS
+  /** threshold + silhouette: paint the dropped side in `overlayColor`
+   * instead of leaving it transparent — a two-colour duotone. */
+  overlay: boolean;
+  overlayColor: string;
   /** -100…100, applied before the mode. */
   contrast: number;
   brightness: number;
@@ -30,6 +35,8 @@ export const DEFAULT_ADJUST: ImageAdjust = {
   invert: false,
   silhouette: false,
   color: "#ffffff",
+  overlay: false,
+  overlayColor: "#000000",
   contrast: 0,
   brightness: 0,
 };
@@ -93,6 +100,7 @@ export function adjustImage(
   const cRaw = adj.contrast / 100;
   const cF = (259 * (cRaw * 255 + 255)) / (255 * (259 - cRaw * 255));
   const [sr, sg, sb] = adj.silhouette ? parseColor(adj.color) : [0, 0, 0];
+  const [oR, oG, oB] = adj.silhouette && adj.overlay ? parseColor(adj.overlayColor) : [0, 0, 0];
 
   for (let i = 0; i < px.length; i += 4) {
     if (px[i + 3] === 0) continue; // fully transparent — nothing to do
@@ -128,6 +136,10 @@ export function adjustImage(
         px[i] = sr;
         px[i + 1] = sg;
         px[i + 2] = sb;
+      } else if (adj.overlay) {
+        px[i] = oR;
+        px[i + 1] = oG;
+        px[i + 2] = oB;
       } else {
         px[i + 3] = 0;
       }

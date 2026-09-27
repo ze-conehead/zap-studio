@@ -342,7 +342,7 @@ export function AdjustControls({ layer, patch }: { layer: ImageLayer; patch: Pat
 
   return (
     <div className="flex flex-col gap-2 rounded-md border p-2.5">
-      <Label>{t("Colour reduction")}</Label>
+      <Label>{t("Color reduction")}</Label>
       <div className="flex gap-1">
         {modes.map(([m, label]) => (
           <button
@@ -410,29 +410,46 @@ export function AdjustControls({ layer, patch }: { layer: ImageLayer; patch: Pat
             {t("Silhouette (one colour, rest transparent)")}
           </label>
           {adj.silhouette && (
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <ColorField
-                  label={t("Colour")}
-                  value={adj.color}
-                  onChange={(v) => set({ color: v })}
-                />
+            <>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <ColorField
+                    label={t("Color")}
+                    value={adj.color}
+                    onChange={(v) => set({ color: v })}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set({ color: "#ffffff" })}
+                >
+                  {t("White")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set({ color: "#000000" })}
+                >
+                  {t("Black")}
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => set({ color: "#ffffff" })}
-              >
-                {t("White")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => set({ color: "#000000" })}
-              >
-                {t("Black")}
-              </Button>
-            </div>
+
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={adj.overlay}
+                  onCheckedChange={(v) => set({ overlay: !!v })}
+                />
+                {t("Overlay color (paint the rest instead of leaving it transparent)")}
+              </label>
+              {adj.overlay && (
+                <ColorField
+                  label={t("Overlay color")}
+                  value={adj.overlayColor}
+                  onChange={(v) => set({ overlayColor: v })}
+                />
+              )}
+            </>
           )}
         </>
       )}

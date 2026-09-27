@@ -22,7 +22,7 @@ import type { MaskOption } from "../templates";
 import { useStore } from "../store";
 import { type CardBackground, type Layer } from "../types";
 
-import { ColorField, Field, FillEditor, Panel, SliderField, type Patch } from "./inspector/fields";
+import { ColorField, Field, FillEditor, Panel, RepeatingPatternControls, SliderField, type Patch } from "./inspector/fields";
 import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, TextProps } from "./inspector/layerProps";
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
@@ -267,6 +267,13 @@ export function Inspector({
       {(isImage(selected) || isText(selected) || isShape(selected) || isQr(selected)) &&
         !isMask &&
         !isLogoSlot && <EffectsControls layer={selected} patch={patch} />}
+
+      {isShape(selected) && !isMask && !isLogoSlot && (
+        <RepeatingPatternControls
+          value={selected.fill}
+          onChange={(fp, history) => patch({ fill: { ...selected.fill, ...fp } }, history)}
+        />
+      )}
     </Panel>
   );
 }

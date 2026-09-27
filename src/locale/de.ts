@@ -848,7 +848,7 @@ export const de: Record<string, string> = {
     "Logos gibt es nur bei SteamGridDB \u2013 daf\u00fcr wird ein API-Key ben\u00f6tigt.",
 
   // ── Image adjustment (greyscale / threshold) ─────────────────────────────
-  "Colour reduction": "Farbreduktion",
+  "Color reduction": "Farbreduktion",
   Original: "Original",
   Greyscale: "Graustufen",
   Threshold: "Schwellenwert",
@@ -858,7 +858,9 @@ export const de: Record<string, string> = {
   Invert: "Invertieren",
   "Silhouette (one colour, rest transparent)":
     "Silhouette (eine Farbe, Rest transparent)",
-  Colour: "Farbe",
+  "Overlay color (paint the rest instead of leaving it transparent)":
+    "Overlay-Farbe (färbt den Rest ein, statt ihn transparent zu lassen)",
+  "Overlay color": "Overlay-Farbe",
   White: "Wei\u00df",
   Black: "Schwarz",
 

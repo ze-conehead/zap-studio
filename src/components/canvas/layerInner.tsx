@@ -28,6 +28,7 @@ import {
   resolvePlaceholders,
   type PlaceholderContext,
 } from "../../placeholders";
+import { usePatternTile } from "../../repeatingPattern";
 import { renderedFontSize } from "../../textFit";
 import { DEFAULT_FLOW_HEIGHT, flowLayout, obstacleBoxes } from "../../textFlow";
 import { fontStyleString } from "../../textUtil";
@@ -192,6 +193,10 @@ function ShapeInner({
     start: { x: number; y: number },
   ) => void;
 }) {
+  // Called unconditionally before any early return below, so hook order
+  // stays stable regardless of which branch this render takes.
+  const patternTile = usePatternTile(layer.fill.pattern);
+
   if (layer.combine?.length)
     return (
       <CompoundShapeInner
@@ -229,6 +234,15 @@ function ShapeInner({
           globalCompositeOperation: "overlay" as const,
         }
       : null;
+
+  const pattern = patternTile
+    ? {
+        listening: false,
+        opacity: fill.pattern!.opacity,
+        fillPatternImage: patternTile as unknown as HTMLImageElement,
+        fillPatternRepeat: "repeat" as const,
+      }
+    : null;
 
   // As a mask only the alpha matters: paint opaque, skip stroke + noise.
   if (gco) {
@@ -271,6 +285,7 @@ function ShapeInner({
       <>
         <Ellipse radiusX={w / 2} radiusY={h / 2} {...paint} {...stroke} {...shadow} />
         {noise && <Ellipse radiusX={w / 2} radiusY={h / 2} {...noise} />}
+        {pattern && <Ellipse radiusX={w / 2} radiusY={h / 2} {...pattern} />}
       </>
     );
   }
@@ -279,6 +294,7 @@ function ShapeInner({
     <>
       <Rect {...box} {...paint} {...stroke} {...shadow} />
       {noise && <Rect {...box} {...noise} />}
+      {pattern && <Rect {...box} {...pattern} />}
     </>
   );
 }
@@ -423,6 +439,7 @@ function CompoundShapeInner({
   // .cache() a no-op, since the ref never attaches to anything then).
   const silhouetteRef = useRef<Konva.Group>(null);
   const outerRef = useRef<Konva.Group>(null);
+  const patternTile = usePatternTile(layer.fill.pattern);
   useLayoutEffect(() => {
     silhouetteRef.current?.cache();
     outerRef.current?.cache();
@@ -492,12 +509,21 @@ function CompoundShapeInner({
           globalCompositeOperation: "overlay" as const,
         }
       : null;
+  const pattern = patternTile
+    ? {
+        listening: false,
+        opacity: fill.pattern!.opacity,
+        fillPatternImage: patternTile as unknown as HTMLImageElement,
+        fillPatternRepeat: "repeat" as const,
+      }
+    : null;
 
   return (
     <>
     <Group ref={outerRef}>
       <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...paint} {...stroke} {...shadow} />
       {noise && <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...noise} />}
+      {pattern && <Rect x={box.x} y={box.y} width={box.w} height={box.h} {...pattern} />}
       <Group ref={silhouetteRef} globalCompositeOperation="destination-in">
         {ops.map((op, i) => (
           <SilhouetteNode key={i} op={op} />
@@ -683,6 +709,7 @@ function PlayersGlyph({
 
 export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
   const full = { x: 0, y: 0, width: CANVAS.w, height: CANVAS.h };
+  const patternTile = usePatternTile(bg.pattern);
 
   const fill =
     bg.kind === "gradient"
@@ -700,6 +727,15 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
           fillPatternImage={noiseTile() as unknown as HTMLImageElement}
           fillPatternRepeat="repeat"
           globalCompositeOperation="overlay"
+        />
+      )}
+      {patternTile && (
+        <Rect
+          {...full}
+          listening={false}
+          opacity={bg.pattern!.opacity}
+          fillPatternImage={patternTile as unknown as HTMLImageElement}
+          fillPatternRepeat="repeat"
         />
       )}
     </>

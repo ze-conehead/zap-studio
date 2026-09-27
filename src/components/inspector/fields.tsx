@@ -8,13 +8,29 @@ import {
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { gradientStops } from "../../background";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../../recentColors";
 import { cn } from "@/lib/utils";
 import { useT } from "../../i18n";
 import { PX_PER_MM, TRIM_RECT } from "../../card";
+import {
+  ensureLocalLogosLoaded,
+  getLocalLogosVersion,
+  listLocalLogos,
+  localLogoUrl,
+  subscribeLocalLogos,
+} from "../../localLogos";
+import { DEFAULT_PATTERN } from "../../repeatingPattern";
 import {
   type CardBackground,
   type Layer,
@@ -357,3 +373,126 @@ export const round = (n: number, d = 0) => {
   const f = 10 ** d;
   return Math.round(n * f) / f;
 };
+
+// A logo from "Manage logos" tiled across a shape's or the background's
+// fill — rotated in place, evenly spaced, optionally offset into a brick
+// pattern. Always the last box in Properties (see Inspector.tsx / panels.tsx).
+export function RepeatingPatternControls({
+  value,
+  onChange,
+}: {
+  value: CardBackground;
+  onChange: (patch: Partial<CardBackground>, history?: boolean) => void;
+}) {
+  const t = useT();
+  useSyncExternalStore(subscribeLocalLogos, getLocalLogosVersion, getLocalLogosVersion);
+  useEffect(() => {
+    void ensureLocalLogosLoaded();
+  }, []);
+  const logos = listLocalLogos();
+  const p = { ...DEFAULT_PATTERN, ...(value.pattern ?? {}) };
+  const set = (fp: Partial<typeof p>, history = true) =>
+    onChange({ pattern: { ...p, ...fp } }, history);
+
+  const [thumb, setThumb] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    if (!p.logoId) {
+      setThumb(undefined);
+      return;
+    }
+    void localLogoUrl(p.logoId).then((u) => {
+      if (alive) setThumb(u);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [p.logoId]);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-2.5">
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox checked={p.enabled} onCheckedChange={(v) => set({ enabled: !!v })} />
+        {t("Repeating image")}
+      </label>
+
+      {p.enabled && (
+        <>
+          {logos.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("No logos yet — add some in Settings ▸ Manage logos …")}
+            </p>
+          ) : (
+            <Field label={t("Logo")}>
+              <div className="flex items-center gap-2">
+                {thumb && (
+                  <img
+                    src={thumb}
+                    alt=""
+                    className="size-8 shrink-0 rounded border bg-muted/30 object-contain"
+                  />
+                )}
+                <Select
+                  value={p.logoId ?? ""}
+                  onValueChange={(v) => set({ logoId: v })}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={t("Pick a logo …")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {logos.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </Field>
+          )}
+
+          <SliderField
+            label={t("Size {n} px", { n: Math.round(p.size) })}
+            min={4}
+            max={300}
+            step={1}
+            value={p.size}
+            onChange={(v, done) => set({ size: Math.round(v) }, done)}
+          />
+          <SliderField
+            label={t("Spacing {n} px", { n: Math.round(p.spacing) })}
+            min={0}
+            max={300}
+            step={1}
+            value={p.spacing}
+            onChange={(v, done) => set({ spacing: Math.round(v) }, done)}
+          />
+          <SliderField
+            label={t("Rotation {n}°", { n: Math.round(p.rotation) })}
+            min={0}
+            max={360}
+            step={1}
+            value={p.rotation}
+            onChange={(v, done) => set({ rotation: Math.round(v) }, done)}
+          />
+          <SliderField
+            label={t("Stagger {n}%", { n: Math.round(p.stagger) })}
+            min={0}
+            max={100}
+            step={1}
+            value={p.stagger}
+            onChange={(v, done) => set({ stagger: Math.round(v) }, done)}
+          />
+          <SliderField
+            label={t("Opacity {n}%", { n: Math.round(p.opacity * 100) })}
+            min={0}
+            max={1}
+            step={0.01}
+            value={p.opacity}
+            onChange={(v, done) => set({ opacity: v }, done)}
+          />
+        </>
+      )}
+    </div>
+  );
+}

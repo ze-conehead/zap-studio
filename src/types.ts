@@ -1,6 +1,7 @@
 import type { FormatId } from "./formats";
 import type { ImageAdjust } from "./imageAdjust";
 import type { PlaceholderKey } from "./placeholders";
+import type { RepeatingImagePattern } from "./repeatingPattern";
 
 export type LayerType =
   | "image"
@@ -42,6 +43,8 @@ export interface CardBackground {
   angle: number; // linear gradient direction in degrees (0 = →, 90 = ↓)
   noise: number; // grain overlay strength, 0..1 (0 = off)
   enabled?: boolean; // templates only: false => contributes no background
+  // A logo tiled across the fill — see src/repeatingPattern.ts.
+  pattern?: RepeatingImagePattern;
 }
 
 // A soft drop shadow drawn behind an image / text / shape layer. Offset
