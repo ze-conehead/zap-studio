@@ -357,3 +357,11 @@ export const removeLocalLogo = localLogos.remove;
 export const removeAllLocalLogos = localLogos.removeAll;
 export const searchLocalLogos = localLogos.search;
 export const searchLocalCovers = localCovers.search;
+
+// The cover library, same shape — for browsing/picking one directly (as
+// opposed to searchLocalCovers's by-game-title lookup).
+export const subscribeLocalCovers = localCovers.subscribe;
+export const getLocalCoversVersion = localCovers.version;
+export const listLocalCovers = localCovers.list;
+export const ensureLocalCoversLoaded = localCovers.ensureLoaded;
+export const localCoverUrl = localCovers.url;

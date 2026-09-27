@@ -31,7 +31,7 @@ import {
   type CardBackground,
   type Layer,
 } from "../../types";
-import { LogoPickerDialog } from "../LogoPickerDialog";
+import { LocalImagePickerDialog } from "../LocalImagePickerDialog";
 
 export type Patch = (p: Partial<Layer>, history?: boolean) => void;
 
@@ -621,7 +621,7 @@ export function RepeatingPatternControls({
                   {pickedName ?? t("Pick a logo …")}
                 </span>
               </Button>
-              <LogoPickerDialog
+              <LocalImagePickerDialog
                 open={pickerOpen}
                 onOpenChange={setPickerOpen}
                 onPick={(logoId) => {

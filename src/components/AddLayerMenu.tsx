@@ -6,6 +6,7 @@ import {
   Crop,
   GitBranch,
   ImageIcon,
+  Images,
   Link2,
   Loader2,
   PaintBucket,
@@ -51,6 +52,13 @@ import {
 } from "../factory";
 import { useT } from "../i18n";
 import { fileToLayerSource, nameFromUrl, urlToLayerSource } from "../image";
+import {
+  listLocalCovers,
+  listLocalLogos,
+  localCoverUrl,
+  localLogoUrl,
+} from "../localLogos";
+import { LocalImagePickerDialog } from "./LocalImagePickerDialog";
 import { useStore } from "../store";
 import type { ShapeKind } from "../types";
 
@@ -70,6 +78,8 @@ export function AddLayerMenu() {
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
+  const [logoPickerOpen, setLogoPickerOpen] = useState(false);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
 
   // A freshly added image goes in as-is; which alpha mask it fills (if any)
   // is picked in the Inspector, or set for you by the cover flow.
@@ -98,6 +108,27 @@ export function AddLayerMenu() {
       addImageLayer({ ...img, name: nameFromUrl(value) });
       setUrl("");
       setUrlOpen(false);
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Embeds a copy of the picked logo/cover, same as an upload — it stays
+  // usable (movable, filterable, exportable) even if that library entry is
+  // later renamed or removed.
+  const addFromLibrary = async (libraryKind: "logo" | "cover", id: string) => {
+    const entry = (libraryKind === "cover" ? listLocalCovers() : listLocalLogos()).find(
+      (l) => l.id === id,
+    );
+    const getUrl = libraryKind === "cover" ? localCoverUrl : localLogoUrl;
+    try {
+      setBusy(true);
+      const blobUrl = await getUrl(id);
+      if (!blobUrl) throw new Error(t("That file is no longer available."));
+      const img = await urlToLayerSource(blobUrl);
+      addImageLayer({ ...img, name: entry?.name ?? nameFromUrl(blobUrl) });
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -190,6 +221,12 @@ export function AddLayerMenu() {
           <DropdownMenuItem onClick={() => setUrlOpen(true)}>
             <Link2 /> {t("Add from URL")}
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLogoPickerOpen(true)}>
+            <ImageIcon /> {t("Add logo …")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCoverPickerOpen(true)}>
+            <Images /> {t("Add cover …")}
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel>{t("Shape")}</DropdownMenuLabel>
@@ -264,6 +301,25 @@ export function AddLayerMenu() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <LocalImagePickerDialog
+        open={logoPickerOpen}
+        onOpenChange={setLogoPickerOpen}
+        kind="logo"
+        onPick={(id) => {
+          setLogoPickerOpen(false);
+          void addFromLibrary("logo", id);
+        }}
+      />
+      <LocalImagePickerDialog
+        open={coverPickerOpen}
+        onOpenChange={setCoverPickerOpen}
+        kind="cover"
+        onPick={(id) => {
+          setCoverPickerOpen(false);
+          void addFromLibrary("cover", id);
+        }}
+      />
 
       <input
         ref={fileRef}

@@ -892,6 +892,13 @@ export const de: Record<string, string> = {
   "Pick a logo …": "Logo auswählen …",
   "Pick a logo": "Logo auswählen",
   "Search logos …": "Logos durchsuchen …",
+  "No covers yet — add some in Settings ▸ Manage covers …":
+    "Noch keine Cover – füge welche unter Einstellungen ▸ Cover verwalten … hinzu.",
+  "Pick a cover": "Cover auswählen",
+  "Search covers …": "Cover durchsuchen …",
+  "Add logo …": "Logo hinzufügen …",
+  "Add cover …": "Cover hinzufügen …",
+  "That file is no longer available.": "Diese Datei ist nicht mehr verfügbar.",
 
   // ── Layer effects (shadow / glow) ──
   "Shadow / glow": "Schatten / Schein",
