@@ -208,6 +208,22 @@ describe("buildOverlay", () => {
     const layers = buildOverlay(consoleP, undefined, globalP, undefined);
     expect(names(layers)).toEqual(["Banner", "Shape"]);
   });
+
+  it("keeps a console layer dragged above a global one there on the card too", () => {
+    // Dragging "Banner" above "Shape" while editing the console template
+    // directly sets stackAfterId — a game card must draw it in that same
+    // spot, not fall back to "every console layer under the whole global
+    // stack" (the bug: it looked right in the console template but reset
+    // to the bottom on an actual card).
+    const shape = { ...makeShapeLayer("rect"), name: "Shape" };
+    const globalP = { ...newGlobalTemplate(), layers: [shape] };
+    const banner = { ...img("Banner"), stackAfterId: shape.id };
+    const plain = img("Plain");
+    const consoleP = { ...newConsoleTemplate("ps", "PlayStation"), layers: [banner, plain] };
+
+    const layers = buildOverlay(consoleP, undefined, globalP, undefined);
+    expect(names(layers)).toEqual(["Plain", "Shape", "Banner"]);
+  });
 });
 
 const fill = (color: string): CardBackground => ({

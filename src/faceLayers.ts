@@ -14,8 +14,14 @@ import type { BackgroundLayer, CardBackground, Layer, Project } from "./types";
 // the whole global stack: it slots into the global template's own logo
 // frame (`logoSlot`, never drawn itself) at that frame's own position, so
 // where the template author put the frame in their stack — above a
-// decorative shape, say — is where the logo actually draws. Every other
-// console layer keeps the plain "console below global" rule.
+// decorative shape, say — is where the logo actually draws. A console
+// layer dragged above a specific global layer while editing the console
+// template directly (`stackAfterId`, the same mechanism buildFaceLayers
+// uses for an own layer anchored to an overlay one) keeps that position
+// here too, instead of always sitting under the whole global stack — a
+// console template is itself an "own vs. overlay=global" pair the same
+// way a card is, so the anchor it recorded still names a real global
+// layer once this flattens the two into one list for the card.
 export function buildOverlay(
   consoleP: Project | undefined,
   descendantOfConsole: Project | undefined,
@@ -37,7 +43,17 @@ export function buildOverlay(
     return [withFillOverride(l, descendantOfGlobal)];
   });
 
-  return [...consoleLayers, ...globalLayers];
+  const globalIds = new Set(globalLayers.map((l) => l.id));
+  const anchored = (l: Layer) =>
+    !l.mask && !l.clipped && !!l.stackAfterId && globalIds.has(l.stackAfterId);
+  const anchoredAt = (id: string) => consoleLayers.filter((l) => anchored(l) && l.stackAfterId === id);
+
+  const out: Layer[] = consoleLayers.filter((l) => !anchored(l));
+  for (const gl of globalLayers) {
+    out.push(gl);
+    out.push(...anchoredAt(gl.id));
+  }
+  return out;
 }
 
 // One z-ordered list for a face: the project's own layers, then the
