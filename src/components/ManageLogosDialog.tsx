@@ -4,7 +4,7 @@
 // source: Local", found by file name when a console asks for its logo or a
 // card for its cover.
 
-import { FolderOpen, Loader2, Search, Trash2, Upload, X } from "lucide-react";
+import { FolderOpen, Loader2, Pencil, Search, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,7 +22,9 @@ import {
   type LibraryKind,
   type LocalLogo,
 } from "../localLogos";
+import { usedLogoIds } from "../logoUsage";
 import { askConfirm } from "./ConfirmDialog";
+import { LogoEditDialog } from "./LogoEditDialog";
 
 const SHOWN = 60; // thumbnails rendered at once — the filter narrows it down
 
@@ -48,6 +50,11 @@ export function ManageLogosDialog({
   const [filter, setFilter] = useState("");
   const [over, setOver] = useState(false);
   const [, bump] = useState(0);
+  const [editing, setEditing] = useState<LocalLogo | null>(null);
+  // Logos an enabled repeating-image pattern currently points at, anywhere
+  // in the library — floated to the top so the ones actually in use are
+  // easy to find again. Logo-only: nothing references a cover by id.
+  const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
@@ -55,15 +62,25 @@ export function ManageLogosDialog({
       setError("");
       setNote("");
     }
-  }, [open, lib]);
+    if (open && !covers) {
+      void usedLogoIds().then(setUsedIds);
+    } else {
+      setUsedIds(new Set());
+    }
+  }, [open, lib, covers]);
 
   const q = normalizeTitle(filter);
   const shown = useMemo(() => {
     const all = q
       ? logos.filter((l) => normalizeTitle(`${l.path} ${l.name}`).includes(q))
       : logos;
-    return { list: all.slice(0, SHOWN), total: all.length };
-  }, [logos, q]);
+    // Stable sort: used logos first, original order preserved within each
+    // group — a plain filter/slice would otherwise be arbitrary about it.
+    const sorted = usedIds.size
+      ? [...all].sort((a, b) => Number(usedIds.has(b.id)) - Number(usedIds.has(a.id)))
+      : all;
+    return { list: sorted.slice(0, SHOWN), total: sorted.length };
+  }, [logos, q, usedIds]);
 
   const ingest = async (inputs: AddedLogo[]) => {
     if (!inputs.length) return;
@@ -101,6 +118,7 @@ export function ManageLogosDialog({
   const pickOnline = () => (covers ? setCoverSource("sgdb") : setLogoSource("sgdb"));
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-w-3xl flex-col gap-3">
         <DialogHeader>
@@ -217,7 +235,14 @@ export function ManageLogosDialog({
             <>
               <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
                 {shown.list.map((l) => (
-                  <LogoTile key={l.id} logo={l} lib={lib} onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))} />
+                  <LogoTile
+                    key={l.id}
+                    logo={l}
+                    lib={lib}
+                    used={usedIds.has(l.id)}
+                    onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))}
+                    onEdit={() => setEditing(l)}
+                  />
                 ))}
               </ul>
               {shown.total > SHOWN && (
@@ -245,10 +270,31 @@ export function ManageLogosDialog({
         </div>
       </DialogContent>
     </Dialog>
+    {editing && (
+      <LogoEditDialog
+        open
+        onOpenChange={(o) => !o && setEditing(null)}
+        logo={editing}
+        lib={lib}
+      />
+    )}
+    </>
   );
 }
 
-function LogoTile({ logo, lib, onRemove }: { logo: LocalLogo; lib: ImageLibrary; onRemove: () => void }) {
+function LogoTile({
+  logo,
+  lib,
+  used,
+  onRemove,
+  onEdit,
+}: {
+  logo: LocalLogo;
+  lib: ImageLibrary;
+  used?: boolean;
+  onRemove: () => void;
+  onEdit: () => void;
+}) {
   const t = useT();
   const [url, setUrl] = useState<string | undefined>();
   useEffect(() => {
@@ -259,7 +305,21 @@ function LogoTile({ logo, lib, onRemove }: { logo: LocalLogo; lib: ImageLibrary;
     };
   }, [logo.id, lib]);
   return (
-    <li className="group relative flex flex-col gap-1 rounded-md border p-1.5" title={logo.path ? `${logo.path}/${logo.name}` : logo.name}>
+    <li
+      className={cn(
+        "group relative flex flex-col gap-1 rounded-md border p-1.5",
+        used && "border-primary/60",
+      )}
+      title={logo.path ? `${logo.path}/${logo.name}` : logo.name}
+    >
+      {used && (
+        <span
+          className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-primary/90 px-1 py-0.5 text-[10px] leading-none text-primary-foreground"
+          title={t("Used by a repeating image pattern")}
+        >
+          <Sparkles className="size-2.5" /> {t("In use")}
+        </span>
+      )}
       <div className="canvas-checker flex aspect-[3/2] items-center justify-center overflow-hidden rounded">
         {url ? (
           <img src={url} alt={logo.name} loading="lazy" className="max-h-full max-w-full object-contain p-1" />
@@ -269,14 +329,24 @@ function LogoTile({ logo, lib, onRemove }: { logo: LocalLogo; lib: ImageLibrary;
       </div>
       <span className="truncate text-[11px]">{logo.name}</span>
       {logo.path && <span className="truncate text-[10px] text-muted-foreground">{logo.path}</span>}
-      <button
-        type="button"
-        className="absolute right-1 top-1 hidden rounded bg-background/80 p-1 text-muted-foreground hover:text-destructive group-hover:block"
-        title={t("Remove")}
-        onClick={onRemove}
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+      <div className="absolute right-1 top-1 hidden gap-0.5 group-hover:flex">
+        <button
+          type="button"
+          className="rounded bg-background/80 p-1 text-muted-foreground hover:text-foreground"
+          title={t("Edit")}
+          onClick={onEdit}
+        >
+          <Pencil className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          className="rounded bg-background/80 p-1 text-muted-foreground hover:text-destructive"
+          title={t("Remove")}
+          onClick={onRemove}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
     </li>
   );
 }

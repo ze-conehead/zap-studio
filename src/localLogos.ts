@@ -131,6 +131,10 @@ export interface ImageLibrary {
   ensureLoaded: () => Promise<void>;
   url: (id: string) => Promise<string | undefined>;
   add: (inputs: AddedLogo[], onProgress?: (done: number, total: number) => void) => Promise<AddReport>;
+  /** Overwrites one entry's image in place — same id, same name/path, so
+   * every reference to it (a repeating pattern's logoId, say) still points
+   * at the right thing. Used by the logo editor's "Save". */
+  replace: (id: string, blob: Blob) => Promise<void>;
   remove: (id: string) => Promise<void>;
   removeAll: () => Promise<void>;
   search: (term: string) => Promise<CoverCandidate[]>;
@@ -253,6 +257,22 @@ function createLibrary(kind: LibraryKind): ImageLibrary {
   }
 
 
+  // ── editing ────────────────────────────────────────────────────────────────
+
+  async function replace(id: string, blob: Blob): Promise<void> {
+    await ensureLoaded();
+    await set(BLOB_KEY(id), blob);
+    const old = urls.get(id);
+    if (old) {
+      URL.revokeObjectURL(old);
+      urls.delete(id);
+    }
+    const next = (cache ?? []).map((l) =>
+      l.id === id ? { ...l, size: blob.size, type: blob.type } : l,
+    );
+    await saveIndex(next);
+  }
+
   // ── removing ───────────────────────────────────────────────────────────────
 
   async function remove(id: string): Promise<void> {
@@ -319,7 +339,7 @@ function createLibrary(kind: LibraryKind): ImageLibrary {
     return out;
   }
 
-  return { kind, subscribe, version: getVersion, list, ensureLoaded, url: urlOf, add, remove, removeAll, search };
+  return { kind, subscribe, version: getVersion, list, ensureLoaded, url: urlOf, add, replace, remove, removeAll, search };
 }
 
 export const localLogos = createLibrary("logo");
@@ -332,6 +352,7 @@ export const listLocalLogos = localLogos.list;
 export const ensureLocalLogosLoaded = localLogos.ensureLoaded;
 export const localLogoUrl = localLogos.url;
 export const addLocalLogos = localLogos.add;
+export const replaceLocalLogo = localLogos.replace;
 export const removeLocalLogo = localLogos.remove;
 export const removeAllLocalLogos = localLogos.removeAll;
 export const searchLocalLogos = localLogos.search;
