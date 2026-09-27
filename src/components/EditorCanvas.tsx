@@ -10,6 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { Layer, Line, Stage, Transformer } from "react-konva";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import { isBackground, makeImageLayer } from "../factory";
@@ -106,6 +107,11 @@ export function EditorCanvas({
   });
   const [fitScale, setFitScale] = useState(0.5);
   const scale = fitScale * zoom;
+  // Radix's ScrollArea viewport doesn't give its content a percentage-based
+  // height to grow into (its own inner wrapper is block/auto-height), so
+  // "centred when small, scrollable when large" needs an explicit pixel
+  // floor instead of min-h-full/min-w-full.
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
 
   const registerFront = useCallback((s: Konva.Stage | null) => {
     stages.current.front = s;
@@ -128,6 +134,7 @@ export function EditorCanvas({
         Math.min(availW / (CANVAS.w * nFaces), availH / CANVAS.h),
       ),
     );
+    setContainerSize({ w: el.clientWidth, h: el.clientHeight });
   }, [nFaces]);
   useLayoutEffect(() => {
     measure();
@@ -216,12 +223,10 @@ export function EditorCanvas({
   };
 
   return (
-    <div
-      className={cn(
-        "canvas-checker grid flex-1 place-items-center overflow-auto p-6",
-        panning && "cursor-grabbing",
-      )}
-      ref={wrapRef}
+    <ScrollArea
+      orientation="both"
+      className={cn("canvas-checker flex-1", panning && "cursor-grabbing")}
+      viewportRef={wrapRef}
       onMouseDownCapture={startPan}
       // Swallow file drops that miss a face so the browser doesn't open them.
       onDragOver={(e) => {
@@ -231,39 +236,44 @@ export function EditorCanvas({
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
     >
-      <div className="flex items-start gap-6">
-        <FaceStage
-          side="front"
-          active={side === "front"}
-          caption={hasBack}
-          scale={scale}
-          overlay={overlay}
-          consoleBg={consoleBg}
-          globalBg={globalBg}
-          masks={masks}
-          logoSlot={logoSlot}
-          guides={guides}
-          badgeMeta={badgeMeta}
-          showBleed={showBleed}
-          registerStage={registerFront}
-          selectedCombine={selectedCombine}
-          onSelectCombine={onSelectCombine}
-        />
-        {hasBack && (
+      <div
+        className="grid place-items-center p-6"
+        style={{ minWidth: containerSize.w, minHeight: containerSize.h }}
+      >
+        <div className="flex items-start gap-6">
           <FaceStage
-            side="back"
-            active={side === "back"}
-            caption
+            side="front"
+            active={side === "front"}
+            caption={hasBack}
             scale={scale}
+            overlay={overlay}
+            consoleBg={consoleBg}
+            globalBg={globalBg}
+            masks={masks}
+            logoSlot={logoSlot}
             guides={guides}
             badgeMeta={badgeMeta}
             showBleed={showBleed}
-            onRemove={() => dispatch({ type: "REMOVE_BACK" })}
-            registerStage={registerBack}
+            registerStage={registerFront}
+            selectedCombine={selectedCombine}
+            onSelectCombine={onSelectCombine}
           />
-        )}
+          {hasBack && (
+            <FaceStage
+              side="back"
+              active={side === "back"}
+              caption
+              scale={scale}
+              guides={guides}
+              badgeMeta={badgeMeta}
+              showBleed={showBleed}
+              onRemove={() => dispatch({ type: "REMOVE_BACK" })}
+              registerStage={registerBack}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </ScrollArea>
   );
 }
 
