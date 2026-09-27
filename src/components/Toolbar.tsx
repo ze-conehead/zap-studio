@@ -12,19 +12,25 @@ import { describeChange } from "../historyLabel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MIN_ZOOM, MAX_ZOOM } from "./EditorCanvas";
 import { useStore } from "../store";
 import { useT } from "../i18n";
 import type { GuideApi } from "../App";
 
 interface Props {
   guides: GuideApi;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
   onOpenPreview: () => void;
   onOpenOverview: () => void;
 }
 
 export function Toolbar({
   guides,
+  zoom,
+  onZoomChange,
   onOpenPreview,
   onOpenOverview,
 }: Props) {
@@ -128,6 +134,29 @@ export function Toolbar({
           <Button variant="outline" size="sm" onClick={onOpenOverview}>
             <LayoutGrid /> {t("Preview all")}
           </Button>
+          <Separator orientation="vertical" className="h-6" />
+          <div className="flex items-center gap-2 px-1" title={t("Zoom — Ctrl/Cmd + scroll, or middle-drag to pan")}>
+            <Slider
+              className="w-28"
+              min={MIN_ZOOM * 100}
+              max={MAX_ZOOM * 100}
+              step={5}
+              value={[Math.round(zoom * 100)]}
+              onValueChange={([v]) => onZoomChange(v / 100)}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="w-11 shrink-0 text-left text-xs tabular-nums text-muted-foreground hover:text-foreground"
+                  onClick={() => onZoomChange(1)}
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{t("Reset zoom to fit")}</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </header>

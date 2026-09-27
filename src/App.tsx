@@ -411,6 +411,9 @@ function Shell({
   };
   const [preview, setPreview] = useState(false);
   const [demo, setDemo] = useState(false);
+  // The main canvas's zoom, on top of its auto-fit scale — 1 = fit. A pure
+  // view setting, not project state, so it isn't undo/redo-able.
+  const [zoom, setZoom] = useState(1);
   // Dialogs the menu bar and the toolbar both open.
   const [cutSheet, setCutSheet] = useState(false);
   const [exportAll, setExportAll] = useState(false);
@@ -471,6 +474,8 @@ function Shell({
   const bar = {
     canvas,
     guides,
+    zoom,
+    onZoomChange: setZoom,
     onNewProject,
     onOpenProjects,
     onOpenPreview: () => setPreview(true),
@@ -521,6 +526,8 @@ function Shell({
           guides={guides}
           selectedCombine={selectedCombine}
           onSelectCombine={selectCombine}
+          zoom={zoom}
+          onZoomChange={setZoom}
         />
         <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
           <FaceControl />

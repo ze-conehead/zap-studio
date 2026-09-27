@@ -52,6 +52,11 @@ export interface CanvasHandle {
   getStageWidth: () => number;
 }
 
+// The interactive zoom is a multiplier on top of the auto-fit scale (1 =
+// fit); exports always use the fit scale itself, unaffected by it.
+export const MIN_ZOOM = 0.25;
+export const MAX_ZOOM = 4;
+
 export function EditorCanvas({
   handleRef,
   overlay = [],
@@ -62,6 +67,8 @@ export function EditorCanvas({
   guides,
   selectedCombine,
   onSelectCombine,
+  zoom,
+  onZoomChange,
 }: {
   handleRef: React.MutableRefObject<CanvasHandle | null>;
   overlay?: TLayer[];
@@ -75,6 +82,8 @@ export function EditorCanvas({
   // App.tsx#selectedCombine.
   selectedCombine?: { parentId: string; index: number } | null;
   onSelectCombine?: (parentId: string, index: number) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
 }) {
   const { state, dispatch } = useStore();
   const { project, side, showBleed } = state;
@@ -95,7 +104,8 @@ export function EditorCanvas({
     front: null,
     back: null,
   });
-  const [scale, setScale] = useState(0.5);
+  const [fitScale, setFitScale] = useState(0.5);
+  const scale = fitScale * zoom;
 
   const registerFront = useCallback((s: Konva.Stage | null) => {
     stages.current.front = s;
@@ -112,7 +122,7 @@ export function EditorCanvas({
     const gap = 24;
     const availW = el.clientWidth - pad - gap * (nFaces - 1);
     const availH = el.clientHeight - pad;
-    setScale(
+    setFitScale(
       Math.max(
         0.12,
         Math.min(availW / (CANVAS.w * nFaces), availH / CANVAS.h),
@@ -131,14 +141,85 @@ export function EditorCanvas({
   useLayoutEffect(() => {
     handleRef.current = {
       getStage: (s) => stages.current[s ?? side],
-      getStageWidth: () => CANVAS.w * scale,
+      // Export resolution stays tied to the fit scale — independent of the
+      // user's interactive zoom, which is a view setting only.
+      getStageWidth: () => CANVAS.w * fitScale,
     };
   });
 
+  // Ctrl/Cmd + wheel zooms, anchored on the pointer so the point under the
+  // cursor stays put. A plain wheel is left alone (native scroll/pan).
+  // React makes wheel listeners passive, so preventDefault needs a real DOM
+  // listener rather than an onWheel prop.
+  const zoomAnchor = useRef<{ mx: number; my: number; contentX: number; contentY: number; ratio: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const factor = Math.exp(-e.deltaY * 0.0025);
+      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+      if (newZoom === zoom) return;
+      zoomAnchor.current = {
+        mx,
+        my,
+        contentX: el.scrollLeft + mx,
+        contentY: el.scrollTop + my,
+        ratio: newZoom / zoom,
+      };
+      onZoomChange(newZoom);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [zoom, onZoomChange]);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    const a = zoomAnchor.current;
+    if (!el || !a) return;
+    el.scrollLeft = a.contentX * a.ratio - a.mx;
+    el.scrollTop = a.contentY * a.ratio - a.my;
+    zoomAnchor.current = null;
+  }, [zoom]);
+
+  // Middle-mouse drag pans by scrolling the wrapper directly.
+  const [panning, setPanning] = useState(false);
+  const startPan = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    const el = wrapRef.current;
+    if (!el) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startLeft = el.scrollLeft;
+    const startTop = el.scrollTop;
+    setPanning(true);
+    const onMove = (ev: MouseEvent) => {
+      el.scrollLeft = startLeft - (ev.clientX - startX);
+      el.scrollTop = startTop - (ev.clientY - startY);
+    };
+    const onUp = () => {
+      setPanning(false);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
   return (
     <div
-      className="canvas-checker grid flex-1 place-items-center overflow-auto p-6"
+      className={cn(
+        "canvas-checker grid flex-1 place-items-center overflow-auto p-6",
+        panning && "cursor-grabbing",
+      )}
       ref={wrapRef}
+      onMouseDown={startPan}
       // Swallow file drops that miss a face so the browser doesn't open them.
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
