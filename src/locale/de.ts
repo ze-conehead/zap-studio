@@ -697,6 +697,9 @@ export const de: Record<string, string> = {
   "Load example for {name}": "Beispiel für {name} laden",
   Color: "Farbe",
   Gradient: "Verlauf",
+  Transparent: "Transparent",
+  "No fill — whatever's underneath shows through.":
+    "Keine Füllung – was darunter liegt, scheint durch.",
   From: "Von",
   To: "Nach",
   Linear: "Linear",

@@ -215,7 +215,9 @@ function ShapeInner({
   const paint =
     fill.kind === "gradient"
       ? gradientFill(fill, w, h, ellipse)
-      : { fill: fill.color };
+      : fill.kind === "none"
+        ? { fill: "transparent" }
+        : { fill: fill.color };
 
   const stroke =
     layer.strokeWidth > 0
@@ -225,7 +227,7 @@ function ShapeInner({
   const shadow = gco ? undefined : shadowProps(layer.shadow);
 
   const noise =
-    fill.noise > 0
+    fill.kind !== "none" && fill.noise > 0
       ? {
           listening: false,
           opacity: fill.noise,
@@ -496,11 +498,16 @@ function CompoundShapeInner({
   // layer instead of across the stack.
   const { fill } = layer;
   const box = combinedBounds(ops);
-  const paint = fill.kind === "gradient" ? gradientFill(fill, box.w, box.h, false) : { fill: fill.color };
+  const paint =
+    fill.kind === "gradient"
+      ? gradientFill(fill, box.w, box.h, false)
+      : fill.kind === "none"
+        ? { fill: "transparent" }
+        : { fill: fill.color };
   const stroke = layer.strokeWidth > 0 ? { stroke: layer.stroke, strokeWidth: layer.strokeWidth } : {};
   const shadow = shadowProps(layer.shadow);
   const noise =
-    fill.noise > 0
+    fill.kind !== "none" && fill.noise > 0
       ? {
           listening: false,
           opacity: fill.noise,
@@ -714,12 +721,14 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
   const fill =
     bg.kind === "gradient"
       ? gradientFill(bg, CANVAS.w, CANVAS.h)
-      : { fill: bg.color };
+      : bg.kind === "none"
+        ? { fill: "transparent" }
+        : { fill: bg.color };
 
   return (
     <>
       <Rect name="bg" {...full} {...fill} />
-      {bg.noise > 0 && (
+      {bg.kind !== "none" && bg.noise > 0 && (
         <Rect
           {...full}
           listening={false}

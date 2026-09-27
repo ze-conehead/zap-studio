@@ -35,7 +35,9 @@ export type ConditionField =
 export type PlayersIconStyle = "auto" | "single" | "group" | "controller";
 
 export interface CardBackground {
-  kind: "solid" | "gradient";
+  // "none" paints no fill at all — stays transparent, so only a repeating
+  // pattern (or, for a shape, whatever's stacked underneath) shows through.
+  kind: "solid" | "gradient" | "none";
   color: string; // solid fill (also kept in sync with the first gradient stop)
   color2: string; // legacy second gradient stop (mirrors stops[1])
   stops?: string[]; // gradient stops, >= 2; falls back to [color, color2]

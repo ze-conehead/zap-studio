@@ -59,7 +59,7 @@ export function FillEditor({
   return (
     <>
       <div className="flex gap-2">
-        {(["solid", "gradient"] as const).map((k) => (
+        {(["solid", "gradient", "none"] as const).map((k) => (
           <Button
             key={k}
             variant={f.kind === k ? "default" : "outline"}
@@ -67,12 +67,16 @@ export function FillEditor({
             className="flex-1"
             onClick={() => set({ kind: k })}
           >
-            {k === "solid" ? t("Color") : t("Gradient")}
+            {k === "solid" ? t("Color") : k === "gradient" ? t("Gradient") : t("Transparent")}
           </Button>
         ))}
       </div>
 
-      {f.kind === "solid" ? (
+      {f.kind === "none" ? (
+        <p className="text-xs text-muted-foreground">
+          {t("No fill — whatever's underneath shows through.")}
+        </p>
+      ) : f.kind === "solid" ? (
         <ColorField label={t("Color")} value={f.color} onChange={(v) => set({ color: v })} />
       ) : (
         <>
@@ -132,14 +136,16 @@ export function FillEditor({
         </>
       )}
 
-      <SliderField
-        label={t("Grain / noise {n}%", { n: Math.round(f.noise * 100) })}
-        min={0}
-        max={1}
-        step={0.01}
-        value={f.noise}
-        onChange={(v, done) => set({ noise: v }, done)}
-      />
+      {f.kind !== "none" && (
+        <SliderField
+          label={t("Grain / noise {n}%", { n: Math.round(f.noise * 100) })}
+          min={0}
+          max={1}
+          step={0.01}
+          value={f.noise}
+          onChange={(v, done) => set({ noise: v }, done)}
+        />
+      )}
     </>
   );
 }
