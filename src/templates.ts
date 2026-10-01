@@ -19,6 +19,21 @@ export function alphaMasksOf(p: Project | undefined): Layer[] {
 }
 
 /**
+ * The mask a freshly found cover goes into: the first one not flagged
+ * "screenshot only" (see ShapeLayer#shotOnly) — undefined if there isn't
+ * one, e.g. every mask in this stack is a screenshot frame.
+ */
+export function mainMaskOf(masks: Layer[]): Layer | undefined {
+  return masks.find((m) => !(isAlphaMask(m) && m.shotOnly));
+}
+
+/** Every mask besides the cover one, in their original order. */
+export function screenshotMasksOf(masks: Layer[]): Layer[] {
+  const main = mainMaskOf(masks);
+  return main ? masks.filter((m) => m.id !== main.id) : masks;
+}
+
+/**
  * Every frame a card can point at: the global template's first — so the
  * historical "the global mask clips the cover" stays true — then the
  * console's own.
@@ -53,10 +68,10 @@ export function resolveMask(l: Layer, masks: Layer[]): Layer | undefined {
   return undefined;
 }
 
-// The first alpha mask a card sees — what a freshly picked cover goes into.
+// What a freshly picked cover goes into.
 export async function loadMainMask(): Promise<Layer | undefined> {
   const g = await loadProject(GLOBAL_TEMPLATE_ID);
-  return alphaMasksOf(g)[0];
+  return mainMaskOf(alphaMasksOf(g));
 }
 
 // The "All consoles" logo placement frame, if one is set.

@@ -233,6 +233,22 @@ export function MaskRoleControls({
             "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.",
           )}
         </p>
+        {selected.alphaMask && (
+          <>
+            <label className="flex items-center gap-2 pl-0.5 text-sm">
+              <Checkbox
+                checked={!!selected.shotOnly}
+                onCheckedChange={(v) => patch({ shotOnly: !!v })}
+              />
+              {t("Screenshot only")}
+            </label>
+            <p className="pl-0.5 text-xs text-muted-foreground">
+              {t(
+                "“Find cover” skips this frame — for a stack of screenshot frames with no dedicated cover slot, flag all of them so every one counts as a screenshot to find.",
+              )}
+            </p>
+          </>
+        )}
       </div>
     );
   }

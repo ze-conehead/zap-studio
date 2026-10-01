@@ -50,6 +50,7 @@ import {
   loadImagedGameKeys,
   type QuickImportRow,
 } from "../quickImport";
+import { mainMaskOf } from "../templates";
 import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
@@ -143,14 +144,15 @@ export function GameTree({
     try {
       if (row.gameKey === currentGameKey) {
         const img = await urlToLayerSource(url);
+        const mask = mainMaskOf(masks);
         dispatch({
           type: "ADD_LAYER",
           layer: fitImageToMask(
             {
               ...makeImageLayer({ ...img, name: t("Main image") }),
-              maskId: masks[0]?.id,
+              maskId: mask?.id,
             },
-            masks[0],
+            mask,
           ),
         });
       } else {

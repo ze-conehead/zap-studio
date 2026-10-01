@@ -95,6 +95,12 @@ export interface BaseLayer {
   // pointing at it by id is clipped to its alpha and fitted to its box. The
   // frame itself is never drawn on a card.
   alphaMask?: boolean;
+  // alphaMask only: never the destination for "Find cover" — a freshly
+  // found cover always goes into the first alpha mask NOT flagged this way.
+  // For a template whose frames are all screenshots (box art lives
+  // elsewhere, or isn't used), flag every one of them so there's no forced
+  // "cover" slot and all of them count as screenshots.
+  shotOnly?: boolean;
   /** @deprecated an image with this set resolves to the first alpha mask. */
   main?: boolean;
   logoSlot?: boolean; // "All consoles" only: where an inserted logo is placed. Never drawn.

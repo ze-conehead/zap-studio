@@ -995,6 +995,10 @@ export const de: Record<string, string> = {
     "Karten k\u00f6nnen ein Bild in diesen Rahmen legen: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Gr\u00f6\u00dfe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
   "No alpha masks yet — add one in a console template or \u201cGlobal Layout\u201d.":
     "Noch keine Alpha-Masken \u2013 leg eine in einer Konsolen-Vorlage oder in \u201eGlobal Layout\u201c an.",
+  "Screenshot only": "Nur Screenshot",
+  "“Find cover” skips this frame — for a stack of screenshot frames with no dedicated cover slot, flag all of them so every one counts as a screenshot to find.":
+    "„Cover suchen“ überspringt diesen Rahmen – bei mehreren Screenshot-Rahmen ohne eigenen Cover-Platz markiere sie alle, damit jeder als zu suchender Screenshot zählt.",
+  "Find {n} screenshot(s)": "{n} Screenshot(s) suchen",
   None: "Keine",
   global: "global",
   console: "Konsole",
