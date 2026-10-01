@@ -4,15 +4,24 @@
 // Same page size and offset on both pages, so a duplex printer lands the
 // cover in exactly the same spot front and back.
 
+import type Konva from "konva";
 import { FileDown, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CANVAS, TRIM_RECT } from "../card";
+import { findGame } from "../data/catalog";
 import { downloadBlob, exportPng } from "../export";
+import { GLOBAL_TEMPLATE_ID, templateId } from "../factory";
+import { ensureFontsLoaded } from "../fonts";
 import { getFormat } from "../formats";
+import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
 import { cardTrayPdf, type CardPdfPage, type PdfCutRect, type PdfScoreLines } from "../pdf";
+import { loadProject } from "../persist";
 import { getCutLineSpot, getScoreLineSpot, spotColorCss } from "../spotColors";
 import { useStore } from "../store";
+import type { BackFace, ImageLayer } from "../types";
 import { Button } from "./ui/button";
+import { CardStage } from "./CardStage";
 import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { CanvasHandle } from "./EditorCanvas";
@@ -77,14 +86,45 @@ export function CoverPdfDialog({
   const [error, setError] = useState("");
   const [cutLine, setCutLine] = useState(false);
   const [scoreLine, setScoreLine] = useState(false);
+  const [backFirst, setBackFirst] = useState(false);
+  // A card with no back of its own borrows the console template's, then the
+  // global one's — same fallback src/overview.ts already resolves for "All
+  // cards" and the bulk exports, just not previously wired in here. Loaded
+  // off-screen (it's a different project's layers) and captured the same
+  // way the card's own back would be.
+  const [inheritedBack, setInheritedBack] = useState<BackFace | undefined>(undefined);
+  const offscreenBack = useRef<Konva.Stage | null>(null);
 
   useEffect(() => {
     if (open) {
       setError("");
       setCutLine(false);
       setScoreLine(false);
+      setBackFirst(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    setInheritedBack(undefined);
+    if (!open || project.back) return;
+    let alive = true;
+    (async () => {
+      const consoleId = project.isTemplate ? project.consoleId : findGame(project.gameKey)?.console.id;
+      const [consoleP, globalP] = await Promise.all([
+        consoleId ? loadProject(templateId(consoleId)) : Promise.resolve(undefined),
+        loadProject(GLOBAL_TEMPLATE_ID),
+      ]);
+      const back = consoleP?.back ?? globalP?.back;
+      if (!back || !alive) return;
+      await ensureFontsLoaded();
+      const isImage = (l: (typeof back.layers)[number]): l is ImageLayer => l.type === "image";
+      await Promise.all(back.layers.filter(isImage).map((l) => preloadImage(l.src)));
+      if (alive) setInheritedBack(back);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [open, project]);
 
   const cardWidthMM = f.trimMM.w + f.bleedMM * 2;
   const cardHeightMM = f.trimMM.h + f.bleedMM * 2;
@@ -99,18 +139,19 @@ export function CoverPdfDialog({
   // The menu item shows whenever the *format* supports a back (dvd-insert,
   // switch-case, …) — but the live canvas only mounts a "back" stage once
   // *this* card actually has one (see EditorCanvas's hasBack = !!project.back).
-  // Without this, a card that never got "+ Add back side" clicked makes
-  // getStage("back") return null and run() silently no-op: a click that
-  // visibly does nothing and never sets an error.
-  const hasBack = !!project.back;
+  // Without that, or an inherited one resolved above, a card that never got
+  // "+ Add back side" clicked makes getStage("back") return null and run()
+  // silently no-op: a click that visibly does nothing and never sets an error.
+  const hasBack = !!project.back || !!inheritedBack;
 
   const safeName = () =>
     project.name.replace(/[^\w-]+/g, "_").slice(0, 40) || "sticker";
 
   const run = async () => {
     const front = canvas.current?.getStage("front");
-    const back = canvas.current?.getStage("back");
     const w = canvas.current?.getStageWidth() ?? 0;
+    const back = project.back ? canvas.current?.getStage("back") : offscreenBack.current;
+    const backWidth = project.back ? w : CANVAS.w;
     if (!fits) return;
     if (!front || !back || !w) {
       setError(t("This card has no back side yet — add one first (+ Add back side)."));
@@ -139,9 +180,13 @@ export function CoverPdfDialog({
               hMM: f.trimMM.h,
             }
           : undefined;
-      const page = async (stage: typeof front, label: string): Promise<CardPdfPage> => ({
+      const page = async (
+        stage: typeof front,
+        stageWidth: number,
+        label: string,
+      ): Promise<CardPdfPage> => ({
         imageDataUrl: await withTimeout(
-          exportPng({ stage, stageWidth: w, mode: "bleed" }),
+          exportPng({ stage, stageWidth, mode: "bleed" }),
           15000,
           `Capturing the ${label}`,
         ),
@@ -156,10 +201,10 @@ export function CoverPdfDialog({
         scoreLines,
         scoreSpot,
       });
-      const frontPage = await page(front, "front");
-      const backPage = await page(back, "inside");
+      const frontPage = await page(front, w, "front");
+      const backPage = await page(back, backWidth, "inside");
       const blob = await withTimeout(
-        cardTrayPdf([frontPage, backPage]),
+        cardTrayPdf(backFirst ? [backPage, frontPage] : [frontPage, backPage]),
         15000,
         "Building the PDF",
       );
@@ -195,6 +240,28 @@ export function CoverPdfDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (busy ? null : onOpenChange(o))}>
+      {/* Off-screen render target for an inherited back — the live editor
+          never mounts a "back" stage for a card that has none of its own. */}
+      {inheritedBack && (
+        <div aria-hidden style={{ position: "fixed", left: -20000, top: 0, opacity: 0 }}>
+          <CardStage
+            card={{
+              key: "cover-pdf-back",
+              consoleName: "",
+              gameTitle: "",
+              project,
+              overlay: [],
+              back: inheritedBack,
+              holo: false,
+            }}
+            face="back"
+            width={TRIM_RECT.w}
+            stageRef={(s) => {
+              offscreenBack.current = s;
+            }}
+          />
+        </div>
+      )}
       <DialogContent className="flex max-h-[88vh] max-w-md flex-col gap-4">
         <DialogHeader>
           <DialogTitle>{t("Cover PDF – double-sided")}</DialogTitle>
@@ -274,6 +341,10 @@ export function CoverPdfDialog({
             {t("Fold line as a vector path ({name}, spot colour)", { name: scoreSpot.name })}
           </label>
         )}
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox checked={backFirst} onCheckedChange={(v) => setBackFirst(!!v)} />
+          {t("Back side first (page 1 = inside, page 2 = front)")}
+        </label>
 
         {!fits && (
           <span className="text-xs text-destructive">

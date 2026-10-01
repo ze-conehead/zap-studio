@@ -262,6 +262,8 @@ export const de: Record<string, string> = {
     "Schnittlinie als Pfad ({name}, Schmuckfarbe)",
   "Fold line as a vector path ({name}, spot colour)":
     "Falzlinie als Pfad ({name}, Schmuckfarbe)",
+  "Back side first (page 1 = inside, page 2 = front)":
+    "Rückseite zuerst (Seite 1 = Innenseite, Seite 2 = Vorderseite)",
   "Card-tray printing": "Kartenfach-Druck",
   "For a printer's disc/card tray (e.g. Canon's). The tray is usually bigger than the card, and exactly where the card sits on it depends on your printer — print a test page, measure the offset from a corner against the real card, and adjust it below. Remembered per tray type.":
     "Für das Disc-/Kartenfach eines Druckers (z. B. Canon). Das Fach ist meist größer als die Karte, und wo genau die Karte darauf sitzt, hängt vom Drucker ab – drucke eine Testseite, miss den Versatz ab einer Ecke an der echten Karte und passe ihn unten an. Wird je Fach-Typ gemerkt.",
