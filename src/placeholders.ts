@@ -97,6 +97,13 @@ export function placeholderLabel(key: PlaceholderKey, kind: WorkspaceKind): stri
 
 export const hasPlaceholders = (text: string) => /\{[a-z]+\}/i.test(text);
 
+// A real description runs much longer than a title — a "{desc}" Property
+// layer with nothing to resolve against falls back to this instead of the
+// bare token, so a long block of text can be previewed (wrapping, overflow,
+// frame sizing) while designing a template.
+export const LOREM_IPSUM =
+  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vitae arcu vel justo tincidunt vehicula. Sed dignissim, ante at ultricies feugiat, lectus mi gravida nulla, eget porta eros magna sed sapien. Nulla facilisi. Donec at sagittis nisi, cursus ullamcorper turpis.";
+
 function value(key: string, ctx: PlaceholderContext): string | undefined {
   const m = ctx.meta;
   switch (key) {

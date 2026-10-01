@@ -24,6 +24,7 @@ import { useImage } from "../../hooks/useImage";
 import { useAdjustedImage } from "../../imageAdjust";
 import { shadowProps } from "../../layerEffects";
 import {
+  LOREM_IPSUM,
   placeholderValue,
   resolvePlaceholders,
   type PlaceholderContext,
@@ -94,9 +95,13 @@ export function LayerInner({
   // {title} & co. resolve here, so measuring, flowing and exporting all see
   // the same string — the stored layer keeps the raw text. A Metadata layer
   // whose card has no value for its field draws nothing; only the global
-  // template (no card to preview) shows the token so the layer stays visible.
+  // template (no card to preview, so this never reaches an export) shows
+  // something instead — the token, or for {desc}, specifically, a lorem
+  // ipsum paragraph, since a description runs far longer than any other
+  // field and needs a realistic amount of text to check wrapping against.
   const text = layer.metaField
-    ? (placeholderValue(layer.metaField, vars) ?? (vars?.title === undefined ? layer.text : ""))
+    ? (placeholderValue(layer.metaField, vars) ??
+        (vars?.title === undefined ? (layer.metaField === "desc" ? LOREM_IPSUM : layer.text) : ""))
     : resolvePlaceholders(layer.text, vars);
   const shown = text === layer.text ? layer : { ...layer, text };
   return <TextInner layer={shown} gco={gco} obstacles={obstacles} />;

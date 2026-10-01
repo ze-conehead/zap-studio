@@ -227,10 +227,12 @@ export function LayerNode({
           const n = ref.current!;
           // Shapes bake the resize into width/height and keep scale at 1, so
           // a rounded corner stays a true constant radius instead of being
-          // stretched by a non-uniform node scale. A text frame does the
-          // same, so dragging its handles reflows the text at its own size
-          // rather than blowing the type up.
-          if (layer.type === "text" && layer.flow) {
+          // stretched by a non-uniform node scale. Text does the same, so
+          // dragging its handles resizes the frame the type sits in — wider
+          // reflows it, taller (flow text only; a plain text block's height
+          // just follows its content) grows the frame — never the type
+          // itself.
+          if (layer.type === "text") {
             const sx = n.scaleX();
             const sy = n.scaleY();
             n.scaleX(1);
@@ -243,7 +245,9 @@ export function LayerNode({
                 scaleX: 1,
                 scaleY: 1,
                 width: Math.max(24, layer.width * sx),
-                height: Math.max(24, (layer.height ?? DEFAULT_FLOW_HEIGHT) * sy),
+                ...(layer.flow
+                  ? { height: Math.max(24, (layer.height ?? DEFAULT_FLOW_HEIGHT) * sy) }
+                  : {}),
               },
               true,
             );
