@@ -251,8 +251,20 @@ export function EditorCanvas({
       }}
     >
       <div
-        className="grid place-items-center p-6"
-        style={{ minWidth: containerSize.w, minHeight: containerSize.h }}
+        className="grid place-items-center"
+        style={{
+          minWidth: containerSize.w,
+          minHeight: containerSize.h,
+          // Room to pan the card past its own edges once zoomed in — half a
+          // viewport on each side is enough to bring any point (a corner,
+          // say) all the way to the centre, reached by 2x zoom and held
+          // from there on (no reason for the scroll area to keep growing
+          // at 4x). Ramps up smoothly from the small fixed margin at fit
+          // scale or below, rather than jumping the instant zoom passes 1.
+          padding:
+            Math.max(0, Math.min(1, zoom - 1)) * (Math.max(containerSize.w, containerSize.h) / 2 - 24) +
+            24,
+        }}
       >
         <div className="flex items-start gap-6">
           <FaceStage
