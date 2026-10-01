@@ -99,16 +99,17 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   "switch-case": {
     id: "switch-case",
     name: "Nintendo Switch case",
-    // front 99 + spine 10 + back 99; back face = the case's inside.
+    // back 99 + spine 10 + front 99, left to right — same order as the DVD
+    // wrap's own panels below; back face = the case's inside.
     trimMM: { w: 208, h: 160.5 },
     bleedMM: 3,
     cornerRadiusMM: 0,
     thickRatio: 0.0008,
     hasBack: true,
     panels: [
-      { name: "Front", wMM: 99 },
-      { name: "Spine", wMM: 10 },
       { name: "Back", wMM: 99 },
+      { name: "Spine", wMM: 10 },
+      { name: "Front", wMM: 99 },
     ],
   },
   // Placeholder geometry — a project created with this format stores its own
