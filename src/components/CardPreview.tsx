@@ -60,6 +60,8 @@ function CardBrowserPreview({
   const [backImg, setBackImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
+  const features = getFormat().features;
+  const [showFeatures, setShowFeatures] = useState(true);
   const card3d = useRef<Card3DHandle>(null);
   const offFront = useRef<Konva.Stage | null>(null);
   const offBack = useRef<Konva.Stage | null>(null);
@@ -222,6 +224,7 @@ function CardBrowserPreview({
           front={img}
           back={hasBack ? backImg : null}
           holo={holo}
+          features={showFeatures ? features : undefined}
           placeholder={placeholder}
         />
       </div>
@@ -267,6 +270,12 @@ function CardBrowserPreview({
           <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
           {t("Holographic card")}
         </label>
+        {features && (
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={showFeatures} onCheckedChange={(v) => setShowFeatures(!!v)} />
+            {t("Show holes & edges")}
+          </label>
+        )}
         <span className="preview3d-sep" />
         <Button
           variant="outline"

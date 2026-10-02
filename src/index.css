@@ -234,6 +234,9 @@
   transform-style: flat;
 }
 .card3d .face.front {
+  /* Clear of the body's slices: for a label (<1px thick) the front sat at the
+     same depth as the first slice and z-fought it, painting the card silver. */
+  transform: translateZ(0.6px);
   box-shadow:
     0 40px 80px -18px rgba(0, 0, 0, 0.7),
     0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -245,7 +248,7 @@
     0 0 calc(26px + var(--tilt, 0) * 34px) rgba(140, 190, 255, 0.35);
 }
 .card3d .face.back {
-  transform: translateZ(calc(-1 * var(--thick))) rotateY(180deg);
+  transform: translateZ(calc(-1 * var(--thick) - 0.6px)) rotateY(180deg);
   background: #101018;
 }
 
@@ -307,6 +310,14 @@
   background: #18181b;
   color: #a1a1aa;
   font-size: 13px;
+}
+
+.card3d .features {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .card3d .ink,

@@ -35,6 +35,13 @@ export interface FormatPanel {
   wMM: number;
 }
 
+// Physical details of whatever the label is stuck on, drawn over the label in
+// the 3D preview only (never exported) so you can see what the artwork has to
+// work around. Positions are mm from the trim's top-left corner.
+export type FormatFeature =
+  | { kind: "hole"; xMM: number; yMM: number; rMM: number } // centred on x/y
+  | { kind: "edge"; side: "top" | "bottom" | "left" | "right"; sizeMM: number };
+
 export interface CardFormat {
   id: FormatId;
   name: string; // English i18n key
@@ -45,6 +52,7 @@ export interface CardFormat {
   thickRatio: number; // 3D preview thickness ÷ trim height
   hasBack: boolean; // a separate, independently designed reverse side
   panels?: FormatPanel[]; // absent = a single print area
+  features?: FormatFeature[]; // preview-only overlay, see FormatFeature
 }
 
 // Dimensions are approximate real-world values — tune here if needed.
@@ -68,6 +76,11 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     cornerRadiusMM: 1.5,
     thickRatio: 0.0015,
     hasBack: false,
+    // The two hub holes of the cassette shell, 42 mm apart.
+    features: [
+      { kind: "hole", xMM: 10.75, yMM: 27, rMM: 5.5 },
+      { kind: "hole", xMM: 52.75, yMM: 27, rMM: 5.5 },
+    ],
   },
   "floppy-label": {
     id: "floppy-label",
@@ -141,6 +154,8 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     cornerRadiusMM: 1.5,
     thickRatio: 0.0015,
     hasBack: false,
+    // The cartridge's raised top lip, which the label tucks up against.
+    features: [{ kind: "edge", side: "top", sizeMM: 4 }],
   },
   "amiga-label": {
     id: "amiga-label",

@@ -518,6 +518,7 @@ export const de: Record<string, string> = {
   "DVD covers": "DVD-Hüllen",
   Labels: "Labels",
   Category: "Kategorie",
+  "Show holes & edges": "Löcher & Kanten anzeigen",
   "DVD case wrap": "DVD-Hüllen-Wrap",
   "Cassette case (J-card)": "Kassettenhülle (J-Card)",
   "Nintendo Switch case": "Nintendo-Switch-Hülle",
