@@ -3,8 +3,9 @@
 
 import Konva from "konva";
 import { useRef } from "react";
-import { Ellipse, Group, Line, Rect, Text } from "react-konva";
-import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, TRIM_RECT } from "../../card";
+import { Circle, Ellipse, Group, Line, Rect, Text } from "react-konva";
+import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, PX_PER_MM, TRIM_RECT } from "../../card";
+import { getFormat } from "../../formats";
 import type { Guide } from "../../guides";
 import { useT } from "../../i18n";
 import { DEFAULT_FLOW_HEIGHT } from "../../textFlow";
@@ -32,6 +33,77 @@ export function Guides({ showBleed }: { showBleed: boolean }) {
         strokeWidth={1.5}
       />
       <RoundedCardOutline />
+    </>
+  );
+}
+
+// The holes / lip of whatever a label sticks on (cassette hubs, the top of an
+// NES cartridge) — translucent, so the artwork underneath stays editable.
+// Guides layer, so never exported.
+export function FeatureGuides() {
+  const features = getFormat().features;
+  if (!features) return null;
+  const mm = (v: number) => v * PX_PER_MM;
+  return (
+    <>
+      {features.map((f, i) => {
+        if (f.kind === "hole") {
+          return (
+            <Group key={i} listening={false}>
+              <Circle
+                x={TRIM_RECT.x + mm(f.xMM)}
+                y={TRIM_RECT.y + mm(f.yMM)}
+                radius={mm(f.rMM)}
+                fill="#0a0a0f"
+                opacity={0.55}
+              />
+              <Circle
+                x={TRIM_RECT.x + mm(f.xMM)}
+                y={TRIM_RECT.y + mm(f.yMM)}
+                radius={mm(f.rMM)}
+                stroke="#f8fafc"
+                strokeWidth={1.5}
+                dash={[10, 6]}
+              />
+            </Group>
+          );
+        }
+        const size = mm(f.sizeMM);
+        const horiz = f.side === "top" || f.side === "bottom";
+        const x = f.side === "right" ? TRIM_RECT.x + TRIM_RECT.w - size : TRIM_RECT.x;
+        const y = f.side === "bottom" ? TRIM_RECT.y + TRIM_RECT.h - size : TRIM_RECT.y;
+        const w = horiz ? TRIM_RECT.w : size;
+        const h = horiz ? size : TRIM_RECT.h;
+        const edge = {
+          top: [0, h],
+          bottom: [0, -h],
+          left: [w, 0],
+          right: [-w, 0],
+        }[f.side];
+        const start = f.side === "bottom" ? { x: 0, y: h } : f.side === "right" ? { x: w, y: 0 } : { x: 0, y: 0 };
+        const line =
+          f.side === "top"
+            ? [x, y + h, x + w, y + h]
+            : f.side === "bottom"
+              ? [x, y, x + w, y]
+              : f.side === "left"
+                ? [x + w, y, x + w, y + h]
+                : [x, y, x, y + h];
+        return (
+          <Group key={i} listening={false}>
+            <Rect
+              x={x}
+              y={y}
+              width={w}
+              height={h}
+              fillLinearGradientStartPoint={start}
+              fillLinearGradientEndPoint={{ x: start.x + edge[0], y: start.y + edge[1] }}
+              fillLinearGradientColorStops={[0, "rgba(248,250,252,0.3)", 1, "rgba(248,250,252,0)"]}
+            />
+            <Line points={line} stroke="#f8fafc" strokeWidth={1.5} dash={[10, 6]} />
+          </Group>
+        );
+      })}
     </>
   );
 }

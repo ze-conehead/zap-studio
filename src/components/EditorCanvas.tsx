@@ -39,7 +39,14 @@ import type {
 import { buildFaceLayers, effectiveBgFill } from "../faceLayers";
 import { CardBackgroundNodes, ReadOnlyLayer } from "./canvas/layerInner";
 import { LayerNode } from "./canvas/LayerNode";
-import { GuideLine, Guides, MainMaskOutline, PanelGuides, TextFrameOutline } from "./canvas/outlines";
+import {
+  FeatureGuides,
+  GuideLine,
+  Guides,
+  MainMaskOutline,
+  PanelGuides,
+  TextFrameOutline,
+} from "./canvas/outlines";
 import { layerBoxSize, snapNodeToGuides, type SnapHit, type SnapLines } from "./canvas/snapping";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
@@ -843,6 +850,7 @@ function FaceStage({
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} />
             <PanelGuides />
+            {!back && <FeatureGuides />}
 
             {!back && slotOutline && (
               <MainMaskOutline mask={slotOutline} colour="#38bdf8" />

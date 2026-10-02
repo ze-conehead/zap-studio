@@ -1,5 +1,6 @@
 import type { CardFormat } from "../formats";
 import { useT } from "../i18n";
+import { FeatureOverlay } from "./FeatureOverlay";
 
 // A to-scale outline of a sticker format: its aspect ratio, corner rounding
 // and — for the wraps / J-card — the fold lines between panels. Shown in the
@@ -59,6 +60,16 @@ export function FormatPreview({ format: f }: { format: CardFormat }) {
           stroke="var(--primary)"
           strokeWidth={2}
         />
+        {f.features && (
+          <FeatureOverlay
+            features={f.features}
+            trimMM={f.trimMM}
+            x={x}
+            y={y}
+            width={rw}
+            height={rh}
+          />
+        )}
         {folds.map((fx, i) => (
           <line
             key={i}
