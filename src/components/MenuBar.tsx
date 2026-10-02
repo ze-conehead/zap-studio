@@ -5,7 +5,7 @@
 // Radix' DropdownMenu has no menubar mode, so the "hover to walk across the
 // open menus" behaviour is wired up by hand via `openMenu`.
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { AlertTriangle, ArrowUpCircle, Check, ChevronRight, X } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,7 +28,14 @@ import {
   setLogoSource,
 } from "../covers";
 import { getWorkspace, getWorkspaceKind, setWorkspaceFormat } from "../workspace";
-import { FORMAT_IDS, FORMATS, getFormat, getFormatId, setFormat } from "../formats";
+import {
+  FORMAT_CATEGORIES,
+  FORMATS,
+  formatsIn,
+  getFormat,
+  getFormatId,
+  setFormat,
+} from "../formats";
 import { useLang, useT } from "../i18n";
 import { useStore } from "../store";
 import {
@@ -266,17 +273,22 @@ export function MenuBar({
 
       <Menu id="project" open={open} setOpen={setOpen} label={t("Project")}>
         <Sub label={t("Format")} value={t(getFormat().name)}>
-          {FORMAT_IDS.map((id) => (
-            <DropdownMenuItem
-              key={id}
-              disabled={id === getFormatId()}
-              onClick={() => {
-                setWorkspaceFormat(id);
-                setFormat(id); // reloads
-              }}
-            >
-              {t(FORMATS[id].name)}
-            </DropdownMenuItem>
+          {FORMAT_CATEGORIES.map((c) => (
+            <Fragment key={c.id}>
+              <DropdownMenuLabel>{t(c.name)}</DropdownMenuLabel>
+              {formatsIn(c.id).map((id) => (
+                <DropdownMenuItem
+                  key={id}
+                  disabled={id === getFormatId()}
+                  onClick={() => {
+                    setWorkspaceFormat(id);
+                    setFormat(id); // reloads
+                  }}
+                >
+                  {t(FORMATS[id].name)}
+                </DropdownMenuItem>
+              ))}
+            </Fragment>
           ))}
         </Sub>
 

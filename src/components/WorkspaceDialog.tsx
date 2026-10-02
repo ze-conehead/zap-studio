@@ -17,8 +17,9 @@ import {
 import {
   customCardFormat,
   DEFAULT_CUSTOM_FORMAT,
-  FORMAT_IDS,
+  FORMAT_CATEGORIES,
   FORMATS,
+  formatsIn,
   getFormatId,
   type CustomFormatSpec,
   type FormatId,
@@ -69,6 +70,7 @@ export function WorkspaceDialog({
   const [example, setExample] = useState(false);
   const [games, setGames] = useState(EXAMPLE_GAMES_DEFAULT);
   const [format, setFormat] = useState<FormatId>(getFormatId());
+  const category = FORMATS[format].category;
   const [customW, setCustomW] = useState(String(DEFAULT_CUSTOM_FORMAT.wMM));
   const [customH, setCustomH] = useState(String(DEFAULT_CUSTOM_FORMAT.hMM));
   const [customR, setCustomR] = useState(String(DEFAULT_CUSTOM_FORMAT.cornerRadiusMM));
@@ -233,6 +235,29 @@ export function WorkspaceDialog({
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="shrink-0 text-sm text-muted-foreground">
+                {t("Category")}
+              </span>
+              <div className="flex flex-1 gap-1 rounded-md border p-0.5">
+                {FORMAT_CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => category !== c.id && setFormat(formatsIn(c.id)[0])}
+                    className={cn(
+                      "flex-1 rounded px-2 py-1 text-sm font-medium",
+                      category === c.id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent",
+                    )}
+                  >
+                    {t(c.name)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-sm text-muted-foreground">
                 {t("Format")}
               </span>
               <Select value={format} onValueChange={(v) => setFormat(v as FormatId)}>
@@ -240,7 +265,7 @@ export function WorkspaceDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FORMAT_IDS.map((id) => (
+                  {formatsIn(category).map((id) => (
                     <SelectItem key={id} value={id}>
                       {t(FORMATS[id].name)}
                     </SelectItem>

@@ -1,7 +1,7 @@
 # Zap-Studio
 
 Design credit-card-sized stickers (ISO ID-1, 54 × 85.6 mm) — and cassette
-labels, floppy labels, DVD wraps, J-cards or any custom size — for game
+labels, floppy labels, NES / Amiga / Game Boy labels, DVD wraps, J-cards or any custom size — for game
 consoles and movie collections. Runs entirely locally: as a web app in the
 browser or as a desktop app for macOS, Windows and Linux. No server, no
 login; everything lives in the browser's IndexedDB / localStorage.

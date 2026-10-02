@@ -13,7 +13,19 @@ export type FormatId =
   | "dvd-insert"
   | "cassette-jcard"
   | "switch-case"
+  | "nes-label"
+  | "amiga-label"
+  | "gameboy-label"
   | "custom";
+
+// What the new-project dialog (and Project ▸ Format) groups formats under.
+export type FormatCategory = "cards" | "covers" | "labels";
+
+export const FORMAT_CATEGORIES: { id: FormatCategory; name: string }[] = [
+  { id: "cards", name: "Cards" },
+  { id: "covers", name: "DVD covers" },
+  { id: "labels", name: "Labels" },
+];
 
 // A multi-panel format (DVD wrap, cassette J-card) is one artboard split
 // into panels by fold lines. The panels partition trimMM.w left-to-right;
@@ -26,6 +38,7 @@ export interface FormatPanel {
 export interface CardFormat {
   id: FormatId;
   name: string; // English i18n key
+  category: FormatCategory;
   trimMM: { w: number; h: number };
   bleedMM: number;
   cornerRadiusMM: number; // preview mask only
@@ -38,6 +51,7 @@ export interface CardFormat {
 export const FORMATS: Record<FormatId, CardFormat> = {
   card: {
     id: "card",
+    category: "cards",
     name: "Credit card",
     trimMM: { w: 54, h: 85.6 },
     bleedMM: 3,
@@ -47,6 +61,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "cassette-label": {
     id: "cassette-label",
+    category: "labels",
     name: "Cassette label",
     trimMM: { w: 63.5, h: 42.7 },
     bleedMM: 2,
@@ -56,6 +71,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "floppy-label": {
     id: "floppy-label",
+    category: "labels",
     name: "Floppy disk label",
     trimMM: { w: 70, h: 70 },
     bleedMM: 2,
@@ -65,6 +81,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "dvd-insert": {
     id: "dvd-insert",
+    category: "covers",
     name: "DVD case wrap",
     // flap 7 + back 130.5 + spine 14 + front 130.5 + flap 7
     trimMM: { w: 289, h: 183 },
@@ -82,6 +99,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "cassette-jcard": {
     id: "cassette-jcard",
+    category: "covers",
     name: "Cassette case (J-card)",
     // front 64 + spine 12 + back 64 + tuck flap 14
     trimMM: { w: 154, h: 101.6 },
@@ -98,6 +116,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
   },
   "switch-case": {
     id: "switch-case",
+    category: "covers",
     name: "Nintendo Switch case",
     // back 99 + spine 10 + front 99, left to right — same order as the DVD
     // wrap's own panels below; back face = the case's inside.
@@ -112,10 +131,42 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Front", wMM: 99 },
     ],
   },
+  // Approximate real-world label recesses — tune here if needed.
+  "nes-label": {
+    id: "nes-label",
+    category: "labels",
+    name: "NES cartridge label",
+    trimMM: { w: 73, h: 54 },
+    bleedMM: 2,
+    cornerRadiusMM: 1.5,
+    thickRatio: 0.0015,
+    hasBack: false,
+  },
+  "amiga-label": {
+    id: "amiga-label",
+    category: "labels",
+    name: "Amiga disk label",
+    trimMM: { w: 70, h: 55 },
+    bleedMM: 2,
+    cornerRadiusMM: 2,
+    thickRatio: 0.0015,
+    hasBack: false,
+  },
+  "gameboy-label": {
+    id: "gameboy-label",
+    category: "labels",
+    name: "Game Boy cartridge label",
+    trimMM: { w: 46, h: 40 },
+    bleedMM: 2,
+    cornerRadiusMM: 1.5,
+    thickRatio: 0.0015,
+    hasBack: false,
+  },
   // Placeholder geometry — a project created with this format stores its own
   // dimensions (see CustomFormatSpec below) and getFormat() merges them in.
   custom: {
     id: "custom",
+    category: "cards",
     name: "Custom",
     trimMM: { w: 54, h: 85.6 },
     bleedMM: 3,
@@ -180,6 +231,9 @@ export function customCardFormat(spec: CustomFormatSpec): CardFormat {
 }
 
 export const FORMAT_IDS = Object.keys(FORMATS) as FormatId[];
+
+export const formatsIn = (c: FormatCategory): FormatId[] =>
+  FORMAT_IDS.filter((id) => FORMATS[id].category === c);
 
 const KEY = `stickerstudio:format${wsSuffix()}`;
 
