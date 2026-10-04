@@ -21,7 +21,8 @@ export interface OverviewCard {
   card: DemoCard; // ready to hand to <CardStage>
 }
 
-export async function loadOverviewCards(): Promise<OverviewCard[]> {
+// `consoleId` limits it to one console (the spine preview needs only that).
+export async function loadOverviewCards(consoleId?: string): Promise<OverviewCard[]> {
   // A console's / a card's own pick for an ancestor's editableFill shape or
   // background — see src/fillOverrides.ts. Global overrides are per
   // console; console overrides per card (when it has a saved design).
@@ -37,6 +38,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
   const out: OverviewCard[] = [];
 
   for (const c of getCatalog()) {
+    if (consoleId && c.id !== consoleId) continue;
     if (!tplCache.has(c.id)) {
       tplCache.set(c.id, await loadProject(templateId(c.id)));
     }
@@ -46,7 +48,7 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
     // the global one's.
     const inheritedBack = consoleP?.back ?? globalBack;
 
-    for (const g of c.games) {
+    for (const [gi, g] of c.games.entries()) {
       const key = gameKeyOf(c, g);
       const pid = getGameProject(key);
       const saved = pid ? await loadProject(pid) : undefined;
@@ -64,7 +66,10 @@ export async function loadOverviewCards(): Promise<OverviewCard[]> {
           // No design yet: an empty project still renders the console and
           // global templates, which is exactly what that card looks like.
           project: saved ?? newProject(g.title),
-          overlay: buildOverlay(consoleP, saved, globalP, consoleP),
+          overlay: buildOverlay(consoleP, saved, globalP, consoleP, {
+            index: gi,
+            count: c.games.length,
+          }),
           consoleBg: bgFill(consoleP, saved),
           globalBg,
           masks: [...globalMasks, ...alphaMasksOf(consoleP)],

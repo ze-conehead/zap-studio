@@ -53,6 +53,7 @@ import { maskOptions, type MaskOption } from "./templates";
 import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
 import { getFormatId } from "./formats";
+import { spineSliceFor } from "./spine";
 import {
   lastProjectId,
   lastViewId,
@@ -370,7 +371,13 @@ function Shell({
         overlay = globalLayers;
       } else {
         consoleLayers = overlayable(consoleP, descendantOfConsole);
-        overlay = buildOverlay(consoleP, descendantOfConsole, globalP, descendantOfGlobal);
+        overlay = buildOverlay(
+          consoleP,
+          descendantOfConsole,
+          globalP,
+          descendantOfGlobal,
+          spineSliceFor(project.gameKey),
+        );
       }
       setTpl({
         overlay,

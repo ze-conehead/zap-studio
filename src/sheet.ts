@@ -55,14 +55,16 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
 
   const meta = new Map<
     string,
-    { consoleId: string; consoleName: string; gameTitle: string }
+    { consoleId: string; consoleName: string; gameTitle: string; index: number; count: number }
   >();
   for (const c of getCatalog()) {
-    for (const g of c.games) {
+    for (const [index, g] of c.games.entries()) {
       meta.set(gameKeyOf(c, g), {
         consoleId: c.id,
         consoleName: c.name,
         gameTitle: g.title,
+        index,
+        count: c.games.length,
       });
     }
   }
@@ -84,7 +86,10 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       consoleName: m.consoleName,
       gameTitle: m.gameTitle,
       project,
-      overlay: buildOverlay(consoleP, project, globalP, consoleP),
+      overlay: buildOverlay(consoleP, project, globalP, consoleP, {
+        index: m.index,
+        count: m.count,
+      }),
       consoleBg: bgFill(consoleP, project),
       globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],

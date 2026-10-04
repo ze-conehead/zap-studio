@@ -26,6 +26,7 @@ import { ColorField, Field, FillEditor, Panel, RepeatingPatternControls, SliderF
 import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps, ShapeProps, TextProps } from "./inspector/layerProps";
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
+import { SpineBgProps } from "./inspector/spine";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
 
 interface InspectorProps {
@@ -176,6 +177,10 @@ export function Inspector({
 
   if (isCondition(selected)) {
     return <ConditionProps layer={selected} patch={patch} />;
+  }
+
+  if (isImage(selected) && selected.spineBg) {
+    return <SpineBgProps layer={selected} patch={patch} />;
   }
 
   if (selected.type === "background") {

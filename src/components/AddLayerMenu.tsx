@@ -59,6 +59,7 @@ import {
   localLogoUrl,
 } from "../localLogos";
 import { LocalImagePickerDialog } from "./LocalImagePickerDialog";
+import { hasSpine, isSpineBg } from "../spine";
 import { useStore } from "../store";
 import type { ShapeKind } from "../types";
 
@@ -75,6 +76,15 @@ export function AddLayerMenu() {
   // Frames get a running number so several don't land on top of each other.
   const nextMask = faceLayers.filter((l) => l.alphaMask).length + 1;
   const fileRef = useRef<HTMLInputElement>(null);
+  const spineRef = useRef<HTMLInputElement>(null);
+  // A console template with a spine panel can carry one picture spread over
+  // all its games' spines.
+  const canSpineBg =
+    !onBack &&
+    project.isTemplate &&
+    !project.isGlobalTemplate &&
+    hasSpine() &&
+    !faceLayers.some(isSpineBg);
   const [busy, setBusy] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -92,6 +102,24 @@ export function AddLayerMenu() {
       setBusy(true);
       const img = await fileToLayerSource(file);
       addImageLayer({ ...img, name: file.name.replace(/\.[^.]+$/, "") });
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addSpineBgFromFile = async (file: File) => {
+    try {
+      setBusy(true);
+      const img = await fileToLayerSource(file);
+      dispatch({
+        type: "ADD_LAYER",
+        layer: {
+          ...makeImageLayer({ ...img, name: t("Spine background"), fit: "cover" }),
+          spineBg: true,
+        },
+      });
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -187,6 +215,11 @@ export function AddLayerMenu() {
                   }
                 >
                   <ImageIcon /> {t("Logo slot")}
+                </DropdownMenuItem>
+              )}
+              {canSpineBg && (
+                <DropdownMenuItem onClick={() => spineRef.current?.click()}>
+                  <Images /> {t("Spine background …")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -318,6 +351,18 @@ export function AddLayerMenu() {
         onPick={(id) => {
           setCoverPickerOpen(false);
           void addFromLibrary("cover", id);
+        }}
+      />
+
+      <input
+        ref={spineRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void addSpineBgFromFile(f);
+          e.target.value = "";
         }}
       />
 

@@ -148,6 +148,13 @@ export interface ImageLayer extends BaseLayer {
   // Trimmed off each side, as fractions (0..1) of the natural size, so the
   // crop survives any resize. width / height describe the cropped area.
   crop?: ImageCrop;
+  // Console template only: a "Spine background". One picture spread across
+  // the spines of every game in the console — each card shows its own slice
+  // of it on its spine panel. The geometry (x/y/size/crop) is computed per
+  // card in src/spine.ts; the fields below steer it.
+  spineBg?: boolean;
+  spineCount?: number; // how many spines the picture spans; default = games in the console
+  spineFocus?: { x: number; y: number }; // 0..1, which part of the picture is kept when it has to be cropped; default centre
 }
 
 export interface ImageCrop {

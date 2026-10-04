@@ -10,6 +10,7 @@ import { t } from "./i18n";
 import { urlToLayerSource } from "./image";
 import { loadAllProjects, loadProject, saveProject } from "./persist";
 import { loadMainMask } from "./templates";
+import type { Layer } from "./types";
 
 export interface QuickImportRow {
   gameKey: string;
@@ -87,4 +88,45 @@ export async function insertCover(
     linkGameProject(row.gameKey, p.id);
     await saveProject(p);
   }
+}
+
+// Fetches every picture in `items`, fits each into its alpha mask (frame) and
+// adds them all to `row`'s design on disk in one save — creating and linking
+// the design if it doesn't exist yet. A picture that can't be fetched is
+// skipped; the ones that worked are still saved. Returns the masks that got
+// filled.
+export async function insertMaskImages(
+  row: QuickImportRow,
+  items: { url: string; mask: Layer; name: string }[],
+): Promise<Layer[]> {
+  const layers = [];
+  const filled: Layer[] = [];
+  for (const it of items) {
+    try {
+      const img = await urlToLayerSource(it.url);
+      layers.push(
+        fitImageToMask(
+          { ...makeImageLayer({ ...img, name: it.name }), maskId: it.mask.id },
+          it.mask,
+        ),
+      );
+      filled.push(it.mask);
+    } catch {
+      /* one bad URL shouldn't lose the rest */
+    }
+  }
+  if (!layers.length) return [];
+  const pid = getGameProject(row.gameKey);
+  const existing = pid ? await loadProject(pid) : undefined;
+  if (existing) {
+    await saveProject({ ...existing, layers: [...existing.layers, ...layers], updatedAt: Date.now() });
+  } else {
+    const p = newProject(row.gameTitle);
+    p.gameKey = row.gameKey;
+    p.consoleName = row.consoleName;
+    p.layers = layers;
+    linkGameProject(row.gameKey, p.id);
+    await saveProject(p);
+  }
+  return filled;
 }

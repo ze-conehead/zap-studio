@@ -4,6 +4,7 @@
 
 import { isBackground } from "./factory";
 import { withFillOverride } from "./fillOverrides";
+import { applySpine, type SpineSlice } from "./spine";
 import { isAlphaMask, resolveMask } from "./templates";
 import type { BackgroundLayer, CardBackground, Layer, Project } from "./types";
 
@@ -27,6 +28,8 @@ export function buildOverlay(
   descendantOfConsole: Project | undefined,
   globalP: Project | undefined,
   descendantOfGlobal: Project | undefined,
+  // Which spine of the console this card is, for a "Spine background" layer.
+  spine: SpineSlice = { index: 0, count: 1 },
 ): Layer[] {
   const overlayable = (p: Project | undefined, descendant: Project | undefined) =>
     (p?.layers ?? [])
@@ -34,8 +37,9 @@ export function buildOverlay(
       .map((l) => withFillOverride(l, descendant));
 
   const logo = consoleP?.layers.find((l) => l.type === "image" && l.logo);
-  const consoleLayers = overlayable(consoleP, descendantOfConsole).filter(
-    (l) => l.id !== logo?.id,
+  const consoleLayers = applySpine(
+    overlayable(consoleP, descendantOfConsole).filter((l) => l.id !== logo?.id),
+    spine,
   );
   const globalLayers = (globalP?.layers ?? []).flatMap((l): Layer[] => {
     if (isBackground(l)) return [];

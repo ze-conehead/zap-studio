@@ -63,6 +63,9 @@ import { loadLogoSlot } from "../templates";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import { MetaSweepDialog } from "./MetaSweepDialog";
+import { AutoFillDialog } from "./AutoFillDialog";
+import { SpinePreviewDialog } from "./SpinePreviewDialog";
+import { hasSpine } from "../spine";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
 type TreeFilter = "all" | "with" | "without";
@@ -132,6 +135,8 @@ export function GameTree({
 
   // Cover actions from the right-click menus.
   const [sweep, setSweep] = useState<SweepScope | null>(null);
+  const [autoFill, setAutoFill] = useState<SweepScope | null>(null);
+  const [spinePreview, setSpinePreview] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [consoleLogos, setConsoleLogos] = useState(false);
   const [consoleLogo, setConsoleLogo] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
@@ -234,11 +239,16 @@ export function GameTree({
       ? [{ label: t("Find logo"), onSelect: () => setConsoleLogo(row) }]
       : []),
     { label: t("Find covers"), onSelect: () => setSweep(row) },
+    { label: t("Auto-fill …"), onSelect: () => setAutoFill(row) },
+    ...(hasSpine()
+      ? [{ label: t("Spine preview …"), onSelect: () => setSpinePreview(row) }]
+      : []),
   ];
 
   const globalMenuItems = (): ContextMenuItem[] => [
     { label: t("Find logos"), onSelect: () => setConsoleLogos(true) },
     { label: t("Find covers"), onSelect: () => setSweep({}) },
+    { label: t("Auto-fill …"), onSelect: () => setAutoFill({}) },
   ];
 
   const activeConsole = activeConsoleId ?? activeGameKey?.split("/")[0];
@@ -704,6 +714,24 @@ export function GameTree({
           consoleId={sweep.consoleId}
           consoleName={sweep.consoleName}
           excludeGameKey={currentGameKey}
+        />
+      )}
+
+      {autoFill && (
+        <AutoFillDialog
+          open
+          onOpenChange={(o) => !o && setAutoFill(null)}
+          consoleId={autoFill.consoleId}
+          consoleName={autoFill.consoleName}
+        />
+      )}
+
+      {spinePreview && (
+        <SpinePreviewDialog
+          open
+          onOpenChange={(o) => !o && setSpinePreview(null)}
+          consoleId={spinePreview.consoleId}
+          consoleName={spinePreview.consoleName}
         />
       )}
 

@@ -25,6 +25,7 @@ import { getGamelistVersion, resolveBadgeMeta, subscribeGamelists } from "../gam
 import { getCatalogVersion, subscribeCatalog } from "../data/catalog";
 import { hiddenCaseIds, resolveConditions } from "../conditions";
 import { segmentLayers } from "../masking";
+import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
 import { sweepMaskMove } from "../maskSweep";
@@ -388,10 +389,17 @@ function FaceStage({
   const cases = resolveConditions(layerList, badgeMeta, preview).filter(
     (l: TLayer) => !l.logoSlot || project.isGlobalTemplate,
   );
+  // A console template shows its "Spine background" as the first spine of
+  // however many the console has (the preview dialog shows them all); cards
+  // get theirs resolved in buildOverlay().
+  const ownLayers =
+    project.isTemplate && !project.isGlobalTemplate && !back
+      ? applySpine(cases, spineSliceForConsole(project.consoleId))
+      : cases;
   // The back is a plain face — no template overlay, no alpha masks.
   const { layers: renderLayers, foreignIds } = buildFaceLayers(
     project,
-    cases,
+    ownLayers,
     back ? [] : resolveConditions(overlay, badgeMeta),
     masks,
   );
@@ -412,7 +420,7 @@ function FaceStage({
     const node =
       active && selectedId ? nodeRefs.current.get(selectedId) : undefined;
     const layer = layerList.find((l) => l.id === selectedId);
-    tr.nodes(active && node && layer && !layer.locked ? [node] : []);
+    tr.nodes(active && node && layer && !layer.locked && !isSpineBg(layer) ? [node] : []);
     tr.getLayer()?.batchDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, active, project, side]);

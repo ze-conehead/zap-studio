@@ -107,7 +107,10 @@ export async function drawPack(
       gameTitle: pick.game.title,
       project:
         saved ?? placeholderProject(gameKey, pick.console.name, pick.game.title),
-      overlay: buildOverlay(consoleP, saved, globalP, consoleP),
+      overlay: buildOverlay(consoleP, saved, globalP, consoleP, {
+        index: Math.max(0, pick.console.games.indexOf(pick.game)),
+        count: pick.console.games.length,
+      }),
       consoleBg: bgFill(consoleP, saved),
       globalBg: bgFill(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
