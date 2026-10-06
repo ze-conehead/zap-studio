@@ -1193,4 +1193,30 @@ export const de: Record<string, string> = {
   "{n} screenshot(s) inserted": "{n} Screenshot(s) eingefügt",
   "{n} item(s) had no usable picture": "{n} Eintrag/Einträge ohne brauchbares Bild",
   "{n} step(s) failed: {msg}": "{n} Schritt(e) fehlgeschlagen: {msg}",
+
+  // ── Snapshots ──
+  "Snapshots …": "Snapshots …",
+  "Snapshots – {name}": "Snapshots – {name}",
+  "Restore “{name}”?": "„{name}“ wiederherstellen?",
+  "The design goes back to this snapshot. You can undo it with ⌘Z.": "Das Design wird auf diesen Snapshot zurückgesetzt. Mit ⌘Z lässt sich das rückgängig machen.",
+  "Name, e.g. “before the redesign”": "Name, z. B. „vor dem Redesign“",
+  "No snapshots of this design yet.": "Noch keine Snapshots von diesem Design.",
+  "automatic": "automatisch",
+  "{n} layer(s)": "{n} Layer",
+  "Before auto-fill": "Vor Auto-Fill",
+
+  // ── Auto-fill review ──
+  "Check what was picked. “Next” takes the source’s next suggestion, “Choose” opens the search, the bin empties the frame. Changes are saved right away.": "Prüfe die Auswahl. „Weiter“ nimmt den nächsten Vorschlag der Quelle, „Auswählen“ öffnet die Suche, der Papierkorb leert den Rahmen. Änderungen werden sofort gespeichert.",
+  "That picture could not be loaded.": "Dieses Bild konnte nicht geladen werden.",
+  "That image is no longer there.": "Dieses Bild ist nicht mehr vorhanden.",
+  "Logo – {name}": "Logo – {name}",
+  "Empty": "Leer",
+  "Next suggestion ({n} / {total})": "Nächster Vorschlag ({n} / {total})",
+  "Choose …": "Auswählen …",
+  "Put it back": "Wieder einsetzen",
+  "Empty the frame": "Rahmen leeren",
+  "Review {n} picture(s) …": "{n} Bild(er) prüfen …",
+
+  // ── Auto-fill logo slot ──
+  "No logo slot in the global template — add one there first.": "Kein Logo-Slot im globalen Template – lege dort zuerst einen an.",
 };

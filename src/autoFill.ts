@@ -12,6 +12,7 @@ import { consolesWithoutLogo, insertConsoleLogo, type ConsoleRow } from "./conso
 import { getGameProject } from "./gameIndex";
 import { t } from "./i18n";
 import { loadProject } from "./persist";
+import { saveSnapshot } from "./snapshots";
 import { insertMaskImages, type QuickImportRow } from "./quickImport";
 import { alphaMasksOf, mainMaskOf, resolveMask, screenshotMasksOf } from "./templates";
 import type { Layer } from "./types";
@@ -29,6 +30,9 @@ export interface FillTask {
 }
 
 export interface AutoFillPlan {
+  // A console logo only draws inside the global template's logo slot — with
+  // no slot there is nowhere for one to go, so no logos are planned.
+  logoSlot: boolean;
   logos: ConsoleRow[];
   covers: FillTask[];
   screenshots: FillTask[];
@@ -41,6 +45,19 @@ export interface AutoFillProgress {
   label: string;
 }
 
+// One picture the run put in, with what else the source offered — the
+// review grid steps through `candidates` from there.
+export interface FilledFrame {
+  kind: "logo" | "cover" | "screenshot";
+  key: string; // gameKey, or the consoleId for a logo
+  consoleName: string;
+  title: string; // game title, or the console name for a logo
+  mask?: Layer; // the frame it fills (logos sit in the logo slot instead)
+  layerId: string;
+  candidates: string[];
+  index: number; // which candidate is in now
+}
+
 export interface AutoFillReport {
   logos: number;
   covers: number;
@@ -50,6 +67,7 @@ export interface AutoFillReport {
   // Steps that errored — the first message, to point at a missing API key etc.
   failed: number;
   firstError?: string;
+  filled: FilledFrame[];
 }
 
 /**
@@ -58,8 +76,12 @@ export interface AutoFillReport {
  * it to one console.
  */
 export async function planAutoFill(consoleId?: string): Promise<AutoFillPlan> {
-  const logos = (await consolesWithoutLogo()).filter((r) => !consoleId || r.consoleId === consoleId);
-  const globalMasks = alphaMasksOf(await loadProject(GLOBAL_TEMPLATE_ID));
+  const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
+  const logoSlot = !!globalP?.layers.some((l) => l.logoSlot);
+  const logos = logoSlot
+    ? (await consolesWithoutLogo()).filter((r) => !consoleId || r.consoleId === consoleId)
+    : [];
+  const globalMasks = alphaMasksOf(globalP);
   const covers: FillTask[] = [];
   const screenshots: FillTask[] = [];
 
@@ -85,10 +107,8 @@ export async function planAutoFill(consoleId?: string): Promise<AutoFillPlan> {
       if (empty.length) screenshots.push({ row, masks: empty });
     }
   }
-  return { logos, covers, screenshots };
+  return { logoSlot, logos, covers, screenshots };
 }
-
-const first = (c: CoverCandidate[]) => c[0]?.url;
 
 /** Runs the chosen phases of `plan` in order: logos, covers, screenshots. */
 export async function runAutoFill(
@@ -97,10 +117,26 @@ export async function runAutoFill(
   onProgress: (p: AutoFillProgress) => void,
   signal: AbortSignal,
 ): Promise<AutoFillReport> {
-  const report: AutoFillReport = { logos: 0, covers: 0, screenshots: 0, missing: 0, failed: 0 };
+  const report: AutoFillReport = {
+    logos: 0,
+    covers: 0,
+    screenshots: 0,
+    missing: 0,
+    failed: 0,
+    filled: [],
+  };
   const fail = (e: unknown) => {
     report.failed++;
     report.firstError ??= (e as Error).message;
+  };
+  // Every design / template this run is about to change gets an automatic
+  // snapshot first (once), so the whole run can be rolled back per card.
+  const snapped = new Set<string>();
+  const snapshotFirst = async (projectId: string | undefined) => {
+    if (!projectId || snapped.has(projectId)) return;
+    snapped.add(projectId);
+    const p = await loadProject(projectId);
+    if (p) await saveSnapshot(p, t("Before auto-fill"), { auto: true });
   };
 
   if (opts.logos) {
@@ -108,11 +144,22 @@ export async function runAutoFill(
       if (signal.aborted) return report;
       onProgress({ phase: "logos", done: i, total: plan.logos.length, label: row.consoleName });
       try {
-        const url = first(await searchLogos(row.consoleName));
+        const candidates = (await searchLogos(row.consoleName)).map((c) => c.url);
+        const url = candidates[0];
         if (!url) report.missing++;
         else {
-          await insertConsoleLogo(row, url);
+          await snapshotFirst(templateId(row.consoleId));
+          const layerId = await insertConsoleLogo(row, url);
           report.logos++;
+          report.filled.push({
+            kind: "logo",
+            key: row.consoleId,
+            consoleName: row.consoleName,
+            title: row.consoleName,
+            layerId,
+            candidates,
+            index: 0,
+          });
         }
       } catch (e) {
         fail(e);
@@ -130,35 +177,41 @@ export async function runAutoFill(
       const { row } = task;
       onProgress({ phase, done: i, total: tasks.length, label: `${row.consoleName} – ${row.gameTitle}` });
       try {
-        const cands = await search(row.consoleName, row.gameTitle);
-        // Distinct pictures: each frame takes the next candidate. Hand out
-        // one per frame; a candidate that turns out unusable is replaced by
-        // a spare from the list.
-        const urls = cands.map((c) => c.url);
-        const items = task.masks.slice(0, urls.length).map((mask, k) => ({
-          url: urls[k],
-          mask,
-          name: phase === "covers" ? t("Main image") : mask.name,
-        }));
-        if (!items.length) {
+        const urls = (await search(row.consoleName, row.gameTitle)).map((c) => c.url);
+        if (!urls.length) {
           report.missing++;
           continue;
         }
-        let filled = await insertMaskImages(row, items);
-        const spare = urls.slice(items.length);
-        // Retry the frames that failed with the spare candidates.
-        let left = task.masks.filter((m) => !filled.some((f) => f.id === m.id));
-        while (left.length && spare.length && !signal.aborted) {
-          const retry = left.slice(0, spare.length).map((mask) => ({
-            url: spare.shift() as string,
-            mask,
-            name: phase === "covers" ? t("Main image") : mask.name,
-          }));
-          filled = [...filled, ...(await insertMaskImages(row, retry))];
-          left = task.masks.filter((m) => !filled.some((f) => f.id === m.id));
+        await snapshotFirst(getGameProject(row.gameKey));
+        // Distinct pictures: each frame takes the next candidate; one that
+        // can't be fetched is skipped for the one after it.
+        let next = 0;
+        let short = false;
+        for (const mask of task.masks) {
+          let done = false;
+          while (!done && next < urls.length && !signal.aborted) {
+            const index = next++;
+            const [hit] = await insertMaskImages(row, [
+              { url: urls[index], mask, name: phase === "covers" ? t("Main image") : mask.name },
+            ]);
+            if (hit) {
+              done = true;
+              report[phase]++;
+              report.filled.push({
+                kind: phase === "covers" ? "cover" : "screenshot",
+                key: row.gameKey,
+                consoleName: row.consoleName,
+                title: row.gameTitle,
+                mask,
+                layerId: hit.layerId,
+                candidates: urls,
+                index,
+              });
+            }
+          }
+          if (!done) short = true;
         }
-        report[phase] += filled.length;
-        if (left.length) report.missing++;
+        if (short) report.missing++;
       } catch (e) {
         fail(e);
       }

@@ -93,24 +93,23 @@ export async function insertCover(
 // Fetches every picture in `items`, fits each into its alpha mask (frame) and
 // adds them all to `row`'s design on disk in one save — creating and linking
 // the design if it doesn't exist yet. A picture that can't be fetched is
-// skipped; the ones that worked are still saved. Returns the masks that got
-// filled.
+// skipped; the ones that worked are still saved. Returns which mask got which
+// new layer.
 export async function insertMaskImages(
   row: QuickImportRow,
   items: { url: string; mask: Layer; name: string }[],
-): Promise<Layer[]> {
+): Promise<{ mask: Layer; layerId: string }[]> {
   const layers = [];
-  const filled: Layer[] = [];
+  const filled: { mask: Layer; layerId: string }[] = [];
   for (const it of items) {
     try {
       const img = await urlToLayerSource(it.url);
-      layers.push(
-        fitImageToMask(
-          { ...makeImageLayer({ ...img, name: it.name }), maskId: it.mask.id },
-          it.mask,
-        ),
+      const layer = fitImageToMask(
+        { ...makeImageLayer({ ...img, name: it.name }), maskId: it.mask.id },
+        it.mask,
       );
-      filled.push(it.mask);
+      layers.push(layer);
+      filled.push({ mask: it.mask, layerId: layer.id });
     } catch {
       /* one bad URL shouldn't lose the rest */
     }
@@ -129,4 +128,37 @@ export async function insertMaskImages(
     await saveProject(p);
   }
   return filled;
+}
+
+// Swaps the picture of one image layer in a game's design on disk for `url`,
+// re-fitted into `mask` from the new picture's own size (any crop dropped).
+export async function replaceGameImage(
+  gameKey: string,
+  layerId: string,
+  url: string,
+  mask: Layer | undefined,
+): Promise<void> {
+  const pid = getGameProject(gameKey);
+  const p = pid ? await loadProject(pid) : undefined;
+  const old = p?.layers.find((l) => l.id === layerId);
+  if (!p || old?.type !== "image") throw new Error(t("That image is no longer there."));
+  const img = await urlToLayerSource(url);
+  const fresh = makeImageLayer({ ...img, name: old.name });
+  const next = fitImageToMask(
+    { ...old, ...img, width: fresh.width, height: fresh.height, crop: undefined },
+    mask,
+  );
+  await saveProject({
+    ...p,
+    layers: p.layers.map((l) => (l.id === layerId ? next : l)),
+    updatedAt: Date.now(),
+  });
+}
+
+/** Drops one layer from a game's design on disk. */
+export async function removeGameLayer(gameKey: string, layerId: string): Promise<void> {
+  const pid = getGameProject(gameKey);
+  const p = pid ? await loadProject(pid) : undefined;
+  if (!p) return;
+  await saveProject({ ...p, layers: p.layers.filter((l) => l.id !== layerId), updatedAt: Date.now() });
 }

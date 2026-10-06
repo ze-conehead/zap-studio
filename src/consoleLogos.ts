@@ -47,11 +47,11 @@ export async function makeConsoleLogoLayer(
   );
 }
 
-/** Embeds `url` and adds it as a logo image layer on the console's template. */
+/** Embeds `url` and adds it as a logo image layer on the console's template. Returns the new layer's id. */
 export async function insertConsoleLogo(
   row: ConsoleRow,
   url: string,
-): Promise<void> {
+): Promise<string> {
   const layer = await makeConsoleLogoLayer(url, await loadLogoSlot());
   const existing = await loadProject(templateId(row.consoleId));
   const base = existing ?? newConsoleTemplate(row.consoleId, row.consoleName);
@@ -61,4 +61,25 @@ export async function insertConsoleLogo(
     layers: [...base.layers, layer],
     updatedAt: Date.now(),
   });
+  return layer.id;
+}
+
+/** Swaps the picture of a console's logo layer for `url`, fitted into the logo slot again. */
+export async function replaceConsoleLogo(consoleId: string, layerId: string, url: string): Promise<void> {
+  const p = await loadProject(templateId(consoleId));
+  const old = p?.layers.find((l) => l.id === layerId);
+  if (!p || !old) throw new Error(t("That image is no longer there."));
+  const fresh = await makeConsoleLogoLayer(url, await loadLogoSlot());
+  await saveProject({
+    ...p,
+    layers: p.layers.map((l) => (l.id === layerId ? { ...fresh, id: layerId } : l)),
+    updatedAt: Date.now(),
+  });
+}
+
+/** Drops one layer from a console's template on disk. */
+export async function removeConsoleLayer(consoleId: string, layerId: string): Promise<void> {
+  const p = await loadProject(templateId(consoleId));
+  if (!p) return;
+  await saveProject({ ...p, layers: p.layers.filter((l) => l.id !== layerId), updatedAt: Date.now() });
 }

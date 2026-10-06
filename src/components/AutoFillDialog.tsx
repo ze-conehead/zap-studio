@@ -14,6 +14,7 @@ import { useStore } from "../store";
 import { getWorkspaceKind } from "../workspace";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
+import { AutoFillReview } from "./AutoFillReview";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 // Fully automatic Find logos / Find cover / screenshots: no search dialog,
@@ -34,12 +35,15 @@ export function AutoFillDialog({
 }) {
   const t = useT();
   const { state, dispatch } = useStore();
-  const [phase, setPhase] = useState<"loading" | "setup" | "run" | "done">("loading");
+  const [phase, setPhase] = useState<"loading" | "setup" | "run" | "done" | "review">("loading");
   const [plan, setPlan] = useState<AutoFillPlan | null>(null);
   const [opts, setOpts] = useState<AutoFillOptions>({ logos: true, covers: false, screenshots: true });
   const [progress, setProgress] = useState<AutoFillProgress | null>(null);
   const [report, setReport] = useState<AutoFillReport | null>(null);
   const abort = useRef<AbortController | null>(null);
+  // The design open in the editor when the run started, to reload it from
+  // disk afterwards (the run and the review write straight to disk).
+  const opened = useRef<{ id: string; updatedAt: number } | null>(null);
   const movies = getWorkspaceKind() === "movies";
 
   useEffect(() => {
@@ -71,14 +75,28 @@ export function AutoFillDialog({
     const ctl = new AbortController();
     abort.current = ctl;
     setPhase("run");
-    const openId = state.project.id;
-    const before = state.project.updatedAt;
+    opened.current = { id: state.project.id, updatedAt: state.project.updatedAt };
     const r = await runAutoFill(plan, opts, setProgress, ctl.signal);
     setReport(r);
-    // Pick up what was written to the design that's open in the editor.
-    const fresh = await loadProject(openId);
-    if (fresh && fresh.updatedAt !== before) dispatch({ type: "LOAD", project: fresh });
+    await refreshOpen();
     setPhase("done");
+  };
+
+  // Pick up what was written to the design that's open in the editor.
+  const refreshOpen = async () => {
+    const o = opened.current;
+    if (!o) return;
+    const fresh = await loadProject(o.id);
+    if (fresh && fresh.updatedAt !== o.updatedAt) {
+      dispatch({ type: "LOAD", project: fresh });
+      opened.current = { id: o.id, updatedAt: fresh.updatedAt };
+    }
+  };
+
+  const close = (o: boolean) => {
+    if (o || phase === "run") return;
+    if (phase === "review") void refreshOpen();
+    onOpenChange(false);
   };
 
   const counts = plan
@@ -112,8 +130,12 @@ export function AutoFillDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (phase === "run" ? undefined : onOpenChange(o))}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent
+        className={
+          phase === "review" ? "flex max-h-[88vh] max-w-5xl flex-col gap-3" : "max-w-md"
+        }
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="size-4" />
@@ -141,7 +163,9 @@ export function AutoFillDialog({
               t("Logos"),
               movies
                 ? t("Not available for movies.")
-                : t("{n} console(s) without a logo", { n: counts.logos }),
+                : !plan.logoSlot
+                  ? t("No logo slot in the global template — add one there first.")
+                  : t("{n} console(s) without a logo", { n: counts.logos }),
               movies || counts.logos === 0,
             )}
             {row(
@@ -164,7 +188,7 @@ export function AutoFillDialog({
               counts.covers === 0,
             )}
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={() => close(false)}>
                 {t("Cancel")}
               </Button>
               <Button disabled={!anything} onClick={() => void start()}>
@@ -222,8 +246,24 @@ export function AutoFillDialog({
                 </li>
               )}
             </ul>
-            <Button onClick={() => onOpenChange(false)}>{t("Close")}</Button>
+            <div className="flex justify-end gap-2">
+              {report.filled.length > 0 && (
+                <Button variant="outline" onClick={() => setPhase("review")}>
+                  {t("Review {n} picture(s) …", { n: report.filled.length })}
+                </Button>
+              )}
+              <Button onClick={() => close(false)}>{t("Close")}</Button>
+            </div>
           </div>
+        )}
+
+        {phase === "review" && report && (
+          <>
+            <AutoFillReview frames={report.filled} />
+            <div className="flex justify-end">
+              <Button onClick={() => close(false)}>{t("Done")}</Button>
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>

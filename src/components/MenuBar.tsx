@@ -53,6 +53,7 @@ import {
 import type { GuideApi } from "../App";
 import type { CanvasHandle } from "./EditorCanvas";
 import { useFileActions } from "./fileActions";
+import { SnapshotsDialog } from "./SnapshotsDialog";
 import { checkForUpdate, dismissUpdate, type UpdateInfo } from "../updateCheck";
 
 interface Props {
@@ -209,6 +210,7 @@ export function MenuBar({
   const { state, dispatch } = useStore();
   const { project, past, future, showBleed, selectedId } = state;
   const [open, setOpen] = useState<MenuId | null>(null);
+  const [snapshots, setSnapshots] = useState(false);
   const file = useFileActions(canvas);
   const { zipRef } = file;
   const coverSource = getCoverSource();
@@ -316,6 +318,7 @@ export function MenuBar({
         >
           {t("Redo (⌘⇧Z)")}
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSnapshots(true)}>{t("Snapshots …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={!selectedId}
@@ -557,6 +560,7 @@ export function MenuBar({
           e.target.value = "";
         }}
       />
+      <SnapshotsDialog open={snapshots} onOpenChange={setSnapshots} />
     </div>
   );
 }

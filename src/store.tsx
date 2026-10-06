@@ -55,6 +55,8 @@ type Action =
   | { type: "SELECT"; id: string | null }
   | { type: "TOGGLE"; key: "showBleed" }
   | { type: "UNDO" }
+  // Puts a snapshot's content back (src/snapshots.ts) — one undoable step.
+  | { type: "RESTORE"; project: Project }
   | { type: "REDO" }
   // Jump to a point in the history list: `to` indexes [...past, current, ...future].
   | { type: "JUMP"; to: number }
@@ -297,6 +299,13 @@ function reducer(state: State, action: Action): State {
 
     case "TOGGLE":
       return { ...state, [action.key]: !state[action.key] };
+
+    case "RESTORE":
+      return {
+        ...commit(state, { ...action.project, id: project.id, updatedAt: Date.now() }),
+        side: "front",
+        selectedId: null,
+      };
 
     case "JUMP": {
       const base = state.pending ?? state.project;

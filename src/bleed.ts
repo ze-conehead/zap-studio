@@ -8,6 +8,7 @@ import { loadGuides, saveGuides } from "./guides";
 import { getBaseFormat, getFormat, setBleedOverride } from "./formats";
 import { lastProjectId, loadAllProjects, mapTrash, saveProject } from "./persist";
 import { PX_PER_MM } from "./card";
+import { mapSnapshots } from "./snapshots";
 import type { Layer, Project } from "./types";
 import { wsSuffix } from "./workspace";
 
@@ -34,6 +35,7 @@ export async function changeBleed(mm: number): Promise<void> {
     if (last) localStorage.setItem(LAST, last);
     else localStorage.removeItem(LAST);
     await mapTrash(move);
+    await mapSnapshots(move);
     const guides = loadGuides();
     saveGuides({ ...guides, items: guides.items.map((g) => ({ ...g, pos: g.pos + d })) });
   }
