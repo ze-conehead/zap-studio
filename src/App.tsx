@@ -12,6 +12,7 @@ import { MetadataPanel } from "./components/MetadataPanel";
 import { ProjectsDialog } from "./components/ProjectsDialog";
 import { MenuBar } from "./components/MenuBar";
 import { OverviewDialog } from "./components/OverviewDialog";
+import { CollectionStatusDialog } from "./components/CollectionStatusDialog";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
@@ -444,6 +445,7 @@ function Shell({
   const [dataSafety, setDataSafety] = useState(false);
   const [workspaces, setWorkspaces] = useState(false);
   const [preflight, setPreflight] = useState(false);
+  const [collection, setCollection] = useState(false);
   const [apiKeys, setApiKeys] = useState(false);
   const [customFonts, setCustomFonts] = useState(false);
   const [manageLogos, setManageLogos] = useState(false);
@@ -509,6 +511,7 @@ function Shell({
     onOpenDataSafety: () => setDataSafety(true),
     onOpenWorkspaces: () => setWorkspaces(true),
     onOpenPreflight: () => setPreflight(true),
+    onOpenCollection: () => setCollection(true),
     onOpenApiKeys: () => setApiKeys(true),
     onOpenCustomFonts: () => setCustomFonts(true),
     onOpenManageLogos: () => setManageLogos(true),
@@ -603,6 +606,7 @@ function Shell({
       />
       <DataSafetyDialog open={dataSafety} onOpenChange={setDataSafety} />
       <WorkspaceDialog open={workspaces} onOpenChange={setWorkspaces} />
+      <CollectionStatusDialog open={collection} onOpenChange={setCollection} onPick={onPickGame} />
       <PreflightDialog
         open={preflight}
         onOpenChange={setPreflight}

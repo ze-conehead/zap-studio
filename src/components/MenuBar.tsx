@@ -71,6 +71,7 @@ interface Props {
   onOpenDataSafety: () => void;
   onOpenWorkspaces: () => void;
   onOpenPreflight: () => void;
+  onOpenCollection: () => void;
   onOpenApiKeys: () => void;
   onOpenCustomFonts: () => void;
   onOpenManageLogos: () => void;
@@ -193,6 +194,7 @@ export function MenuBar({
   onOpenDataSafety,
   onOpenWorkspaces,
   onOpenPreflight,
+  onOpenCollection,
   onOpenApiKeys,
   onOpenCustomFonts,
   onOpenManageLogos,
@@ -247,6 +249,7 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenProjects}>{t("Open design …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onOpenCollection}>{t("Collection status …")}</DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenPreflight}>
           {t("Preflight check …")}
         </DropdownMenuItem>
