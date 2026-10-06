@@ -1,4 +1,4 @@
-import { ChevronRight, Loader2, Search, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, ChevronRight, Loader2, Search, Trash2, Undo2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import type { FilledFrame } from "../autoFill";
 import { insertConsoleLogo, removeConsoleLayer, replaceConsoleLogo } from "../consoleLogos";
@@ -81,6 +81,16 @@ export function AutoFillReview({ frames }: { frames: FilledFrame[] }) {
 
   const picked = picking !== null ? items[picking] : null;
 
+  // The same picture on several cards (similar titles return the same hits):
+  // for each item, the other cards that got that picture too.
+  const sharedWith = (it: Item): string[] => {
+    if (it.removed || it.kind === "logo") return [];
+    const titles = items
+      .filter((o) => o !== it && !o.removed && o.kind !== "logo" && o.key !== it.key && o.url === it.url)
+      .map((o) => o.title);
+    return [...new Set(titles)];
+  };
+
   return (
     <div className="flex min-h-0 flex-col gap-2">
       <p className="text-xs text-muted-foreground">
@@ -132,6 +142,17 @@ export function AutoFillReview({ frames }: { frames: FilledFrame[] }) {
                           </div>
                         )}
                       </div>
+                      {sharedWith(it).length > 0 && (
+                        <span
+                          className="flex items-center gap-1 text-[11px] text-amber-500"
+                          title={sharedWith(it).join(", ")}
+                        >
+                          <AlertTriangle className="size-3 shrink-0" />
+                          <span className="truncate">
+                            {t("Also on {titles}", { titles: sharedWith(it).join(", ") })}
+                          </span>
+                        </span>
+                      )}
                       <div className="flex items-center gap-0.5">
                         <span className="mr-auto truncate text-[11px] text-muted-foreground">
                           {it.kind === "logo" ? t("Logo") : it.mask?.name}
