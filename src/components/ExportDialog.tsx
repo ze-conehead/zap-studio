@@ -104,7 +104,7 @@ export function ExportDialog({
         />
         <Row
           icon={Scissors}
-          label={t("Print / cut sheet (Cricut · wir-machen-druck) …")}
+          label={t("Print / cut sheet (A4 · Letter · Cricut · wir-machen-druck) …")}
           onClick={() => closeThen(onOpenCutSheet)}
         />
       </DialogContent>

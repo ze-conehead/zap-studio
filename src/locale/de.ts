@@ -951,8 +951,6 @@ export const de: Record<string, string> = {
   "This card": "Diese Karte",
   "Multiple cards": "Mehrere Karten",
   "Cut sheet for Cricut …": "Schneidebogen für Cricut …",
-  "Print / cut sheet (Cricut · wir-machen-druck) …":
-    "Druck-/Schneidebogen (Cricut · wir-machen-druck) …",
   "Cut sheet for Cricut": "Schneidebogen für Cricut",
   "Sticker sheet for wir-machen-druck.de":
     "Stickerbogen für wir-machen-druck.de",
@@ -1231,4 +1229,17 @@ export const de: Record<string, string> = {
   "Default": "Standard",
   "Automatic (from the cover)": "Automatisch (aus dem Cover)",
   "Choose a color": "Farbe wählen",
+
+  // ── Paper sheets ──
+  "A single card doesn't fit on the sheet inside the margin.": "Eine einzelne Karte passt nicht innerhalb des Rands auf den Bogen.",
+  "Print sheet ({paper})": "Druckbogen ({paper})",
+  "A4 sheet (PDF)": "A4-Bogen (PDF)",
+  "US Letter sheet (PDF)": "US-Letter-Bogen (PDF)",
+  "Lays the designs out on {paper} paper at real size, as many as fit inside the margin, centred and in the same spots on every page — with crop marks for cutting by hand. One PDF; print at 100 % (“actual size”).": "Verteilt die Designs in Originalgröße auf {paper}-Papier – so viele, wie innerhalb des Rands passen, mittig und auf jeder Seite an derselben Stelle, mit Schnittmarken zum Ausschneiden. Ein PDF; mit 100 % („Originalgröße“) drucken.",
+  "Unprinted border on every side — most printers can't print right to the edge.": "Unbedruckter Rand rundum – die meisten Drucker drucken nicht bis an die Kante.",
+  "Margin": "Rand",
+  "{pages} sheet(s), up to {n} per sheet. Cyan only shows the trim edge here — the PDF has the crop marks. Print at 100 % (“actual size”), never “fit to page”.": "{pages} Bogen, bis zu {n} pro Bogen. Cyan zeigt hier nur die Schnittkante – im PDF sind die Schnittmarken. Mit 100 % („Originalgröße“) drucken, nie „an Seite anpassen“.",
+
+  // ── Export menu ──
+  "Print / cut sheet (A4 · Letter · Cricut · wir-machen-druck) …": "Druck-/Schneidebogen (A4 · Letter · Cricut · wir-machen-druck) …",
 };

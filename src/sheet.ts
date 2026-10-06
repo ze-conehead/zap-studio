@@ -103,7 +103,15 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
   return out;
 }
 
-export type SheetTarget = "cricut" | "wmd";
+export type SheetTarget = "cricut" | "wmd" | "a4" | "letter";
+
+// Plain paper sheets for an office printer: the page is the whole sheet,
+// the cards sit centred inside a margin the printer can reach.
+export const PAPER = {
+  a4: { wMM: 210, hMM: 297 },
+  letter: { wMM: 215.9, hMM: 279.4 },
+} as const;
+export const isPaper = (t: SheetTarget): t is keyof typeof PAPER => t === "a4" || t === "letter";
 
 // Outer bleed added around the whole wir-machen-druck sheet.
 export const WMD_BLEED_MM = 2;
@@ -121,6 +129,8 @@ export interface SheetOptions {
   // … shifted by this much (mm) to cancel the printer's duplex offset.
   duplexXMM: number;
   duplexYMM: number;
+  // Paper sheets only: unprinted border on every side.
+  marginMM: number;
 }
 
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
@@ -131,6 +141,7 @@ export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   backs: false,
   duplexXMM: 0,
   duplexYMM: 0,
+  marginMM: 8,
 };
 
 // Crop marks: this long, this far off the bleed edge; the sheet gets this
@@ -189,13 +200,20 @@ export async function composeSheet(
   if (!cardImages.length) throw new Error("no cards");
 
   const wmd = opts.target === "wmd";
+  const paper = isPaper(opts.target) ? PAPER[opts.target] : null;
   const gap = Math.max(0, opts.gapMM) * PX_PER_MM;
   // Each printed cell is the whole card canvas — trim plus the full bleed on
   // every side, always visible.
   const cellW = CANVAS.w;
   const cellH = CANVAS.h;
   // The sheet's margin: the wmd outer bleed, or room for the crop marks.
-  const outerBleed = wmd ? WMD_BLEED_MM * PX_PER_MM : opts.cropMarks ? MARK_MARGIN_MM * PX_PER_MM : 0;
+  const outerBleed = paper
+    ? Math.max(0, opts.marginMM) * PX_PER_MM
+    : wmd
+      ? WMD_BLEED_MM * PX_PER_MM
+      : opts.cropMarks
+        ? MARK_MARGIN_MM * PX_PER_MM
+        : 0;
   const whiteBg = wmd || opts.background === "white";
 
   let cols: number;
@@ -209,8 +227,8 @@ export async function composeSheet(
     perPage = cardImages.length;
     pageCount = 1;
   } else {
-    const printW = PRINT_W_MM * PX_PER_MM - outerBleed * 2;
-    const printH = PRINT_H_MM * PX_PER_MM - outerBleed * 2;
+    const printW = (paper ? paper.wMM : PRINT_W_MM) * PX_PER_MM - outerBleed * 2;
+    const printH = (paper ? paper.hMM : PRINT_H_MM) * PX_PER_MM - outerBleed * 2;
     cols = Math.floor((printW + gap) / (cellW + gap));
     rows = Math.floor((printH + gap) / (cellH + gap));
     if (cols < 1 || rows < 1) throw new Error("card-too-big");
@@ -232,10 +250,17 @@ export async function composeSheet(
 
   for (let p = 0; p < pageCount; p++) {
     const slice = imgs.slice(p * perPage, p * perPage + perPage);
-    const pcols = Math.min(cols, slice.length);
-    const prows = Math.ceil(slice.length / pcols);
-    const pageW = Math.round(pcols * cellW + (pcols - 1) * gap + outerBleed * 2);
-    const pageH = Math.round(prows * cellH + (prows - 1) * gap + outerBleed * 2);
+    // A paper page is the whole sheet with the full grid centred on it — the
+    // same spots on every page, even a half-empty last one. Otherwise the
+    // page hugs the cards.
+    const pcols = paper ? cols : Math.min(cols, slice.length);
+    const prows = paper ? rows : Math.ceil(slice.length / pcols);
+    const gridW = pcols * cellW + (pcols - 1) * gap;
+    const gridH = prows * cellH + (prows - 1) * gap;
+    const pageW = paper ? Math.round(paper.wMM * PX_PER_MM) : Math.round(gridW + outerBleed * 2);
+    const pageH = paper ? Math.round(paper.hMM * PX_PER_MM) : Math.round(gridH + outerBleed * 2);
+    const originX = paper ? Math.round((pageW - gridW) / 2) : outerBleed;
+    const originY = paper ? Math.round((pageH - gridH) / 2) : outerBleed;
     const cutRects: CutRect[] = [];
 
     const canvas = document.createElement("canvas");
@@ -248,8 +273,8 @@ export async function composeSheet(
     }
 
     const cellPos = (i: number) => ({
-      cx: outerBleed + (i % pcols) * (cellW + gap),
-      cy: outerBleed + Math.floor(i / pcols) * (cellH + gap),
+      cx: originX + (i % pcols) * (cellW + gap),
+      cy: originY + Math.floor(i / pcols) * (cellH + gap),
     });
     slice.forEach((img, i) => {
       const { cx, cy } = cellPos(i);
@@ -264,7 +289,8 @@ export async function composeSheet(
         rMM: rMm,
       });
     });
-    if (opts.cropMarks) drawCropMarks(ctx, slice.length, cellPos, cellW, cellH, gap, outerBleed, pageW, pageH);
+    const grid = { l: originX, t: originY, r: originX + gridW, b: originY + gridH };
+    if (opts.cropMarks) drawCropMarks(ctx, slice.length, cellPos, cellW, cellH, gap, grid, pageW, pageH);
 
     // The back sheet: the same grid mirrored left ↔ right (a long-edge
     // duplex flip), each back nudged by the duplex offset. No marks — the
@@ -341,7 +367,8 @@ function drawCropMarks(
   cellW: number,
   cellH: number,
   gap: number,
-  margin: number,
+  // The grid's outer edges: a mark beyond them may reach the sheet's edge.
+  grid: { l: number; t: number; r: number; b: number },
   pageW: number,
   pageH: number,
 ): void {
@@ -365,10 +392,10 @@ function drawCropMarks(
     // Room beyond the bleed on each side: the margin at the sheet edge,
     // else the gap to the next cell.
     const room = (edge: number, limit: number) => Math.max(0, Math.min(len, Math.abs(limit - edge) - off));
-    const lRoom = room(cx, cx <= margin + 0.5 ? 0 : cx - gap);
-    const rRoom = room(cx + cellW, cx + cellW >= pageW - margin - 0.5 ? pageW : cx + cellW + gap);
-    const tRoom = room(cy, cy <= margin + 0.5 ? 0 : cy - gap);
-    const bRoom = room(cy + cellH, cy + cellH >= pageH - margin - 0.5 ? pageH : cy + cellH + gap);
+    const lRoom = room(cx, cx <= grid.l + 0.5 ? 0 : cx - gap);
+    const rRoom = room(cx + cellW, cx + cellW >= grid.r - 0.5 ? pageW : cx + cellW + gap);
+    const tRoom = room(cy, cy <= grid.t + 0.5 ? 0 : cy - gap);
+    const bRoom = room(cy + cellH, cy + cellH >= grid.b - 0.5 ? pageH : cy + cellH + gap);
     const minLen = 1 * PX_PER_MM;
     // Horizontal marks (along the top / bottom trim line), left and right.
     if (lRoom >= minLen) {

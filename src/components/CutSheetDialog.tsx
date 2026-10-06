@@ -11,10 +11,12 @@ import { downloadBlob } from "../export";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
-import { stickerSheetPdf } from "../pdf";
+import { cardTrayPdf, stickerSheetPdf } from "../pdf";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
+  isPaper,
+  PAPER,
   listGameDesigns,
   loadSheetCards,
   PRINT_H_MM,
@@ -134,9 +136,26 @@ export function CutSheetDialog({
   }, [phase, cards, opts]);
 
   const wmd = opts.target === "wmd";
+  const paper = isPaper(opts.target) ? PAPER[opts.target] : null;
 
   const download = async () => {
     if (!result) return;
+
+    if (paper) {
+      // One PDF, every sheet at the exact paper size; with backs, each
+      // front page is followed by its mirrored back for duplex printing.
+      const pages = result.pages.flatMap((pg) =>
+        [pg.dataUrl, pg.backDataUrl]
+          .filter((u): u is string => !!u)
+          .map((imageDataUrl) => ({
+            imageDataUrl,
+            cardWidthMM: paper.wMM,
+            cardHeightMM: paper.hMM,
+          })),
+      );
+      downloadBlob(await cardTrayPdf(pages), `print-sheet-${opts.target}.pdf`);
+      return;
+    }
 
     if (wmd) {
       const pg = result.pages[0];
@@ -236,7 +255,9 @@ export function CutSheetDialog({
 
   const errorText =
     error === "card-too-big"
-      ? t("A single card is larger than the Cricut print area for this format.")
+      ? paper
+        ? t("A single card doesn't fit on the sheet inside the margin.")
+        : t("A single card is larger than the Cricut print area for this format.")
       : error === "empty" || error === "no cards"
         ? t("None of the selected games has a saved design.")
         : t("Could not build the sheet.");
@@ -246,7 +267,11 @@ export function CutSheetDialog({
       <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col">
         <DialogHeader>
           <DialogTitle>
-            {wmd ? t("Sticker sheet for wir-machen-druck.de") : t("Cut sheet for Cricut")}
+            {paper
+              ? t("Print sheet ({paper})", { paper: opts.target === "a4" ? "A4" : "US Letter" })
+              : wmd
+                ? t("Sticker sheet for wir-machen-druck.de")
+                : t("Cut sheet for Cricut")}
           </DialogTitle>
         </DialogHeader>
 
@@ -286,8 +311,8 @@ export function CutSheetDialog({
 
         {phase === "pick" && (
           <>
-            <div className="flex gap-1 rounded-md border p-0.5 text-xs">
-              {(["cricut", "wmd"] as SheetTarget[]).map((tg) => (
+            <div className="flex flex-wrap gap-1 rounded-md border p-0.5 text-xs">
+              {(["a4", "letter", "cricut", "wmd"] as SheetTarget[]).map((tg) => (
                 <button
                   key={tg}
                   className={
@@ -296,17 +321,35 @@ export function CutSheetDialog({
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-accent")
                   }
-                  onClick={() => setOpts((o) => ({ ...o, target: tg }))}
+                  onClick={() =>
+                    setOpts((o) => ({
+                      ...o,
+                      target: tg,
+                      // Paper gets cut by hand: marks and white paper by default.
+                      ...(isPaper(tg) && !isPaper(o.target)
+                        ? { cropMarks: true, background: "white" as const }
+                        : {}),
+                    }))
+                  }
                 >
-                  {tg === "cricut"
-                    ? t("Cricut Explore (Print then Cut)")
-                    : t("wir-machen-druck.de (print PDF)")}
+                  {tg === "a4"
+                    ? t("A4 sheet (PDF)")
+                    : tg === "letter"
+                      ? t("US Letter sheet (PDF)")
+                      : tg === "cricut"
+                        ? t("Cricut Explore (Print then Cut)")
+                        : t("wir-machen-druck.de (print PDF)")}
                 </button>
               ))}
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {wmd
+              {paper
+                ? t(
+                    "Lays the designs out on {paper} paper at real size, as many as fit inside the margin, centred and in the same spots on every page — with crop marks for cutting by hand. One PDF; print at 100 % (“actual size”).",
+                    { paper: opts.target === "a4" ? "A4" : "US Letter" },
+                  )
+                : wmd
                 ? t(
                     "Builds a single print-ready PDF: every design on one sheet at real size, each card full-bleed, with a 2 mm outer bleed and a “kiss_cut” contour (100 % magenta spot colour) around each card — the cut line their production expects.",
                   )
@@ -334,6 +377,25 @@ export function CutSheetDialog({
                 />
                 mm
               </label>
+              {paper && (
+                <label className="flex items-center gap-1.5" title={t("Unprinted border on every side — most printers can't print right to the edge.")}>
+                  {t("Margin")}
+                  <input
+                    type="number"
+                    className="h-7 w-16 rounded border bg-transparent px-2"
+                    value={opts.marginMM}
+                    min={0}
+                    step={1}
+                    onChange={(e) =>
+                      setOpts((o) => ({
+                        ...o,
+                        marginMM: Math.max(0, Number(e.target.value) || 0),
+                      }))
+                    }
+                  />
+                  mm
+                </label>
+              )}
               {!wmd && (
                 <label className="flex items-center gap-1.5">
                   <Checkbox
@@ -577,7 +639,7 @@ export function CutSheetDialog({
               </div>
             </div>
 
-            {!wmd && (
+            {!wmd && !paper && (
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md border bg-muted/30 p-2.5 text-xs">
                 <dt className="text-muted-foreground">{t("Image (print PNG)")}</dt>
                 <dd className="font-mono">
@@ -600,7 +662,12 @@ export function CutSheetDialog({
             )}
 
             <p className="text-xs text-muted-foreground">
-              {wmd
+              {paper
+                ? t(
+                    "{pages} sheet(s), up to {n} per sheet. Cyan only shows the trim edge here — the PDF has the crop marks. Print at 100 % (“actual size”), never “fit to page”.",
+                    { pages: result.pages.length, n: result.perPage },
+                  )
+                : wmd
                 ? t(
                     "Cyan = the “kiss_cut” contour. The PDF is one sheet, {w}×{h} mm incl. a 2 mm outer bleed, RGB image + magenta spot cut line — upload it as the print data. Order the sheet at this exact size. Output intent: ISO Coated v2 300% (ECI), named only — wir-machen-druck converts the RGB image to it.",
                     {
@@ -619,7 +686,7 @@ export function CutSheetDialog({
                 {t("Back to selection")}
               </Button>
               <Button size="sm" onClick={() => void download()}>
-                {wmd ? t("Download PDF") : t("Download .zip (print + cut)")}
+                {wmd || paper ? t("Download PDF") : t("Download .zip (print + cut)")}
               </Button>
             </div>
           </>
