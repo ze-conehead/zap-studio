@@ -1286,4 +1286,23 @@ export const de: Record<string, string> = {
   "Open in the editor": "Im Editor öffnen",
   "{n} error(s)": "{n} Fehler",
   "Also on {titles}": "Auch auf {titles}",
+
+  // ── Template packs ──
+  "That file is not a Zap-Studio template pack.": "Diese Datei ist kein Zap-Studio-Template-Paket.",
+  "Before template import": "Vor Template-Import",
+  "templates": "Templates",
+  "Templates": "Templates",
+  "Export templates": "Templates exportieren",
+  "Import templates": "Templates importieren",
+  "Export templates …": "Templates exportieren …",
+  "Import templates …": "Templates importieren …",
+  "Saves the chosen templates — layers, pictures and the custom fonts they use — as one file, to reuse in another project or share. Cards are not included.": "Speichert die gewählten Templates – Layer, Bilder und die verwendeten eigenen Schriften – als eine Datei, zum Wiederverwenden in einem anderen Projekt oder zum Teilen. Karten sind nicht enthalten.",
+  "Each chosen template replaces the one here (a snapshot of it is kept, see Edit ▸ Snapshots). Consoles you don't have yet are added. The page reloads afterwards.": "Jedes gewählte Template ersetzt das vorhandene (davon bleibt ein Snapshot, siehe Bearbeiten ▸ Snapshots). Fehlende Konsolen werden angelegt. Danach lädt die Seite neu.",
+  "This pack was made for “{a}”, this project is “{b}” — positions and sizes won't fit the new format exactly.": "Dieses Paket wurde für „{a}“ erstellt, dieses Projekt ist „{b}“ – Positionen und Größen passen nicht genau zum neuen Format.",
+  "No templates yet.": "Noch keine Templates.",
+  "new console": "neue Konsole",
+  "replaces": "ersetzt",
+  "new": "neu",
+  "Also installs {n} font(s): {names}": "Installiert außerdem {n} Schrift(en): {names}",
+  "Export": "Exportieren",
 };

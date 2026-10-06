@@ -5,7 +5,7 @@
 // Radix' DropdownMenu has no menubar mode, so the "hover to walk across the
 // open menus" behaviour is wired up by hand via `openMenu`.
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowUpCircle, Check, ChevronRight, X } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,6 +54,7 @@ import type { GuideApi } from "../App";
 import type { CanvasHandle } from "./EditorCanvas";
 import { useFileActions } from "./fileActions";
 import { SnapshotsDialog } from "./SnapshotsDialog";
+import { TemplatePackDialog } from "./TemplatePackDialog";
 import { checkForUpdate, dismissUpdate, type UpdateInfo } from "../updateCheck";
 
 interface Props {
@@ -213,6 +214,8 @@ export function MenuBar({
   const { project, past, future, showBleed, selectedId } = state;
   const [open, setOpen] = useState<MenuId | null>(null);
   const [snapshots, setSnapshots] = useState(false);
+  const [templatePack, setTemplatePack] = useState<{ mode: "export" | "import"; file?: File } | null>(null);
+  const packRef = useRef<HTMLInputElement>(null);
   const file = useFileActions(canvas);
   const { zipRef } = file;
   const coverSource = getCoverSource();
@@ -264,6 +267,12 @@ export function MenuBar({
             </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t("Templates")}</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => setTemplatePack({ mode: "export" })}>
+          {t("Export templates …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => packRef.current?.click()}>{t("Import templates …")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t("Full backup")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={onOpenExportProject}>
@@ -564,6 +573,24 @@ export function MenuBar({
         }}
       />
       <SnapshotsDialog open={snapshots} onOpenChange={setSnapshots} />
+      <input
+        ref={packRef}
+        type="file"
+        accept=".zip,application/zip"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) setTemplatePack({ mode: "import", file: f });
+          e.target.value = "";
+        }}
+      />
+      {templatePack && (
+        <TemplatePackDialog
+          mode={templatePack.mode}
+          file={templatePack.file}
+          onClose={() => setTemplatePack(null)}
+        />
+      )}
     </div>
   );
 }
