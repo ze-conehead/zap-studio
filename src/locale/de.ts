@@ -1252,4 +1252,14 @@ export const de: Record<string, string> = {
   "Only {mm} mm from the fold between {a} and {b} — keep {safe} mm clear.": "Nur {mm} mm vom Falz zwischen {a} und {b} – halte {safe} mm Abstand.",
   "Covers a hole in the shell — that part won't be seen.": "Liegt auf einem Loch im Gehäuse – dieser Teil ist nicht zu sehen.",
   "Reaches under the shell's edge ({mm} mm) — that part gets hidden.": "Reicht unter die Gehäusekante ({mm} mm) – dieser Teil wird verdeckt.",
+
+  // ── Shelf export ──
+  "Export PNG": "PNG exportieren",
+  "cases": "Hüllen",
+  "spines": "Spines",
+
+  // ── Contrast ──
+  "Black or white, whichever reads better on what's underneath. Click for a fixed color instead.": "Schwarz oder Weiß – je nachdem, was auf dem Untergrund besser lesbar ist. Klicken für eine feste Farbe.",
+  "Contrast": "Kontrast",
+  "Contrast: black or white, whichever reads better on what's underneath": "Kontrast: Schwarz oder Weiß, je nachdem, was auf dem Untergrund besser lesbar ist",
 };

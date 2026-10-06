@@ -4,6 +4,8 @@ import { CANVAS, TRIM_RECT } from "../card";
 import type { DemoCard } from "../demo";
 import type { GameMeta } from "../gamelist";
 import { applyAccent, useCardAccent } from "../accent";
+import { applyContrast } from "../contrast";
+import { useImageCacheVersion } from "../hooks/useImage";
 import { resolveConditions } from "../conditions";
 import { isBackground } from "../factory";
 import { resolveBadgeMeta } from "../gamelist";
@@ -52,12 +54,17 @@ export function CardStage({
   // Re-renders once the cover is decoded; exports preload it, so their
   // first frame already has it.
   const accent = useCardAccent(card.project, card.masks);
-  const layers = buildFaceLayers(
-    card.project,
-    resolved,
-    back ? [] : resolveConditions(card.overlay, meta),
-    card.masks,
-  ).layers.map((l) => applyAccent(l, accent));
+  useImageCacheVersion(); // contrast colours depend on decoded pictures
+  const paintedBg = bg ? applyAccent(bg, accent) : bg;
+  const layers = applyContrast(
+    buildFaceLayers(
+      card.project,
+      resolved,
+      back ? [] : resolveConditions(card.overlay, meta),
+      card.masks,
+    ).layers.map((l) => applyAccent(l, accent)),
+    paintedBg,
+  );
   // What a flowing text frame breaks around (src/textFlow.ts).
   const obstacles = [...(card.masks ?? []), ...content.filter((l) => l.alphaMask)];
 
@@ -70,9 +77,9 @@ export function CardStage({
       scaleY={scale}
       listening={false}
     >
-      {bg && (
+      {paintedBg && (
         <KLayer listening={false} opacity={bgLayer?.opacity ?? 1}>
-          <CardBackgroundNodes bg={applyAccent(bg, accent)} />
+          <CardBackgroundNodes bg={paintedBg} />
         </KLayer>
       )}
 

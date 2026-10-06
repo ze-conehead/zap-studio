@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../../recentColors";
 import { cn } from "@/lib/utils";
 import { ACCENT_TOKEN, DEFAULT_ACCENT, isAccent } from "../../accent";
+import { CONTRAST_TOKEN, isContrast } from "../../contrast";
 import { useT } from "../../i18n";
 import { PX_PER_MM, TRIM_RECT } from "../../card";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAdjust";
@@ -281,6 +282,8 @@ export function ColorField({
   const recent = recentColors();
   const ref = useRef<HTMLInputElement>(null);
   const accent = isAccent(value);
+  const contrast = isContrast(value);
+  const token = accent || contrast;
   // The native "change" fires once the picker closes — that's a pick worth
   // remembering, unlike every "input" while dragging through the wheel.
   useEffect(() => {
@@ -289,7 +292,7 @@ export function ColorField({
     const done = () => rememberColor(el.value);
     el.addEventListener("change", done);
     return () => el.removeEventListener("change", done);
-  }, [accent]);
+  }, [token]);
   const pickFromScreen = async () => {
     if (!window.EyeDropper) return;
     try {
@@ -303,17 +306,22 @@ export function ColorField({
   return (
     <Field label={label}>
       <div className="flex gap-1">
-        {accent ? (
-          // The card's accent (src/accent.ts) — no fixed colour to pick.
-          // Clicking turns it back into a plain colour to edit.
+        {token ? (
+          // The card's accent (src/accent.ts) or contrast colour
+          // (src/contrast.ts) — no fixed colour to pick. Clicking turns it
+          // back into a plain colour to edit.
           <button
             type="button"
             className="flex h-8 min-w-0 flex-1 items-center gap-1.5 truncate rounded-md border border-input px-2 text-xs"
-            title={t("Accent color of each card, taken from its cover. Click for a fixed color instead.")}
-            onClick={() => onChange(DEFAULT_ACCENT)}
+            title={
+              accent
+                ? t("Accent color of each card, taken from its cover. Click for a fixed color instead.")
+                : t("Black or white, whichever reads better on what's underneath. Click for a fixed color instead.")
+            }
+            onClick={() => onChange(accent ? DEFAULT_ACCENT : "#ffffff")}
           >
-            <span className="accent-swatch size-4 shrink-0 rounded-sm" />
-            <span className="truncate">{t("Accent")}</span>
+            <span className={cn("size-4 shrink-0 rounded-sm", accent ? "accent-swatch" : "contrast-swatch")} />
+            <span className="truncate">{accent ? t("Accent") : t("Contrast")}</span>
           </button>
         ) : (
           <input
@@ -349,6 +357,15 @@ export function ColorField({
         >
           A
         </button>
+        <button
+          type="button"
+          className={cn(
+            "contrast-swatch size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
+            contrast && "ring-1 ring-primary",
+          )}
+          title={t("Contrast: black or white, whichever reads better on what's underneath")}
+          onClick={() => onChange(CONTRAST_TOKEN)}
+        />
         {recent.map((c) => (
           <button
             key={c}

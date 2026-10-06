@@ -61,6 +61,7 @@ import {
 } from "../localLogos";
 import { LocalImagePickerDialog } from "./LocalImagePickerDialog";
 import { TRIM_RECT } from "../card";
+import { CONTRAST_TOKEN } from "../contrast";
 import { hasSpine, isSpineBg, spineRect } from "../spine";
 import { useStore } from "../store";
 import type { ShapeKind } from "../types";
@@ -135,6 +136,7 @@ export function AddLayerMenu() {
         width: TRIM_RECT.h * span,
         fontSize: Math.round(spine.w * 0.5),
         bold: true,
+        fill: CONTRAST_TOKEN, // stays readable on any spine background
         autoFit: true,
         autoFitLines: 1,
       },

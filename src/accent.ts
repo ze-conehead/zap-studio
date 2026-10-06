@@ -116,16 +116,16 @@ export function useCardAccent(project: Project, masks: Layer[] = []): string {
 }
 
 /**
- * `value` with every ACCENT_TOKEN string swapped for `accent`. Returns the
- * very same object when there's nothing to swap, so untouched layers keep
- * their identity.
+ * `value` with every `token` string swapped for `color`. Returns the very
+ * same object when there's nothing to swap, so untouched layers keep their
+ * identity.
  */
-export function applyAccent<T>(value: T, accent: string): T {
-  if (value === ACCENT_TOKEN) return accent as T;
+export function replaceToken<T>(value: T, token: string, color: string): T {
+  if (value === token) return color as T;
   if (Array.isArray(value)) {
     let changed = false;
     const out = value.map((v) => {
-      const n = applyAccent(v, accent);
+      const n = replaceToken(v, token, color);
       if (n !== v) changed = true;
       return n;
     });
@@ -135,10 +135,14 @@ export function applyAccent<T>(value: T, accent: string): T {
     let out: Record<string, unknown> | null = null;
     for (const [k, v] of Object.entries(value)) {
       if (k === "src") continue; // image data — never a colour
-      const n = applyAccent(v, accent);
+      const n = replaceToken(v, token, color);
       if (n !== v) (out ??= { ...(value as Record<string, unknown>) })[k] = n;
     }
     return (out ?? value) as T;
   }
   return value;
 }
+
+/** `value` with every ACCENT_TOKEN swapped for `accent` (see replaceToken). */
+export const applyAccent = <T,>(value: T, accent: string): T =>
+  replaceToken(value, ACCENT_TOKEN, accent);

@@ -26,6 +26,8 @@ import { getCatalogVersion, subscribeCatalog } from "../data/catalog";
 import { hiddenCaseIds, resolveConditions } from "../conditions";
 import { segmentLayers } from "../masking";
 import { applyAccent, useCardAccent } from "../accent";
+import { applyContrast } from "../contrast";
+import { useImageCacheVersion } from "../hooks/useImage";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
@@ -406,7 +408,14 @@ function FaceStage({
   );
   // Colour fields set to the accent token paint this card's accent colour.
   const cardAccentColor = useCardAccent(project, masks);
-  const renderLayers = faceLayersRaw.map((l) => applyAccent(l, cardAccentColor));
+  // …and fields set to the contrast token black or white, by what's under
+  // them — recomputed as pictures finish loading.
+  useImageCacheVersion();
+  const paintedBg = bg ? applyAccent(bg, cardAccentColor) : bg;
+  const renderLayers = applyContrast(
+    faceLayersRaw.map((l) => applyAccent(l, cardAccentColor)),
+    paintedBg,
+  );
 
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -766,9 +775,9 @@ function FaceStage({
             top: cropped ? -TRIM_RECT.y * scale : 0,
           }}
         >
-          {bg && (
+          {paintedBg && (
             <Layer listening={false} opacity={bgLayer?.opacity ?? 1}>
-              <CardBackgroundNodes bg={applyAccent(bg, cardAccentColor)} />
+              <CardBackgroundNodes bg={paintedBg} />
             </Layer>
           )}
 

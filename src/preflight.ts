@@ -13,7 +13,8 @@ import { isBackground } from "./factory";
 import { resolveBadgeMeta } from "./gamelist";
 import { t } from "./i18n";
 import { loadOverviewCards, type OverviewCard } from "./overview";
-import { renderedFontSize, textHeight } from "./textFit";
+import { bounds } from "./layerBounds";
+import { renderedFontSize } from "./textFit";
 import type { Layer, Project, TextLayer } from "./types";
 
 // ── thresholds ─────────────────────────────────────────────────────────────
@@ -66,32 +67,6 @@ export function effectiveDpi(l: Layer): number | null {
   // pixels in the same box.
   const nat = croppedNatural(l);
   return Math.min((nat.w / w) * 300, (nat.h / h) * 300);
-}
-
-/** Axis-aligned bounds of a layer in canvas px, rotation included. */
-function bounds(l: Layer): { x1: number; y1: number; x2: number; y2: number } | null {
-  let w: number;
-  let h: number;
-  if (l.type === "text") {
-    w = l.width;
-    h = textHeight(l);
-  } else if ("width" in l && "height" in l) {
-    w = l.width;
-    h = l.height;
-  } else {
-    return null;
-  }
-  w = Math.abs(w * l.scaleX);
-  h = Math.abs(h * l.scaleY);
-  if (!w || !h) return null;
-
-  if (!l.rotation) {
-    return { x1: l.x - w / 2, y1: l.y - h / 2, x2: l.x + w / 2, y2: l.y + h / 2 };
-  }
-  const r = (l.rotation * Math.PI) / 180;
-  const cw = (Math.abs(Math.cos(r)) * w + Math.abs(Math.sin(r)) * h) / 2;
-  const ch = (Math.abs(Math.sin(r)) * w + Math.abs(Math.cos(r)) * h) / 2;
-  return { x1: l.x - cw, y1: l.y - ch, x2: l.x + cw, y2: l.y + ch };
 }
 
 // A layer that is meant to run past the trim edge, so the edge checks skip it.

@@ -1,7 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 // Minimal image loader/cache for Konva nodes.
 const cache = new Map<string, HTMLImageElement>();
+
+// Bumped whenever an image lands in the cache, for things computed from
+// image pixels during render (accent / contrast colours) that need to
+// re-run once a picture they depend on has decoded.
+let cacheVersion = 0;
+const cacheListeners = new Set<() => void>();
+function remember(src: string, el: HTMLImageElement) {
+  cache.set(src, el);
+  cacheVersion++;
+  for (const fn of cacheListeners) fn();
+}
+const subscribeCache = (fn: () => void) => {
+  cacheListeners.add(fn);
+  return () => cacheListeners.delete(fn);
+};
+const getCacheVersion = () => cacheVersion;
+/** Re-renders the caller whenever another image has finished loading. */
+export const useImageCacheVersion = () =>
+  useSyncExternalStore(subscribeCache, getCacheVersion, getCacheVersion);
 
 // Warms the same cache so a Stage mounted afterwards paints its images on
 // the very first frame (needed before capturing one off-screen).
@@ -24,7 +43,7 @@ export function preloadImage(src: string): Promise<void> {
     }, PRELOAD_TIMEOUT_MS);
     el.onload = () => {
       clearTimeout(timer);
-      cache.set(src, el);
+      remember(src, el);
       resolve();
     };
     el.onerror = () => {
@@ -54,7 +73,7 @@ export function useImage(src: string | undefined): HTMLImageElement | undefined 
     const el = new Image();
     el.crossOrigin = "anonymous";
     el.onload = () => {
-      cache.set(src, el);
+      remember(src, el);
       if (alive) setImg(el);
     };
     el.src = src;
