@@ -48,6 +48,7 @@ import {
   makeQrLayer,
   makeShapeLayer,
   makeTextLayer,
+  uid,
   type MetaBadgeKind,
 } from "../factory";
 import { useT } from "../i18n";
@@ -59,7 +60,8 @@ import {
   localLogoUrl,
 } from "../localLogos";
 import { LocalImagePickerDialog } from "./LocalImagePickerDialog";
-import { hasSpine, isSpineBg } from "../spine";
+import { TRIM_RECT } from "../card";
+import { hasSpine, isSpineBg, spineRect } from "../spine";
 import { useStore } from "../store";
 import type { ShapeKind } from "../types";
 
@@ -107,6 +109,61 @@ export function AddLayerMenu() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // Spine furniture for a template: the game's title running along the
+  // spine (one line, shrunk to fit), and a copy of the console's logo at
+  // the foot of it.
+  const spine = !onBack && project.isTemplate ? spineRect() : null;
+  const consoleLogo = project.isGlobalTemplate
+    ? undefined
+    : faceLayers.find((l) => l.type === "image" && l.logo);
+
+  // With a console logo around, the title keeps clear of the foot of the
+  // spine, where "Spine logo" goes (the lowest ~25 %).
+  const addSpineTitle = () => {
+    if (!spine) return;
+    const span = consoleLogo ? 0.66 : 0.84;
+    dispatch({
+      type: "ADD_LAYER",
+      layer: {
+        ...makeMetaTextLayer("title"),
+        name: t("Spine title"),
+        x: spine.x + spine.w / 2,
+        y: TRIM_RECT.y + TRIM_RECT.h * (consoleLogo ? 0.06 + span / 2 : 0.5),
+        rotation: 90, // reads top to bottom; 270 for bottom to top
+        width: TRIM_RECT.h * span,
+        fontSize: Math.round(spine.w * 0.5),
+        bold: true,
+        autoFit: true,
+        autoFitLines: 1,
+      },
+    });
+  };
+
+  const addSpineLogo = () => {
+    if (!spine || consoleLogo?.type !== "image") return;
+    // Turned 90°, its width runs along the spine and its height across it.
+    const s = Math.min((spine.w * 0.7) / consoleLogo.height, (TRIM_RECT.h * 0.22) / consoleLogo.width);
+    const w = consoleLogo.width * s;
+    const h = consoleLogo.height * s;
+    dispatch({
+      type: "ADD_LAYER",
+      layer: {
+        ...consoleLogo,
+        id: uid(),
+        name: t("Spine logo"),
+        logo: false,
+        stackAfterId: undefined,
+        x: spine.x + spine.w / 2,
+        y: TRIM_RECT.y + TRIM_RECT.h * 0.94 - w / 2,
+        rotation: 90,
+        scaleX: 1,
+        scaleY: 1,
+        width: w,
+        height: h,
+      },
+    });
   };
 
   const addSpineBgFromFile = async (file: File) => {
@@ -220,6 +277,16 @@ export function AddLayerMenu() {
               {canSpineBg && (
                 <DropdownMenuItem onClick={() => spineRef.current?.click()}>
                   <Images /> {t("Spine background …")}
+                </DropdownMenuItem>
+              )}
+              {spine && (
+                <DropdownMenuItem onClick={addSpineTitle}>
+                  <Type /> {t("Spine title")}
+                </DropdownMenuItem>
+              )}
+              {spine && consoleLogo && (
+                <DropdownMenuItem onClick={addSpineLogo}>
+                  <ImageIcon /> {t("Spine logo")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

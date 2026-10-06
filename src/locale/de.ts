@@ -1242,4 +1242,8 @@ export const de: Record<string, string> = {
 
   // ── Export menu ──
   "Print / cut sheet (A4 · Letter · Cricut · wir-machen-druck) …": "Druck-/Schneidebogen (A4 · Letter · Cricut · wir-machen-druck) …",
+
+  // ── Spine title/logo ──
+  "Spine title": "Spine-Titel",
+  "Spine logo": "Spine-Logo",
 };
