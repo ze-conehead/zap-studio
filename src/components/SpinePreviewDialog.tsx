@@ -1,8 +1,9 @@
 import type Konva from "konva";
-import { Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PANELS, TRIM_RECT } from "../card";
 import { packImageSources } from "../demo";
+import { downloadBlob } from "../export";
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
@@ -11,6 +12,7 @@ import { saveProject } from "../persist";
 import { hasSpine } from "../spine";
 import { useStore } from "../store";
 import { captureTrim, CardStage } from "./CardStage";
+import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
@@ -23,7 +25,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 // Capture width of one card, full trim — wide enough that the narrow spine
 // stays sharp.
 const CAPTURE_W = 1400;
-const FULL_W = 420;
+// The whole-wrap copy: shown small, but also what "Export PNG" uses in that
+// view, so it's kept at a printable-ish size.
+const FULL_W = 1000;
 
 interface Strip {
   key: string;
@@ -59,6 +63,33 @@ async function cut(dataUrl: string): Promise<Pick<Strip, "spine" | "full">> {
   return { spine: a.toDataURL("image/png"), full: b.toDataURL("image/jpeg", 0.88) };
 }
 
+// All strips side by side in one PNG — the shelf as it would stand,
+// optionally with a thin dark line where two cases meet.
+async function shelfPng(srcs: string[], edges: boolean): Promise<Blob> {
+  const imgs = await Promise.all(srcs.map(loadImg));
+  const h = Math.max(...imgs.map((i) => i.naturalHeight));
+  const line = edges ? Math.max(1, Math.round(h / 400)) : 0;
+  const widths = imgs.map((i) => Math.round(i.naturalWidth * (h / i.naturalHeight)));
+  const c = document.createElement("canvas");
+  c.width = widths.reduce((a, w) => a + w, 0) + line * (imgs.length - 1);
+  c.height = h;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("no canvas");
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  let x = 0;
+  imgs.forEach((img, i) => {
+    if (i > 0 && line) {
+      ctx.fillRect(x, 0, line, h);
+      x += line;
+    }
+    ctx.drawImage(img, x, 0, widths[i], h);
+    x += widths[i];
+  });
+  return new Promise((res, rej) =>
+    c.toBlob((b) => (b ? res(b) : rej(new Error("export failed"))), "image/png"),
+  );
+}
+
 export function SpinePreviewDialog({
   open,
   onOpenChange,
@@ -79,6 +110,20 @@ export function SpinePreviewDialog({
   const [full, setFull] = useState(false);
   const [edges, setEdges] = useState(true);
   const stage = useRef<Konva.Stage | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const exportShelf = async () => {
+    setSaving(true);
+    try {
+      const blob = await shelfPng(strips.map((s) => (full ? s.full : s.spine)), edges);
+      const safe = consoleName.replace(/[\\/:*?"<>|]+/g, "-").trim() || "shelf";
+      downloadBlob(blob, `${safe} – ${full ? t("cases") : t("spines")}.png`);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Load the console's cards (flushing the open template first, so a
   // just-picked picture is on disk).
@@ -185,6 +230,14 @@ export function SpinePreviewDialog({
                   ? t("{n} / {total} cases", { n: strips.length, total: cards.length })
                   : t("loading …")}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={rendering || !strips.length || saving}
+                onClick={() => void exportShelf()}
+              >
+                {saving ? <Loader2 className="animate-spin" /> : <Download />} {t("Export PNG")}
+              </Button>
             </div>
 
             <div className="overflow-x-auto rounded-md border bg-muted/30 p-4">
