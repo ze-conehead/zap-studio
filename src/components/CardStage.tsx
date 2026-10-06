@@ -3,6 +3,7 @@ import { Group, Layer as KLayer, Stage } from "react-konva";
 import { CANVAS, TRIM_RECT } from "../card";
 import type { DemoCard } from "../demo";
 import type { GameMeta } from "../gamelist";
+import { applyAccent, useCardAccent } from "../accent";
 import { resolveConditions } from "../conditions";
 import { isBackground } from "../factory";
 import { resolveBadgeMeta } from "../gamelist";
@@ -48,12 +49,15 @@ export function CardStage({
   const vars = placeholderContextFor(card.project, meta);
   const resolved = resolveConditions(content, meta);
   // The back is a plain face — no template overlay, no alpha masks.
-  const { layers } = buildFaceLayers(
+  // Re-renders once the cover is decoded; exports preload it, so their
+  // first frame already has it.
+  const accent = useCardAccent(card.project, card.masks);
+  const layers = buildFaceLayers(
     card.project,
     resolved,
     back ? [] : resolveConditions(card.overlay, meta),
     card.masks,
-  );
+  ).layers.map((l) => applyAccent(l, accent));
   // What a flowing text frame breaks around (src/textFlow.ts).
   const obstacles = [...(card.masks ?? []), ...content.filter((l) => l.alphaMask)];
 
@@ -68,7 +72,7 @@ export function CardStage({
     >
       {bg && (
         <KLayer listening={false} opacity={bgLayer?.opacity ?? 1}>
-          <CardBackgroundNodes bg={bg} />
+          <CardBackgroundNodes bg={applyAccent(bg, accent)} />
         </KLayer>
       )}
 

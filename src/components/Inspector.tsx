@@ -27,6 +27,7 @@ import { EffectsControls, ImageProps, MetaBadgeProps, PositionControls, QrProps,
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../layerStyle";
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { SpineBgProps } from "./inspector/spine";
+import { AccentPanel } from "./inspector/accent";
 import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
 
 interface InspectorProps {
@@ -163,15 +164,19 @@ export function Inspector({
             )}
           </Panel>
           {global && <GuidesPanel guides={guides} />}
+          <AccentPanel masks={masks.map((m) => m.layer)} />
         </>
       );
     }
     return (
-      <Panel title={t("Properties")}>
-        <p className="text-xs text-muted-foreground">
-          {t("Select a layer to edit it.")}
-        </p>
-      </Panel>
+      <>
+        <Panel title={t("Properties")}>
+          <p className="text-xs text-muted-foreground">
+            {t("Select a layer to edit it.")}
+          </p>
+        </Panel>
+        <AccentPanel masks={masks.map((m) => m.layer)} />
+      </>
     );
   }
 

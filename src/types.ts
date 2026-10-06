@@ -321,6 +321,9 @@ export interface Project {
   // keyed by that layer's id. Every template shape/background can be
   // overridden this way. See src/fillOverrides.ts.
   fillOverrides?: Record<string, LayerStyleOverride>;
+  // A fixed accent colour (hex) instead of the one taken from the card's
+  // cover — see src/accent.ts. On a template it's the preview colour.
+  accent?: string;
 }
 
 // A descendant's own pick for one of an ancestor template's shape/background

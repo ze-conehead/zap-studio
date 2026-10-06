@@ -25,6 +25,7 @@ import { getGamelistVersion, resolveBadgeMeta, subscribeGamelists } from "../gam
 import { getCatalogVersion, subscribeCatalog } from "../data/catalog";
 import { hiddenCaseIds, resolveConditions } from "../conditions";
 import { segmentLayers } from "../masking";
+import { applyAccent, useCardAccent } from "../accent";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
@@ -397,12 +398,15 @@ function FaceStage({
       ? applySpine(cases, spineSliceForConsole(project.consoleId))
       : cases;
   // The back is a plain face — no template overlay, no alpha masks.
-  const { layers: renderLayers, foreignIds } = buildFaceLayers(
+  const { layers: faceLayersRaw, foreignIds } = buildFaceLayers(
     project,
     ownLayers,
     back ? [] : resolveConditions(overlay, badgeMeta),
     masks,
   );
+  // Colour fields set to the accent token paint this card's accent colour.
+  const cardAccentColor = useCardAccent(project, masks);
+  const renderLayers = faceLayersRaw.map((l) => applyAccent(l, cardAccentColor));
 
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -764,7 +768,7 @@ function FaceStage({
         >
           {bg && (
             <Layer listening={false} opacity={bgLayer?.opacity ?? 1}>
-              <CardBackgroundNodes bg={bg} />
+              <CardBackgroundNodes bg={applyAccent(bg, cardAccentColor)} />
             </Layer>
           )}
 

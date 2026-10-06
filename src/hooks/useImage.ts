@@ -7,6 +7,9 @@ const cache = new Map<string, HTMLImageElement>();
 // the very first frame (needed before capturing one off-screen).
 const PRELOAD_TIMEOUT_MS = 8000;
 
+/** The decoded image for `src`, if it has been loaded already. */
+export const cachedImage = (src: string): HTMLImageElement | undefined => cache.get(src);
+
 export function preloadImage(src: string): Promise<void> {
   if (!src || cache.has(src)) return Promise.resolve();
   return new Promise((resolve) => {

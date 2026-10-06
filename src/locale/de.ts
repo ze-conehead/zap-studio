@@ -1219,4 +1219,16 @@ export const de: Record<string, string> = {
 
   // ── Auto-fill logo slot ──
   "No logo slot in the global template — add one there first.": "Kein Logo-Slot im globalen Template – lege dort zuerst einen an.",
+
+  // ── Accent color ──
+  "Accent color of each card, taken from its cover. Click for a fixed color instead.": "Akzentfarbe der jeweiligen Karte, aus ihrem Cover. Klicken für eine feste Farbe.",
+  "Accent": "Akzent",
+  "Accent color (from the card's cover)": "Akzentfarbe (aus dem Cover der Karte)",
+  "Accent preview color": "Akzent-Vorschaufarbe",
+  "Accent color": "Akzentfarbe",
+  "Color fields set to “A” paint each card's accent — the main color of its cover. Here, with no cover, they show this color instead.": "Farbfelder auf „A“ malen die Akzentfarbe jeder Karte – die Hauptfarbe ihres Covers. Hier, ohne Cover, zeigen sie stattdessen diese Farbe.",
+  "Color fields set to “A” paint this color. Automatic takes the main color of this card's cover.": "Farbfelder auf „A“ malen diese Farbe. Automatisch nimmt die Hauptfarbe des Covers dieser Karte.",
+  "Default": "Standard",
+  "Automatic (from the cover)": "Automatisch (aus dem Cover)",
+  "Choose a color": "Farbe wählen",
 };

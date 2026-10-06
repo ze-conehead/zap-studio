@@ -55,6 +55,8 @@ type Action =
   | { type: "SELECT"; id: string | null }
   | { type: "TOGGLE"; key: "showBleed" }
   | { type: "UNDO" }
+  // The project's fixed accent colour; undefined = automatic (src/accent.ts).
+  | { type: "SET_ACCENT"; accent?: string }
   // Puts a snapshot's content back (src/snapshots.ts) — one undoable step.
   | { type: "RESTORE"; project: Project }
   | { type: "REDO" }
@@ -299,6 +301,10 @@ function reducer(state: State, action: Action): State {
 
     case "TOGGLE":
       return { ...state, [action.key]: !state[action.key] };
+
+    case "SET_ACCENT":
+      if (project.accent === action.accent) return state;
+      return commit(state, { ...project, accent: action.accent, updatedAt: Date.now() });
 
     case "RESTORE":
       return {

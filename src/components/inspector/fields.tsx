@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../../recentColors";
 import { cn } from "@/lib/utils";
+import { ACCENT_TOKEN, DEFAULT_ACCENT, isAccent } from "../../accent";
 import { useT } from "../../i18n";
 import { PX_PER_MM, TRIM_RECT } from "../../card";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAdjust";
@@ -279,6 +280,7 @@ export function ColorField({
   useSyncExternalStore(subscribeRecentColors, getRecentColorsVersion, getRecentColorsVersion);
   const recent = recentColors();
   const ref = useRef<HTMLInputElement>(null);
+  const accent = isAccent(value);
   // The native "change" fires once the picker closes — that's a pick worth
   // remembering, unlike every "input" while dragging through the wheel.
   useEffect(() => {
@@ -287,7 +289,7 @@ export function ColorField({
     const done = () => rememberColor(el.value);
     el.addEventListener("change", done);
     return () => el.removeEventListener("change", done);
-  }, []);
+  }, [accent]);
   const pickFromScreen = async () => {
     if (!window.EyeDropper) return;
     try {
@@ -301,13 +303,27 @@ export function ColorField({
   return (
     <Field label={label}>
       <div className="flex gap-1">
-        <input
-          ref={ref}
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-input bg-transparent p-1"
-        />
+        {accent ? (
+          // The card's accent (src/accent.ts) — no fixed colour to pick.
+          // Clicking turns it back into a plain colour to edit.
+          <button
+            type="button"
+            className="flex h-8 min-w-0 flex-1 items-center gap-1.5 truncate rounded-md border border-input px-2 text-xs"
+            title={t("Accent color of each card, taken from its cover. Click for a fixed color instead.")}
+            onClick={() => onChange(DEFAULT_ACCENT)}
+          >
+            <span className="accent-swatch size-4 shrink-0 rounded-sm" />
+            <span className="truncate">{t("Accent")}</span>
+          </button>
+        ) : (
+          <input
+            ref={ref}
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-input bg-transparent p-1"
+          />
+        )}
         {typeof window !== "undefined" && window.EyeDropper && (
           <Button
             type="button"
@@ -321,26 +337,35 @@ export function ColorField({
           </Button>
         )}
       </div>
-      {recent.length > 0 && (
-        <div className="flex flex-wrap gap-1" title={t("Recent colors")}>
-          {recent.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={cn(
-                "size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
-                c === value.toLowerCase() && "ring-1 ring-primary",
-              )}
-              style={{ background: c }}
-              title={c}
-              onClick={() => {
-                onChange(c);
-                rememberColor(c);
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-1" title={t("Recent colors")}>
+        <button
+          type="button"
+          className={cn(
+            "accent-swatch grid size-4 place-items-center rounded-sm border border-black/20 text-[9px] font-bold leading-none text-white ring-offset-1 hover:ring-1 hover:ring-primary",
+            accent && "ring-1 ring-primary",
+          )}
+          title={t("Accent color (from the card's cover)")}
+          onClick={() => onChange(ACCENT_TOKEN)}
+        >
+          A
+        </button>
+        {recent.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={cn(
+              "size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
+              c === value.toLowerCase() && "ring-1 ring-primary",
+            )}
+            style={{ background: c }}
+            title={c}
+            onClick={() => {
+              onChange(c);
+              rememberColor(c);
+            }}
+          />
+        ))}
+      </div>
     </Field>
   );
 }
