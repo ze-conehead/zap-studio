@@ -1246,4 +1246,10 @@ export const de: Record<string, string> = {
   // ── Spine title/logo ──
   "Spine title": "Spine-Titel",
   "Spine logo": "Spine-Logo",
+
+  // ── Preflight folds/features ──
+  "Runs across the fold between {a} and {b} — it will be bent in half.": "Läuft über den Falz zwischen {a} und {b} – wird beim Falten geknickt.",
+  "Only {mm} mm from the fold between {a} and {b} — keep {safe} mm clear.": "Nur {mm} mm vom Falz zwischen {a} und {b} – halte {safe} mm Abstand.",
+  "Covers a hole in the shell — that part won't be seen.": "Liegt auf einem Loch im Gehäuse – dieser Teil ist nicht zu sehen.",
+  "Reaches under the shell's edge ({mm} mm) — that part gets hidden.": "Reicht unter die Gehäusekante ({mm} mm) – dieser Teil wird verdeckt.",
 };

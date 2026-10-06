@@ -6,7 +6,8 @@
 // is one problem that shows up on every card, not twenty problems.
 
 import { croppedNatural } from "./factory";
-import { PX_PER_MM, TRIM_RECT } from "./card";
+import { FOLD_X, PANELS, PX_PER_MM, TRIM_RECT } from "./card";
+import { getFormat, type FormatFeature } from "./formats";
 import { resolveConditions } from "./conditions";
 import { isBackground } from "./factory";
 import { resolveBadgeMeta } from "./gamelist";
@@ -25,6 +26,8 @@ export const PT_SMALL = 5;
 export const PT_TINY = 4;
 // How close to the trim edge is asking for trouble when the cut drifts.
 export const SAFE_MM = 2;
+// Same for a fold line on a case wrap: a fold never lands exactly.
+export const SAFE_FOLD_MM = 2;
 
 export type Severity = "error" | "warning";
 export type FindingCode =
@@ -32,6 +35,9 @@ export type FindingCode =
   | "tiny-text"
   | "outside-trim"
   | "near-trim"
+  | "on-fold"
+  | "near-fold"
+  | "under-feature"
   | "empty";
 
 export interface Finding {
@@ -91,13 +97,46 @@ function bounds(l: Layer): { x1: number; y1: number; x2: number; y2: number } | 
 // A layer that is meant to run past the trim edge, so the edge checks skip it.
 const bleedsOnPurpose = (l: Layer) =>
   isBackground(l) ||
+  (l.type === "image" && !!l.spineBg) ||
   !!l.alphaMask ||
   !!l.logoSlot ||
   !!l.main ||
   !!l.mask ||
   (l.type === "image" && !!l.maskId);
 
-function checkLayer(l: Layer): { code: FindingCode; severity: Severity; message: string }[] {
+// What a fold or a hole would ruin: small print and codes. Pictures and
+// shapes often wrap across a fold on purpose.
+const isFineDetail = (l: Layer) => l.type === "text" || l.type === "qr" || l.type === "metabadge";
+
+/** The physical layout the checks measure against — the active format by default. */
+export interface CheckContext {
+  folds: { x: number; left: string; right: string }[]; // canvas px, with the panels either side
+  features: FormatFeature[]; // mm from the trim's top-left
+}
+
+export function formatContext(): CheckContext {
+  return {
+    folds: FOLD_X.map((x, i) => ({ x, left: PANELS[i].name, right: PANELS[i + 1].name })),
+    features: getFormat().features ?? [],
+  };
+}
+
+// Does an axis-aligned box touch a circle?
+function boxHitsCircle(
+  b: { x1: number; y1: number; x2: number; y2: number },
+  cx: number,
+  cy: number,
+  r: number,
+): boolean {
+  const nx = Math.max(b.x1, Math.min(cx, b.x2));
+  const ny = Math.max(b.y1, Math.min(cy, b.y2));
+  return (nx - cx) ** 2 + (ny - cy) ** 2 < r * r;
+}
+
+function checkLayer(
+  l: Layer,
+  ctx: CheckContext = formatContext(),
+): { code: FindingCode; severity: Severity; message: string }[] {
   if (!l.visible) return [];
   const out: { code: FindingCode; severity: Severity; message: string }[] = [];
 
@@ -161,6 +200,77 @@ function checkLayer(l: Layer): { code: FindingCode; severity: Severity; message:
     }
   }
 
+  // ── folds of a case wrap ──
+  const b = bounds(l);
+  if (b && isFineDetail(l)) {
+    const safe = SAFE_FOLD_MM * PX_PER_MM;
+    for (const f of ctx.folds) {
+      const names = { a: t(f.left), b: t(f.right) };
+      if (b.x1 < f.x && b.x2 > f.x) {
+        out.push({
+          code: "on-fold",
+          severity: "error",
+          message: t("Runs across the fold between {a} and {b} — it will be bent in half.", names),
+        });
+      } else {
+        const d = Math.min(Math.abs(b.x1 - f.x), Math.abs(b.x2 - f.x));
+        if (d < safe) {
+          out.push({
+            code: "near-fold",
+            severity: "warning",
+            message: t("Only {mm} mm from the fold between {a} and {b} — keep {safe} mm clear.", {
+              ...names,
+              mm: pxToMM(d).toFixed(1),
+              safe: SAFE_FOLD_MM,
+            }),
+          });
+        }
+      }
+    }
+  }
+
+  // ── holes / edges of what the label sticks on ──
+  if (b && !bleedsOnPurpose(l)) {
+    for (const f of ctx.features) {
+      if (f.kind === "hole") {
+        const hit = boxHitsCircle(
+          b,
+          TRIM_RECT.x + f.xMM * PX_PER_MM,
+          TRIM_RECT.y + f.yMM * PX_PER_MM,
+          f.rMM * PX_PER_MM,
+        );
+        if (hit) {
+          out.push({
+            code: "under-feature",
+            severity: "warning",
+            message: t("Covers a hole in the shell — that part won't be seen."),
+          });
+          break;
+        }
+      } else {
+        const size = f.sizeMM * PX_PER_MM;
+        const hit =
+          f.side === "top"
+            ? b.y1 < TRIM_RECT.y + size
+            : f.side === "bottom"
+              ? b.y2 > TRIM_RECT.y + TRIM_RECT.h - size
+              : f.side === "left"
+                ? b.x1 < TRIM_RECT.x + size
+                : b.x2 > TRIM_RECT.x + TRIM_RECT.w - size;
+        if (hit) {
+          out.push({
+            code: "under-feature",
+            severity: "warning",
+            message: t("Reaches under the shell's edge ({mm} mm) — that part gets hidden.", {
+              mm: f.sizeMM,
+            }),
+          });
+          break;
+        }
+      }
+    }
+  }
+
   return out;
 }
 
@@ -173,7 +283,7 @@ interface Card {
 }
 
 /** Runs every check over a set of cards, merging repeats from templates. */
-export function checkCards(cards: Card[]): Finding[] {
+export function checkCards(cards: Card[], ctx: CheckContext = formatContext()): Finding[] {
   const byKey = new Map<string, Finding>();
 
   for (const card of cards) {
@@ -191,7 +301,7 @@ export function checkCards(cards: Card[]): Finding[] {
         cards: [where],
         fromTemplate: false,
       });
-      continue;
+      // …but its template layers still print on it, so they're still checked.
     }
 
     // Cases the metadata doesn't select never print on this card, so they
@@ -203,11 +313,12 @@ export function checkCards(cards: Card[]): Finding[] {
     ];
 
     for (const l of live) {
-      for (const f of checkLayer(l)) {
+      for (const f of checkLayer(l, ctx)) {
         const key = `${f.code}:${l.id}`;
         const hit = byKey.get(key);
         if (hit) {
-          hit.cards.push(where);
+          // One layer can trip the same check twice on a card (two folds).
+          if (!hit.cards.includes(where)) hit.cards.push(where);
         } else {
           byKey.set(key, {
             key,
