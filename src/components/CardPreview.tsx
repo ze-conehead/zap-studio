@@ -21,6 +21,9 @@ import { loadOverviewCards, type OverviewCard } from "../overview";
 import { saveProject } from "../persist";
 import { useStore } from "../store";
 import { Card3D, type Card3DHandle } from "./Card3D";
+import { FeatureOverlay } from "./FeatureOverlay";
+import { Mockup3D, type Mockup3DHandle } from "./Mockup3D";
+import { cropPanels } from "../mockup";
 import { captureTrim, CardStage } from "./CardStage";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -60,8 +63,23 @@ function CardBrowserPreview({
   const [backImg, setBackImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [holo, setHolo] = useState(false);
-  const features = getFormat().features;
+  const fmt = getFormat();
+  const features = fmt.features;
   const [showFeatures, setShowFeatures] = useState(true);
+  // A label format is shown stuck on its cartridge / cassette / disk by
+  // default; the checkbox swaps back to the bare sticker.
+  const shell = fmt.mockup?.kind === "shell" ? fmt.mockup : undefined;
+  const [onShell, setOnShell] = useState(!!shell);
+  const mock = useRef<Mockup3DHandle>(null);
+  const view = (): Pick<Card3DHandle, "spin" | "flip" | "reset" | "zoomBy"> | null =>
+    shell && onShell
+      ? {
+          spin: (d) => mock.current?.spin(d),
+          flip: () => mock.current?.spin(180),
+          reset: () => mock.current?.reset(),
+          zoomBy: (f) => mock.current?.zoomBy(f),
+        }
+      : card3d.current;
   const card3d = useRef<Card3DHandle>(null);
   const offFront = useRef<Konva.Stage | null>(null);
   const offBack = useRef<Konva.Stage | null>(null);
@@ -176,7 +194,7 @@ function CardBrowserPreview({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const c = card3d.current;
+      const c = view();
       if (e.key === "Escape") return onClose();
       if (e.key === "[") return step(-1);
       if (e.key === "]") return step(1);
@@ -191,7 +209,7 @@ function CardBrowserPreview({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, total]);
+  }, [onClose, total, onShell]);
 
   const placeholder = err ?? (cards ? t("rendering …") : t("loading …"));
 
@@ -219,14 +237,36 @@ function CardBrowserPreview({
       )}
 
       <div onPointerDown={(e) => e.stopPropagation()}>
-        <Card3D
-          ref={card3d}
-          front={img}
-          back={hasBack ? backImg : null}
-          holo={holo}
-          features={showFeatures ? features : undefined}
-          placeholder={placeholder}
-        />
+        {shell && onShell ? (
+          <Mockup3D
+            ref={mock}
+            wMM={shell.wMM}
+            hMM={shell.hMM}
+            dMM={shell.dMM}
+            color={shell.color}
+            placeholder={placeholder}
+            label={{
+              image: img,
+              xMM: shell.labelXMM,
+              yMM: shell.labelYMM,
+              wMM: fmt.trimMM.w,
+              hMM: fmt.trimMM.h,
+              overlay:
+                showFeatures && features ? (
+                  <FeatureOverlay features={features} trimMM={fmt.trimMM} className="features" />
+                ) : undefined,
+            }}
+          />
+        ) : (
+          <Card3D
+            ref={card3d}
+            front={img}
+            back={hasBack ? backImg : null}
+            holo={holo}
+            features={showFeatures ? features : undefined}
+            placeholder={placeholder}
+          />
+        )}
       </div>
 
       <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
@@ -266,10 +306,18 @@ function CardBrowserPreview({
 
         <span className="preview3d-sep" />
 
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
-          {t("Holographic card")}
-        </label>
+        {shell && (
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={onShell} onCheckedChange={(v) => setOnShell(!!v)} />
+            {t("On the real object")}
+          </label>
+        )}
+        {!(shell && onShell) && (
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={holo} onCheckedChange={(v) => setHolo(!!v)} />
+            {t("Holographic card")}
+          </label>
+        )}
         {features && (
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={showFeatures} onCheckedChange={(v) => setShowFeatures(!!v)} />
@@ -281,7 +329,7 @@ function CardBrowserPreview({
           variant="outline"
           size="icon"
           title={t("Zoom out")}
-          onClick={() => card3d.current?.zoomBy(1 / 1.2)}
+          onClick={() => view()?.zoomBy(1 / 1.2)}
         >
           <ZoomOut />
         </Button>
@@ -289,14 +337,14 @@ function CardBrowserPreview({
           variant="outline"
           size="icon"
           title={t("Zoom in")}
-          onClick={() => card3d.current?.zoomBy(1.2)}
+          onClick={() => view()?.zoomBy(1.2)}
         >
           <ZoomIn />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => card3d.current?.flip()}>
+        <Button variant="outline" size="sm" onClick={() => view()?.flip()}>
           <FlipHorizontal2 /> {t("Flip")}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => card3d.current?.reset()}>
+        <Button variant="outline" size="sm" onClick={() => view()?.reset()}>
           <RotateCcw /> {t("Reset view")}
         </Button>
         <Button variant="outline" size="sm" onClick={onClose}>
@@ -325,6 +373,25 @@ function FlatPreview({
   const t = useT();
   const [img, setImg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // The wrap folded round its case — on by default when the format has one.
+  const caseMock = getFormat().mockup?.kind === "case" ? getFormat().mockup : undefined;
+  const [threeD, setThreeD] = useState(!!caseMock);
+  const [faces, setFaces] = useState<Record<string, string> | null>(null);
+  const mock = useRef<Mockup3DHandle>(null);
+
+  useEffect(() => {
+    if (!img || !caseMock) return;
+    let alive = true;
+    cropPanels(img)
+      .then((f) => alive && setFaces(f))
+      .catch((e) => alive && setErr((e as Error).message));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [img]);
+
+  const mm = (name: string) => panels.find((p) => p.name === name)?.wMM ?? 0;
 
   useEffect(() => {
     const w = canvas.current?.getStageWidth() ?? 0;
@@ -352,6 +419,22 @@ function FlatPreview({
 
   return (
     <div className="preview3d-backdrop" onPointerDown={onClose}>
+      {caseMock && threeD ? (
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <Mockup3D
+            ref={mock}
+            wMM={mm("Front") || getFormat().trimMM.w / 2}
+            hMM={getFormat().trimMM.h}
+            dMM={mm("Spine") || 10}
+            color={caseMock.color}
+            front={faces?.Front ?? null}
+            back={faces?.Back ?? null}
+            left={faces?.Spine ?? null}
+            glossy
+            placeholder={err ?? t("rendering …")}
+          />
+        </div>
+      ) : (
       <div className="flat-preview" onPointerDown={(e) => e.stopPropagation()}>
         {img ? (
           <img src={img} alt={t("Card preview")} draggable={false} />
@@ -362,8 +445,21 @@ function FlatPreview({
           <span key={pct} className="flat-preview-fold" style={{ left: `${pct}%` }} />
         ))}
       </div>
+      )}
       <div className="preview3d-bar" onPointerDown={(e) => e.stopPropagation()}>
-        <span className="text-xs text-muted-foreground">{t("Fold lines dashed")}</span>
+        {caseMock && (
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={threeD} onCheckedChange={(v) => setThreeD(!!v)} />
+            {t("Folded case (3D)")}
+          </label>
+        )}
+        {caseMock && threeD ? (
+          <Button variant="outline" size="sm" onClick={() => mock.current?.reset()}>
+            <RotateCcw /> {t("Reset view")}
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">{t("Fold lines dashed")}</span>
+        )}
         <Button variant="outline" size="sm" onClick={onClose}>
           <X /> {t("Close")}
         </Button>

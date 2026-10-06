@@ -42,6 +42,22 @@ export type FormatFeature =
   | { kind: "hole"; xMM: number; yMM: number; rMM: number } // centred on x/y
   | { kind: "edge"; side: "top" | "bottom" | "left" | "right"; sizeMM: number };
 
+// How the 3D mockup (components/Mockup3D.tsx) shows a format: a case wrap
+// folded round a box — front, spine and back panels on the matching sides,
+// the spine panel's width as the depth — or a label stuck onto the shell it
+// belongs on, at real size. Positions in mm; colours are the plastic.
+export type Mockup =
+  | { kind: "case"; color: string }
+  | {
+      kind: "shell";
+      wMM: number;
+      hMM: number;
+      dMM: number;
+      color: string;
+      labelXMM: number; // label's top-left on the shell's front
+      labelYMM: number;
+    };
+
 export interface CardFormat {
   id: FormatId;
   name: string; // English i18n key
@@ -53,6 +69,7 @@ export interface CardFormat {
   hasBack: boolean; // a separate, independently designed reverse side
   panels?: FormatPanel[]; // absent = a single print area
   features?: FormatFeature[]; // preview-only overlay, see FormatFeature
+  mockup?: Mockup; // 3D preview on the real object; absent = just the sticker
 }
 
 // Dimensions are approximate real-world values — tune here if needed.
@@ -81,6 +98,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { kind: "hole", xMM: 10.75, yMM: 27, rMM: 5.5 },
       { kind: "hole", xMM: 52.75, yMM: 27, rMM: 5.5 },
     ],
+    mockup: { kind: "shell", wMM: 100.4, hMM: 63.8, dMM: 12, color: "#2b2f36", labelXMM: 18.5, labelYMM: 4 },
   },
   "floppy-label": {
     id: "floppy-label",
@@ -91,6 +109,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     cornerRadiusMM: 2,
     thickRatio: 0.0015,
     hasBack: false,
+    mockup: { kind: "shell", wMM: 90, hMM: 94, dMM: 3.3, color: "#1e2026", labelXMM: 10, labelYMM: 22 },
   },
   "dvd-insert": {
     id: "dvd-insert",
@@ -109,6 +128,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Front", wMM: 130.5 },
       { name: "Flap", wMM: 7 },
     ],
+    mockup: { kind: "case", color: "#121417" },
   },
   "cassette-jcard": {
     id: "cassette-jcard",
@@ -126,6 +146,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Back", wMM: 64 },
       { name: "Flap", wMM: 14 },
     ],
+    mockup: { kind: "case", color: "#c9ced6" },
   },
   "switch-case": {
     id: "switch-case",
@@ -143,6 +164,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
       { name: "Spine", wMM: 10 },
       { name: "Front", wMM: 99 },
     ],
+    mockup: { kind: "case", color: "#d32f2f" },
   },
   // Approximate real-world label recesses — tune here if needed.
   "nes-label": {
@@ -156,6 +178,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     hasBack: false,
     // The cartridge's raised top lip, which the label tucks up against.
     features: [{ kind: "edge", side: "top", sizeMM: 4 }],
+    mockup: { kind: "shell", wMM: 120, hMM: 133, dMM: 20, color: "#8d9096", labelXMM: 23.5, labelYMM: 14 },
   },
   "amiga-label": {
     id: "amiga-label",
@@ -166,6 +189,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     cornerRadiusMM: 2,
     thickRatio: 0.0015,
     hasBack: false,
+    mockup: { kind: "shell", wMM: 90, hMM: 94, dMM: 3.3, color: "#e9e6dd", labelXMM: 10, labelYMM: 36 },
   },
   "gameboy-label": {
     id: "gameboy-label",
@@ -176,6 +200,7 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     cornerRadiusMM: 1.5,
     thickRatio: 0.0015,
     hasBack: false,
+    mockup: { kind: "shell", wMM: 57, hMM: 65, dMM: 8, color: "#a9a7a1", labelXMM: 5.5, labelYMM: 13 },
   },
   // Placeholder geometry — a project created with this format stores its own
   // dimensions (see CustomFormatSpec below) and getFormat() merges them in.

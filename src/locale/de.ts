@@ -1305,4 +1305,8 @@ export const de: Record<string, string> = {
   "new": "neu",
   "Also installs {n} font(s): {names}": "Installiert außerdem {n} Schrift(en): {names}",
   "Export": "Exportieren",
+
+  // ── 3D mockup ──
+  "On the real object": "Auf dem echten Objekt",
+  "Folded case (3D)": "Gefaltete Hülle (3D)",
 };
