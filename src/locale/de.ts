@@ -1363,4 +1363,7 @@ export const de: Record<string, string> = {
   "A margin of up to {m} mm would fit.": "Mit einem Rand von bis zu {m} mm würde es passen.",
   "Use fewer cards or a smaller gap.": "Nimm weniger Karten oder einen kleineren Abstand.",
   "The grid doesn't fit on the sheet — see the hint under Layout.": "Das Raster passt nicht auf den Bogen – siehe Hinweis unter Layout.",
+
+  // ── File menu ──
+  "Import game list": "Spielliste importieren",
 };

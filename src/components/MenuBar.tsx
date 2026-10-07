@@ -260,7 +260,7 @@ export function MenuBar({
         {getWorkspaceKind() === "games" && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>{t("Import")}</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("Import game list")}</DropdownMenuLabel>
             <DropdownMenuItem onClick={onOpenBaseImport}>{t("Base set …")}</DropdownMenuItem>
             <DropdownMenuItem onClick={onOpenZaparoo}>
               {t("Zaparoo (MiSTer) …")}
