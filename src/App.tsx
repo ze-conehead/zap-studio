@@ -13,6 +13,7 @@ import { ProjectsDialog } from "./components/ProjectsDialog";
 import { MenuBar } from "./components/MenuBar";
 import { OverviewDialog } from "./components/OverviewDialog";
 import { CollectionStatusDialog } from "./components/CollectionStatusDialog";
+import { StorageErrorScreen } from "./components/StorageErrorScreen";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
@@ -93,6 +94,7 @@ export interface GuideApi {
 
 export default function App() {
   const [project, setProject] = useState<Project | null>(null);
+  const [bootError, setBootError] = useState<unknown>(null);
   const [showProjects, setShowProjects] = useState(false);
 
   // Global guide lines: same set on every card, on/off remembered.
@@ -151,27 +153,32 @@ export default function App() {
   // detached blank project — so the global template is the fallback.
   useEffect(() => {
     (async () => {
-      // Make sure the "All consoles" template exists (cards may reference it).
-      let globalP = await loadProject(GLOBAL_TEMPLATE_ID);
-      if (!globalP) {
-        globalP = newGlobalTemplate();
-        await saveProject(globalP);
-      }
+      try {
+        // Make sure the "All consoles" template exists (cards may reference it).
+        let globalP = await loadProject(GLOBAL_TEMPLATE_ID);
+        if (!globalP) {
+          globalP = newGlobalTemplate();
+          await saveProject(globalP);
+        }
 
-      const id = lastViewId() ?? lastProjectId();
-      let restored = id ? await loadProject(id) : undefined;
-      // A console template that was opened but never edited isn't saved —
-      // rebuild it from the catalogue so the reload lands back on it.
-      if (!restored && id && id !== GLOBAL_TEMPLATE_ID) {
-        const c = getCatalog().find((c) => templateId(c.id) === id);
-        if (c) restored = newConsoleTemplate(c.id, c.name);
+        const id = lastViewId() ?? lastProjectId();
+        let restored = id ? await loadProject(id) : undefined;
+        // A console template that was opened but never edited isn't saved —
+        // rebuild it from the catalogue so the reload lands back on it.
+        if (!restored && id && id !== GLOBAL_TEMPLATE_ID) {
+          const c = getCatalog().find((c) => templateId(c.id) === id);
+          if (c) restored = newConsoleTemplate(c.id, c.name);
+        }
+        // Only restore it if it belongs to the active format.
+        setProject(
+          restored && (restored.format ?? "card") === getFormatId()
+            ? restored
+            : globalP,
+        );
+      } catch (e) {
+        // The start-up probe passed but reading the stored project failed.
+        setBootError(e);
       }
-      // Only restore it if it belongs to the active format.
-      setProject(
-        restored && (restored.format ?? "card") === getFormatId()
-          ? restored
-          : globalP,
-      );
     })();
     // Register uploaded fonts as early as possible — no need to block the
     // boot on it, the font pickers just fill in once it resolves.
@@ -229,6 +236,8 @@ export default function App() {
     const existing = await loadProject(GLOBAL_TEMPLATE_ID);
     setProject(existing ?? newGlobalTemplate());
   };
+
+  if (bootError) return <StorageErrorScreen error={bootError} />;
 
   if (!project) {
     return (

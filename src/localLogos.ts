@@ -6,7 +6,7 @@
 // or a game's box art is the same in every project. One library per kind,
 // built by createLibrary(); the logo one keeps its original export names.
 
-import { del, get, keys, set } from "idb-keyval";
+import { del, get, keys, set } from "./idb";
 import { unzipSync } from "fflate";
 import { normalizeTitle, type CoverCandidate } from "./covers";
 import { t } from "./i18n";

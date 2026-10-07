@@ -1309,4 +1309,16 @@ export const de: Record<string, string> = {
   // ── 3D mockup ──
   "On the real object": "Auf dem echten Objekt",
   "Folded case (3D)": "Gefaltete Hülle (3D)",
+
+  // ── Storage error screen ──
+  "The browser's storage isn't responding": "Der Speicher des Browsers antwortet nicht",
+  "Zap-Studio keeps your projects in the browser's IndexedDB, and the browser reports an error when it tries to read it. Your data is not deleted by this screen.": "Zap-Studio speichert deine Projekte in der IndexedDB des Browsers, und der Browser meldet beim Lesen einen Fehler. Dieser Bildschirm löscht keine Daten.",
+  "What usually helps, in this order:": "Was meistens hilft, in dieser Reihenfolge:",
+  "Quit the browser completely (⌘Q, not just the window), start it again and reopen the app. This clears a stuck lock after a crash or sleep.": "Den Browser komplett beenden (⌘Q, nicht nur das Fenster), neu starten und die App wieder öffnen. Das löst eine hängende Sperre nach Absturz oder Ruhezustand.",
+  "Make sure the app isn't open in a second window or profile, and that the disk isn't full.": "Prüfen, dass die App nicht in einem zweiten Fenster oder Profil offen ist und die Festplatte nicht voll ist.",
+  "Still failing: your latest automatic backup is a zap-studio-backup_….zip in the folder you picked under Data safety. Open the app on another address (a different port, or another browser) and use File ▸ Import project … with that file.": "Weiterhin Fehler: Deine letzte automatische Sicherung ist eine zap-studio-backup_….zip in dem Ordner, den du unter Datensicherheit gewählt hast. Öffne die App unter einer anderen Adresse (anderer Port oder anderer Browser) und nutze Datei ▸ Projekt importieren … mit dieser Datei.",
+  "Last resort: clear the site data for this address in the browser settings, then import the backup. That deletes whatever the broken storage still holds.": "Letzter Ausweg: in den Browser-Einstellungen die Websitedaten für diese Adresse löschen und danach die Sicherung importieren. Das löscht alles, was der defekte Speicher noch enthält.",
+  "Open without saved data": "Ohne gespeicherte Daten öffnen",
+  "“Open without saved data” starts an empty session that stores nothing — handy to import a backup and export from it. Closing the tab discards it.": "„Ohne gespeicherte Daten öffnen“ startet eine leere Sitzung, die nichts speichert – praktisch, um eine Sicherung zu importieren und daraus zu exportieren. Beim Schließen des Tabs ist alles weg.",
+  "Temporary session — nothing is saved. Export your work (File ▸ Export project as .zip) before closing.": "Temporäre Sitzung – nichts wird gespeichert. Exportiere deine Arbeit (Datei ▸ Projekt als .zip exportieren), bevor du schließt.",
 };

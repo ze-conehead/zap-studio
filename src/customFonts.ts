@@ -5,7 +5,7 @@
 // KB to a few MB, too big for localStorage. An in-memory cache keeps reads
 // synchronous for the picker via useSyncExternalStore.
 
-import { del, get, keys, set } from "idb-keyval";
+import { del, get, keys, set } from "./idb";
 import { t } from "./i18n";
 import { wsIdbPrefix } from "./workspace";
 

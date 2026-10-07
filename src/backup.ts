@@ -1,5 +1,5 @@
 import { t } from "./i18n";
-import { set } from "idb-keyval";
+import { set } from "./idb";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import {
   ensureCustomFontsLoaded,

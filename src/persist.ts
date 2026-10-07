@@ -1,4 +1,4 @@
-import { get, set, del, keys } from "idb-keyval";
+import { get, set, del, keys } from "./idb";
 import { migrateProject } from "./factory";
 import { linkGameProject } from "./gameIndex";
 import { wsIdbPrefix, wsSuffix } from "./workspace";

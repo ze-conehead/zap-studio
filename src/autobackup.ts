@@ -7,7 +7,7 @@
 // below reports "unsupported" and the manual backup stays the only route.
 
 import { useSyncExternalStore } from "react";
-import { get, set, del } from "idb-keyval";
+import { get, set, del } from "./idb";
 import { exportBackup } from "./backup";
 import { loadAllProjects } from "./persist";
 

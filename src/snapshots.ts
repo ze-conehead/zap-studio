@@ -4,7 +4,7 @@
 // IndexedDB next to the projects, namespaced per workspace, so deleting a
 // workspace takes them along. Not part of the .zip backup.
 
-import { del, get, keys, set } from "idb-keyval";
+import { del, get, keys, set } from "./idb";
 import { uid } from "./factory";
 import { wsIdbPrefix } from "./workspace";
 import type { Project } from "./types";

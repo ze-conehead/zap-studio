@@ -4,7 +4,7 @@
 // Called "workspace" throughout the source because `Project` is already the
 // type of a single card design — only the labels say "project".
 
-import { del, keys } from "idb-keyval";
+import { del, keys } from "../idb";
 import { Check, Layers, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { seedWorkspace } from "../data/catalog";
