@@ -24,6 +24,7 @@ import { Card3D, type Card3DHandle } from "./Card3D";
 import { FeatureOverlay } from "./FeatureOverlay";
 import { Mockup3D, type Mockup3DHandle } from "./Mockup3D";
 import { cropPanels } from "../mockup";
+import { clampPan, PREVIEW_MAX_ZOOM, PREVIEW_MIN_ZOOM } from "../panLimit";
 import { captureTrim, CardStage } from "./CardStage";
 import type { CanvasHandle } from "./EditorCanvas";
 
@@ -353,7 +354,7 @@ function CardBrowserPreview({
       </div>
 
       <p className="preview3d-hint" onPointerDown={(e) => e.stopPropagation()}>
-        {t("[ ] step cards · drag to rotate · flick to spin · wheel to zoom · F flips, R resets")}
+        {t("[ ] step cards · drag to rotate · right-drag or ⇧-drag to move · flick to spin · wheel to zoom · F flips, R resets")}
       </p>
     </div>
   );
@@ -392,6 +393,13 @@ function FlatPreview({
   }, [img]);
 
   const mm = (name: string) => panels.find((p) => p.name === name)?.wMM ?? 0;
+
+  // The flat wrap can be zoomed (wheel) and moved (drag) too — also past its
+  // own edge once zoomed in (see panLimit).
+  const [view, setView] = useState({ z: 1, x: 0, y: 0 });
+  const flat = useRef<HTMLDivElement>(null);
+  const flatDrag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
+  const zoomed = view.z !== 1 || view.x !== 0 || view.y !== 0;
 
   useEffect(() => {
     const w = canvas.current?.getStageWidth() ?? 0;
@@ -435,7 +443,43 @@ function FlatPreview({
           />
         </div>
       ) : (
-      <div className="flat-preview" onPointerDown={(e) => e.stopPropagation()}>
+      <div
+        ref={flat}
+        className="flat-preview"
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
+          cursor: flatDrag.current ? "grabbing" : "grab",
+          touchAction: "none",
+        }}
+        onContextMenu={(e) => e.preventDefault()}
+        onWheel={(e) =>
+          setView((v) => ({
+            ...v,
+            z: Math.min(PREVIEW_MAX_ZOOM, Math.max(PREVIEW_MIN_ZOOM, v.z * (1 - e.deltaY * 0.0014))),
+          }))
+        }
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // pointer already released — carry on
+          }
+          flatDrag.current = { px: e.clientX, py: e.clientY, ox: view.x, oy: view.y };
+        }}
+        onPointerMove={(e) => {
+          const d = flatDrag.current;
+          const el = flat.current;
+          if (!d || !el) return;
+          setView((v) => ({
+            ...v,
+            x: clampPan(d.ox + e.clientX - d.px, window.innerWidth, el.offsetWidth * v.z),
+            y: clampPan(d.oy + e.clientY - d.py, window.innerHeight, el.offsetHeight * v.z),
+          }));
+        }}
+        onPointerUp={() => (flatDrag.current = null)}
+        onPointerCancel={() => (flatDrag.current = null)}
+      >
         {img ? (
           <img src={img} alt={t("Card preview")} draggable={false} />
         ) : (
@@ -458,7 +502,14 @@ function FlatPreview({
             <RotateCcw /> {t("Reset view")}
           </Button>
         ) : (
-          <span className="text-xs text-muted-foreground">{t("Fold lines dashed")}</span>
+          <>
+            <span className="text-xs text-muted-foreground">{t("Fold lines dashed · wheel zooms, drag moves")}</span>
+            {zoomed && (
+              <Button variant="outline" size="sm" onClick={() => setView({ z: 1, x: 0, y: 0 })}>
+                <RotateCcw /> {t("Reset view")}
+              </Button>
+            )}
+          </>
         )}
         <Button variant="outline" size="sm" onClick={onClose}>
           <X /> {t("Close")}

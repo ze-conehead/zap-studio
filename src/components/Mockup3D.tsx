@@ -4,6 +4,7 @@
 // wheel to zoom. Sizes are in mm, scaled so the object fills the stage.
 
 import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
+import { clampPan, PREVIEW_MAX_ZOOM, PREVIEW_MIN_ZOOM } from "../panLimit";
 
 export interface Mockup3DHandle {
   reset: () => void;
@@ -49,7 +50,10 @@ export function Mockup3D({
   const START = { x: -10, y: 40 };
   const [rot, setRot] = useState(START);
   const [zoom, setZoom] = useState(1);
+  // Panning: the whole object moves on screen (right / middle button or Shift + drag).
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const drag = useRef<{ px: number; py: number; rx: number; ry: number } | null>(null);
+  const panDrag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
   const [unit, setUnit] = useState(4);
 
   // px per mm: the larger side gets ~60 % of the viewport height.
@@ -64,8 +68,9 @@ export function Mockup3D({
     reset: () => {
       setRot(START);
       setZoom(1);
+      setPan({ x: 0, y: 0 });
     },
-    zoomBy: (f) => setZoom((z) => Math.min(2.6, Math.max(0.4, z * f))),
+    zoomBy: (f) => setZoom((z) => Math.min(PREVIEW_MAX_ZOOM, Math.max(PREVIEW_MIN_ZOOM, z * f))),
     spin: (deg) => setRot((r) => ({ ...r, y: r.y + deg })),
   }));
 
@@ -108,11 +113,31 @@ export function Mockup3D({
   return (
     <div
       className="mockup3d-stage"
+      onContextMenu={(e) => e.preventDefault()}
+      onMouseDown={(e) => e.button === 1 && e.preventDefault() /* no middle-click autoscroll */}
       onPointerDown={(e) => {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {
+          // pointer already released — carry on, the move handler still works
+        }
+        if (e.button === 1 || e.button === 2 || e.shiftKey) {
+          panDrag.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y };
+          return;
+        }
         drag.current = { px: e.clientX, py: e.clientY, rx: rot.x, ry: rot.y };
       }}
       onPointerMove={(e) => {
+        const pd = panDrag.current;
+        if (pd) {
+          // The object's reach on screen: its longest side, zoomed.
+          const reach = Math.max(W, H) * zoom;
+          setPan({
+            x: clampPan(pd.ox + e.clientX - pd.px, window.innerWidth, reach),
+            y: clampPan(pd.oy + e.clientY - pd.py, window.innerHeight, reach),
+          });
+          return;
+        }
         const d = drag.current;
         if (!d) return;
         setRot({
@@ -120,13 +145,23 @@ export function Mockup3D({
           y: d.ry + (e.clientX - d.px) * 0.35,
         });
       }}
-      onPointerUp={() => (drag.current = null)}
-      onPointerCancel={() => (drag.current = null)}
-      onWheel={(e) => setZoom((z) => Math.min(2.6, Math.max(0.4, z * (1 - e.deltaY * 0.0014))))}
+      onPointerUp={() => {
+        drag.current = null;
+        panDrag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+        panDrag.current = null;
+      }}
+      onWheel={(e) =>
+        setZoom((z) => Math.min(PREVIEW_MAX_ZOOM, Math.max(PREVIEW_MIN_ZOOM, z * (1 - e.deltaY * 0.0014))))
+      }
     >
       <div
         className="mockup3d-box"
-        style={{ transform: `scale(${zoom}) rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
+        }}
       >
         {face(
           W,

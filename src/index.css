@@ -168,6 +168,8 @@
   position: fixed;
   inset: 0;
   z-index: 60;
+  /* A zoomed / panned object can be far larger than the window. */
+  overflow: hidden;
   display: grid;
   place-items: center;
   /* A soft studio spotlight behind the card — without it a dark card sits on
@@ -222,6 +224,9 @@
 }
 .card3d.dragging {
   cursor: grabbing;
+}
+.card3d.panning {
+  cursor: move;
 }
 
 .card3d .face {

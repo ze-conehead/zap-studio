@@ -1331,4 +1331,8 @@ export const de: Record<string, string> = {
   "Use saved data": "Gespeicherte Daten nutzen",
   "Go back to your saved data?": "Zurück zu deinen gespeicherten Daten?",
   "This reloads the app with the browser's storage. Everything you did in this temporary session is discarded — export it first (File ▸ Export project as .zip) if you want to keep it. If the storage is still broken, the error screen comes back.": "Die App wird mit dem Speicher des Browsers neu geladen. Alles, was du in dieser temporären Sitzung gemacht hast, geht verloren – exportiere es vorher (Datei ▸ Projekt als .zip exportieren), wenn du es behalten willst. Ist der Speicher weiterhin defekt, erscheint wieder der Fehlerbildschirm.",
+
+  // ── Preview panning ──
+  "[ ] step cards · drag to rotate · right-drag or ⇧-drag to move · flick to spin · wheel to zoom · F flips, R resets": "[ ] Karten durchblättern · ziehen = drehen · Rechtsklick- oder ⇧-Ziehen = verschieben · wischen = drehen lassen · Rad = zoomen · F = wenden, R = zurücksetzen",
+  "Fold lines dashed · wheel zooms, drag moves": "Falzlinien gestrichelt · Rad zoomt, Ziehen verschiebt",
 };

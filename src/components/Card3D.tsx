@@ -12,6 +12,7 @@ import {
   type Ref,
 } from "react";
 import { getFormat, previewCssVars, type FormatFeature } from "../formats";
+import { clampPan, PREVIEW_MAX_ZOOM, PREVIEW_MIN_ZOOM } from "../panLimit";
 import { FeatureOverlay } from "./FeatureOverlay";
 
 const START = { x: -12, y: -18 };
@@ -68,6 +69,10 @@ export function Card3D({
   const vel = useRef({ x: 0, y: 0 });
   const zoom = useRef(1);
   const zoomTo = useRef(1);
+  // Screen-space offset of the whole card (panning), eased toward `panTo`.
+  const pan = useRef({ x: 0, y: 0 });
+  const panTo = useRef({ x: 0, y: 0 });
+  const panning = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
   const idle = useRef(0);
   const tween = useRef<Tween | null>(null);
   const dragging = useRef(false);
@@ -92,7 +97,7 @@ export function Card3D({
     const ry = rot.current.y + swayY;
     const z = zoom.current;
 
-    el.style.transform = `scale(${z.toFixed(3)}) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+    el.style.transform = `translate(${pan.current.x.toFixed(1)}px, ${pan.current.y.toFixed(1)}px) scale(${z.toFixed(3)}) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
 
     // Where the light lands, in card space. `ry` wraps, so fold it first.
     const fold = ((((ry + 180) % 360) + 360) % 360) - 180;
@@ -117,7 +122,7 @@ export function Card3D({
     const sh = shadowRef.current;
     if (sh) {
       sh.style.transform =
-        `translate(-50%, -50%) translate(${(-fold * 0.9).toFixed(1)}px, ${(18 + Math.abs(rx) * 0.35).toFixed(1)}px)` +
+        `translate(-50%, -50%) translate(${(pan.current.x - fold * 0.9).toFixed(1)}px, ${(pan.current.y + 18 + Math.abs(rx) * 0.35).toFixed(1)}px)` +
         ` scale(${(z * (1 - Math.abs(fold) / 260)).toFixed(3)}, ${(z * (0.16 + (1 - Math.abs(rx) / 90) * 0.1)).toFixed(3)})`;
       sh.style.opacity = String(clamp(0.55 - Math.abs(rx) / 220, 0.12, 0.6));
     }
@@ -164,6 +169,12 @@ export function Card3D({
 
       // Zoom always eases toward its target.
       zoom.current += (zoomTo.current - zoom.current) * Math.min(1, 0.18 * dt);
+      // …and so does the pan (instantly while the user is dragging it).
+      if (!panning.current) {
+        const k = Math.min(1, 0.22 * dt);
+        pan.current.x += (panTo.current.x - pan.current.x) * k;
+        pan.current.y += (panTo.current.y - pan.current.y) * k;
+      }
 
       paint(now);
       raf = requestAnimationFrame(tick);
@@ -184,7 +195,10 @@ export function Card3D({
   useImperativeHandle(
     ref,
     () => ({
-      reset: () => tweenTo({ ...START, z: 1 }),
+      reset: () => {
+        panTo.current = { x: 0, y: 0 };
+        tweenTo({ ...START, z: 1 });
+      },
       flip: () => {
         // Snap to the nearest clean face, then add half a turn.
         const half = Math.round(rot.current.y / 180) * 180;
@@ -193,7 +207,7 @@ export function Card3D({
       spin: (deg) =>
         tweenTo({ x: rot.current.x, y: rot.current.y + deg, z: zoom.current }, 520),
       zoomBy: (f) => {
-        zoomTo.current = clamp(zoomTo.current * f, 0.5, 2.6);
+        zoomTo.current = clamp(zoomTo.current * f, PREVIEW_MIN_ZOOM, PREVIEW_MAX_ZOOM);
       },
     }),
     [tweenTo],
@@ -205,6 +219,14 @@ export function Card3D({
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {
       // pointer already released — carry on, the move handler still works
+    }
+    // Middle / right button, or Shift + drag: move the card instead of
+    // turning it.
+    if (e.button === 1 || e.button === 2 || e.shiftKey) {
+      e.preventDefault();
+      panning.current = { px: e.clientX, py: e.clientY, ox: pan.current.x, oy: pan.current.y };
+      cardRef.current?.classList.add("panning");
+      return;
     }
     pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch.current.size === 2) {
@@ -232,6 +254,17 @@ export function Card3D({
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    const pn = panning.current;
+    if (pn) {
+      const card = cardRef.current;
+      const z = zoom.current;
+      // Past the card's edge is fine — see panLimit.
+      const x = clampPan(pn.ox + e.clientX - pn.px, window.innerWidth, (card?.offsetWidth ?? 0) * z);
+      const y = clampPan(pn.oy + e.clientY - pn.py, window.innerHeight, (card?.offsetHeight ?? 0) * z);
+      pan.current = { x, y };
+      panTo.current = { x, y };
+      return;
+    }
     if (pinch.current.has(e.pointerId)) {
       pinch.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     }
@@ -239,7 +272,7 @@ export function Card3D({
     if (base && pinch.current.size === 2) {
       const [a, b] = [...pinch.current.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      zoomTo.current = clamp((d / base.dist) * base.zoom, 0.5, 2.6);
+      zoomTo.current = clamp((d / base.dist) * base.zoom, PREVIEW_MIN_ZOOM, PREVIEW_MAX_ZOOM);
       return;
     }
     const d = drag.current;
@@ -259,6 +292,11 @@ export function Card3D({
   };
 
   const endPointer = (e: React.PointerEvent) => {
+    if (panning.current) {
+      panning.current = null;
+      cardRef.current?.classList.remove("panning");
+      return;
+    }
     pinch.current.delete(e.pointerId);
     if (pinch.current.size < 2) pinchBase.current = null;
     if (pinch.current.size === 0) {
@@ -269,7 +307,7 @@ export function Card3D({
   };
 
   const onWheel = (e: React.WheelEvent) => {
-    zoomTo.current = clamp(zoomTo.current * (1 - e.deltaY * 0.0014), 0.5, 2.6);
+    zoomTo.current = clamp(zoomTo.current * (1 - e.deltaY * 0.0014), PREVIEW_MIN_ZOOM, PREVIEW_MAX_ZOOM);
   };
 
   const faces = (
@@ -315,6 +353,8 @@ export function Card3D({
         onPointerMove={onPointerMove}
         onPointerUp={endPointer}
         onPointerCancel={endPointer}
+        onContextMenu={(e) => e.preventDefault()}
+        onMouseDown={(e) => e.button === 1 && e.preventDefault() /* no middle-click autoscroll */}
         onWheel={onWheel}
       >
         {faces}
