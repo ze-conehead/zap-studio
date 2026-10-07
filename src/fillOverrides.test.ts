@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backgroundFillOverride, canOverrideStyle, setFillOverride, withFillOverride } from "./fillOverrides";
+import { backgroundFillOverride, backgroundFillOverrides, canOverrideStyle, setFillOverride, withFillOverride, withFillOverrides } from "./fillOverrides";
 import { makeAlphaMaskLayer, makeBackgroundLayer, makeLogoSlotLayer, makeShapeLayer, makeTextLayer } from "./factory";
 import type { CardBackground, Project } from "./types";
 
@@ -103,5 +103,32 @@ describe("placement frames can't be overridden", () => {
     const mask = makeAlphaMaskLayer(1);
     const descendant = { fillOverrides: { [mask.id]: { fill: fill("#f00"), stroke: "#0f0" } } } as Project;
     expect(withFillOverride(mask, descendant)).toBe(mask);
+  });
+});
+
+describe("a global layer through console and card", () => {
+  const red = fill("#f00");
+  const blue = fill("#00f");
+
+  it("the card's pick goes over the console's, the console's over the global's", () => {
+    const circle = makeShapeLayer("circle");
+    const consoleP = { fillOverrides: { [circle.id]: { fill: red, stroke: "#111111" } } } as Project;
+    const card = { fillOverrides: { [circle.id]: { fill: blue } } } as Project;
+
+    const seen = withFillOverrides(circle, [consoleP, card]);
+    expect(seen.type === "shape" && seen.fill).toBe(blue); // the card wins
+    expect(seen.type === "shape" && seen.stroke).toBe("#111111"); // …but only for what it picked
+    const consoleOnly = withFillOverrides(circle, [consoleP, { fillOverrides: {} } as Project]);
+    expect(consoleOnly.type === "shape" && consoleOnly.fill).toBe(red);
+    expect(withFillOverrides(circle, [undefined, undefined])).toBe(circle);
+  });
+
+  it("works for a background fill as well", () => {
+    const bg = makeBackgroundLayer();
+    const consoleP = { fillOverrides: { [bg.id]: { fill: red } } } as Project;
+    const card = { fillOverrides: { [bg.id]: { fill: blue } } } as Project;
+    expect(backgroundFillOverrides(bg, [consoleP, card])).toBe(blue);
+    expect(backgroundFillOverrides(bg, [consoleP, undefined])).toBe(red);
+    expect(backgroundFillOverrides(bg, [])).toBe(bg.fill);
   });
 });

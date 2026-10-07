@@ -178,6 +178,37 @@ describe("buildFaceLayers", () => {
   });
 });
 
+describe("buildOverlay: overrides of a global layer", () => {
+  const solid = (color: string): CardBackground => ({ kind: "solid", color, color2: color, angle: 0, noise: 0 });
+  const fillOf = (l: Layer | undefined) => (l && l.type === "shape" ? l.fill.color : undefined);
+
+  it("a card's own pick for a global circle wins over the console's", () => {
+    // the reported bug: global circle → console overrides it → card overrides it again
+    const circle = { ...makeShapeLayer("circle"), name: "Circle" };
+    const globalP = { ...newGlobalTemplate(), layers: [circle] };
+    const consoleP = {
+      ...newConsoleTemplate("ps", "PlayStation"),
+      fillOverrides: { [circle.id]: { fill: solid("#ff0000") } },
+    };
+    const onCard = (fillOverrides?: Record<string, { fill: CardBackground }>) =>
+      fillOf(buildOverlay(consoleP, { ...card(), fillOverrides }, globalP, consoleP).find((l) => l.id === circle.id));
+
+    expect(onCard()).toBe("#ff0000"); // inherits the console's
+    expect(onCard({ [circle.id]: { fill: solid("#0000ff") } })).toBe("#0000ff"); // the card's own
+  });
+
+  it("editing the console template still shows the console's pick", () => {
+    const circle = makeShapeLayer("circle");
+    const globalP = { ...newGlobalTemplate(), layers: [circle] };
+    const consoleP = {
+      ...newConsoleTemplate("ps", "PlayStation"),
+      fillOverrides: { [circle.id]: { fill: solid("#ff0000") } },
+    };
+    const layers = buildOverlay(consoleP, undefined, globalP, consoleP);
+    expect(fillOf(layers.find((l) => l.id === circle.id))).toBe("#ff0000");
+  });
+});
+
 describe("buildOverlay", () => {
   it("slots the console's logo into the global logo frame's own stacking position", () => {
     const shape = { ...makeShapeLayer("rect"), name: "Shape" };

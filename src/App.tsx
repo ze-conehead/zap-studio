@@ -53,7 +53,7 @@ import { ensureCustomFontsLoaded } from "./customFonts";
 import { getGameProject, linkGameProject } from "./gameIndex";
 import { loadGuides, newGuideId, saveGuides, type GuidesState } from "./guides";
 import { maskOptions, type MaskOption } from "./templates";
-import { backgroundFillOverride, withFillOverride } from "./fillOverrides";
+import { backgroundFillOverrides, withFillOverride } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
 import { getFormatId } from "./formats";
 import { spineSliceFor } from "./spine";
@@ -355,12 +355,14 @@ function Shell({
 
       // A template's own (visible) background layer is what a card inherits
       // when its background source is "console" / "global".
-      const bgFill = (p?: Project, descendant?: Project) => {
+      // A global background can be overridden by the console and, over that,
+      // by the card (chain: nearest the owner first).
+      const bgFill = (p?: Project, chain: (Project | undefined)[] = []) => {
         const bg = p?.layers.find(isBackground);
-        return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
+        return bg?.visible ? backgroundFillOverrides(bg, chain) : undefined;
       };
-      const globalBg = bgFill(globalP, descendantOfGlobal);
-      const consoleBg = bgFill(consoleP, descendantOfConsole);
+      const globalBg = bgFill(globalP, [descendantOfGlobal, descendantOfConsole]);
+      const consoleBg = bgFill(consoleP, [descendantOfConsole]);
 
       // The global "main alpha mask" clips each card's main image; it never
       // paints as an overlay layer itself. Background layers never overlay.

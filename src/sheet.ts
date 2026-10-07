@@ -6,7 +6,7 @@
 import { BLEED_PX, CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
-import { backgroundFillOverride } from "./fillOverrides";
+import { backgroundFillOverrides } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadAllProjects, loadProject } from "./persist";
@@ -46,9 +46,11 @@ export async function listGameDesigns(): Promise<SheetGame[]> {
 export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
   // A console's / a card's own pick for an ancestor's editableFill shape or
   // background — see src/fillOverrides.ts.
-  const bgFill = (p?: Project, descendant?: Project) => {
+  // `chain`: the descendants that may override it, nearest the owner first
+  // (a global background: the console, then the card).
+  const bgFill = (p?: Project, chain: (Project | undefined)[] = []) => {
     const bg = p?.layers.find(isBackground);
-    return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
+    return bg?.visible ? backgroundFillOverrides(bg, chain) : undefined;
   };
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalMasks = alphaMasksOf(globalP);
@@ -90,8 +92,8 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
         index: m.index,
         count: m.count,
       }),
-      consoleBg: bgFill(consoleP, project),
-      globalBg: bgFill(globalP, consoleP),
+      consoleBg: bgFill(consoleP, [project]),
+      globalBg: bgFill(globalP, [consoleP, project]),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       // Own back, else the console template's, else the global one's —
       // same fallback as the overview. The cut sheet ignores it; the

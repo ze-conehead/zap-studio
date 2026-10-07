@@ -11,7 +11,7 @@ import {
   newProject,
   templateId,
 } from "./factory";
-import { backgroundFillOverride } from "./fillOverrides";
+import { backgroundFillOverrides } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
@@ -81,9 +81,11 @@ export async function drawPack(
   // background — see src/fillOverrides.ts. Global overrides are per
   // console (descendant = consoleP), console overrides per card
   // (descendant = the card's own saved project, when it has one).
-  const bgFill = (p?: Project, descendant?: Project) => {
+  // `chain`: the descendants that may override it, nearest the owner first
+  // (a global background: the console, then the card).
+  const bgFill = (p?: Project, chain: (Project | undefined)[] = []) => {
     const bg = p?.layers.find(isBackground);
-    return bg?.visible ? backgroundFillOverride(bg, descendant) : undefined;
+    return bg?.visible ? backgroundFillOverrides(bg, chain) : undefined;
   };
   const globalP = await loadProject(GLOBAL_TEMPLATE_ID);
   const globalMasks = alphaMasksOf(globalP);
@@ -111,8 +113,8 @@ export async function drawPack(
         index: Math.max(0, pick.console.games.indexOf(pick.game)),
         count: pick.console.games.length,
       }),
-      consoleBg: bgFill(consoleP, saved),
-      globalBg: bgFill(globalP, consoleP),
+      consoleBg: bgFill(consoleP, [saved]),
+      globalBg: bgFill(globalP, [consoleP, saved]),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       holo: false,
     });

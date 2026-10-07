@@ -3,7 +3,7 @@
 // (EditorCanvas), the static renderer (CardStage) and the unit tests.
 
 import { isBackground } from "./factory";
-import { withFillOverride } from "./fillOverrides";
+import { withFillOverride, withFillOverrides } from "./fillOverrides";
 import { applySpine, type SpineSlice } from "./spine";
 import { isAlphaMask, resolveMask } from "./templates";
 import type { BackgroundLayer, CardBackground, Layer, Project } from "./types";
@@ -44,7 +44,9 @@ export function buildOverlay(
   const globalLayers = (globalP?.layers ?? []).flatMap((l): Layer[] => {
     if (isBackground(l)) return [];
     if (l.logoSlot) return logo ? [withFillOverride(logo, descendantOfConsole)] : [];
-    return [withFillOverride(l, descendantOfGlobal)];
+    // A global layer is overridden by the console and, over that, by the
+    // card itself (descendantOfConsole is the card's own project).
+    return [withFillOverrides(l, [descendantOfGlobal, descendantOfConsole])];
   });
 
   const globalIds = new Set(globalLayers.map((l) => l.id));

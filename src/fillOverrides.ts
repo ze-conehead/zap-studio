@@ -42,6 +42,27 @@ export function withFillOverride(
   return layer;
 }
 
+/**
+ * `layer` as seen through a whole chain of descendants, the one nearest its
+ * owner first — a global layer through [console, card]: the console's picks
+ * go over the layer's own, then the card's go over those.
+ */
+export function withFillOverrides(
+  layer: Layer,
+  chain: (Pick<Project, "fillOverrides"> | undefined)[],
+): Layer {
+  return chain.reduce((l, d) => withFillOverride(l, d), layer);
+}
+
+/** backgroundFillOverride() through a chain, nearest descendant to the owner first — the last pick wins. */
+export function backgroundFillOverrides(
+  bg: { id: string; fill: CardBackground } | undefined,
+  chain: (Pick<Project, "fillOverrides"> | undefined)[],
+): CardBackground | undefined {
+  if (!bg) return undefined;
+  return chain.reduce((fill, d) => d?.fillOverrides?.[bg.id]?.fill ?? fill, bg.fill);
+}
+
 /** The background layer's fill for `descendant`, honouring an override —
  * same rule as withFillOverride, kept separate since callers here only
  * ever have the resolved CardBackground, not a Layer, in hand. */
