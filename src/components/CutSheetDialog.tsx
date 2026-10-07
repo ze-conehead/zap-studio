@@ -16,8 +16,14 @@ import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
   isPaper,
+  MAX_PAGE_MM,
+  MIN_PAGE_MM,
   PAPER,
+  PAPER_PRESETS,
+  paperName,
+  paperSize,
   planPaperSheet,
+  presetOf,
   listGameDesigns,
   loadSheetCards,
   PRINT_H_MM,
@@ -157,7 +163,7 @@ export function CutSheetDialog({
             cardHeightMM: pg.heightMM,
           })),
       );
-      downloadBlob(await cardTrayPdf(pages), `print-sheet-${opts.target}.pdf`);
+      downloadBlob(await cardTrayPdf(pages), `print-sheet-${presetOf(paperSize(opts))?.id ?? "custom"}.pdf`);
       return;
     }
 
@@ -274,7 +280,7 @@ export function CutSheetDialog({
         <DialogHeader>
           <DialogTitle>
             {paper
-              ? t("Print sheet ({paper})", { paper: opts.target === "a4" ? "A4" : "US Letter" })
+              ? t("Print sheet ({paper})", { paper: paperName(opts) })
               : wmd
                 ? t("Sticker sheet for wir-machen-druck.de")
                 : t("Cut sheet for Cricut")}
@@ -331,6 +337,8 @@ export function CutSheetDialog({
                     setOpts((o) => ({
                       ...o,
                       target: tg,
+                      // A page size picked for one sheet isn't the other's.
+                      pageMM: null,
                       // Paper gets cut by hand: marks and white paper by default.
                       ...(isPaper(tg) && !isPaper(o.target)
                         ? { cropMarks: true, background: "white" as const }
@@ -353,7 +361,7 @@ export function CutSheetDialog({
               {paper
                 ? t(
                     "Lays the designs out on {paper} paper at real size, as many as fit inside the margin, centred and in the same spots on every page — with crop marks for cutting by hand. One PDF; print at 100 % (“actual size”).",
-                    { paper: opts.target === "a4" ? "A4" : "US Letter" },
+                    { paper: paperName(opts) },
                   )
                 : wmd
                 ? t(
@@ -429,6 +437,69 @@ export function CutSheetDialog({
 
             {paper && paperPlan && (
               <div className="flex flex-col gap-2 rounded-md border p-2.5 text-xs">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <label className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">{t("Sheet size")}</span>
+                    <select
+                      className="h-7 rounded border bg-transparent px-1.5"
+                      value={presetOf(paperSize(opts))?.id ?? "custom"}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        const size = paperSize(opts);
+                        const pick = PAPER_PRESETS.find((p) => p.id === id);
+                        setOpts((o) => {
+                          // "Custom" keeps the current size, now editable.
+                          if (!pick) return { ...o, pageMM: { w: size.wMM, h: size.hMM } };
+                          // The target's own sheet needs no override.
+                          if (pick.id === o.target) return { ...o, pageMM: null };
+                          return { ...o, pageMM: { w: pick.wMM, h: pick.hMM } };
+                        });
+                      }}
+                    >
+                      {PAPER_PRESETS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                      <option value="custom">{t("Custom size")}</option>
+                    </select>
+                  </label>
+                  <span className="flex items-center gap-1.5">
+                    {([
+                      ["w", t("Width")],
+                      ["h", t("Height")],
+                    ] as const).map(([k, label], i) => (
+                      <span key={k} className="flex items-center gap-1.5">
+                        {i === 1 && "×"}
+                        <input
+                          type="number"
+                          aria-label={label}
+                          title={label}
+                          className="h-7 w-[4.5rem] rounded border bg-transparent px-2"
+                          min={MIN_PAGE_MM}
+                          max={MAX_PAGE_MM}
+                          step={0.1}
+                          value={opts.pageMM ? opts.pageMM[k] : PAPER[opts.target as "a4" | "letter"][k === "w" ? "wMM" : "hMM"]}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            const cur = paperSize(opts);
+                            setOpts((o) => ({
+                              ...o,
+                              pageMM: {
+                                w: k === "w" ? v : (o.pageMM?.w ?? cur.wMM),
+                                h: k === "h" ? v : (o.pageMM?.h ?? cur.hMM),
+                              },
+                            }));
+                          }}
+                        />
+                      </span>
+                    ))}
+                    mm
+                  </span>
+                  <span className="text-muted-foreground">
+                    ≈ {+(paperSize(opts).wMM / 25.4).toFixed(2)} × {+(paperSize(opts).hMM / 25.4).toFixed(2)} in
+                  </span>
+                </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <span className="text-muted-foreground">{t("Layout")}</span>
                   <div className="flex gap-1 rounded-md border p-0.5">

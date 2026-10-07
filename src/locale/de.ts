@@ -1366,4 +1366,8 @@ export const de: Record<string, string> = {
 
   // ── File menu ──
   "Import game list": "Spielliste importieren",
+
+  // ── Sheet size ──
+  "Sheet size": "Blattgröße",
+  "Custom size": "Eigene Größe",
 };

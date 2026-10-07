@@ -48,4 +48,24 @@ describe("probeStorage", () => {
     await expect(db.probeStorage()).rejects.toBe(broken);
     vi.doUnmock("idb-keyval");
   });
+
+  it("gives up with a clear message when the storage never answers", async () => {
+    vi.resetModules();
+    sessionStorage.clear();
+    vi.useFakeTimers();
+    try {
+      const never = () => new Promise(() => {});
+      vi.doMock("idb-keyval", () => ({ get: never, set: never, del: never, keys: never }));
+      const db = await import("./idb");
+      const outcome = db.probeStorage().then(
+        () => "resolved",
+        (e: Error) => e.message,
+      );
+      await vi.advanceTimersByTimeAsync(db.PROBE_TIMEOUT_MS + 1);
+      expect(await outcome).toMatch(/didn't answer within 10 seconds/);
+    } finally {
+      vi.useRealTimers();
+      vi.doUnmock("idb-keyval");
+    }
+  });
 });

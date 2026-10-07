@@ -61,10 +61,36 @@ export const del = (key: IDBValidKey): Promise<void> => {
 export const keys = <K extends IDBValidKey = IDBValidKey>(): Promise<K[]> =>
   useMem ? Promise.resolve([...mem.keys()] as K[]) : real.keys<K>();
 
-/** Rejects with the browser's own error when storage can't be used. */
+// How long the start-up probe waits before it calls the storage stuck. A
+// database another window has blocked (an open delete / upgrade request)
+// never answers at all — without a limit that is a blank page.
+export const PROBE_TIMEOUT_MS = 10_000;
+
+/** Rejects with the browser's own error when IndexedDB can't be used — or after PROBE_TIMEOUT_MS of silence. */
 export async function probeStorage(): Promise<void> {
   if (useMem) return;
-  await real.set("__probe__", Date.now());
-  await real.get("__probe__");
-  await real.del("__probe__");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `The browser's storage didn't answer within ${PROBE_TIMEOUT_MS / 1000} seconds — another window or tab of this app may be holding it.`,
+          ),
+        ),
+      PROBE_TIMEOUT_MS,
+    );
+  });
+  try {
+    await Promise.race([
+      (async () => {
+        await real.set("__probe__", Date.now());
+        await real.get("__probe__");
+        await real.del("__probe__");
+      })(),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }

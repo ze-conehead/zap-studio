@@ -113,6 +113,45 @@ export const PAPER = {
 } as const;
 export const isPaper = (t: SheetTarget): t is keyof typeof PAPER => t === "a4" || t === "letter";
 
+// Other sheets a printer might take, for the page-size picker.
+export const PAPER_PRESETS = [
+  { id: "a5", name: "A5", wMM: 148, hMM: 210 },
+  { id: "a4", name: "A4", wMM: 210, hMM: 297 },
+  { id: "a3", name: "A3", wMM: 297, hMM: 420 },
+  { id: "letter", name: "US Letter", wMM: 215.9, hMM: 279.4 },
+  { id: "legal", name: "US Legal", wMM: 215.9, hMM: 355.6 },
+  { id: "tabloid", name: "Tabloid (11 × 17 in)", wMM: 279.4, hMM: 431.8 },
+  { id: "super-b", name: "Super B (13 × 19 in)", wMM: 330.2, hMM: 482.6 },
+] as const;
+
+export const MIN_PAGE_MM = 30;
+export const MAX_PAGE_MM = 2000;
+const clampPage = (v: number) => Math.min(MAX_PAGE_MM, Math.max(MIN_PAGE_MM, v));
+
+/**
+ * The paper sheet's size, short side first — the chosen preset's own, or the
+ * custom one. Which way it lies on the printer is the orientation's business,
+ * so the order the user typed the two numbers in doesn't matter.
+ */
+export function paperSize(opts: Pick<SheetOptions, "target" | "pageMM">): { wMM: number; hMM: number } {
+  const base = opts.pageMM ?? (isPaper(opts.target) ? PAPER[opts.target] : PAPER.a4);
+  const a = clampPage(Number("wMM" in base ? base.wMM : base.w) || MIN_PAGE_MM);
+  const b = clampPage(Number("hMM" in base ? base.hMM : base.h) || MIN_PAGE_MM);
+  return { wMM: Math.min(a, b), hMM: Math.max(a, b) };
+}
+
+/** The preset a size matches (either way round), if any. */
+export function presetOf(size: { wMM: number; hMM: number }) {
+  const s = [Math.min(size.wMM, size.hMM), Math.max(size.wMM, size.hMM)];
+  return PAPER_PRESETS.find((p) => Math.abs(p.wMM - s[0]) < 0.05 && Math.abs(p.hMM - s[1]) < 0.05);
+}
+
+/** "A4", "US Letter", or "123 × 456 mm" for something else. */
+export function paperName(opts: Pick<SheetOptions, "target" | "pageMM">): string {
+  const size = paperSize(opts);
+  return presetOf(size)?.name ?? `${+size.wMM.toFixed(1)} × ${+size.hMM.toFixed(1)} mm`;
+}
+
 // Outer bleed added around the whole wir-machen-druck sheet.
 export const WMD_BLEED_MM = 2;
 
@@ -131,6 +170,9 @@ export interface SheetOptions {
   duplexYMM: number;
   // Paper sheets only: unprinted border on every side.
   marginMM: number;
+  // Paper sheets only: a page size other than the target's own (A4 / US
+  // Letter), for a printer that takes other formats. Either way round.
+  pageMM: { w: number; h: number } | null;
   // Paper sheets only: which way the page lies. "auto" takes whichever fits
   // more cards (or, with a fixed grid, the one the grid fits on).
   orientation: "auto" | "portrait" | "landscape";
@@ -149,6 +191,7 @@ export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   duplexXMM: 0,
   duplexYMM: 0,
   marginMM: 8,
+  pageMM: null,
   orientation: "auto",
   grid: null,
 };
@@ -224,7 +267,7 @@ export interface PaperPlanResult {
  */
 export function planPaperSheet(opts: SheetOptions): PaperPlanResult {
   if (!isPaper(opts.target)) return {};
-  const paper = PAPER[opts.target];
+  const paper = paperSize(opts);
   const gap = Math.max(0, opts.gapMM);
   const margin = Math.max(0, opts.marginMM);
   const trimW = TRIM_RECT.w / PX_PER_MM;
