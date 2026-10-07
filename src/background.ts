@@ -95,7 +95,20 @@ export function gradientFill(
   };
 }
 
-// Monochrome grain tile, generated once and reused for preview + export.
+/**
+ * One grain pixel from a random 0..1: black or white, with an opacity that
+ * grows with the distance from the middle. Laid over a colour with the plain
+ * "source-over" blend this darkens and lightens it in equal measure, so it
+ * shows on any colour — the "overlay" blend the grain used before multiplies
+ * with what's underneath, so it left a dark or light fill almost untouched.
+ */
+export function grainPixel(v: number): { value: 0 | 255; alpha: number } {
+  const s = (v - 0.5) * 2; // -1 … 1
+  return { value: s > 0 ? 255 : 0, alpha: Math.round(Math.abs(s) * 255) };
+}
+
+// Grain tile, generated once and reused for preview + export. Used with the
+// normal blend at the fill's grain strength as opacity (see grainPixel).
 let tile: HTMLCanvasElement | null = null;
 export function noiseTile(): HTMLCanvasElement {
   if (tile) return tile;
@@ -106,11 +119,11 @@ export function noiseTile(): HTMLCanvasElement {
   const ctx = c.getContext("2d")!;
   const img = ctx.createImageData(size, size);
   for (let i = 0; i < img.data.length; i += 4) {
-    const v = (Math.random() * 255) | 0;
-    img.data[i] = v;
-    img.data[i + 1] = v;
-    img.data[i + 2] = v;
-    img.data[i + 3] = 255;
+    const { value, alpha } = grainPixel(Math.random());
+    img.data[i] = value;
+    img.data[i + 1] = value;
+    img.data[i + 2] = value;
+    img.data[i + 3] = alpha;
   }
   ctx.putImageData(img, 0, 0);
   tile = c;

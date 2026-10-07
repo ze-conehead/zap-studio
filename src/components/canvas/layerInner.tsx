@@ -238,7 +238,6 @@ function ShapeInner({
           opacity: fill.noise,
           fillPatternImage: noiseTile() as unknown as HTMLImageElement,
           fillPatternRepeat: "repeat" as const,
-          globalCompositeOperation: "overlay" as const,
         }
       : null;
 
@@ -287,20 +286,33 @@ function ShapeInner({
     );
   }
 
+  // The stroke is centred on the outline, so its inner half sits over the
+  // fill. The grain belongs to the fill — keep it inside the stroke instead
+  // of running under half of it.
+  const inset = layer.strokeWidth > 0 ? layer.strokeWidth / 2 : 0;
   if (ellipse) {
+    const rx = Math.max(0, w / 2 - inset);
+    const ry = Math.max(0, h / 2 - inset);
     return (
       <>
         <Ellipse radiusX={w / 2} radiusY={h / 2} {...paint} {...stroke} {...shadow} />
-        {noise && <Ellipse radiusX={w / 2} radiusY={h / 2} {...noise} />}
+        {noise && <Ellipse radiusX={rx} radiusY={ry} {...noise} />}
         {pattern && <Ellipse radiusX={w / 2} radiusY={h / 2} {...pattern} />}
       </>
     );
   }
   const box = { x: -w / 2, y: -h / 2, width: w, height: h, cornerRadius: radius };
+  const grainBox = {
+    x: -w / 2 + inset,
+    y: -h / 2 + inset,
+    width: Math.max(0, w - 2 * inset),
+    height: Math.max(0, h - 2 * inset),
+    cornerRadius: Math.max(0, radius - inset),
+  };
   return (
     <>
       <Rect {...box} {...paint} {...stroke} {...shadow} />
-      {noise && <Rect {...box} {...noise} />}
+      {noise && <Rect {...grainBox} {...noise} />}
       {pattern && <Rect {...box} {...pattern} />}
     </>
   );
@@ -518,7 +530,6 @@ function CompoundShapeInner({
           opacity: fill.noise,
           fillPatternImage: noiseTile() as unknown as HTMLImageElement,
           fillPatternRepeat: "repeat" as const,
-          globalCompositeOperation: "overlay" as const,
         }
       : null;
   const pattern = patternTile
@@ -740,7 +751,6 @@ export function CardBackgroundNodes({ bg }: { bg: CardBackground }) {
           opacity={bg.noise}
           fillPatternImage={noiseTile() as unknown as HTMLImageElement}
           fillPatternRepeat="repeat"
-          globalCompositeOperation="overlay"
         />
       )}
       {patternTile && (
