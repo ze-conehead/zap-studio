@@ -20,6 +20,7 @@ import {
 } from "../factory";
 import type { MaskOption } from "../templates";
 import { useStore } from "../store";
+import { canOverrideStyle } from "../fillOverrides";
 import { type CardBackground, type Layer } from "../types";
 
 import { ColorField, Field, FillEditor, Panel, RepeatingPatternControls, SliderField, type Patch } from "./inspector/fields";
@@ -57,7 +58,7 @@ export function Inspector({
   useSyncExternalStore(subscribeCatalog, getCatalogVersion, getCatalogVersion);
   useSyncExternalStore(subscribeStyleClipboard, getStyleClipboardVersion, getStyleClipboardVersion);
 
-  if (foreignSelected && "fill" in foreignSelected) {
+  if (foreignSelected && "fill" in foreignSelected && canOverrideStyle(foreignSelected)) {
     const fill = foreignSelected.fill as CardBackground;
     const isShapeSel = foreignSelected.type === "shape";
     const override = state.project.fillOverrides?.[foreignSelected.id];

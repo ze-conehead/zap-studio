@@ -6,6 +6,18 @@
 
 import type { CardBackground, Layer, LayerStyleOverride, Project } from "./types";
 
+/**
+ * Can a descendant pick its own fill / stroke for this inherited layer?
+ * Shapes and backgrounds, yes — except the placement frames: an alpha mask
+ * (a frame a card's picture is clipped to) and the logo slot are never drawn
+ * on a card, only shown as a dashed outline, so a fill for them would mean
+ * nothing. They are edited in the template that owns them.
+ */
+export function canOverrideStyle(layer: Layer): boolean {
+  if (layer.type !== "shape" && layer.type !== "background") return false;
+  return !(layer.alphaMask || layer.mainMask || layer.shotMask !== undefined || layer.logoSlot);
+}
+
 /** `layer` as seen from `descendant` — its own fill/stroke picks merged
  * over the layer's own, for whichever fields it set. Layers that aren't
  * shapes/backgrounds pass straight through. */
@@ -14,7 +26,8 @@ export function withFillOverride(
   descendant: Pick<Project, "fillOverrides"> | undefined,
 ): Layer {
   const o = descendant?.fillOverrides?.[layer.id];
-  if (!o) return layer;
+  // A frame that can't be overridden ignores one an older version stored.
+  if (!o || !canOverrideStyle(layer)) return layer;
   if (layer.type === "background") {
     return o.fill ? { ...layer, fill: o.fill } : layer;
   }

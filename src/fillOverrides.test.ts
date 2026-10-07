@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { backgroundFillOverride, setFillOverride, withFillOverride } from "./fillOverrides";
-import { makeBackgroundLayer, makeShapeLayer, makeTextLayer } from "./factory";
+import { backgroundFillOverride, canOverrideStyle, setFillOverride, withFillOverride } from "./fillOverrides";
+import { makeAlphaMaskLayer, makeBackgroundLayer, makeLogoSlotLayer, makeShapeLayer, makeTextLayer } from "./factory";
 import type { CardBackground, Project } from "./types";
 
 const fill = (color: string): CardBackground => ({
@@ -86,5 +86,22 @@ describe("setFillOverride", () => {
     p = setFillOverride(p, "l1", { fill: fill("#f00") });
     p = setFillOverride(p, "l1", { stroke: "#00f" });
     expect(p.fillOverrides).toEqual({ l1: { fill: fill("#f00"), stroke: "#00f" } });
+  });
+});
+
+describe("placement frames can't be overridden", () => {
+  it("allows shapes and backgrounds, not alpha masks or the logo slot", () => {
+    expect(canOverrideStyle(makeShapeLayer("rect"))).toBe(true);
+    expect(canOverrideStyle(makeBackgroundLayer())).toBe(true);
+    expect(canOverrideStyle(makeAlphaMaskLayer(1))).toBe(false);
+    expect(canOverrideStyle({ ...makeAlphaMaskLayer(1), shotOnly: true })).toBe(false);
+    expect(canOverrideStyle(makeLogoSlotLayer())).toBe(false);
+    expect(canOverrideStyle(makeTextLayer("x"))).toBe(false);
+  });
+
+  it("ignores an override an older version stored for a frame", () => {
+    const mask = makeAlphaMaskLayer(1);
+    const descendant = { fillOverrides: { [mask.id]: { fill: fill("#f00"), stroke: "#0f0" } } } as Project;
+    expect(withFillOverride(mask, descendant)).toBe(mask);
   });
 });

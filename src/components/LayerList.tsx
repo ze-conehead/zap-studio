@@ -49,6 +49,7 @@ import {
   buildForeignMenuItems,
   buildLayerMenuItems,
 } from "./layerContextMenu";
+import { canOverrideStyle } from "../fillOverrides";
 import type { MaskOption } from "../templates";
 
 function iconFor(l: Layer) {
@@ -330,7 +331,7 @@ export function LayerList({
 
   const foreignRow = (l: Layer, source: "console" | "global", nested = false) => {
     const Icon = iconFor(l);
-    const editable = l.type === "shape" || l.type === "background";
+    const editable = canOverrideStyle(l);
     const active = foreignSelectedId === l.id;
     // A card/console layer can be dragged to stack right above this one —
     // except a layer clipped into a mask, whose position there always wins.
