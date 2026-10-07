@@ -1321,4 +1321,9 @@ export const de: Record<string, string> = {
   "Open without saved data": "Ohne gespeicherte Daten öffnen",
   "“Open without saved data” starts an empty session that stores nothing — handy to import a backup and export from it. Closing the tab discards it.": "„Ohne gespeicherte Daten öffnen“ startet eine leere Sitzung, die nichts speichert – praktisch, um eine Sicherung zu importieren und daraus zu exportieren. Beim Schließen des Tabs ist alles weg.",
   "Temporary session — nothing is saved. Export your work (File ▸ Export project as .zip) before closing.": "Temporäre Sitzung – nichts wird gespeichert. Exportiere deine Arbeit (Datei ▸ Projekt als .zip exportieren), bevor du schließt.",
+
+  // ── Column resizer ──
+  "Resize the left column": "Linke Spalte in der Breite ändern",
+  "Resize the right column": "Rechte Spalte in der Breite ändern",
+  "Drag to resize — double-click to reset": "Zum Ändern ziehen – Doppelklick setzt zurück",
 };

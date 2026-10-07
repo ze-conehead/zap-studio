@@ -14,6 +14,7 @@ import { MenuBar } from "./components/MenuBar";
 import { OverviewDialog } from "./components/OverviewDialog";
 import { CollectionStatusDialog } from "./components/CollectionStatusDialog";
 import { StorageErrorScreen } from "./components/StorageErrorScreen";
+import { ColumnResizer, useColumnWidth } from "./components/ColumnResizer";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
@@ -312,6 +313,9 @@ function Shell({
   const { state, dispatch } = useStore();
   const project = state.project;
   const canvas = useRef<CanvasHandle | null>(null);
+  // The two side columns are resizable (ColumnResizer) and remember their width.
+  const leftCol = useColumnWidth("stickerstudio:colLeft", 256, 180);
+  const rightCol = useColumnWidth("stickerstudio:colRight", 384, 280);
 
   // Load the console + global template projects for the current view and
   // derive the read-only overlay layers and their backgrounds:
@@ -537,6 +541,7 @@ function Shell({
       <Toolbar {...bar} />
       <div className="flex min-h-0 flex-1">
         <GameTree
+          width={leftCol.width}
           activeGameKey={activeGameKey}
           activeConsoleId={activeConsoleId}
           activeGlobal={activeGlobal}
@@ -545,6 +550,7 @@ function Shell({
           onOpenConsole={onOpenConsole}
           onOpenGlobal={onOpenGlobal}
         />
+        <ColumnResizer side="left" col={leftCol} otherWidth={rightCol.width} />
         <EditorCanvas
           handleRef={canvas}
           overlay={overlay}
@@ -558,7 +564,11 @@ function Shell({
           zoom={zoom}
           onZoomChange={setZoom}
         />
-        <aside className="flex w-96 shrink-0 flex-col overflow-y-auto border-l bg-sidebar">
+        <ColumnResizer side="right" col={rightCol} otherWidth={leftCol.width} />
+        <aside
+          className="flex shrink-0 flex-col overflow-y-auto border-l bg-sidebar"
+          style={{ width: rightCol.width }}
+        >
           <FaceControl guides={guides} />
           <LayerList
             masks={masks}

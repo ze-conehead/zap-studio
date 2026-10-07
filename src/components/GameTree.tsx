@@ -96,6 +96,7 @@ interface Props {
   activeConsoleId?: string;
   activeGlobal: boolean;
   masks?: Layer[];
+  width: number; // px — the column is resizable, see ColumnResizer
   onPickGame: (consoleName: string, gameTitle: string, gameKey: string) => void;
   onOpenConsole: (consoleId: string, consoleName: string) => void;
   onOpenGlobal: () => void;
@@ -114,6 +115,7 @@ export function GameTree({
   activeConsoleId,
   activeGlobal,
   masks = [],
+  width,
   onPickGame,
   onOpenConsole,
   onOpenGlobal,
@@ -423,7 +425,10 @@ export function GameTree({
   };
 
   return (
-    <nav className="flex w-64 shrink-0 flex-col border-r bg-sidebar">
+    <nav
+      className="flex shrink-0 flex-col border-r bg-sidebar"
+      style={{ width }}
+    >
       <h2 className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {isMovies ? t("Collections & movies") : t("Consoles & games")}
       </h2>
