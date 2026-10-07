@@ -1326,4 +1326,9 @@ export const de: Record<string, string> = {
   "Resize the left column": "Linke Spalte in der Breite ändern",
   "Resize the right column": "Rechte Spalte in der Breite ändern",
   "Drag to resize — double-click to reset": "Zum Ändern ziehen – Doppelklick setzt zurück",
+
+  // ── Memory banner exit ──
+  "Use saved data": "Gespeicherte Daten nutzen",
+  "Go back to your saved data?": "Zurück zu deinen gespeicherten Daten?",
+  "This reloads the app with the browser's storage. Everything you did in this temporary session is discarded — export it first (File ▸ Export project as .zip) if you want to keep it. If the storage is still broken, the error screen comes back.": "Die App wird mit dem Speicher des Browsers neu geladen. Alles, was du in dieser temporären Sitzung gemacht hast, geht verloren – exportiere es vorher (Datei ▸ Projekt als .zip exportieren), wenn du es behalten willst. Ist der Speicher weiterhin defekt, erscheint wieder der Fehlerbildschirm.",
 };

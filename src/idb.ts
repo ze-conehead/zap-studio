@@ -29,6 +29,17 @@ export function enterMemoryMode(): void {
   location.reload();
 }
 
+/** Back to the saved data: reload without the in-memory flag. If the browser's
+ * storage is still broken, the error screen simply comes up again. */
+export function leaveMemoryMode(): void {
+  try {
+    sessionStorage.removeItem(FLAG);
+  } catch {
+    /* sessionStorage unavailable — nothing to remove */
+  }
+  location.reload();
+}
+
 const mem = new Map<IDBValidKey, unknown>();
 const useMem = memoryMode();
 

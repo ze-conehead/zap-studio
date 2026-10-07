@@ -1,5 +1,6 @@
 import { DatabaseZap } from "lucide-react";
-import { enterMemoryMode } from "../idb";
+import { enterMemoryMode, leaveMemoryMode } from "../idb";
+import { askConfirm } from "./ConfirmDialog";
 import { useT } from "../i18n";
 import { Button } from "./ui/button";
 
@@ -46,15 +47,32 @@ export function StorageErrorScreen({ error }: { error: unknown }) {
   );
 }
 
-// A small, always-visible reminder while running on the in-memory store.
+// A small, always-visible reminder while running on the in-memory store —
+// with the way out, since the mode sticks to the tab until it is closed.
 export function MemoryModeBanner() {
   const t = useT();
+  const leave = async () => {
+    const ok = await askConfirm({
+      title: t("Go back to your saved data?"),
+      body: t("This reloads the app with the browser's storage. Everything you did in this temporary session is discarded — export it first (File ▸ Export project as .zip) if you want to keep it. If the storage is still broken, the error screen comes back."),
+      confirmLabel: t("Use saved data"),
+      destructive: true,
+    });
+    if (ok) leaveMemoryMode();
+  };
   return (
     <div
-      className="pointer-events-none fixed bottom-3 left-1/2 z-50 -translate-x-1/2 rounded-full border border-amber-500/40 bg-background/95 px-3 py-1 text-xs text-amber-500 shadow"
+      className="fixed bottom-3 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-full border border-amber-500/40 bg-background/95 py-1 pl-3 pr-1 text-xs text-amber-500 shadow"
       role="status"
     >
-      {t("Temporary session — nothing is saved. Export your work (File ▸ Export project as .zip) before closing.")}
+      <span>{t("Temporary session — nothing is saved. Export your work (File ▸ Export project as .zip) before closing.")}</span>
+      <button
+        type="button"
+        className="shrink-0 rounded-full border border-amber-500/50 px-2.5 py-0.5 font-medium hover:bg-amber-500/15"
+        onClick={() => void leave()}
+      >
+        {t("Use saved data")}
+      </button>
     </div>
   );
 }
