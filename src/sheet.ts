@@ -3,7 +3,7 @@
 // plus a matching SVG whose rounded paths cut each card at its trim edge.
 // Paginated to the Cricut Explore Print-then-Cut area.
 
-import { CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
+import { BLEED_PX, CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
 import { backgroundFillOverride } from "./fillOverrides";
@@ -131,6 +131,13 @@ export interface SheetOptions {
   duplexYMM: number;
   // Paper sheets only: unprinted border on every side.
   marginMM: number;
+  // Paper sheets only: which way the page lies. "auto" takes whichever fits
+  // more cards (or, with a fixed grid, the one the grid fits on).
+  orientation: "auto" | "portrait" | "landscape";
+  // Paper sheets only: a fixed grid — e.g. 5 × 2 on US Letter — instead of
+  // as many cards as fit. Cards then sit at their trim size, `gapMM` apart;
+  // each one's bleed is only printed as far as that gap leaves room for.
+  grid: { cols: number; rows: number } | null;
 }
 
 export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
@@ -142,6 +149,8 @@ export const DEFAULT_SHEET_OPTIONS: SheetOptions = {
   duplexXMM: 0,
   duplexYMM: 0,
   marginMM: 8,
+  orientation: "auto",
+  grid: null,
 };
 
 // Crop marks: this long, this far off the bleed edge; the sheet gets this
@@ -189,6 +198,86 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+export interface PaperPlan {
+  orientation: "portrait" | "landscape";
+  pageWMM: number;
+  pageHMM: number;
+  cols: number;
+  rows: number;
+}
+
+export interface PaperPlanResult {
+  plan?: PaperPlan;
+  // For a fixed grid that doesn't fit: what it needs vs. what the page
+  // (in the best orientation) leaves inside the margin, in mm.
+  need?: { w: number; h: number };
+  avail?: { w: number; h: number };
+  // The widest margin (mm) at which the grid would fit — absent when even a
+  // margin of 0 isn't enough.
+  maxMargin?: number;
+}
+
+/**
+ * How cards are laid out on a paper sheet: the orientation and the grid.
+ * `plan` is absent when nothing fits — the card is bigger than the printable
+ * area, or the fixed grid doesn't fit in either allowed orientation.
+ */
+export function planPaperSheet(opts: SheetOptions): PaperPlanResult {
+  if (!isPaper(opts.target)) return {};
+  const paper = PAPER[opts.target];
+  const gap = Math.max(0, opts.gapMM);
+  const margin = Math.max(0, opts.marginMM);
+  const trimW = TRIM_RECT.w / PX_PER_MM;
+  const trimH = TRIM_RECT.h / PX_PER_MM;
+  const cellW = CANVAS.w / PX_PER_MM;
+  const cellH = CANVAS.h / PX_PER_MM;
+  const orients: ("portrait" | "landscape")[] =
+    opts.orientation === "auto" ? ["portrait", "landscape"] : [opts.orientation];
+  const eps = 0.01;
+
+  const tries = orients.map((o) => {
+    const pageWMM = o === "portrait" ? paper.wMM : paper.hMM;
+    const pageHMM = o === "portrait" ? paper.hMM : paper.wMM;
+    const availW = pageWMM - 2 * margin;
+    const availH = pageHMM - 2 * margin;
+    if (opts.grid) {
+      const cols = Math.max(1, Math.round(opts.grid.cols));
+      const rows = Math.max(1, Math.round(opts.grid.rows));
+      const needW = cols * trimW + (cols - 1) * gap;
+      const needH = rows * trimH + (rows - 1) * gap;
+      const fits = needW <= availW + eps && needH <= availH + eps;
+      return { o, pageWMM, pageHMM, cols, rows, fits, needW, needH, availW, availH };
+    }
+    const cols = Math.floor((availW + gap) / (cellW + gap) + eps);
+    const rows = Math.floor((availH + gap) / (cellH + gap) + eps);
+    return { o, pageWMM, pageHMM, cols, rows, fits: cols >= 1 && rows >= 1, needW: cellW, needH: cellH, availW, availH };
+  });
+
+  // Most cards wins; a tie keeps portrait (it comes first).
+  const best = tries
+    .filter((x) => x.fits)
+    .reduce<(typeof tries)[number] | undefined>(
+      (a, x) => (!a || x.cols * x.rows > a.cols * a.rows ? x : a),
+      undefined,
+    );
+  if (best) {
+    return {
+      plan: { orientation: best.o, pageWMM: best.pageWMM, pageHMM: best.pageHMM, cols: best.cols, rows: best.rows },
+    };
+  }
+  // Nothing fits: report against the orientation it comes closest to fitting.
+  const closeness = (x: (typeof tries)[number]) => Math.min(x.availW / x.needW, x.availH / x.needH);
+  const roomiest = tries.reduce((a, x) => (closeness(x) > closeness(a) ? x : a));
+  const maxMargin = Math.max(
+    ...tries.map((x) => Math.min((x.pageWMM - x.needW) / 2, (x.pageHMM - x.needH) / 2)),
+  );
+  return {
+    need: { w: roomiest.needW, h: roomiest.needH },
+    avail: { w: roomiest.availW, h: roomiest.availH },
+    maxMargin: maxMargin >= 0 ? Math.floor(maxMargin * 10) / 10 : undefined,
+  };
+}
+
 // `cardImages` are full-canvas (trim + full bleed) PNGs, one per card;
 // `backImages` (same order, "" for a card without a back) feed the back
 // sheets when opts.backs is on.
@@ -201,6 +290,10 @@ export async function composeSheet(
 
   const wmd = opts.target === "wmd";
   const paper = isPaper(opts.target) ? PAPER[opts.target] : null;
+  const paperPlan = paper ? planPaperSheet(opts).plan : undefined;
+  if (paper && !paperPlan) throw new Error(opts.grid ? "grid-too-big" : "card-too-big");
+  // A fixed grid puts the cards at their trim size, not the full-bleed cell.
+  const gridMode = !!paper && !!opts.grid;
   const gap = Math.max(0, opts.gapMM) * PX_PER_MM;
   // Each printed cell is the whole card canvas — trim plus the full bleed on
   // every side, always visible.
@@ -226,9 +319,14 @@ export async function composeSheet(
     rows = Math.ceil(cardImages.length / cols);
     perPage = cardImages.length;
     pageCount = 1;
+  } else if (paperPlan) {
+    cols = paperPlan.cols;
+    rows = paperPlan.rows;
+    perPage = cols * rows;
+    pageCount = Math.ceil(cardImages.length / perPage);
   } else {
-    const printW = (paper ? paper.wMM : PRINT_W_MM) * PX_PER_MM - outerBleed * 2;
-    const printH = (paper ? paper.hMM : PRINT_H_MM) * PX_PER_MM - outerBleed * 2;
+    const printW = PRINT_W_MM * PX_PER_MM - outerBleed * 2;
+    const printH = PRINT_H_MM * PX_PER_MM - outerBleed * 2;
     cols = Math.floor((printW + gap) / (cellW + gap));
     rows = Math.floor((printH + gap) / (cellH + gap));
     if (cols < 1 || rows < 1) throw new Error("card-too-big");
@@ -255,10 +353,12 @@ export async function composeSheet(
     // page hugs the cards.
     const pcols = paper ? cols : Math.min(cols, slice.length);
     const prows = paper ? rows : Math.ceil(slice.length / pcols);
-    const gridW = pcols * cellW + (pcols - 1) * gap;
-    const gridH = prows * cellH + (prows - 1) * gap;
-    const pageW = paper ? Math.round(paper.wMM * PX_PER_MM) : Math.round(gridW + outerBleed * 2);
-    const pageH = paper ? Math.round(paper.hMM * PX_PER_MM) : Math.round(gridH + outerBleed * 2);
+    const unitW = gridMode ? TRIM_RECT.w : cellW;
+    const unitH = gridMode ? TRIM_RECT.h : cellH;
+    const gridW = pcols * unitW + (pcols - 1) * gap;
+    const gridH = prows * unitH + (prows - 1) * gap;
+    const pageW = paperPlan ? Math.round(paperPlan.pageWMM * PX_PER_MM) : Math.round(gridW + outerBleed * 2);
+    const pageH = paperPlan ? Math.round(paperPlan.pageHMM * PX_PER_MM) : Math.round(gridH + outerBleed * 2);
     const originX = paper ? Math.round((pageW - gridW) / 2) : outerBleed;
     const originY = paper ? Math.round((pageH - gridH) / 2) : outerBleed;
     const cutRects: CutRect[] = [];
@@ -272,14 +372,30 @@ export async function composeSheet(
       ctx.fillRect(0, 0, pageW, pageH);
     }
 
+    // Top-left of card i's full-bleed canvas. In a fixed grid it's the trim
+    // that sits on the grid, so the canvas starts that far up and to the left.
     const cellPos = (i: number) => ({
-      cx: originX + (i % pcols) * (cellW + gap),
-      cy: originY + Math.floor(i / pcols) * (cellH + gap),
+      cx: originX + (i % pcols) * (unitW + gap) - (gridMode ? TRIM_RECT.x : 0),
+      cy: originY + Math.floor(i / pcols) * (unitH + gap) - (gridMode ? TRIM_RECT.y : 0),
     });
+    // One card's picture: whole when it has its own cell, in a fixed grid
+    // clipped to its trim plus as much bleed as the gap leaves room for.
+    const bleedExt = Math.min(BLEED_PX, gap / 2);
+    const drawCard = (c: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number) => {
+      if (!gridMode) {
+        c.drawImage(img, x, y, cellW, cellH);
+        return;
+      }
+      c.save();
+      c.beginPath();
+      c.rect(x + TRIM_RECT.x - bleedExt, y + TRIM_RECT.y - bleedExt, TRIM_RECT.w + 2 * bleedExt, TRIM_RECT.h + 2 * bleedExt);
+      c.clip();
+      c.drawImage(img, x, y, cellW, cellH);
+      c.restore();
+    };
     slice.forEach((img, i) => {
       const { cx, cy } = cellPos(i);
-      // Print: the full-bleed card, unclipped.
-      ctx.drawImage(img, cx, cy, cellW, cellH);
+      drawCard(ctx, img, cx, cy);
       // Cut: the rounded trim edge inside the bleed.
       cutRects.push({
         xMM: mm(cx + TRIM_RECT.x),
@@ -290,7 +406,10 @@ export async function composeSheet(
       });
     });
     const grid = { l: originX, t: originY, r: originX + gridW, b: originY + gridH };
-    if (opts.cropMarks) drawCropMarks(ctx, slice.length, cellPos, cellW, cellH, gap, grid, pageW, pageH);
+    if (opts.cropMarks) {
+      if (gridMode) drawGridMarks(ctx, slice.length, pcols, originX, originY, gap, pageW, pageH);
+      else drawCropMarks(ctx, slice.length, cellPos, cellW, cellH, gap, grid, pageW, pageH);
+    }
 
     // The back sheet: the same grid mirrored left ↔ right (a long-edge
     // duplex flip), each back nudged by the duplex offset. No marks — the
@@ -311,7 +430,7 @@ export async function composeSheet(
         const back = backs[p * perPage + i];
         if (!back) return;
         const { cx, cy } = cellPos(i);
-        bctx.drawImage(back, pageW - cx - cellW + dx, cy + dy, cellW, cellH);
+        drawCard(bctx, back, pageW - cx - cellW + dx, cy + dy);
       });
       backDataUrl = bc.toDataURL("image/png");
     }
@@ -416,5 +535,54 @@ function drawCropMarks(
       line(right, cy + cellH + off, right, cy + cellH + off + bRoom);
     }
   }
+  ctx.restore();
+}
+
+// Crop marks for a fixed grid of cards sitting at their trim size: ticks in
+// the page margin only, lined up with every column's left / right trim edge
+// (above and below the grid) and every row's top / bottom edge (left and
+// right of it) — between the cards there's no room for any.
+function drawGridMarks(
+  ctx: CanvasRenderingContext2D,
+  count: number,
+  pcols: number,
+  originX: number,
+  originY: number,
+  gap: number,
+  pageW: number,
+  pageH: number,
+): void {
+  const colsUsed = Math.min(pcols, count);
+  const rowsUsed = Math.ceil(count / pcols);
+  const right = originX + colsUsed * TRIM_RECT.w + (colsUsed - 1) * gap;
+  const bottom = originY + rowsUsed * TRIM_RECT.h + (rowsUsed - 1) * gap;
+  const off = MARK_GAP_MM * PX_PER_MM;
+  // As long as the margin allows, up to the usual length.
+  const room = Math.min(originX, originY, pageW - right, pageH - bottom) - off;
+  const len = Math.min(MARK_LEN_MM * PX_PER_MM, room);
+  if (len < 1 * PX_PER_MM) return; // no margin to speak of
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = Math.max(1, 0.15 * PX_PER_MM);
+  ctx.beginPath();
+  for (let c = 0; c < colsUsed; c++) {
+    const x1 = originX + c * (TRIM_RECT.w + gap);
+    for (const x of [x1, x1 + TRIM_RECT.w]) {
+      ctx.moveTo(x, originY - off);
+      ctx.lineTo(x, originY - off - len);
+      ctx.moveTo(x, bottom + off);
+      ctx.lineTo(x, bottom + off + len);
+    }
+  }
+  for (let r = 0; r < rowsUsed; r++) {
+    const y1 = originY + r * (TRIM_RECT.h + gap);
+    for (const y of [y1, y1 + TRIM_RECT.h]) {
+      ctx.moveTo(originX - off, y);
+      ctx.lineTo(originX - off - len, y);
+      ctx.moveTo(right + off, y);
+      ctx.lineTo(right + off + len, y);
+    }
+  }
+  ctx.stroke();
   ctx.restore();
 }

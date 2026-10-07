@@ -12,9 +12,18 @@ import {
 import { ensureFontsLoaded } from "./fonts";
 import { getFormat } from "./formats";
 
-export type ExportMode = "trim" | "bleed" | "marks";
+// "marks" is bleed + crop marks; "trim-marks" is crop marks around the bare
+// trimmed card (no bleed).
+export type ExportMode = "trim" | "bleed" | "marks" | "trim-marks";
 
+// What the "All cards" export offers — see modeFor() for the single card.
 export const EXPORT_MODES: ExportMode[] = ["trim", "bleed", "marks"];
+
+/** The mode for a bleed / crop-marks choice (the single-card PNG dialog). */
+export function modeFor(bleed: boolean, marks: boolean): ExportMode {
+  if (marks) return bleed ? "marks" : "trim-marks";
+  return bleed ? "bleed" : "trim";
+}
 
 export function exportLabel(mode: ExportMode): string {
   const f = getFormat();
@@ -24,6 +33,7 @@ export function exportLabel(mode: ExportMode): string {
   if (mode === "bleed") {
     return t("PNG – with {n} mm bleed", { n: f.bleedMM });
   }
+  if (mode === "trim-marks") return t("PNG – crop marks");
   return t("PNG – bleed + crop marks");
 }
 
@@ -86,21 +96,29 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
     return out.toDataURL("image/png");
   }
 
-  // mode === "marks"
+  // mode === "marks" (with the bleed) or "trim-marks" (without)
+  const withBleed = mode === "marks";
   const M = MARKS_MARGIN_PX;
   const out = document.createElement("canvas");
-  out.width = CANVAS.w + M * 2;
-  out.height = CANVAS.h + M * 2;
+  out.width = (withBleed ? CANVAS.w : TRIM_RECT.w) + M * 2;
+  out.height = (withBleed ? CANVAS.h : TRIM_RECT.h) + M * 2;
   const ctx = out.getContext("2d")!;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, out.width, out.height);
-  ctx.drawImage(full, M, M);
+  // Where the canvas' own (0, 0) lands in the output.
+  const ox = withBleed ? M : M - TRIM_RECT.x;
+  const oy = withBleed ? M : M - TRIM_RECT.y;
+  if (withBleed) {
+    ctx.drawImage(full, M, M);
+  } else {
+    ctx.drawImage(full, TRIM_RECT.x, TRIM_RECT.y, TRIM_RECT.w, TRIM_RECT.h, M, M, TRIM_RECT.w, TRIM_RECT.h);
+  }
 
   const gap = PX_PER_MM * 1.5;
   const len = PX_PER_MM * 3.5;
-  const left = M + TRIM_RECT.x;
+  const left = ox + TRIM_RECT.x;
   const right = left + TRIM_RECT.w;
-  const top = M + TRIM_RECT.y;
+  const top = oy + TRIM_RECT.y;
   const bottom = top + TRIM_RECT.h;
 
   ctx.strokeStyle = "#000000";
@@ -128,7 +146,7 @@ export async function exportPng({ stage, stageWidth, mode }: ExportOpts): Promis
     ctx.setLineDash([PX_PER_MM * 1.2, PX_PER_MM * 1.2]);
     ctx.beginPath();
     for (const fx of FOLD_X) {
-      const x = M + fx;
+      const x = ox + fx;
       vMark(x, top, -1);
       vMark(x, bottom, 1);
     }

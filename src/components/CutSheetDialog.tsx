@@ -17,6 +17,7 @@ import {
   DEFAULT_SHEET_OPTIONS,
   isPaper,
   PAPER,
+  planPaperSheet,
   listGameDesigns,
   loadSheetCards,
   PRINT_H_MM,
@@ -137,6 +138,8 @@ export function CutSheetDialog({
 
   const wmd = opts.target === "wmd";
   const paper = isPaper(opts.target) ? PAPER[opts.target] : null;
+  // How cards land on the chosen paper (also drives the hint and Build).
+  const paperPlan = paper ? planPaperSheet(opts) : null;
 
   const download = async () => {
     if (!result) return;
@@ -149,8 +152,9 @@ export function CutSheetDialog({
           .filter((u): u is string => !!u)
           .map((imageDataUrl) => ({
             imageDataUrl,
-            cardWidthMM: paper.wMM,
-            cardHeightMM: paper.hMM,
+            // landscape pages are the paper turned on its side
+            cardWidthMM: pg.widthMM,
+            cardHeightMM: pg.heightMM,
           })),
       );
       downloadBlob(await cardTrayPdf(pages), `print-sheet-${opts.target}.pdf`);
@@ -254,7 +258,9 @@ export function CutSheetDialog({
   };
 
   const errorText =
-    error === "card-too-big"
+    error === "grid-too-big"
+      ? t("The grid doesn't fit on the sheet — see the hint under Layout.")
+      : error === "card-too-big"
       ? paper
         ? t("A single card doesn't fit on the sheet inside the margin.")
         : t("A single card is larger than the Cricut print area for this format.")
@@ -385,7 +391,7 @@ export function CutSheetDialog({
                     className="h-7 w-16 rounded border bg-transparent px-2"
                     value={opts.marginMM}
                     min={0}
-                    step={1}
+                    step={0.5}
                     onChange={(e) =>
                       setOpts((o) => ({
                         ...o,
@@ -420,6 +426,122 @@ export function CutSheetDialog({
                 </label>
               )}
             </div>
+
+            {paper && paperPlan && (
+              <div className="flex flex-col gap-2 rounded-md border p-2.5 text-xs">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <span className="text-muted-foreground">{t("Layout")}</span>
+                  <div className="flex gap-1 rounded-md border p-0.5">
+                    {([false, true] as const).map((custom) => (
+                      <button
+                        key={String(custom)}
+                        className={
+                          "rounded px-2 py-1 " +
+                          (!!opts.grid === custom ? "bg-primary text-primary-foreground" : "hover:bg-accent")
+                        }
+                        onClick={() =>
+                          setOpts((o) => {
+                            if (!custom) return { ...o, grid: null };
+                            // Start from what "automatic" would do, and — if the
+                            // spacing is still the default — let the cards touch,
+                            // so a grid like 5 × 2 can fit at all.
+                            const start = paperPlan.plan;
+                            const untouched = o.gapMM === DEFAULT_SHEET_OPTIONS.gapMM && o.marginMM === DEFAULT_SHEET_OPTIONS.marginMM;
+                            return {
+                              ...o,
+                              grid: o.grid ?? { cols: start?.cols ?? 3, rows: start?.rows ?? 3 },
+                              ...(untouched ? { gapMM: 0, marginMM: 4 } : {}),
+                            };
+                          })
+                        }
+                      >
+                        {custom ? t("Custom grid") : t("Automatic")}
+                      </button>
+                    ))}
+                  </div>
+                  {opts.grid && (
+                    <span className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        aria-label={t("Columns")}
+                        className="h-7 w-14 rounded border bg-transparent px-2"
+                        min={1}
+                        max={30}
+                        value={opts.grid.cols}
+                        onChange={(e) =>
+                          setOpts((o) => ({
+                            ...o,
+                            grid: { cols: Math.min(30, Math.max(1, Math.round(Number(e.target.value)) || 1)), rows: o.grid?.rows ?? 1 },
+                          }))
+                        }
+                      />
+                      ×
+                      <input
+                        type="number"
+                        aria-label={t("Rows")}
+                        className="h-7 w-14 rounded border bg-transparent px-2"
+                        min={1}
+                        max={30}
+                        value={opts.grid.rows}
+                        onChange={(e) =>
+                          setOpts((o) => ({
+                            ...o,
+                            grid: { cols: o.grid?.cols ?? 1, rows: Math.min(30, Math.max(1, Math.round(Number(e.target.value)) || 1)) },
+                          }))
+                        }
+                      />
+                      {t("cards per sheet")}
+                    </span>
+                  )}
+                  <label className="flex items-center gap-1.5">
+                    {t("Page")}
+                    <select
+                      className="h-7 rounded border bg-transparent px-1.5"
+                      value={opts.orientation}
+                      onChange={(e) =>
+                        setOpts((o) => ({ ...o, orientation: e.target.value as SheetOptions["orientation"] }))
+                      }
+                    >
+                      <option value="auto">{t("Best fit")}</option>
+                      <option value="portrait">{t("Portrait")}</option>
+                      <option value="landscape">{t("Landscape")}</option>
+                    </select>
+                  </label>
+                </div>
+                {paperPlan.plan ? (
+                  <p className="text-muted-foreground">
+                    {t("{cols} × {rows} = {n} per sheet · {page}", {
+                      cols: paperPlan.plan.cols,
+                      rows: paperPlan.plan.rows,
+                      n: paperPlan.plan.cols * paperPlan.plan.rows,
+                      page:
+                        paperPlan.plan.orientation === "landscape" ? t("landscape") : t("portrait"),
+                    })}
+                    {opts.grid &&
+                      " · " +
+                        t("Cards sit at their trim size; a gap of {n} mm or more keeps their full bleed.", {
+                          n: +(2 * BLEED_MM).toFixed(1),
+                        })}
+                  </p>
+                ) : opts.grid && paperPlan.need && paperPlan.avail ? (
+                  <p className="text-amber-500">
+                    {t("Doesn't fit: the grid needs {w} × {h} mm, the page has {aw} × {ah} mm inside the margin.", {
+                      w: paperPlan.need.w.toFixed(1),
+                      h: paperPlan.need.h.toFixed(1),
+                      aw: paperPlan.avail.w.toFixed(1),
+                      ah: paperPlan.avail.h.toFixed(1),
+                    })}{" "}
+                    {paperPlan.maxMargin !== undefined
+                      ? t("A margin of up to {m} mm would fit.", { m: paperPlan.maxMargin })
+                      : t("Use fewer cards or a smaller gap.")}
+                  </p>
+                ) : (
+                  <p className="text-amber-500">
+                    {t("A single card doesn't fit on the sheet inside the margin.")}
+                  </p>
+                )}
+              </div>
+            )}
 
             {getFormat().hasBack && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border p-2.5 text-xs">
@@ -503,7 +625,11 @@ export function CutSheetDialog({
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
                 {t("Cancel")}
               </Button>
-              <Button size="sm" disabled={picked.size === 0} onClick={() => void start()}>
+              <Button
+                size="sm"
+                disabled={picked.size === 0 || (!!paper && !paperPlan?.plan)}
+                onClick={() => void start()}
+              >
                 <Scissors /> {t("Build sheet")}
               </Button>
             </div>
