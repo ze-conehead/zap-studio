@@ -1,5 +1,5 @@
 import type Konva from "konva";
-import { ChevronLeft, ChevronRight, Loader2, Scissors } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Scissors, Star, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { zipSync, strToU8 } from "fflate";
 import { BLEED_MM, TRIM_RECT } from "../card";
@@ -12,6 +12,7 @@ import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
 import { cardTrayPdf, stickerSheetPdf } from "../pdf";
+import { deleteSize, loadSavedSizes, saveSize, savedMatch, type SavedPaperSize } from "../paperSizes";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
@@ -42,6 +43,8 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { CardStage } from "./CardStage";
+import { askConfirm } from "./ConfirmDialog";
+import { PromptDialog, type PromptState } from "./PromptDialog";
 
 type Phase = "pick" | "rendering" | "done" | "error";
 
@@ -63,12 +66,16 @@ export function CutSheetDialog({
   const [face, setFace] = useState<"front" | "back">("front");
   const [showBleed, setShowBleed] = useState(true);
   const [error, setError] = useState("");
+  // Page sizes the user saved (kept in the browser, see src/paperSizes.ts).
+  const [saved, setSaved] = useState<SavedPaperSize[]>(loadSavedSizes);
+  const [namePrompt, setNamePrompt] = useState<PromptState | null>(null);
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
   const backStages = useRef<(Konva.Stage | null)[]>([]);
 
   useEffect(() => {
     if (!open) return;
+    setSaved(loadSavedSizes());
     setPhase("pick");
     setResult(null);
     setCards([]);
@@ -146,6 +153,11 @@ export function CutSheetDialog({
   const paper = isPaper(opts.target) ? PAPER[opts.target] : null;
   // How cards land on the chosen paper (also drives the hint and Build).
   const paperPlan = paper ? planPaperSheet(opts) : null;
+  const pageSize = paperSize(opts);
+  const builtin = presetOf(pageSize);
+  const savedHit = savedMatch(saved, pageSize);
+  // What to call the sheet: a standard size, a saved one, or its dimensions.
+  const sheetName = builtin?.name ?? savedHit?.name ?? paperName(opts);
 
   const download = async () => {
     if (!result) return;
@@ -163,7 +175,7 @@ export function CutSheetDialog({
             cardHeightMM: pg.heightMM,
           })),
       );
-      downloadBlob(await cardTrayPdf(pages), `print-sheet-${presetOf(paperSize(opts))?.id ?? "custom"}.pdf`);
+      downloadBlob(await cardTrayPdf(pages), `print-sheet-${builtin?.id ?? (savedHit?.name.replace(/[^\w-]+/g, "_") || "custom")}.pdf`);
       return;
     }
 
@@ -275,12 +287,13 @@ export function CutSheetDialog({
         : t("Could not build the sheet.");
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col">
         <DialogHeader>
           <DialogTitle>
             {paper
-              ? t("Print sheet ({paper})", { paper: paperName(opts) })
+              ? t("Print sheet ({paper})", { paper: sheetName })
               : wmd
                 ? t("Sticker sheet for wir-machen-druck.de")
                 : t("Cut sheet for Cricut")}
@@ -361,7 +374,7 @@ export function CutSheetDialog({
               {paper
                 ? t(
                     "Lays the designs out on {paper} paper at real size, as many as fit inside the margin, centred and in the same spots on every page — with crop marks for cutting by hand. One PDF; print at 100 % (“actual size”).",
-                    { paper: paperName(opts) },
+                    { paper: sheetName },
                   )
                 : wmd
                 ? t(
@@ -441,13 +454,16 @@ export function CutSheetDialog({
                   <label className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">{t("Sheet size")}</span>
                     <select
-                      className="h-7 rounded border bg-transparent px-1.5"
-                      value={presetOf(paperSize(opts))?.id ?? "custom"}
+                      className="h-7 max-w-[11rem] rounded border bg-transparent px-1.5"
+                      value={builtin ? builtin.id : savedHit ? `saved:${savedHit.id}` : "custom"}
                       onChange={(e) => {
                         const id = e.target.value;
                         const size = paperSize(opts);
+                        const mine = id.startsWith("saved:") ? saved.find((x) => `saved:${x.id}` === id) : undefined;
                         const pick = PAPER_PRESETS.find((p) => p.id === id);
                         setOpts((o) => {
+                          // A saved size is just a size to start from.
+                          if (mine) return { ...o, pageMM: { w: mine.wMM, h: mine.hMM } };
                           // "Custom" keeps the current size, now editable.
                           if (!pick) return { ...o, pageMM: { w: size.wMM, h: size.hMM } };
                           // The target's own sheet needs no override.
@@ -461,6 +477,15 @@ export function CutSheetDialog({
                           {p.name}
                         </option>
                       ))}
+                      {saved.length > 0 && (
+                        <optgroup label={t("Saved sizes")}>
+                          {saved.map((x) => (
+                            <option key={x.id} value={`saved:${x.id}`}>
+                              {x.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       <option value="custom">{t("Custom size")}</option>
                     </select>
                   </label>
@@ -499,6 +524,40 @@ export function CutSheetDialog({
                   <span className="text-muted-foreground">
                     ≈ {+(paperSize(opts).wMM / 25.4).toFixed(2)} × {+(paperSize(opts).hMM / 25.4).toFixed(2)} in
                   </span>
+                  {!builtin && !savedHit && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-accent"
+                      title={t("Keep this size in the list for next time")}
+                      onClick={() =>
+                        setNamePrompt({
+                          title: t("Name for this sheet size:"),
+                          defaultValue: `${+pageSize.wMM.toFixed(1)} × ${+pageSize.hMM.toFixed(1)} mm`,
+                          submitLabel: t("Save"),
+                          onSubmit: (name) => setSaved(saveSize(name, pageSize.wMM, pageSize.hMM)),
+                        })
+                      }
+                    >
+                      <Star className="size-3" /> {t("Save size …")}
+                    </button>
+                  )}
+                  {savedHit && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-accent"
+                      title={t("Remove “{name}” from the saved sizes", { name: savedHit.name })}
+                      onClick={async () => {
+                        const ok = await askConfirm({
+                          title: t("Delete the saved size “{name}”?", { name: savedHit.name }),
+                          confirmLabel: t("Delete"),
+                          destructive: true,
+                        });
+                        if (ok) setSaved(deleteSize(savedHit.id));
+                      }}
+                    >
+                      <Trash2 className="size-3" /> {t("Delete")}
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <span className="text-muted-foreground">{t("Layout")}</span>
@@ -890,6 +949,8 @@ export function CutSheetDialog({
         )}
       </DialogContent>
     </Dialog>
+    <PromptDialog state={namePrompt} onOpenChange={(o) => !o && setNamePrompt(null)} />
+    </>
   );
 }
 

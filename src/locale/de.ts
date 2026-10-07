@@ -1370,4 +1370,12 @@ export const de: Record<string, string> = {
   // ── Sheet size ──
   "Sheet size": "Blattgröße",
   "Custom size": "Eigene Größe",
+
+  // ── Saved sheet sizes ──
+  "Saved sizes": "Gespeicherte Größen",
+  "Save size …": "Größe speichern …",
+  "Keep this size in the list for next time": "Diese Größe für das nächste Mal in der Liste behalten",
+  "Name for this sheet size:": "Name für diese Blattgröße:",
+  "Remove “{name}” from the saved sizes": "„{name}“ aus den gespeicherten Größen entfernen",
+  "Delete the saved size “{name}”?": "Die gespeicherte Größe „{name}“ löschen?",
 };
