@@ -5,7 +5,7 @@
 // logo itself: a dark logo gets a light tile, a light one a dark tile, so
 // that black and white logos are visible at all.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { DEFAULT_ACCENT } from "./accent";
 import { gradientStops } from "./background";
 import { getCatalog, findGame } from "./data/catalog";
@@ -82,6 +82,62 @@ export function useCardBackdrop(consoleId?: string, fromProject = false): string
     };
   }, [id]);
   return css;
+}
+
+// ── which background the tiles use (the user's choice) ────────────────────
+
+// "card": the card's background, or — with none — a light / dark tile picked
+// from the logo (the default). The others force one background for every
+// tile: "transparent" is the checkerboard that stands for it.
+export type LogoBgMode = "card" | "black" | "white" | "transparent";
+export const LOGO_BG_MODES: readonly LogoBgMode[] = ["card", "black", "white", "transparent"];
+
+const MODE_KEY = "stickerstudio:logoTileBg";
+const modeListeners = new Set<() => void>();
+
+export function getLogoBgMode(): LogoBgMode {
+  try {
+    const v = localStorage.getItem(MODE_KEY);
+    if (v && (LOGO_BG_MODES as readonly string[]).includes(v)) return v as LogoBgMode;
+  } catch {
+    /* storage unavailable */
+  }
+  return "card";
+}
+
+export function setLogoBgMode(m: LogoBgMode): void {
+  try {
+    if (m === "card") localStorage.removeItem(MODE_KEY);
+    else localStorage.setItem(MODE_KEY, m);
+  } catch {
+    /* the choice just isn't remembered */
+  }
+  for (const fn of modeListeners) fn();
+}
+
+const subscribeMode = (fn: () => void) => {
+  modeListeners.add(fn);
+  return () => modeListeners.delete(fn);
+};
+
+/** The chosen tile background, shared by every logo view. */
+export const useLogoBgMode = (): LogoBgMode =>
+  useSyncExternalStore(subscribeMode, getLogoBgMode, getLogoBgMode);
+
+/**
+ * The CSS background for a tile under `mode` — null for the checkerboard.
+ * In "card" mode that's the card's background (`backdrop`), else, when there
+ * is none, the light / dark tile for the logo's own lightness.
+ */
+export function tileBackground(
+  mode: LogoBgMode,
+  backdrop: string | null | undefined,
+  lightness: number | null,
+): string | null {
+  if (mode === "black") return "#000000";
+  if (mode === "white") return "#ffffff";
+  if (mode === "transparent") return null;
+  return backdrop ?? tileForLightness(lightness);
 }
 
 // ── a logo's own lightness ─────────────────────────────────────────────────

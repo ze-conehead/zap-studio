@@ -3,9 +3,12 @@ import { makeBackgroundLayer, newConsoleTemplate, newGlobalTemplate } from "./fa
 import {
   DARK_LOGO,
   fillToCss,
+  getLogoBgMode,
   LIGHT_LOGO,
   lightnessOf,
   loadCardBackdrop,
+  setLogoBgMode,
+  tileBackground,
   tileForLightness,
 } from "./logoBackdrop";
 import { saveProject } from "./persist";
@@ -85,5 +88,34 @@ describe("a logo's own lightness", () => {
     expect(tileForLightness(LIGHT_LOGO)).toBe("#1f2937");
     expect(tileForLightness(1)).toBe("#1f2937");
     expect(tileForLightness(null)).toBeNull();
+  });
+});
+
+describe("the chosen tile background", () => {
+  it("forces black, white or the checkerboard, whatever the card or the logo look like", () => {
+    for (const backdrop of ["#123456", null, undefined]) {
+      expect(tileBackground("black", backdrop, 0.9)).toBe("#000000");
+      expect(tileBackground("white", backdrop, 0.1)).toBe("#ffffff");
+      expect(tileBackground("transparent", backdrop, 0.1)).toBeNull();
+    }
+  });
+
+  it("card mode: the card's background, else light / dark by the logo", () => {
+    expect(tileBackground("card", "#123456", 0.9)).toBe("#123456");
+    expect(tileBackground("card", null, 0.1)).toBe("#e5e7eb");
+    expect(tileBackground("card", null, 0.9)).toBe("#1f2937");
+    expect(tileBackground("card", null, 0.5)).toBeNull();
+    // still loading the card's background: no guess yet beyond the logo
+    expect(tileBackground("card", undefined, null)).toBeNull();
+  });
+
+  it("is remembered, and falls back to the card mode for junk", () => {
+    expect(getLogoBgMode()).toBe("card");
+    setLogoBgMode("white");
+    expect(getLogoBgMode()).toBe("white");
+    setLogoBgMode("card");
+    expect(localStorage.getItem("stickerstudio:logoTileBg")).toBeNull();
+    localStorage.setItem("stickerstudio:logoTileBg", "purple");
+    expect(getLogoBgMode()).toBe("card");
   });
 });

@@ -21,6 +21,7 @@ import {
   type LocalLogo,
 } from "../localLogos";
 import { useCardBackdrop } from "../logoBackdrop";
+import { LogoBgToggle } from "./LogoBgToggle";
 import { LogoThumb } from "./LogoThumb";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -78,6 +79,7 @@ export function LocalImagePickerDialog({
           placeholder={isCover ? t("Search covers …") : t("Search logos …")}
           autoFocus
         />
+        {!isCover && <LogoBgToggle />}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {all.length === 0 ? (

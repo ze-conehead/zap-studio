@@ -8,6 +8,7 @@ import { FolderOpen, Loader2, Pencil, Search, Sparkles, Trash2, Upload, X } from
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { useCardBackdrop } from "../logoBackdrop";
+import { LogoBgToggle } from "./LogoBgToggle";
 import { LogoThumb } from "./LogoThumb";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -229,6 +230,8 @@ export function ManageLogosDialog({
             </Button>
           )}
         </div>
+
+        {!covers && logos.length > 0 && <LogoBgToggle />}
 
         <div className="min-h-0 flex-1 overflow-y-auto rounded-md border p-2">
           {logos.length === 0 ? (

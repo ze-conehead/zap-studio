@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { tileForLightness, useImageLightness } from "../logoBackdrop";
+import { tileBackground, useImageLightness, useLogoBgMode } from "../logoBackdrop";
 
 // A logo on its preview tile: the card's own background when there is one
 // (`backdrop`, see src/logoBackdrop.ts), else a light or dark tile picked
@@ -17,9 +17,11 @@ export function LogoThumb({
   className?: string;
   imgClassName?: string;
 }) {
-  // Only measure the logo when there's no card background to show it on.
-  const lightness = useImageLightness(src, backdrop === null);
-  const css = backdrop ?? tileForLightness(lightness ?? null);
+  const mode = useLogoBgMode();
+  // Only measure the logo when it decides the tile: the card mode, with no
+  // card background to go by.
+  const lightness = useImageLightness(src, mode === "card" && backdrop === null);
+  const css = tileBackground(mode, backdrop, lightness ?? null);
   return (
     <div
       className={cn("flex items-center justify-center overflow-hidden rounded", !css && "canvas-checker", className)}

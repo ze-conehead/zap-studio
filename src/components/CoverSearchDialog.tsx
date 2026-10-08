@@ -24,6 +24,7 @@ import { useT } from "../i18n";
 import { getWorkspaceKind } from "../workspace";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { LogoBgToggle } from "./LogoBgToggle";
 import { LogoThumb } from "./LogoThumb";
 import { consoleIdByName, useCardBackdrop } from "../logoBackdrop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -366,6 +367,7 @@ export function CoverSearchDialog({
 
         {state.status === "done" && state.results.length > 0 && (
           <>
+            {logoMode && <LogoBgToggle className="mx-auto w-full max-w-5xl pb-2" />}
             <div className="mx-auto grid max-w-5xl grid-cols-4 gap-3">
               {state.results.slice(0, visible).map((c) => (
                 <button

@@ -1378,4 +1378,8 @@ export const de: Record<string, string> = {
   "Name for this sheet size:": "Name für diese Blattgröße:",
   "Remove “{name}” from the saved sizes": "„{name}“ aus den gespeicherten Größen entfernen",
   "Delete the saved size “{name}”?": "Die gespeicherte Größe „{name}“ löschen?",
+
+  // ── Logo preview background ──
+  "Preview on": "Vorschau auf",
+  "The card's own background — or, with none, light for dark logos and dark for light ones": "Der Hintergrund der Karte – oder, wenn es keinen gibt, hell für dunkle Logos und dunkel für helle",
 };
