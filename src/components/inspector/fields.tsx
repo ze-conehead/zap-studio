@@ -516,9 +516,9 @@ export function AdjustControls({
 
   const modes: [AdjustMode, string][] = [
     ["none", t("Original")],
+    ["tint", t("Tint")],
     ["grayscale", t("Greyscale")],
     ["threshold", t("Threshold")],
-    ["tint", t("Tint")],
   ];
 
   return (
