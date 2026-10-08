@@ -264,7 +264,11 @@ export function EditorCanvas({
       }}
     >
       <div
-        className="grid place-items-center"
+        // w-max: as wide as the card plus its margin. Left to the parent's
+        // width, a card wider than the view overflows it and the margin on
+        // the far (right) side drops out of the scrollable area — vertical
+        // is fine only because a height grows with its content.
+        className="grid w-max place-items-center"
         style={{
           minWidth: containerSize.w,
           minHeight: containerSize.h,
