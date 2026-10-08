@@ -24,6 +24,8 @@ import { useT } from "../i18n";
 import { getWorkspaceKind } from "../workspace";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { LogoThumb } from "./LogoThumb";
+import { consoleIdByName, useCardBackdrop } from "../logoBackdrop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 
@@ -76,6 +78,8 @@ export function CoverSearchDialog({
   shotIndex,
 }: Props) {
   const t = useT();
+  // Logos are previewed on the card's own background (see logoBackdrop.ts).
+  const backdrop = useCardBackdrop(consoleIdByName(consoleName));
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "done"; results: CoverCandidate[] }
@@ -372,19 +376,24 @@ export function CoverSearchDialog({
                   title={`${c.title} ${c.region}`.trim()}
                   onClick={() => onPick(c.url)}
                 >
-                  <img
-                    src={c.thumb ?? c.url}
-                    alt={c.title}
-                    loading="lazy"
-                    className={cn(
-                      "w-full rounded object-contain",
-                      logoMode
-                        ? "canvas-checker aspect-[3/2] p-2"
-                        : shotMode
-                          ? "aspect-[4/3] bg-muted"
-                          : "aspect-[3/4] bg-muted",
-                    )}
-                  />
+                  {logoMode ? (
+                    <LogoThumb
+                      src={c.thumb ?? c.url}
+                      alt={c.title}
+                      backdrop={backdrop}
+                      className="aspect-[3/2] w-full p-2"
+                    />
+                  ) : (
+                    <img
+                      src={c.thumb ?? c.url}
+                      alt={c.title}
+                      loading="lazy"
+                      className={cn(
+                        "w-full rounded object-contain",
+                        shotMode ? "aspect-[4/3] bg-muted" : "aspect-[3/4] bg-muted",
+                      )}
+                    />
+                  )}
                   <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">
                     {c.region || c.title}
                   </span>

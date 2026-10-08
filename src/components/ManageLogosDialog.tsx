@@ -7,6 +7,8 @@
 import { FolderOpen, Loader2, Pencil, Search, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import { useCardBackdrop } from "../logoBackdrop";
+import { LogoThumb } from "./LogoThumb";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -42,6 +44,8 @@ export function ManageLogosDialog({
   useSyncExternalStore(lib.subscribe, lib.version, lib.version);
   const logos = lib.list();
   const covers = kind === "cover";
+  // Logos are previewed on the open project's own card background.
+  const backdrop = useCardBackdrop(undefined, true);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<{ done: number; total: number } | null>(null);
@@ -240,6 +244,7 @@ export function ManageLogosDialog({
                     logo={l}
                     lib={lib}
                     used={usedIds.has(l.id)}
+                    backdrop={covers ? undefined : backdrop}
                     onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))}
                     onEdit={() => setEditing(l)}
                   />
@@ -286,12 +291,15 @@ function LogoTile({
   logo,
   lib,
   used,
+  backdrop,
   onRemove,
   onEdit,
 }: {
   logo: LocalLogo;
   lib: ImageLibrary;
   used?: boolean;
+  // The card background to preview on (logos only; undefined for covers).
+  backdrop?: string | null;
   onRemove: () => void;
   onEdit: () => void;
 }) {
@@ -320,13 +328,21 @@ function LogoTile({
           <Sparkles className="size-2.5" /> {t("In use")}
         </span>
       )}
-      <div className="canvas-checker flex aspect-[3/2] items-center justify-center overflow-hidden rounded">
-        {url ? (
-          <img src={url} alt={logo.name} loading="lazy" className="max-h-full max-w-full object-contain p-1" />
-        ) : (
+      {backdrop === undefined && lib !== localLogos ? (
+        <div className="canvas-checker flex aspect-[3/2] items-center justify-center overflow-hidden rounded">
+          {url ? (
+            <img src={url} alt={logo.name} loading="lazy" className="max-h-full max-w-full object-contain p-1" />
+          ) : (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
+      ) : url ? (
+        <LogoThumb src={url} alt={logo.name} backdrop={backdrop} className="aspect-[3/2]" imgClassName="p-1" />
+      ) : (
+        <div className="canvas-checker flex aspect-[3/2] items-center justify-center overflow-hidden rounded">
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
-        )}
-      </div>
+        </div>
+      )}
       <span className="truncate text-[11px]">{logo.name}</span>
       {logo.path && <span className="truncate text-[10px] text-muted-foreground">{logo.path}</span>}
       <div className="absolute right-1 top-1 hidden gap-0.5 group-hover:flex">

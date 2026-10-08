@@ -20,6 +20,8 @@ import {
   subscribeLocalLogos,
   type LocalLogo,
 } from "../localLogos";
+import { useCardBackdrop } from "../logoBackdrop";
+import { LogoThumb } from "./LogoThumb";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -39,6 +41,8 @@ export function LocalImagePickerDialog({
 }) {
   const t = useT();
   const isCover = kind === "cover";
+  // A logo is previewed on the open project's own card background.
+  const backdrop = useCardBackdrop(undefined, true);
   useSyncExternalStore(
     isCover ? subscribeLocalCovers : subscribeLocalLogos,
     isCover ? getLocalCoversVersion : getLocalLogosVersion,
@@ -98,7 +102,7 @@ export function LocalImagePickerDialog({
             <>
               <div className="mx-auto grid max-w-5xl grid-cols-4 gap-3 sm:grid-cols-6">
                 {filtered.slice(0, visible).map((l) => (
-                  <ImageThumb key={l.id} logo={l} kind={kind} onPick={() => onPick(l.id)} />
+                  <ImageThumb key={l.id} logo={l} kind={kind} backdrop={backdrop} onPick={() => onPick(l.id)} />
                 ))}
               </div>
               {filtered.length > visible && (
@@ -119,10 +123,12 @@ export function LocalImagePickerDialog({
 function ImageThumb({
   logo,
   kind,
+  backdrop,
   onPick,
 }: {
   logo: LocalLogo;
   kind: "logo" | "cover";
+  backdrop: string | null | undefined;
   onPick: () => void;
 }) {
   const [url, setUrl] = useState<string | undefined>(undefined);
@@ -143,16 +149,11 @@ function ImageThumb({
       title={logo.name}
       onClick={onPick}
     >
-      <img
-        src={url}
-        alt=""
-        loading="lazy"
-        className={
-          kind === "cover"
-            ? "aspect-[3/4] w-full rounded bg-muted object-contain"
-            : "canvas-checker aspect-square w-full rounded object-contain p-2"
-        }
-      />
+      {kind === "cover" ? (
+        <img src={url} alt="" loading="lazy" className="aspect-[3/4] w-full rounded bg-muted object-contain" />
+      ) : (
+        <LogoThumb src={url} backdrop={backdrop} className="aspect-square w-full p-2" />
+      )}
       <span className="w-full truncate text-[11px] text-muted-foreground group-hover:text-foreground">
         {logo.name}
       </span>
