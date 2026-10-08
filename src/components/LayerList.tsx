@@ -23,7 +23,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { Fragment, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { activeCases } from "../conditions";
@@ -50,6 +50,7 @@ import {
   buildLayerMenuItems,
 } from "./layerContextMenu";
 import { canOverrideStyle } from "../fillOverrides";
+import { setHoveredLayer } from "../layerHover";
 import type { MaskOption } from "../templates";
 
 function iconFor(l: Layer) {
@@ -121,6 +122,8 @@ export function LayerList({
   // A view-only toggle (not persisted) for when the global/console template
   // rows crowd out the card's own layers.
   const [hideForeign, setHideForeign] = useState(false);
+  // …and never leave a canvas outline behind when the list unmounts.
+  useEffect(() => () => setHoveredLayer(null), []);
 
   // The console's logo image slots into the global template's logo frame
   // and draws there (src/faceLayers.ts#buildFaceLayers) — shown nested
@@ -344,6 +347,8 @@ export function LayerList({
     return (
       <li
         key={l.id}
+        onMouseEnter={() => setHoveredLayer(l.id)}
+        onMouseLeave={() => setHoveredLayer(null)}
         onDragOver={(e) => {
           if (!canDropHere()) return;
           e.preventDefault();
@@ -413,8 +418,11 @@ export function LayerList({
     return (
       <li
         key={l.id}
+        onMouseEnter={() => setHoveredLayer(l.id)}
+        onMouseLeave={() => setHoveredLayer(null)}
         draggable={!bg}
         onDragStart={(e) => {
+          setHoveredLayer(null); // dragging a row: no outline following it around
           dragId.current = l.id;
           setDragging(l.id);
           e.dataTransfer.effectAllowed = "move";

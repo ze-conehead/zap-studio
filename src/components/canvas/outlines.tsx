@@ -8,6 +8,8 @@ import { CANVAS, CORNER_RADIUS_PX, FOLD_X, PANELS, PX_PER_MM, TRIM_RECT } from "
 import { getFormat } from "../../formats";
 import type { Guide } from "../../guides";
 import { useT } from "../../i18n";
+import { isBackground } from "../../factory";
+import { layerSize } from "../../layerBounds";
 import { DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import type { Layer as TLayer, TextLayer as TTextLayer } from "../../types";
 
@@ -33,6 +35,79 @@ export function Guides({ showBleed }: { showBleed: boolean }) {
         strokeWidth={1.5}
       />
       <RoundedCardOutline />
+    </>
+  );
+}
+
+// The layer the pointer is over in the Layers panel, marked on the card so
+// it's clear which element a row is. Drawn in the guides layer — never
+// exported. A background has no box of its own, so it marks the whole card;
+// a condition marks its cases. A double line (dark under accent) reads on
+// any artwork.
+export function HoverOutline({
+  layers,
+  scale,
+  color,
+  measured = {},
+}: {
+  layers: TLayer[];
+  scale: number;
+  color: string;
+  // Sizes read off what is actually drawn, by layer id — they win over the
+  // computed ones (text wraps by whatever font was there when it was laid out).
+  measured?: Record<string, { w: number; h: number }>;
+}) {
+  const px = (n: number) => n / scale; // n screen px, in canvas px
+  return (
+    <>
+      {layers.map((l) => {
+        const box = isBackground(l)
+          ? { w: CANVAS.w, h: CANVAS.h }
+          : (measured[l.id] ?? layerSize(l));
+        if (!box) return null;
+        const body = (
+          <>
+            <Rect
+              x={-box.w / 2}
+              y={-box.h / 2}
+              width={box.w}
+              height={box.h}
+              fill={color}
+              opacity={0.14}
+              listening={false}
+            />
+            <Rect
+              x={-box.w / 2}
+              y={-box.h / 2}
+              width={box.w}
+              height={box.h}
+              stroke="#000000"
+              strokeWidth={px(5)}
+              opacity={0.55}
+              listening={false}
+            />
+            <Rect
+              x={-box.w / 2}
+              y={-box.h / 2}
+              width={box.w}
+              height={box.h}
+              stroke={color}
+              strokeWidth={px(2.5)}
+              dash={l.visible ? undefined : [px(8), px(6)]}
+              listening={false}
+            />
+          </>
+        );
+        return isBackground(l) ? (
+          <Group key={l.id} x={CANVAS.w / 2} y={CANVAS.h / 2} listening={false}>
+            {body}
+          </Group>
+        ) : (
+          <Group key={l.id} x={l.x} y={l.y} rotation={l.rotation} listening={false}>
+            {body}
+          </Group>
+        );
+      })}
     </>
   );
 }

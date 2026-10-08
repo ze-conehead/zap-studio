@@ -11,8 +11,8 @@ export interface Box {
   y2: number;
 }
 
-/** Axis-aligned bounds of a layer in canvas px, rotation included. */
-export function bounds(l: Layer): Box | null {
+/** A layer's drawn size in canvas px (its scale applied, rotation not); null for one with no box of its own. */
+export function layerSize(l: Layer): { w: number; h: number } | null {
   let w: number;
   let h: number;
   if (l.type === "text") {
@@ -26,8 +26,14 @@ export function bounds(l: Layer): Box | null {
   }
   w = Math.abs(w * l.scaleX);
   h = Math.abs(h * l.scaleY);
-  if (!w || !h) return null;
+  return w && h ? { w, h } : null;
+}
 
+/** Axis-aligned bounds of a layer in canvas px, rotation included. */
+export function bounds(l: Layer): Box | null {
+  const size = layerSize(l);
+  if (!size) return null;
+  const { w, h } = size;
   if (!l.rotation) {
     return { x1: l.x - w / 2, y1: l.y - h / 2, x2: l.x + w / 2, y2: l.y + h / 2 };
   }
@@ -36,4 +42,3 @@ export function bounds(l: Layer): Box | null {
   const ch = (Math.abs(Math.sin(r)) * w + Math.abs(Math.cos(r)) * h) / 2;
   return { x1: l.x - cw, y1: l.y - ch, x2: l.x + cw, y2: l.y + ch };
 }
-

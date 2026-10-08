@@ -28,6 +28,7 @@ import { segmentLayers } from "../masking";
 import { applyAccent, useCardAccent } from "../accent";
 import { applyContrast } from "../contrast";
 import { useImageCacheVersion } from "../hooks/useImage";
+import { useHoveredLayer } from "../layerHover";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
@@ -46,6 +47,7 @@ import { LayerNode } from "./canvas/LayerNode";
 import {
   FeatureGuides,
   GuideLine,
+  HoverOutline,
   Guides,
   MainMaskOutline,
   PanelGuides,
@@ -407,6 +409,16 @@ function FaceStage({
     masks,
   );
   // Colour fields set to the accent token paint this card's accent colour.
+  // The layer under the pointer in the Layers panel gets outlined here — on
+  // the face being edited. Looked up wherever it lives (drawn stack, own
+  // list, the templates' layers, their alpha frames); a condition marks its cases.
+  const hoveredId = useHoveredLayer();
+  const hoverTargets =
+    active && hoveredId
+      ? [...new Map([...faceLayersRaw, ...layerList, ...overlay, ...masks].map((l) => [l.id, l])).values()].filter(
+          (l) => l.id === hoveredId || l.condId === hoveredId,
+        )
+      : [];
   const cardAccentColor = useCardAccent(project, masks);
   // …and fields set to the contrast token black or white, by what's under
   // them — recomputed as pictures finish loading.
@@ -420,6 +432,15 @@ function FaceStage({
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const nodeRefs = useRef(new Map<string, Konva.Node>());
+  // Text is outlined at the size it is actually drawn at.
+  const measured: Record<string, { w: number; h: number }> = {};
+  for (const l of hoverTargets) {
+    const node = l.type === "text" ? nodeRefs.current.get(l.id) : undefined;
+    const text = node && "findOne" in node ? (node as Konva.Container).findOne<Konva.Text>("Text") : undefined;
+    if (node && text) {
+      measured[l.id] = { w: text.width() * Math.abs(node.scaleX()), h: text.height() * Math.abs(node.scaleY()) };
+    }
+  }
 
   useEffect(() => {
     registerStage(stageRef.current);
@@ -871,6 +892,7 @@ function FaceStage({
           <Layer name="guides" listening={false}>
             <Guides showBleed={showBleed} />
             <PanelGuides />
+            {hoverTargets.length > 0 && <HoverOutline layers={hoverTargets} scale={scale} color={accent} measured={measured} />}
             {!back && <FeatureGuides />}
 
             {!back && slotOutline && (
