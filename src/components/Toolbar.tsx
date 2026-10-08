@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { MIN_ZOOM, MAX_ZOOM } from "./EditorCanvas";
 import { useStore } from "../store";
 import { useT } from "../i18n";
+import { setKeepView, useKeepView } from "../viewState";
 import type { GuideApi } from "../App";
 
 interface Props {
@@ -37,6 +38,7 @@ export function Toolbar({
   const { state, dispatch } = useStore();
   const t = useT();
   const { past, future, showBleed } = state;
+  const keepView = useKeepView();
 
   // The history list: every step, newest first, the current one marked.
   // Labels come from diffing neighbouring snapshots (src/historyLabel.ts).
@@ -122,6 +124,13 @@ export function Toolbar({
             onCheckedChange={(v) => guides.setSnap(!!v)}
           />
           {t("Snap")}
+        </label>
+        <label
+          className="flex items-center gap-1.5"
+          title={t("Keep the zoom and the scroll position when you switch to another card")}
+        >
+          <Checkbox checked={keepView} onCheckedChange={(v) => setKeepView(!!v)} />
+          {t("Keep view")}
         </label>
       </div>
 

@@ -15,6 +15,7 @@ import { OverviewDialog } from "./components/OverviewDialog";
 import { CollectionStatusDialog } from "./components/CollectionStatusDialog";
 import { StorageErrorScreen } from "./components/StorageErrorScreen";
 import { ColumnResizer, useColumnWidth } from "./components/ColumnResizer";
+import { recallView, rememberZoom } from "./viewState";
 import { DataSafetyDialog } from "./components/DataSafetyDialog";
 import { WorkspaceDialog } from "./components/WorkspaceDialog";
 import { PreflightDialog } from "./components/PreflightDialog";
@@ -446,7 +447,12 @@ function Shell({
   const [demo, setDemo] = useState(false);
   // The main canvas's zoom, on top of its auto-fit scale — 1 = fit. A pure
   // view setting, not project state, so it isn't undo/redo-able.
-  const [zoom, setZoom] = useState(1);
+  // …or, with "Keep view" on (src/viewState.ts), the zoom the previous card had.
+  const [zoom, setZoomState] = useState(() => recallView().zoom);
+  const setZoom = (z: number) => {
+    setZoomState(z);
+    rememberZoom(z);
+  };
   // Dialogs the menu bar and the toolbar both open.
   const [cutSheet, setCutSheet] = useState(false);
   const [exportAll, setExportAll] = useState(false);

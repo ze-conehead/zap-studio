@@ -1382,4 +1382,8 @@ export const de: Record<string, string> = {
   // ── Logo preview background ──
   "Preview on": "Vorschau auf",
   "The card's own background — or, with none, light for dark logos and dark for light ones": "Der Hintergrund der Karte – oder, wenn es keinen gibt, hell für dunkle Logos und dunkel für helle",
+
+  // ── Keep view ──
+  "Keep view": "Ansicht behalten",
+  "Keep the zoom and the scroll position when you switch to another card": "Zoom und Scroll-Position beibehalten, wenn du zu einer anderen Karte wechselst",
 };

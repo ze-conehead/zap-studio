@@ -29,6 +29,7 @@ import { applyAccent, useCardAccent } from "../accent";
 import { applyContrast } from "../contrast";
 import { useImageCacheVersion } from "../hooks/useImage";
 import { useHoveredLayer } from "../layerHover";
+import { recallView, rememberScroll, scrollFraction, scrollFromFraction } from "../viewState";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
@@ -138,6 +139,28 @@ export function EditorCanvas({
   // "centred when small, scrollable when large" needs an explicit pixel
   // floor instead of min-h-full/min-w-full.
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  // "Keep view": once the new card's canvas has its real size, put the scroll
+  // back where the previous card was left. Until then nothing is saved — the
+  // browser clamps the scroll while the layout settles, and that must not
+  // overwrite what we're about to restore.
+  const viewRestored = useRef(false);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (viewRestored.current || !el || containerSize.w === 0) return;
+    viewRestored.current = true;
+    const v = recallView();
+    el.scrollLeft = scrollFromFraction(v.fx, el.scrollWidth, el.clientWidth);
+    el.scrollTop = scrollFromFraction(v.fy, el.scrollHeight, el.clientHeight);
+  }, [containerSize.w, containerSize.h]);
+  const rememberView = () => {
+    const el = wrapRef.current;
+    if (!el || !viewRestored.current) return;
+    rememberScroll(
+      scrollFraction(el.scrollLeft, el.scrollWidth, el.clientWidth),
+      scrollFraction(el.scrollTop, el.scrollHeight, el.clientHeight),
+    );
+  };
 
   const registerFront = useCallback((s: Konva.Stage | null) => {
     stages.current.front = s;
@@ -253,6 +276,7 @@ export function EditorCanvas({
       orientation="both"
       className={cn("canvas-checker flex-1", panning && "cursor-grabbing")}
       viewportRef={wrapRef}
+      onViewportScroll={rememberView}
       onMouseDownCapture={startPan}
       // Swallow file/image drops that miss a face so the browser doesn't
       // navigate to them.

@@ -7,6 +7,7 @@ function ScrollArea({
   className,
   children,
   viewportRef,
+  onViewportScroll,
   orientation = "vertical",
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
@@ -14,6 +15,8 @@ function ScrollArea({
   // panning, zoom-anchored scrolling) — Radix scrolls the Viewport, not the
   // Root, so a plain `ref` on ScrollArea itself wouldn't give that access.
   viewportRef?: React.Ref<HTMLDivElement>;
+  // Scroll events happen on the Viewport too, not the Root.
+  onViewportScroll?: React.UIEventHandler<HTMLDivElement>;
   // Radix only enables scrolling (and shows a scrollbar) on the axes that
   // have a mounted ScrollAreaScrollbar — the unmounted axis's overflow stays
   // "hidden", so a caller that pans/scrolls both ways needs "both".
@@ -26,6 +29,7 @@ function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         ref={viewportRef}
+        onScroll={onViewportScroll}
         className="size-full rounded-[inherit] [&>div]:!block"
       >
         {children}
