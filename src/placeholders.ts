@@ -171,7 +171,7 @@ function value(key: string, ctx: PlaceholderContext): string | undefined {
 }
 
 /** The value one placeholder key resolves to, or undefined when unknown. */
-export function placeholderValue(key: PlaceholderKey, ctx: PlaceholderContext | undefined) {
+export function placeholderValue(key: string, ctx: PlaceholderContext | undefined) {
   return ctx ? present(value(key, ctx)) : undefined;
 }
 

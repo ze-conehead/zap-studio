@@ -191,8 +191,9 @@ export interface TextLayer extends BaseLayer {
   // A Property layer: shows one metadata value picked from a dropdown
   // instead of free text. `text` is kept as "{metaField}" so every text
   // pipeline (measuring, flow, export) works unchanged; a card whose entry
-  // lacks the value draws nothing rather than the literal token.
-  metaField?: PlaceholderKey;
+  // lacks the value draws nothing rather than the literal token. A built-in
+  // PlaceholderKey or an own metadata column's key (src/metaColumns.ts).
+  metaField?: PlaceholderKey | (string & {});
 }
 
 export interface ShapeLayer extends BaseLayer {

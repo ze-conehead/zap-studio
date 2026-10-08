@@ -19,7 +19,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -37,9 +37,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { placeholderKeysFor, placeholderLabel, type PlaceholderKey } from "../../placeholders";
+import { getMetaColumnsVersion, placeholderOptions, subscribeMetaColumns } from "../../metaColumns";
 import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscribeStyleClipboard } from "../../layerStyle";
 import { cn } from "@/lib/utils";
 import { useT } from "../../i18n";
@@ -611,18 +613,25 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
   };
 
   const kind = getWorkspaceKind();
+  useSyncExternalStore(subscribeMetaColumns, getMetaColumnsVersion, getMetaColumnsVersion);
+  const options = placeholderOptions(kind);
+  // A Property layer whose own column was deleted keeps its key, listed as is.
+  const fieldOptions =
+    layer.metaField && !options.some((o) => o.key === layer.metaField)
+      ? [...options, { key: layer.metaField, label: `{${layer.metaField}}`, custom: true }]
+      : options;
   return (
     <>
       {layer.metaField ? (
         <Field label={t("Property")}>
           <Select
             value={layer.metaField}
-            onValueChange={(v) => {
-              const key = v as PlaceholderKey;
+            onValueChange={(key) => {
+              const label = fieldOptions.find((o) => o.key === key)?.label ?? key;
               patch({
                 metaField: key,
                 text: `{${key}}`,
-                name: `${t("Property")} · ${placeholderLabel(key, kind)}`,
+                name: `${t("Property")} · ${label}`,
               });
             }}
           >
@@ -630,9 +639,9 @@ export function TextProps({ layer, patch }: { layer: TextLayer; patch: Patch }) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {placeholderKeysFor(kind).map((k) => (
-                <SelectItem key={k} value={k}>
-                  {placeholderLabel(k, kind)}
+              {fieldOptions.map((o) => (
+                <SelectItem key={o.key} value={o.key}>
+                  {o.custom ? `${o.label}  {${o.key}}` : o.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -968,9 +977,12 @@ export function StyleClipboard({ layer, patch }: { layer: Layer; patch: Patch })
 }
 
 // "{title}", "{year}" … — filled in per card at render time (src/placeholders.ts).
-export function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) => void }) {
+export function PlaceholderPicker({ onPick }: { onPick: (key: string) => void }) {
   const t = useT();
   const kind = getWorkspaceKind();
+  useSyncExternalStore(subscribeMetaColumns, getMetaColumnsVersion, getMetaColumnsVersion);
+  const options = placeholderOptions(kind);
+  const firstOwn = options.findIndex((o) => o.custom);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -979,11 +991,19 @@ export function PlaceholderPicker({ onPick }: { onPick: (key: PlaceholderKey) =>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-        {placeholderKeysFor(kind).map((k) => (
-          <DropdownMenuItem key={k} onClick={() => onPick(k)} className="justify-between gap-4">
-            {placeholderLabel(k, kind)}
-            <span className="font-mono text-[11px] text-muted-foreground">{`{${k}}`}</span>
-          </DropdownMenuItem>
+        {options.map((o, i) => (
+          <Fragment key={o.key}>
+            {i === firstOwn && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">{t("Own fields")}</DropdownMenuLabel>
+              </>
+            )}
+            <DropdownMenuItem onClick={() => onPick(o.key)} className="justify-between gap-4">
+              {o.label}
+              <span className="font-mono text-[11px] text-muted-foreground">{`{${o.key}}`}</span>
+            </DropdownMenuItem>
+          </Fragment>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

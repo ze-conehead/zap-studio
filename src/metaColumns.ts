@@ -13,7 +13,7 @@ import {
   type GameMeta,
 } from "./gamelist";
 import { t } from "./i18n";
-import { PLACEHOLDER_KEYS } from "./placeholders";
+import { PLACEHOLDER_KEYS, placeholderKeysFor, placeholderLabel } from "./placeholders";
 import { wsSuffix, type WorkspaceKind } from "./workspace";
 
 export type ColumnKind = "text" | "long" | "date" | "rating";
@@ -106,6 +106,20 @@ export function allColumns(kind: WorkspaceKind): MetaColumn[] {
       kind: b.kind,
     })),
     ...loadCustomColumns().map((c) => ({ key: c.key, label: c.label, kind: "text" as const, custom: true })),
+  ];
+}
+
+export interface PlaceholderOption {
+  key: string;
+  label: string;
+  custom?: boolean;
+}
+
+/** Everything a text can print: the built-in placeholders, then the own columns. */
+export function placeholderOptions(kind: WorkspaceKind): PlaceholderOption[] {
+  return [
+    ...placeholderKeysFor(kind).map((k) => ({ key: k, label: placeholderLabel(k, kind) })),
+    ...loadCustomColumns().map((c) => ({ key: c.key, label: c.label, custom: true })),
   ];
 }
 

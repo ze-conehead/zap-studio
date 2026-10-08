@@ -8,6 +8,7 @@ import {
   columnKeyFor,
   hiddenColumns,
   loadCustomColumns,
+  placeholderOptions,
   removeCustomColumn,
   setColumnHidden,
   writeCell,
@@ -72,5 +73,13 @@ describe("metadata columns", () => {
     const meta = { name: "x", custom: { region: "PAL" } };
     expect(resolvePlaceholders("Region: {region}", { meta })).toBe("Region: PAL");
     expect(resolvePlaceholders("{constructor}", { meta })).toBe("{constructor}");
+  });
+
+  it("the placeholder pickers list the own columns after the built-in ones", () => {
+    addCustomColumn("Region");
+    const opts = placeholderOptions("games");
+    expect(opts[0]).toMatchObject({ key: "title" });
+    expect(opts.at(-1)).toEqual({ key: "region", label: "Region", custom: true });
+    expect(opts.filter((o) => o.custom)).toHaveLength(1);
   });
 });
