@@ -34,6 +34,7 @@ import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } fr
 interface InspectorProps {
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  inheritedAccent?: string;
   masks?: MaskOption[];
   guides: GuideApi;
   // A read-only console/global shape/background picked in the Layers
@@ -46,6 +47,7 @@ interface InspectorProps {
 export function Inspector({
   consoleBg,
   globalBg,
+  inheritedAccent,
   masks = [],
   guides,
   foreignSelected,
@@ -165,7 +167,7 @@ export function Inspector({
             )}
           </Panel>
           {global && <GuidesPanel guides={guides} />}
-          <AccentPanel masks={masks.map((m) => m.layer)} />
+          <AccentPanel masks={masks.map((m) => m.layer)} inherited={inheritedAccent} />
         </>
       );
     }
@@ -176,7 +178,7 @@ export function Inspector({
             {t("Select a layer to edit it.")}
           </p>
         </Panel>
-        <AccentPanel masks={masks.map((m) => m.layer)} />
+        <AccentPanel masks={masks.map((m) => m.layer)} inherited={inheritedAccent} />
       </>
     );
   }

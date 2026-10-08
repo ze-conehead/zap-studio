@@ -16,6 +16,7 @@ import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
+import { inheritedAccent } from "./accent";
 import type { BackFace, CardBackground, Layer, Project } from "./types";
 
 export const PACK_SIZE = 12;
@@ -29,6 +30,7 @@ export interface DemoCard {
   overlay: Layer[]; // console + global template layers
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  inheritedAccent?: string; // fixed accent of the console / global template
   masks?: Layer[]; // alpha frames from the global + console templates
   // The back face to show: the card's own, else the console template's, else
   // the global template's (src/overview.ts resolves the fallback).
@@ -115,6 +117,7 @@ export async function drawPack(
       }),
       consoleBg: bgFill(consoleP, [saved]),
       globalBg: bgFill(globalP, [consoleP, saved]),
+      inheritedAccent: inheritedAccent(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       holo: false,
     });

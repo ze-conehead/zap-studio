@@ -90,6 +90,7 @@ export function EditorCanvas({
   overlay = [],
   consoleBg,
   globalBg,
+  inheritedAccent,
   masks = [],
   logoSlot,
   guides,
@@ -102,6 +103,7 @@ export function EditorCanvas({
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  inheritedAccent?: string;
   masks?: TLayer[];
   logoSlot?: TLayer;
   guides: GuideApi;
@@ -316,6 +318,7 @@ export function EditorCanvas({
             overlay={overlay}
             consoleBg={consoleBg}
             globalBg={globalBg}
+            inheritedAccent={inheritedAccent}
             masks={masks}
             logoSlot={logoSlot}
             guides={guides}
@@ -354,6 +357,7 @@ function FaceStage({
   overlay = [],
   consoleBg,
   globalBg,
+  inheritedAccent,
   masks = [],
   logoSlot,
   guides,
@@ -371,6 +375,7 @@ function FaceStage({
   overlay?: TLayer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  inheritedAccent?: string;
   masks?: TLayer[];
   logoSlot?: TLayer;
   guides: GuideApi;
@@ -447,7 +452,7 @@ function FaceStage({
           (l) => l.id === hoveredId || l.condId === hoveredId,
         )
       : [];
-  const cardAccentColor = useCardAccent(project, masks);
+  const cardAccentColor = useCardAccent(project, masks, inheritedAccent);
   // …and fields set to the contrast token black or white, by what's under
   // them — recomputed as pictures finish loading.
   useImageCacheVersion();

@@ -10,6 +10,7 @@ import { getGameProject } from "./gameIndex";
 import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
 import type { DemoCard } from "./demo";
+import { inheritedAccent } from "./accent";
 import type { Project } from "./types";
 
 export interface OverviewCard {
@@ -73,6 +74,7 @@ export async function loadOverviewCards(consoleId?: string): Promise<OverviewCar
           }),
           consoleBg: bgFill(consoleP, [saved]),
           globalBg: bgFill(globalP, [consoleP, saved]),
+          inheritedAccent: inheritedAccent(globalP, consoleP),
           masks: [...globalMasks, ...alphaMasksOf(consoleP)],
           back: saved?.back ?? inheritedBack,
           holo: false,

@@ -12,6 +12,7 @@ import { getGameProject } from "./gameIndex";
 import { loadAllProjects, loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
 import type { DemoCard } from "./demo";
+import { inheritedAccent } from "./accent";
 import type { Project } from "./types";
 
 // Cricut Explore "Print then Cut" printable area.
@@ -94,6 +95,7 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
       }),
       consoleBg: bgFill(consoleP, [project]),
       globalBg: bgFill(globalP, [consoleP, project]),
+      inheritedAccent: inheritedAccent(globalP, consoleP),
       masks: [...globalMasks, ...alphaMasksOf(consoleP)],
       // Own back, else the console template's, else the global one's —
       // same fallback as the overview. The cut sheet ignores it; the

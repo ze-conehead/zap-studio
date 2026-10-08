@@ -99,20 +99,31 @@ export function accentOfSrc(src: string): string | undefined {
 }
 
 /**
- * A card's accent: its own fixed one, else its cover's dominant colour
- * (when that image is loaded — exports preload it), else the default.
+ * What an automatic accent takes over from above: the console template's
+ * fixed colour, else the global template's. Undefined when neither is fixed
+ * (the card then uses its cover). `consoleP` is left out while the console
+ * template itself is open — the live project is the source of truth then.
  */
-export function cardAccent(project: Project, masks: Layer[] = []): string {
+export const inheritedAccent = (globalP?: Project, consoleP?: Project): string | undefined =>
+  consoleP?.accent || globalP?.accent || undefined;
+
+/**
+ * A card's accent: its own fixed one, else the console's / global template's
+ * fixed one (`inherited`), else its cover's dominant colour (when that image
+ * is loaded — exports preload it), else the default.
+ */
+export function cardAccent(project: Project, masks: Layer[] = [], inherited?: string): string {
   if (project.accent) return project.accent;
+  if (inherited) return inherited;
   const src = accentSource(project, masks)?.src;
   return (src && accentOfSrc(src)) || DEFAULT_ACCENT;
 }
 
 /** cardAccent(), re-evaluated once the source picture has loaded. */
-export function useCardAccent(project: Project, masks: Layer[] = []): string {
-  const src = project.accent ? undefined : accentSource(project, masks)?.src;
+export function useCardAccent(project: Project, masks: Layer[] = [], inherited?: string): string {
+  const src = project.accent || inherited ? undefined : accentSource(project, masks)?.src;
   useImage(src); // re-renders when it arrives
-  return cardAccent(project, masks);
+  return cardAccent(project, masks, inherited);
 }
 
 /**

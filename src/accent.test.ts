@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ACCENT_TOKEN, accentSource, applyAccent, cardAccent, DEFAULT_ACCENT } from "./accent";
+import { ACCENT_TOKEN, accentSource, applyAccent, cardAccent, DEFAULT_ACCENT, inheritedAccent } from "./accent";
 import { makeAlphaMaskLayer, makeImageLayer, makeShapeLayer, newProject } from "./factory";
 import type { ImageLayer } from "./types";
 
@@ -53,5 +53,18 @@ describe("accentSource / cardAccent", () => {
     p.layers = [img("a")];
     expect(cardAccent(p)).toBe(DEFAULT_ACCENT);
     expect(cardAccent({ ...p, accent: "#123456" })).toBe("#123456");
+  });
+
+  it("an automatic accent takes the console's fixed colour, else the global one", () => {
+    const p = newProject("g");
+    p.layers = [img("a")];
+    const glob = { ...newProject("global"), accent: "#00ff00" };
+    const cons = { ...newProject("console"), accent: "#0000ff" };
+    const auto = newProject("auto");
+    expect(inheritedAccent(glob, cons)).toBe("#0000ff");
+    expect(inheritedAccent(glob, auto)).toBe("#00ff00");
+    expect(inheritedAccent(auto, auto)).toBeUndefined();
+    expect(cardAccent(p, [], "#0000ff")).toBe("#0000ff");
+    expect(cardAccent({ ...p, accent: "#123456" }, [], "#0000ff")).toBe("#123456");
   });
 });

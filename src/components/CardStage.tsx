@@ -53,7 +53,7 @@ export function CardStage({
   // The back is a plain face — no template overlay, no alpha masks.
   // Re-renders once the cover is decoded; exports preload it, so their
   // first frame already has it.
-  const accent = useCardAccent(card.project, card.masks);
+  const accent = useCardAccent(card.project, card.masks, card.inheritedAccent);
   useImageCacheVersion(); // contrast colours depend on decoded pictures
   const paintedBg = bg ? applyAccent(bg, accent) : bg;
   const layers = applyContrast(

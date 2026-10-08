@@ -67,6 +67,7 @@ import {
 } from "./persist";
 import { StoreProvider, useStore } from "./store";
 import { t, useT } from "./i18n";
+import { inheritedAccent } from "./accent";
 import type { CardBackground, Layer, Project } from "./types";
 
 interface Templates {
@@ -78,6 +79,8 @@ interface Templates {
   globalLayers: Layer[];
   consoleBg?: CardBackground;
   globalBg?: CardBackground;
+  // The fixed accent colour an automatic one takes over (console, else global).
+  inheritedAccent?: string;
   logoSlot?: Layer; // "All consoles" placement frame for logos
   masks: MaskOption[]; // alpha frames from the global + console templates
 }
@@ -364,6 +367,11 @@ function Shell({
       };
       const globalBg = bgFill(globalP, [descendantOfGlobal, descendantOfConsole]);
       const consoleBg = bgFill(consoleP, [descendantOfConsole]);
+      // The open console template is `project` itself (its own accent is
+      // handled first); a global one has nothing above it.
+      const inheritedFixed = project.isGlobalTemplate
+        ? undefined
+        : inheritedAccent(globalP, project.isTemplate ? undefined : consoleP);
 
       // The global "main alpha mask" clips each card's main image; it never
       // paints as an overlay layer itself. Background layers never overlay.
@@ -402,6 +410,7 @@ function Shell({
         globalLayers: project.isGlobalTemplate ? [] : globalLayers,
         consoleBg,
         globalBg,
+        inheritedAccent: inheritedFixed,
         logoSlot: project.isGlobalTemplate ? undefined : logoSlot,
         masks,
       });
@@ -414,7 +423,7 @@ function Shell({
     // gameKey, …) only ever changes together with the id.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, project.fillOverrides]);
-  const { overlay, consoleLayers, globalLayers, consoleBg, globalBg, logoSlot, masks } = tpl;
+  const { overlay, consoleLayers, globalLayers, consoleBg, globalBg, inheritedAccent: inheritedFixed, logoSlot, masks } = tpl;
 
   // A read-only layer picked from the Layers panel (a console's or the
   // global template's own) — its own state, since the store's selectedId
@@ -564,6 +573,7 @@ function Shell({
           overlay={overlay}
           consoleBg={consoleBg}
           globalBg={globalBg}
+          inheritedAccent={inheritedFixed}
           masks={masks.map((m) => m.layer)}
           logoSlot={logoSlot}
           guides={guides}
@@ -600,6 +610,7 @@ function Shell({
               <Inspector
                 consoleBg={consoleBg}
                 globalBg={globalBg}
+                inheritedAccent={inheritedFixed}
                 masks={masks}
                 guides={guides}
                 foreignSelected={foreignSelected}
