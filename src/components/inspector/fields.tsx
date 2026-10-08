@@ -2,6 +2,7 @@
 // slider inputs, the fill editor — shared by every properties panel.
 
 import {
+  ChevronDown,
   Minus,
   Pipette,
   Plus,
@@ -14,7 +15,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { getRecentColorsVersion, recentColors, rememberColor, subscribeRecentColors } from "../../recentColors";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  getRecentColorsVersion,
+  INLINE_RECENT,
+  recentColors,
+  rememberColor,
+  ROW_SIZE,
+  subscribeRecentColors,
+} from "../../recentColors";
 import { cn } from "@/lib/utils";
 import { ACCENT_TOKEN, DEFAULT_ACCENT, isAccent } from "../../accent";
 import { CONTRAST_TOKEN, isContrast } from "../../contrast";
@@ -280,6 +289,7 @@ export function ColorField({
   const t = useT();
   useSyncExternalStore(subscribeRecentColors, getRecentColorsVersion, getRecentColorsVersion);
   const recent = recentColors();
+  const [moreOpen, setMoreOpen] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const accent = isAccent(value);
   const contrast = isContrast(value);
@@ -366,24 +376,69 @@ export function ColorField({
           title={t("Contrast: black or white, whichever reads better on what's underneath")}
           onClick={() => onChange(CONTRAST_TOKEN)}
         />
-        {recent.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={cn(
-              "size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
-              c === value.toLowerCase() && "ring-1 ring-primary",
-            )}
-            style={{ background: c }}
-            title={c}
-            onClick={() => {
-              onChange(c);
-              rememberColor(c);
-            }}
-          />
+        {recent.slice(0, INLINE_RECENT).map((c) => (
+          <RecentSwatch key={c} color={c} value={value} onPick={onChange} />
         ))}
+        {recent.length > INLINE_RECENT && (
+          <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="grid size-4 place-items-center rounded-sm border border-input text-muted-foreground hover:bg-accent"
+                title={t("Older colors")}
+              >
+                <ChevronDown className="size-3" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-auto p-2">
+              <div
+                className="grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${ROW_SIZE}, 1rem)` }}
+                title={t("Older colors")}
+              >
+                {recent.slice(INLINE_RECENT).map((c) => (
+                  <RecentSwatch
+                    key={c}
+                    color={c}
+                    value={value}
+                    onPick={(v) => {
+                      onChange(v);
+                      setMoreOpen(false);
+                    }}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
     </Field>
+  );
+}
+
+function RecentSwatch({
+  color,
+  value,
+  onPick,
+}: {
+  color: string;
+  value: string;
+  onPick: (c: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "size-4 rounded-sm border border-black/20 ring-offset-1 hover:ring-1 hover:ring-primary",
+        color === value.toLowerCase() && "ring-1 ring-primary",
+      )}
+      style={{ background: color }}
+      title={color}
+      onClick={() => {
+        onPick(color);
+        rememberColor(color);
+      }}
+    />
   );
 }
 
