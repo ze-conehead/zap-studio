@@ -1,4 +1,4 @@
-import { Images, Loader2, Upload } from "lucide-react";
+import { Images, Loader2, Move, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { fileToLayerSource } from "../../image";
@@ -6,6 +6,7 @@ import { useT } from "../../i18n";
 import { spineCountOf, spineSliceForConsole } from "../../spine";
 import { useStore } from "../../store";
 import type { ImageLayer } from "../../types";
+import { SpineArrangeDialog } from "../SpineArrangeDialog";
 import { SpinePreviewDialog } from "../SpinePreviewDialog";
 import { AdjustControls, NumberField, Panel, SliderField, type Patch } from "./fields";
 
@@ -18,6 +19,7 @@ export function SpineBgProps({ layer, patch }: { layer: ImageLayer; patch: Patch
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [arrange, setArrange] = useState(false);
   const slice = spineSliceForConsole(state.project.consoleId);
   const count = spineCountOf(layer, slice);
   const focus = layer.spineFocus ?? { x: 0.5, y: 0.5 };
@@ -115,6 +117,19 @@ export function SpineBgProps({ layer, patch }: { layer: ImageLayer; patch: Patch
           onChange={(v, done) => patch({ opacity: v }, done)}
         />
       </div>
+
+      <Button variant="outline" size="sm" onClick={() => setArrange(true)}>
+        <Move /> {t("Arrange across all spines …")}
+      </Button>
+      {arrange && (
+        <SpineArrangeDialog
+          open
+          onOpenChange={(o) => !o && setArrange(false)}
+          layer={layer}
+          count={count}
+          patch={patch}
+        />
+      )}
 
       <AdjustControls value={layer.adjust} onChange={(adjust, history) => patch({ adjust }, history)} />
 

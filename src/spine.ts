@@ -36,6 +36,87 @@ export function spineCountOf(l: ImageLayer, slice: SpineSlice): number {
   return n >= 1 ? n : Math.max(1, slice.count);
 }
 
+export const SPINE_ZOOM_MAX = 8;
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+const EPS = 1e-6;
+
+export const spineZoomOf = (l: ImageLayer) => clamp(l.spineZoom ?? 1, 1, SPINE_ZOOM_MAX);
+
+export interface SpinePlacement {
+  stripW: number; // the whole strip: `count` spines wide, one artboard tall
+  w: number; // the picture's size on that strip …
+  h: number;
+  left: number; // … and where its top-left corner sits (≤ 0: it covers the strip)
+  top: number;
+}
+
+/**
+ * Where the picture lies on the strip of all spines: scaled to cover the
+ * strip (like CSS `cover`) times the zoom, then slid by the focus point.
+ */
+export function spinePlacement(
+  l: ImageLayer,
+  count: number,
+  rect: SpineRect,
+  zoom = spineZoomOf(l),
+  focus = l.spineFocus,
+): SpinePlacement {
+  const stripW = count * rect.w;
+  const nw = Math.max(1, l.naturalWidth);
+  const nh = Math.max(1, l.naturalHeight);
+  const scale = Math.max(stripW / nw, rect.h / nh) * zoom;
+  const w = nw * scale;
+  const h = nh * scale;
+  const fx = clamp(focus?.x ?? 0.5, 0, 1);
+  const fy = clamp(focus?.y ?? 0.5, 0, 1);
+  return { stripW, w, h, left: -Math.max(0, w - stripW) * fx, top: -Math.max(0, h - rect.h) * fy };
+}
+
+// The focus that puts the picture's top-left at (left, top) — as far as the
+// picture covers the strip; an axis with no slack keeps `fallback`.
+function focusFor(
+  p: Pick<SpinePlacement, "stripW" | "w" | "h">,
+  rect: SpineRect,
+  left: number,
+  top: number,
+  fallback: { x: number; y: number },
+) {
+  const sx = p.w - p.stripW;
+  const sy = p.h - rect.h;
+  return {
+    x: sx > EPS ? clamp(-left / sx, 0, 1) : fallback.x,
+    y: sy > EPS ? clamp(-top / sy, 0, 1) : fallback.y,
+  };
+}
+
+/** The focus after dragging the picture (dx, dy) strip pixels from `start`. */
+export function spinePan(
+  l: ImageLayer,
+  count: number,
+  rect: SpineRect,
+  start: { x: number; y: number },
+  dx: number,
+  dy: number,
+) {
+  const p = spinePlacement(l, count, rect, spineZoomOf(l), start);
+  return focusFor(p, rect, p.left + dx, p.top + dy, start);
+}
+
+/**
+ * Zoom and focus after zooming to `zoom` with the picture point under the
+ * strip position (cx, cy) staying where it is.
+ */
+export function spineZoomAt(l: ImageLayer, count: number, rect: SpineRect, zoom: number, cx: number, cy: number) {
+  const z = clamp(zoom, 1, SPINE_ZOOM_MAX);
+  const before = spinePlacement(l, count, rect);
+  const u = (cx - before.left) / before.w;
+  const v = (cy - before.top) / before.h;
+  const after = spinePlacement(l, count, rect, z);
+  const focus = focusFor(after, rect, cx - u * after.w, cy - v * after.h, l.spineFocus ?? { x: 0.5, y: 0.5 });
+  return { spineZoom: z, spineFocus: focus };
+}
+
 /**
  * The layer as it appears on one card: placed exactly over the spine panel
  * and cropped to this game's slice of the picture. The picture is scaled to
@@ -49,18 +130,13 @@ export function resolveSpineLayer(
 ): ImageLayer {
   const count = spineCountOf(l, slice);
   const i = ((Math.round(slice.index) % count) + count) % count;
-  const stripW = count * rect.w;
-  const nw = Math.max(1, l.naturalWidth);
-  const nh = Math.max(1, l.naturalHeight);
-  const scale = Math.max(stripW / nw, rect.h / nh);
   // The part of the picture (as fractions of its natural size) that survives
-  // the cover crop, positioned by the focus point.
-  const visW = Math.min(1, stripW / (nw * scale));
-  const visH = Math.min(1, rect.h / (nh * scale));
-  const fx = Math.min(1, Math.max(0, l.spineFocus?.x ?? 0.5));
-  const fy = Math.min(1, Math.max(0, l.spineFocus?.y ?? 0.5));
-  const x0 = (1 - visW) * fx;
-  const y0 = (1 - visH) * fy;
+  // the cover crop and zoom, positioned by the focus point.
+  const p = spinePlacement(l, count, rect);
+  const visW = Math.min(1, p.stripW / p.w);
+  const visH = Math.min(1, rect.h / p.h);
+  const x0 = -p.left / p.w;
+  const y0 = -p.top / p.h;
   const left = x0 + (visW * i) / count;
   const right = x0 + (visW * (i + 1)) / count;
   return {

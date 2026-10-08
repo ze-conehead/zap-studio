@@ -155,6 +155,7 @@ export interface ImageLayer extends BaseLayer {
   spineBg?: boolean;
   spineCount?: number; // how many spines the picture spans; default = games in the console
   spineFocus?: { x: number; y: number }; // 0..1, which part of the picture is kept when it has to be cropped; default centre
+  spineZoom?: number; // 1 (default) = the picture just covers the strip; larger zooms in
 }
 
 export interface ImageCrop {
