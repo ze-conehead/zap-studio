@@ -498,9 +498,10 @@ export const round = (n: number, d = 0) => {
   return Math.round(n * f) / f;
 };
 
-// Greyscale / threshold. Lets a colourful cover or logo be reduced to pure
-// black and white, or to a one-colour silhouette on transparency. Shared by
-// an image layer's own adjustment and a repeating pattern's logo.
+// Greyscale / threshold / tint. Lets a colourful cover or logo be reduced to
+// pure black and white, to a one-colour silhouette on transparency, or be
+// tinted with a colour. Shared by an image layer's own adjustment and a
+// repeating pattern's logo.
 export function AdjustControls({
   value,
   onChange,
@@ -517,11 +518,12 @@ export function AdjustControls({
     ["none", t("Original")],
     ["grayscale", t("Greyscale")],
     ["threshold", t("Threshold")],
+    ["tint", t("Tint")],
   ];
 
   return (
     <div className="flex flex-col gap-2 rounded-md border p-2.5">
-      <Label>{t("Color reduction")}</Label>
+      <Label>{t("Color")}</Label>
       <div className="flex gap-1">
         {modes.map(([m, label]) => (
           <button
@@ -549,6 +551,27 @@ export function AdjustControls({
           value={adj.threshold}
           onChange={(v, done) => set({ threshold: Math.round(v) }, done)}
         />
+      )}
+
+      {adj.mode === "tint" && (
+        <>
+          <ColorField label={t("Tint color")} value={adj.tint} onChange={(v) => set({ tint: v })} />
+          <SliderField
+            label={t("Strength {n}%", { n: adj.tintAmount })}
+            min={0}
+            max={100}
+            step={1}
+            value={adj.tintAmount}
+            onChange={(v, done) => set({ tintAmount: Math.round(v) }, done)}
+          />
+          <label
+            className="flex items-center gap-2 text-sm"
+            title={t("Paints every pixel in the tint and keeps only the shape — for black or white logos, which have no shading to color.")}
+          >
+            <Checkbox checked={adj.tintSolid} onCheckedChange={(v) => set({ tintSolid: !!v })} />
+            {t("Solid color (keep only the shape)")}
+          </label>
+        </>
       )}
 
       {adj.mode !== "none" && (

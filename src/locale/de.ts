@@ -876,7 +876,11 @@ export const de: Record<string, string> = {
     "Logos gibt es nur bei SteamGridDB \u2013 daf\u00fcr wird ein API-Key ben\u00f6tigt.",
 
   // ── Image adjustment (greyscale / threshold) ─────────────────────────────
-  "Color reduction": "Farbreduktion",
+  "Tint": "Einfärben",
+  "Tint color": "Farbton",
+  "Strength {n}%": "Stärke {n} %",
+  "Solid color (keep only the shape)": "Einfarbig (nur die Form behalten)",
+  "Paints every pixel in the tint and keeps only the shape — for black or white logos, which have no shading to color.": "Malt jeden Pixel im Farbton und behält nur die Form – für schwarze oder weiße Logos, die keine Schattierung zum Einfärben haben.",
   Original: "Original",
   Greyscale: "Graustufen",
   Threshold: "Schwellenwert",

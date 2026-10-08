@@ -1,6 +1,7 @@
 // Per-layer image adjustment: strip the colour out of a picture or a logo and
 // push it to pure black and white with an adjustable threshold, optionally as
-// a one-colour silhouette on transparency.
+// a one-colour silhouette on transparency — or tint it with a colour (a red
+// cast over a photo, a black logo recoloured).
 //
 // Konva's own filters need node.cache(), which fights the globalCompositeOperation
 // masking the editor uses, so the pixels are processed into an offscreen canvas
@@ -8,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 
-export type AdjustMode = "none" | "grayscale" | "threshold";
+export type AdjustMode = "none" | "grayscale" | "threshold" | "tint";
 
 export interface ImageAdjust {
   mode: AdjustMode;
@@ -27,6 +28,13 @@ export interface ImageAdjust {
   /** -100…100, applied before the mode. */
   contrast: number;
   brightness: number;
+  /** tint mode: the colour laid over the picture. */
+  tint: string;
+  /** tint mode: 0-100, how far the picture moves towards the tint. */
+  tintAmount: number;
+  /** tint mode: paint every pixel in `tint` and keep only the shape (alpha) —
+   * for a black or white logo, which has no shading to colour. */
+  tintSolid: boolean;
 }
 
 export const DEFAULT_ADJUST: ImageAdjust = {
@@ -39,6 +47,9 @@ export const DEFAULT_ADJUST: ImageAdjust = {
   overlayColor: "#000000",
   contrast: 0,
   brightness: 0,
+  tint: "#e11d48",
+  tintAmount: 100,
+  tintSolid: false,
 };
 
 export const isAdjusted = (a?: ImageAdjust): boolean =>
@@ -68,39 +79,16 @@ function parseColor(css: string): [number, number, number] {
   }
 }
 
-/**
- * Runs `img` through the adjustment and returns a canvas ready for Konva.
- * Returns the image itself when nothing would change.
- */
-export function adjustImage(
-  img: HTMLImageElement,
-  adj: ImageAdjust,
-): HTMLCanvasElement | HTMLImageElement {
-  if (!isAdjusted(adj)) return img;
-  const w = img.naturalWidth || img.width;
-  const h = img.naturalHeight || img.height;
-  if (!w || !h) return img;
-
-  const cvs = document.createElement("canvas");
-  cvs.width = w;
-  cvs.height = h;
-  const ctx = cvs.getContext("2d", { willReadFrequently: true })!;
-  ctx.drawImage(img, 0, 0, w, h);
-
-  let data: ImageData;
-  try {
-    data = ctx.getImageData(0, 0, w, h);
-  } catch {
-    return img; // tainted canvas (cross-origin image without CORS)
-  }
-  const px = data.data;
-
+/** The adjustment on raw RGBA bytes, in place. */
+export function adjustPixels(px: Uint8ClampedArray, adj: ImageAdjust): void {
   // Brightness/contrast as the usual -100…100 photo-editor sliders.
   const b = (adj.brightness / 100) * 255;
   const cRaw = adj.contrast / 100;
   const cF = (259 * (cRaw * 255 + 255)) / (255 * (259 - cRaw * 255));
   const [sr, sg, sb] = adj.silhouette ? parseColor(adj.color) : [0, 0, 0];
   const [oR, oG, oB] = adj.silhouette && adj.overlay ? parseColor(adj.overlayColor) : [0, 0, 0];
+  const [tr, tg, tb] = adj.mode === "tint" ? parseColor(adj.tint) : [0, 0, 0];
+  const amount = Math.min(1, Math.max(0, adj.tintAmount / 100));
 
   for (let i = 0; i < px.length; i += 4) {
     if (px[i + 3] === 0) continue; // fully transparent — nothing to do
@@ -128,6 +116,25 @@ export function adjustImage(
       continue;
     }
 
+    if (adj.mode === "tint") {
+      let tR = tr, tG = tg, tB = tb;
+      if (!adj.tintSolid) {
+        // Keep the picture's light and dark: shadows go to black, the middle
+        // takes the tint, highlights go to white.
+        if (adj.invert) lum = 255 - lum;
+        const t = Math.min(1, Math.max(0, lum / 255));
+        const k = t < 0.5 ? t * 2 : 1;
+        const w = t < 0.5 ? 0 : (t - 0.5) * 2;
+        tR = tr * k + (255 - tr) * w;
+        tG = tg * k + (255 - tg) * w;
+        tB = tb * k + (255 - tb) * w;
+      }
+      px[i] = clamp(Math.round(r + (tR - r) * amount));
+      px[i + 1] = clamp(Math.round(g + (tG - g) * amount));
+      px[i + 2] = clamp(Math.round(bl + (tB - bl) * amount));
+      continue;
+    }
+
     // threshold
     let on = lum >= adj.threshold;
     if (adj.invert) on = !on;
@@ -150,6 +157,34 @@ export function adjustImage(
       px[i + 2] = v;
     }
   }
+}
+
+/**
+ * Runs `img` through the adjustment and returns a canvas ready for Konva.
+ * Returns the image itself when nothing would change.
+ */
+export function adjustImage(
+  img: HTMLImageElement,
+  adj: ImageAdjust,
+): HTMLCanvasElement | HTMLImageElement {
+  if (!isAdjusted(adj)) return img;
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) return img;
+
+  const cvs = document.createElement("canvas");
+  cvs.width = w;
+  cvs.height = h;
+  const ctx = cvs.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  let data: ImageData;
+  try {
+    data = ctx.getImageData(0, 0, w, h);
+  } catch {
+    return img; // tainted canvas (cross-origin image without CORS)
+  }
+  adjustPixels(data.data, adj);
 
   ctx.putImageData(data, 0, 0);
   return cvs;
