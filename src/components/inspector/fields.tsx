@@ -390,7 +390,7 @@ export function ColorField({
                 <ChevronDown className="size-3" />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-2">
+            <PopoverContent align="end" className="w-auto p-2">
               <div
                 className="grid gap-1"
                 style={{ gridTemplateColumns: `repeat(${ROW_SIZE}, 1rem)` }}
