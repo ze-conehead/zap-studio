@@ -36,6 +36,7 @@ import {
 } from "../sheet";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select";
 import {
   Dialog,
   DialogContent,
@@ -451,13 +452,11 @@ export function CutSheetDialog({
             {paper && paperPlan && (
               <div className="flex flex-col gap-2 rounded-md border p-2.5 text-xs">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <label className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">{t("Sheet size")}</span>
-                    <select
-                      className="h-7 max-w-[11rem] rounded border bg-transparent px-1.5"
+                    <Select
                       value={builtin ? builtin.id : savedHit ? `saved:${savedHit.id}` : "custom"}
-                      onChange={(e) => {
-                        const id = e.target.value;
+                      onValueChange={(id) => {
                         const size = paperSize(opts);
                         const mine = id.startsWith("saved:") ? saved.find((x) => `saved:${x.id}` === id) : undefined;
                         const pick = PAPER_PRESETS.find((p) => p.id === id);
@@ -472,23 +471,29 @@ export function CutSheetDialog({
                         });
                       }}
                     >
-                      {PAPER_PRESETS.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                      {saved.length > 0 && (
-                        <optgroup label={t("Saved sizes")}>
-                          {saved.map((x) => (
-                            <option key={x.id} value={`saved:${x.id}`}>
-                              {x.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="custom">{t("Custom size")}</option>
-                    </select>
-                  </label>
+                      <SelectTrigger className="h-7 w-auto max-w-[11rem] gap-2 px-2 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAPER_PRESETS.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                        {saved.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>{t("Saved sizes")}</SelectLabel>
+                            {saved.map((x) => (
+                              <SelectItem key={x.id} value={`saved:${x.id}`}>
+                                {x.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        <SelectItem value="custom">{t("Custom size")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <span className="flex items-center gap-1.5">
                     {([
                       ["w", t("Width")],
@@ -623,20 +628,24 @@ export function CutSheetDialog({
                       {t("cards per sheet")}
                     </span>
                   )}
-                  <label className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     {t("Page")}
-                    <select
-                      className="h-7 rounded border bg-transparent px-1.5"
+                    <Select
                       value={opts.orientation}
-                      onChange={(e) =>
-                        setOpts((o) => ({ ...o, orientation: e.target.value as SheetOptions["orientation"] }))
+                      onValueChange={(v) =>
+                        setOpts((o) => ({ ...o, orientation: v as SheetOptions["orientation"] }))
                       }
                     >
-                      <option value="auto">{t("Best fit")}</option>
-                      <option value="portrait">{t("Portrait")}</option>
-                      <option value="landscape">{t("Landscape")}</option>
-                    </select>
-                  </label>
+                      <SelectTrigger className="h-7 w-auto gap-2 px-2 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">{t("Best fit")}</SelectItem>
+                        <SelectItem value="portrait">{t("Portrait")}</SelectItem>
+                        <SelectItem value="landscape">{t("Landscape")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 {paperPlan.plan ? (
                   <p className="text-muted-foreground">
