@@ -14,6 +14,7 @@ import {
 } from "../gamelist";
 import { useT } from "../i18n";
 import { fetchGameMeta, fetchMovieMeta } from "../metaFetch";
+import { getMetaColumnsVersion, loadCustomColumns, subscribeMetaColumns } from "../metaColumns";
 import { useStore } from "../store";
 import { getWorkspaceKind } from "../workspace";
 import { Button } from "./ui/button";
@@ -245,6 +246,7 @@ function GameMetaForm({
       )}
 
       <MoreDetails draft={draft} update={update} movies={getWorkspaceKind() === "movies"} />
+      <OwnFields draft={draft} update={update} />
     </section>
   );
 }
@@ -264,7 +266,7 @@ function MoreDetails({
   const [open, setOpen] = useState(false);
   const filled = MORE_FIELDS.filter((f) => !f.only || f.only === (movies ? "movies" : "games"))
     .filter((f) => !!draft[f.key]).length;
-  const text = (key: keyof GameMeta, label: string, placeholder?: string, rows?: number) => (
+  const text = (key: TextKey, label: string, placeholder?: string, rows?: number) => (
     <Field key={key} label={label}>
       {rows ? (
         <Textarea
@@ -313,7 +315,41 @@ function MoreDetails({
   );
 }
 
-const MORE_FIELDS: { key: keyof GameMeta; only?: "games" | "movies" }[] = [
+type TextKey = Exclude<keyof GameMeta, "custom">;
+
+// The user's own columns (Settings ▸ Manage metadata), one field each.
+function OwnFields({
+  draft,
+  update,
+}: {
+  draft: GameMeta;
+  update: (patch: Partial<GameMeta>) => void;
+}) {
+  const t = useT();
+  useSyncExternalStore(subscribeMetaColumns, getMetaColumnsVersion, getMetaColumnsVersion);
+  const cols = loadCustomColumns();
+  if (!cols.length) return null;
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Own fields")}</h3>
+      {cols.map((c) => (
+        <Field key={c.key} label={`${c.label}  {${c.key}}`}>
+          <Input
+            value={draft.custom?.[c.key] ?? ""}
+            onChange={(e) => {
+              const custom = { ...(draft.custom ?? {}) };
+              if (e.target.value) custom[c.key] = e.target.value;
+              else delete custom[c.key];
+              update({ custom: Object.keys(custom).length ? custom : undefined });
+            }}
+          />
+        </Field>
+      ))}
+    </div>
+  );
+}
+
+const MORE_FIELDS: { key: TextKey; only?: "games" | "movies" }[] = [
   { key: "ageRating" },
   { key: "series" },
   { key: "altTitle" },

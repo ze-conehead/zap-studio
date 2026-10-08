@@ -38,6 +38,9 @@ export interface GameMeta {
   cast?: string; // top-billed cast (movies)
   country?: string; // production countries (movies)
   ratingCount?: string; // how many votes the rating rests on
+  // The user's own columns (Settings ▸ Manage metadata), by column key —
+  // see src/metaColumns.ts. Each prints on a card as "{key}".
+  custom?: Record<string, string>;
 }
 
 // Namespaced per workspace ("" suffix for the original), so a project's

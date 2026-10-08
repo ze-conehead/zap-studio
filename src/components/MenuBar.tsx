@@ -78,6 +78,7 @@ interface Props {
   onOpenManageLogos: () => void;
   onOpenManageCovers: () => void;
   onOpenSpotColors: () => void;
+  onOpenManageMetadata: () => void;
   onOpenBleed: () => void;
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
@@ -201,6 +202,7 @@ export function MenuBar({
   onOpenManageLogos,
   onOpenManageCovers,
   onOpenSpotColors,
+  onOpenManageMetadata,
   onOpenBleed,
   onOpenWalkthrough,
   onOpenShortcuts,
@@ -491,6 +493,9 @@ export function MenuBar({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenManageCovers}>
           {t("Manage covers …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenManageMetadata}>
+          {t("Manage metadata …")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenSpotColors}>
           {t("Cut & fold lines …")}

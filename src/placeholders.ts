@@ -164,7 +164,10 @@ function value(key: string, ctx: PlaceholderContext): string | undefined {
     case "votes":
       return m?.ratingCount;
   }
-  return undefined;
+  // An own metadata column (src/metaColumns.ts) — own keys only, so
+  // "{constructor}" doesn't find Object.prototype's.
+  const own = m?.custom;
+  return own && Object.prototype.hasOwnProperty.call(own, key) ? own[key] : undefined;
 }
 
 /** The value one placeholder key resolves to, or undefined when unknown. */

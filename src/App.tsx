@@ -23,6 +23,7 @@ import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { ManageLogosDialog } from "./components/ManageLogosDialog";
 import { SpotColorDialog } from "./components/SpotColorDialog";
+import { ManageMetadataDialog } from "./components/ManageMetadataDialog";
 import { BleedDialog } from "./components/BleedDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
@@ -481,6 +482,7 @@ function Shell({
   const [manageLogos, setManageLogos] = useState(false);
   const [manageCovers, setManageCovers] = useState(false);
   const [spotColors, setSpotColors] = useState(false);
+  const [manageMeta, setManageMeta] = useState(false);
   const [bleedOpen, setBleedOpen] = useState(false);
   // Opens by itself on a fresh install, then only from Help ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
@@ -547,6 +549,7 @@ function Shell({
     onOpenManageLogos: () => setManageLogos(true),
     onOpenManageCovers: () => setManageCovers(true),
     onOpenSpotColors: () => setSpotColors(true),
+    onOpenManageMetadata: () => setManageMeta(true),
     onOpenBleed: () => setBleedOpen(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
@@ -656,6 +659,7 @@ function Shell({
       <ManageLogosDialog open={manageLogos} onOpenChange={setManageLogos} />
       <ManageLogosDialog kind="cover" open={manageCovers} onOpenChange={setManageCovers} />
       <SpotColorDialog open={spotColors} onOpenChange={setSpotColors} />
+      {manageMeta && <ManageMetadataDialog open onOpenChange={setManageMeta} />}
       <BleedDialog
         open={bleedOpen}
         onOpenChange={setBleedOpen}

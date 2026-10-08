@@ -35,7 +35,14 @@ export function setIncludeKeysInBackup(v: boolean): void {
   else localStorage.removeItem(INCLUDE_KEYS_KEY);
 }
 // Plain per-workspace keys copied verbatim: format, custom size, bleed.
-const SETTING_KEYS = ["stickerstudio:format", "stickerstudio:customFormat", "stickerstudio:bleed"];
+const SETTING_KEYS = [
+  "stickerstudio:format",
+  "stickerstudio:customFormat",
+  "stickerstudio:bleed",
+  // Own metadata columns and which columns the table shows (src/metaColumns.ts).
+  "stickerstudio:metaColumns",
+  "stickerstudio:metaHidden",
+];
 const wsKey = (base: string) => `${base}${wsSuffix()}`;
 // A key belongs to this workspace when it carries its suffix — the
 // original workspace's keys carry none, so "--w" must be absent there.
