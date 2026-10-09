@@ -134,17 +134,18 @@ export const FORMATS: Record<FormatId, CardFormat> = {
     id: "cassette-jcard",
     category: "covers",
     name: "Cassette case (J-card)",
-    // front 64 + spine 12 + back 64 + tuck flap 14
-    trimMM: { w: 154, h: 101.6 },
+    // The standard J-card, as laid flat: tuck flap 25.4 (1") + spine 12.7
+    // (½") + front 65.087, 103.187 × 102 mm — the flap tucks in along the
+    // back of the case, the front faces out.
+    trimMM: { w: 103.187, h: 102 },
     bleedMM: 3,
     cornerRadiusMM: 0,
     thickRatio: 0.0008,
     hasBack: false,
     panels: [
-      { name: "Front", wMM: 64 },
-      { name: "Spine", wMM: 12 },
-      { name: "Back", wMM: 64 },
-      { name: "Flap", wMM: 14 },
+      { name: "Flap", wMM: 25.4 },
+      { name: "Spine", wMM: 12.7 },
+      { name: "Front", wMM: 65.087 },
     ],
     mockup: { kind: "case", color: "#c9ced6" },
   },
