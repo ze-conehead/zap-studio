@@ -32,7 +32,7 @@ export function AccentPanel({ masks, inherited }: { masks: Layer[]; inherited?: 
           : t("Parent (from the cover)");
 
   return (
-    <Panel title={project.isTemplate ? t("Accent preview color") : t("Accent color")}>
+    <Panel title={t("Accent color")}>
       <p className="text-xs text-muted-foreground">
         {project.isGlobalTemplate
           ? t("Color fields set to “A” paint each card's accent — the main color of its cover, or the color set here. Pick a color to fix it for every card that doesn't override it.")

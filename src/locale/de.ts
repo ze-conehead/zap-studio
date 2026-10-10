@@ -1265,7 +1265,6 @@ export const de: Record<string, string> = {
   "Accent color of each card, taken from its cover. Click for a fixed color instead.": "Akzentfarbe der jeweiligen Karte, aus ihrem Cover. Klicken für eine feste Farbe.",
   "Accent": "Akzent",
   "Accent color (from the card's cover)": "Akzentfarbe (aus dem Cover der Karte)",
-  "Accent preview color": "Akzent-Vorschaufarbe",
   "Accent color": "Akzentfarbe",
   "Default": "Standard",
   "Color fields set to “A” paint each card's accent — the main color of its cover, or the color set here. Pick a color to fix it for every card that doesn't override it.": "Farbfelder auf „A“ malen die Akzentfarbe jeder Karte – die Hauptfarbe ihres Covers oder die hier gesetzte Farbe. Wähle eine Farbe, um sie für alle Karten festzulegen, die sie nicht überschreiben.",
