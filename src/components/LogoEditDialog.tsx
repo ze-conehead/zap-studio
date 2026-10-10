@@ -13,11 +13,12 @@ import { useT } from "../i18n";
 import type { ImageLibrary, LocalLogo } from "../localLogos";
 import { floodFill, parseHexColor, toleranceFromPercent } from "../logoEdit";
 import { ColorField, SliderField } from "./inspector/fields";
+import { cn } from "@/lib/utils";
 
 type Tool = "erase" | "fill" | "rect";
 
 interface DragRect {
-  x0: number; // CSS px, relative to the canvas element
+  x0: number; // CSS px, relative to the canvas element — may lie outside it
   y0: number;
   x1: number;
   y1: number;
@@ -114,31 +115,36 @@ export function LogoEditDialog({
 
   // Rectangle: drag a box, erase exactly that area on release — no colour
   // matching, so it also clears a corner/edge blended into its surroundings
-  // that the wand can't isolate. Uses pointer capture so the drag keeps
-  // tracking (and clamps to the canvas) even once the cursor slips outside
-  // the canvas's box — which happens constantly when dragging near the
-  // transparent padding around a logo, right at the canvas's own edge.
+  // that the wand can't isolate. The drag works over the whole stage, the
+  // margin round the logo included, so a box can start outside the logo and
+  // enclose its edge; only the part over the picture is erased. Pointer
+  // capture keeps it tracking (clamped to the stage) when the cursor leaves.
   const MIN_DRAG_CSS_PX = 3;
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (tool !== "rect" || loading) return;
+  // A pointer position in CSS px relative to the canvas, kept inside the stage.
+  const toCanvas = (e: React.PointerEvent<HTMLDivElement>) => {
+    const stage = e.currentTarget.getBoundingClientRect();
+    const c = canvasRef.current!.getBoundingClientRect();
+    const cx = Math.min(Math.max(e.clientX, stage.left), stage.right);
+    const cy = Math.min(Math.max(e.clientY, stage.top), stage.bottom);
+    return { x: cx - c.left, y: cy - c.top };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (tool !== "rect" || loading || e.button !== 0 || !canvasRef.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-    const y = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
+    const { x, y } = toCanvas(e);
     dragStartRef.current = { x, y };
     setDrag({ x0: x, y0: y, x1: x, y1: y });
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-    const y = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
+    const { x, y } = toCanvas(e);
     setDrag({ x0: dragStartRef.current.x, y0: dragStartRef.current.y, x1: x, y1: y });
   };
 
-  const finishDrag = (e?: React.PointerEvent<HTMLCanvasElement>) => {
+  const finishDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
     if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
@@ -157,12 +163,13 @@ export function LogoEditDialog({
     }
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const cx0 = Math.round(Math.min(drag.x0, drag.x1) * scaleX);
-    const cy0 = Math.round(Math.min(drag.y0, drag.y1) * scaleY);
-    const cx1 = Math.round(Math.max(drag.x0, drag.x1) * scaleX);
-    const cy1 = Math.round(Math.max(drag.y0, drag.y1) * scaleY);
-    const w = Math.min(canvas.width, cx1) - cx0;
-    const h = Math.min(canvas.height, cy1) - cy0;
+    // Only the part of the box that lies over the picture.
+    const cx0 = Math.max(0, Math.round(Math.min(drag.x0, drag.x1) * scaleX));
+    const cy0 = Math.max(0, Math.round(Math.min(drag.y0, drag.y1) * scaleY));
+    const cx1 = Math.min(canvas.width, Math.round(Math.max(drag.x0, drag.x1) * scaleX));
+    const cy1 = Math.min(canvas.height, Math.round(Math.max(drag.y0, drag.y1) * scaleY));
+    const w = cx1 - cx0;
+    const h = cy1 - cy0;
     if (w <= 0 || h <= 0) return;
 
     const ctx = canvas.getContext("2d")!;
@@ -244,7 +251,16 @@ export function LogoEditDialog({
           />
         )}
 
-        <div className="canvas-checker relative flex min-h-[240px] items-center justify-center overflow-hidden rounded-md border">
+        <div
+          className={cn(
+            "canvas-checker relative flex min-h-[240px] touch-none items-center justify-center overflow-hidden rounded-md border p-8",
+            tool === "rect" && "cursor-crosshair select-none",
+          )}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+        >
           {loading && <Loader2 className="absolute size-5 animate-spin text-muted-foreground" />}
           <div
             className="relative w-full max-w-[360px]"
@@ -253,11 +269,11 @@ export function LogoEditDialog({
             <canvas
               ref={canvasRef}
               onClick={handleClick}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
-              className="block max-h-[45vh] w-full cursor-crosshair touch-none"
+              className={cn(
+                "block max-h-[45vh] w-full cursor-crosshair touch-none",
+                // Where the picture ends, so a box can be dragged past it.
+                tool === "rect" && "outline-dashed outline-1 outline-primary/50",
+              )}
               style={{ imageRendering: "pixelated" }}
             />
             {drag && (
