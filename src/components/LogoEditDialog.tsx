@@ -3,13 +3,16 @@
 // transparency or flood it with a solid colour, spreading across every
 // connected pixel within a colour tolerance) and a rectangle tool (drag a
 // box and erase exactly that area — no colour matching, for a corner or
-// edge the wand can't isolate on its own).
+// edge the wand can't isolate on its own). The picture can be zoomed
+// (wheel, slider or buttons; middle-drag or the scrollbars to move around),
+// and a frame always marks where it ends.
 
-import { Eraser, Loader2, PaintBucket, Square, Undo2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Eraser, Loader2, PaintBucket, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import { useT } from "../i18n";
 import type { ImageLibrary, LocalLogo } from "../localLogos";
 import { floodFill, parseHexColor, toleranceFromPercent } from "../logoEdit";
@@ -17,6 +20,9 @@ import { ColorField, SliderField } from "./inspector/fields";
 import { cn } from "@/lib/utils";
 
 type Tool = "erase" | "fill" | "rect";
+
+const ZOOM_MAX = 8;
+const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(1, z));
 
 interface DragRect {
   x0: number; // viewport px (clientX / clientY) — may lie anywhere in the dialog
@@ -47,12 +53,34 @@ export function LogoEditDialog({
   const [loading, setLoading] = useState(true);
   const [drag, setDrag] = useState<DragRect | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Zoom: the picture's width is baseW × zoom; the stage scrolls when it's bigger.
+  const [zoom, setZoom] = useState(1);
+  const [natural, setNatural] = useState({ w: 1, h: 1 });
+  // The stage is in the dialog's portal, which mounts a render later — so the
+  // element is kept in state too, for the effect that needs to see it.
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [stageEl, setStageEl] = useState<HTMLDivElement | null>(null);
+  const setStage = useCallback((el: HTMLDivElement | null) => {
+    stageRef.current = el;
+    setStageEl(el);
+  }, []);
+  // The picture point to keep under the cursor / centre after a zoom, as a
+  // fraction of the picture, and where in the stage's view it sits (px).
+  const anchorRef = useRef<{ fx: number; fy: number; vx: number; vy: number } | null>(null);
+  const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const STAGE_PAD = 32;
+  const stageH = Math.max(240, Math.round(window.innerHeight * 0.45));
+  const baseW = Math.max(
+    40,
+    Math.min(440, (stageH - 2 * STAGE_PAD) * (natural.w / natural.h)),
+  );
 
   useEffect(() => {
     if (!open) return;
     setDirty(false);
     setHistory([]);
     setDrag(null);
+    setZoom(1);
     setLoading(true);
     let alive = true;
     void lib.url(logo.id).then((url) => {
@@ -67,6 +95,7 @@ export function LogoEditDialog({
         const ctx = canvas.getContext("2d")!;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
+        setNatural({ w: canvas.width, h: canvas.height });
         setLoading(false);
       };
       img.src = url;
@@ -75,6 +104,58 @@ export function LogoEditDialog({
       alive = false;
     };
   }, [open, logo.id, lib]);
+
+  // Zoom to `next`, keeping the picture point at stage-view (vx, vy) put.
+  const zoomTo = (next: number, vx?: number, vy?: number) => {
+    const stage = stageRef.current;
+    const canvas = canvasRef.current;
+    const z = clampZoom(next);
+    if (!stage || !canvas || z === zoom) return;
+    const sr = stage.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    const x = vx ?? sr.width / 2;
+    const y = vy ?? sr.height / 2;
+    const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+    anchorRef.current = {
+      fx: clamp01((sr.left + x - cr.left) / cr.width),
+      fy: clamp01((sr.top + y - cr.top) / cr.height),
+      vx: x,
+      vy: y,
+    };
+    setZoom(z);
+  };
+
+  // After the new size is laid out, scroll so the anchor stays under its spot.
+  useLayoutEffect(() => {
+    const a = anchorRef.current;
+    anchorRef.current = null;
+    const stage = stageRef.current;
+    const canvas = canvasRef.current;
+    if (!a || !stage || !canvas) return;
+    const sr = stage.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    // Where the canvas's top-left sits inside the scrollable content.
+    const contentLeft = cr.left - sr.left + stage.scrollLeft;
+    const contentTop = cr.top - sr.top + stage.scrollTop;
+    stage.scrollLeft = contentLeft + a.fx * cr.width - a.vx;
+    stage.scrollTop = contentTop + a.fy * cr.height - a.vy;
+  }, [zoom]);
+
+  // The wheel zooms (a native, non-passive listener so the page doesn't
+  // scroll); re-attached with each zoom so it always sees the current one.
+  useEffect(() => {
+    const stage = stageEl;
+    if (!open || !stage) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const sr = stage.getBoundingClientRect();
+      zoomTo(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - sr.left, e.clientY - sr.top);
+    };
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", onWheel);
+    // zoomTo is rebuilt each render and only reads `zoom`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, zoom, stageEl]);
 
   const undo = () => {
     const canvas = canvasRef.current;
@@ -135,6 +216,18 @@ export function LogoEditDialog({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Middle button over the stage: move the zoomed picture around.
+    if (e.button === 1 && stageRef.current?.contains(e.target as Node)) {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      panRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        left: stageRef.current.scrollLeft,
+        top: stageRef.current.scrollTop,
+      };
+      return;
+    }
     if (tool !== "rect" || loading || e.button !== 0 || !canvasRef.current) return;
     // Controls keep working as usual.
     if ((e.target as HTMLElement).closest("button, input, textarea, select, [role=slider], [role=combobox], label")) return;
@@ -145,6 +238,12 @@ export function LogoEditDialog({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const pan = panRef.current;
+    if (pan && stageRef.current) {
+      stageRef.current.scrollLeft = pan.left - (e.clientX - pan.x);
+      stageRef.current.scrollTop = pan.top - (e.clientY - pan.y);
+      return;
+    }
     if (!dragStartRef.current) return;
     const { x, y } = point(e);
     setDrag({ x0: dragStartRef.current.x, y0: dragStartRef.current.y, x1: x, y1: y });
@@ -153,6 +252,10 @@ export function LogoEditDialog({
   const finishDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
     if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    if (panRef.current) {
+      panRef.current = null;
+      return;
     }
     const canvas = canvasRef.current;
     const start = dragStartRef.current;
@@ -261,21 +364,67 @@ export function LogoEditDialog({
           />
         )}
 
-        <div className="canvas-checker relative flex min-h-[240px] touch-none items-center justify-center overflow-hidden rounded-md border p-8">
-          {loading && <Loader2 className="absolute size-5 animate-spin text-muted-foreground" />}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7 shrink-0"
+            title={t("Zoom out")}
+            disabled={zoom <= 1}
+            onClick={() => zoomTo(zoom / 1.5)}
+          >
+            <ZoomOut />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <Slider
+              min={1}
+              max={ZOOM_MAX}
+              step={0.05}
+              value={[zoom]}
+              onValueChange={([v]) => zoomTo(v)}
+              aria-label={t("Zoom")}
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7 shrink-0"
+            title={t("Zoom in")}
+            disabled={zoom >= ZOOM_MAX}
+            onClick={() => zoomTo(zoom * 1.5)}
+          >
+            <ZoomIn />
+          </Button>
+          <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+            {Math.round(zoom * 100)}%
+          </span>
+          <Button variant="ghost" size="sm" className="h-7 px-2" disabled={zoom === 1} onClick={() => zoomTo(1)}>
+            {t("Fit")}
+          </Button>
+        </div>
+
+        <div
+          ref={setStage}
+          className="canvas-checker relative overflow-auto rounded-md border"
+          style={{ height: stageH }}
+          title={t("Scroll to zoom, middle-drag or the scrollbars to move around")}
+        >
+          {loading && <Loader2 className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
+          {/* m-auto centres the picture while it fits and still lets it scroll once it doesn't */}
           <div
-            className="relative w-full max-w-[360px]"
-            style={{ visibility: loading ? "hidden" : "visible" }}
+            className="m-auto w-max"
+            style={{ padding: STAGE_PAD, visibility: loading ? "hidden" : "visible", minHeight: "100%", display: "grid", placeItems: "center" }}
           >
             <canvas
               ref={canvasRef}
               onClick={handleClick}
-              className={cn(
-                "block max-h-[45vh] w-full cursor-crosshair touch-none",
-                // Where the picture ends, so a box can be dragged past it.
-                tool === "rect" && "outline-dashed outline-1 outline-primary/50",
-              )}
-              style={{ imageRendering: "pixelated" }}
+              className="block cursor-crosshair touch-none outline outline-2 outline-primary/70"
+              style={{
+                imageRendering: "pixelated",
+                width: baseW * zoom,
+                height: (baseW * zoom * natural.h) / natural.w,
+                maxWidth: "none",
+              }}
             />
           </div>
         </div>
