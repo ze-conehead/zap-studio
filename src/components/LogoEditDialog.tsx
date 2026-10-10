@@ -7,6 +7,7 @@
 
 import { Eraser, Loader2, PaintBucket, Square, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useT } from "../i18n";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 type Tool = "erase" | "fill" | "rect";
 
 interface DragRect {
-  x0: number; // CSS px, relative to the canvas element — may lie outside it
+  x0: number; // viewport px (clientX / clientY) — may lie anywhere in the dialog
   y0: number;
   x1: number;
   y1: number;
@@ -115,32 +116,37 @@ export function LogoEditDialog({
 
   // Rectangle: drag a box, erase exactly that area on release — no colour
   // matching, so it also clears a corner/edge blended into its surroundings
-  // that the wand can't isolate. The drag works over the whole stage, the
-  // margin round the logo included, so a box can start outside the logo and
-  // enclose its edge; only the part over the picture is erased. Pointer
-  // capture keeps it tracking (clamped to the stage) when the cursor leaves.
-  const MIN_DRAG_CSS_PX = 3;
+  // that the wand can't isolate. The whole dialog is the drag surface, not
+  // just the picture or its margin: a box can start anywhere (outside the
+  // logo, past its edge) and only the part over the picture is erased.
+  // Pointer capture keeps it tracking, clamped to the dialog, when the cursor
+  // leaves it.
+  const MIN_DRAG_PX = 3;
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  // A pointer position in CSS px relative to the canvas, kept inside the stage.
-  const toCanvas = (e: React.PointerEvent<HTMLDivElement>) => {
-    const stage = e.currentTarget.getBoundingClientRect();
-    const c = canvasRef.current!.getBoundingClientRect();
-    const cx = Math.min(Math.max(e.clientX, stage.left), stage.right);
-    const cy = Math.min(Math.max(e.clientY, stage.top), stage.bottom);
-    return { x: cx - c.left, y: cy - c.top };
+  const point = (e: React.PointerEvent<HTMLElement>) => {
+    const r = contentRef.current?.getBoundingClientRect();
+    return r
+      ? {
+          x: Math.min(Math.max(e.clientX, r.left), r.right),
+          y: Math.min(Math.max(e.clientY, r.top), r.bottom),
+        }
+      : { x: e.clientX, y: e.clientY };
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (tool !== "rect" || loading || e.button !== 0 || !canvasRef.current) return;
+    // Controls keep working as usual.
+    if ((e.target as HTMLElement).closest("button, input, textarea, select, [role=slider], [role=combobox], label")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const { x, y } = toCanvas(e);
+    const { x, y } = point(e);
     dragStartRef.current = { x, y };
     setDrag({ x0: x, y0: y, x1: x, y1: y });
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current) return;
-    const { x, y } = toCanvas(e);
+    const { x, y } = point(e);
     setDrag({ x0: dragStartRef.current.x, y0: dragStartRef.current.y, x1: x, y1: y });
   };
 
@@ -151,23 +157,20 @@ export function LogoEditDialog({
     const canvas = canvasRef.current;
     const start = dragStartRef.current;
     dragStartRef.current = null;
-    if (!canvas || !start || !drag) {
-      setDrag(null);
-      return;
-    }
     setDrag(null);
+    if (!canvas || !start || !drag) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
-    if (Math.abs(drag.x1 - drag.x0) < MIN_DRAG_CSS_PX || Math.abs(drag.y1 - drag.y0) < MIN_DRAG_CSS_PX) {
+    if (Math.abs(drag.x1 - drag.x0) < MIN_DRAG_PX || Math.abs(drag.y1 - drag.y0) < MIN_DRAG_PX) {
       return; // a stray click/tiny nudge, not a real box
     }
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     // Only the part of the box that lies over the picture.
-    const cx0 = Math.max(0, Math.round(Math.min(drag.x0, drag.x1) * scaleX));
-    const cy0 = Math.max(0, Math.round(Math.min(drag.y0, drag.y1) * scaleY));
-    const cx1 = Math.min(canvas.width, Math.round(Math.max(drag.x0, drag.x1) * scaleX));
-    const cy1 = Math.min(canvas.height, Math.round(Math.max(drag.y0, drag.y1) * scaleY));
+    const cx0 = Math.max(0, Math.round((Math.min(drag.x0, drag.x1) - rect.left) * scaleX));
+    const cy0 = Math.max(0, Math.round((Math.min(drag.y0, drag.y1) - rect.top) * scaleY));
+    const cx1 = Math.min(canvas.width, Math.round((Math.max(drag.x0, drag.x1) - rect.left) * scaleX));
+    const cy1 = Math.min(canvas.height, Math.round((Math.max(drag.y0, drag.y1) - rect.top) * scaleY));
     const w = cx1 - cx0;
     const h = cy1 - cy0;
     if (w <= 0 || h <= 0) return;
@@ -198,7 +201,14 @@ export function LogoEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !saving && onOpenChange(o)}>
-      <DialogContent className="flex max-w-xl flex-col gap-3">
+      <DialogContent
+        ref={contentRef}
+        className={cn("flex max-w-xl flex-col gap-3", tool === "rect" && "cursor-crosshair select-none")}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+      >
         <DialogHeader>
           <DialogTitle className="truncate">{t("Edit “{name}”", { name: logo.name })}</DialogTitle>
         </DialogHeader>
@@ -251,16 +261,7 @@ export function LogoEditDialog({
           />
         )}
 
-        <div
-          className={cn(
-            "canvas-checker relative flex min-h-[240px] touch-none items-center justify-center overflow-hidden rounded-md border p-8",
-            tool === "rect" && "cursor-crosshair select-none",
-          )}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={finishDrag}
-          onPointerCancel={finishDrag}
-        >
+        <div className="canvas-checker relative flex min-h-[240px] touch-none items-center justify-center overflow-hidden rounded-md border p-8">
           {loading && <Loader2 className="absolute size-5 animate-spin text-muted-foreground" />}
           <div
             className="relative w-full max-w-[360px]"
@@ -276,19 +277,23 @@ export function LogoEditDialog({
               )}
               style={{ imageRendering: "pixelated" }}
             />
-            {drag && (
-              <div
-                className="pointer-events-none absolute border-2 border-primary bg-primary/20"
-                style={{
-                  left: Math.min(drag.x0, drag.x1),
-                  top: Math.min(drag.y0, drag.y1),
-                  width: Math.abs(drag.x1 - drag.x0),
-                  height: Math.abs(drag.y1 - drag.y0),
-                }}
-              />
-            )}
           </div>
         </div>
+        {drag &&
+          // Portalled to <body>: the dialog is transformed, which would make
+          // `fixed` relative to it instead of the viewport.
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[60] border-2 border-primary bg-primary/20"
+              style={{
+                left: Math.min(drag.x0, drag.x1),
+                top: Math.min(drag.y0, drag.y1),
+                width: Math.abs(drag.x1 - drag.x0),
+                height: Math.abs(drag.y1 - drag.y0),
+              }}
+            />,
+            document.body,
+          )}
 
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" disabled={history.length === 0} onClick={undo}>
