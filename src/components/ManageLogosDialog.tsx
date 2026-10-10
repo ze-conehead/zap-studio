@@ -25,7 +25,9 @@ import {
   type LibraryKind,
   type LocalLogo,
 } from "../localLogos";
-import { usedLogoIds } from "../logoUsage";
+import { libraryUsage } from "../logoUsage";
+import { saveProject } from "../persist";
+import { useStore } from "../store";
 import { askConfirm } from "./ConfirmDialog";
 import { LogoEditDialog } from "./LogoEditDialog";
 
@@ -56,10 +58,10 @@ export function ManageLogosDialog({
   const [over, setOver] = useState(false);
   const [, bump] = useState(0);
   const [editing, setEditing] = useState<LocalLogo | null>(null);
-  // Logos an enabled repeating-image pattern currently points at, anywhere
-  // in the library — floated to the top so the ones actually in use are
-  // easy to find again. Logo-only: nothing references a cover by id.
-  const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
+  // How many saved designs use each entry (src/logoUsage.ts) — those get
+  // their own "In use" section at the top. null while it's being worked out.
+  const [usage, setUsage] = useState<Map<string, number> | null>(null);
+  const { state } = useStore();
 
   useEffect(() => {
     if (open) {
@@ -67,25 +69,49 @@ export function ManageLogosDialog({
       setError("");
       setNote("");
     }
-    if (open && !covers) {
-      void usedLogoIds().then(setUsedIds);
-    } else {
-      setUsedIds(new Set());
-    }
-  }, [open, lib, covers]);
+  }, [open, lib]);
+
+  // Re-checked whenever the library changes (an edit can change a file).
+  const libVersion = lib.version();
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    setUsage(null);
+    // The open design counts too, unsaved edits included — flush it first.
+    (async () => {
+      if (state.dirty) await saveProject(state.project);
+      return libraryUsage(lib);
+    })()
+      .then((u) => alive && setUsage(u))
+      .catch(() => alive && setUsage(new Map()));
+    return () => {
+      alive = false;
+    };
+    // state is read once per opening, not tracked — every edit would re-scan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, lib, libVersion]);
 
   const q = normalizeTitle(filter);
   const shown = useMemo(() => {
     const all = q
       ? logos.filter((l) => normalizeTitle(`${l.path} ${l.name}`).includes(q))
       : logos;
-    // Stable sort: used logos first, original order preserved within each
-    // group — a plain filter/slice would otherwise be arbitrary about it.
-    const sorted = usedIds.size
-      ? [...all].sort((a, b) => Number(usedIds.has(b.id)) - Number(usedIds.has(a.id)))
-      : all;
-    return { list: sorted.slice(0, SHOWN), total: sorted.length };
-  }, [logos, q, usedIds]);
+    const used = usage ? all.filter((l) => usage.has(l.id)) : [];
+    const rest = usage ? all.filter((l) => !usage.has(l.id)) : all;
+    return { used, list: rest.slice(0, SHOWN), restTotal: rest.length, total: all.length };
+  }, [logos, q, usage]);
+
+  const tile = (l: LocalLogo) => (
+    <LogoTile
+      key={l.id}
+      logo={l}
+      lib={lib}
+      uses={usage?.get(l.id)}
+      backdrop={covers ? undefined : backdrop}
+      onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))}
+      onEdit={() => setEditing(l)}
+    />
+  );
 
   const ingest = async (inputs: AddedLogo[]) => {
     if (!inputs.length) return;
@@ -240,22 +266,40 @@ export function ManageLogosDialog({
             <p className="p-4 text-center text-xs text-muted-foreground">{t("Nothing matches.")}</p>
           ) : (
             <>
-              <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
-                {shown.list.map((l) => (
-                  <LogoTile
-                    key={l.id}
-                    logo={l}
-                    lib={lib}
-                    used={usedIds.has(l.id)}
-                    backdrop={covers ? undefined : backdrop}
-                    onRemove={() => void lib.remove(l.id).then(() => bump((n) => n + 1))}
-                    onEdit={() => setEditing(l)}
-                  />
-                ))}
-              </ul>
-              {shown.total > SHOWN && (
+              <section className="mb-3 rounded-md border border-primary/40 bg-primary/5 p-2">
+                <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Sparkles className="size-3.5 text-primary" />
+                  {t("In use")}
+                  {usage ? (
+                    <span className="font-normal normal-case tracking-normal">({shown.used.length})</span>
+                  ) : (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  )}
+                </h3>
+                {!usage ? (
+                  <p className="text-xs text-muted-foreground">{t("Checking your designs …")}</p>
+                ) : shown.used.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {q
+                      ? t("Nothing in use matches.")
+                      : covers
+                        ? t("None of these covers is on a saved card or template yet.")
+                        : t("None of these logos is on a saved card or template yet.")}
+                  </p>
+                ) : (
+                  <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">{shown.used.map(tile)}</ul>
+                )}
+              </section>
+              {usage && shown.used.length > 0 && (
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {covers ? t("All other covers") : t("All other logos")}{" "}
+                  <span className="font-normal normal-case tracking-normal">({shown.restTotal})</span>
+                </h3>
+              )}
+              <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">{shown.list.map(tile)}</ul>
+              {shown.restTotal > SHOWN && (
                 <p className="pt-2 text-center text-[11px] text-muted-foreground">
-                  {t("{n} more — narrow it down with the filter.", { n: shown.total - SHOWN })}
+                  {t("{n} more — narrow it down with the filter.", { n: shown.restTotal - SHOWN })}
                 </p>
               )}
             </>
@@ -293,14 +337,14 @@ export function ManageLogosDialog({
 function LogoTile({
   logo,
   lib,
-  used,
+  uses,
   backdrop,
   onRemove,
   onEdit,
 }: {
   logo: LocalLogo;
   lib: ImageLibrary;
-  used?: boolean;
+  uses?: number; // how many saved designs use it
   // The card background to preview on (logos only; undefined for covers).
   backdrop?: string | null;
   onRemove: () => void;
@@ -319,16 +363,16 @@ function LogoTile({
     <li
       className={cn(
         "group relative flex flex-col gap-1 rounded-md border p-1.5",
-        used && "border-primary/60",
+        !!uses && "border-primary/60",
       )}
       title={logo.path ? `${logo.path}/${logo.name}` : logo.name}
     >
-      {used && (
+      {!!uses && (
         <span
-          className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-primary/90 px-1 py-0.5 text-[10px] leading-none text-primary-foreground"
-          title={t("Used by a repeating image pattern")}
+          className="absolute left-1 top-1 z-10 flex items-center gap-0.5 rounded bg-primary/90 px-1 py-0.5 text-[10px] leading-none text-primary-foreground"
+          title={uses === 1 ? t("Used in 1 saved design") : t("Used in {n} saved designs", { n: uses })}
         >
-          <Sparkles className="size-2.5" /> {t("In use")}
+          <Sparkles className="size-2.5" /> {uses}×
         </span>
       )}
       {backdrop === undefined && lib !== localLogos ? (

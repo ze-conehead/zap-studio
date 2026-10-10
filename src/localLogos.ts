@@ -130,6 +130,8 @@ export interface ImageLibrary {
   list: () => LocalLogo[];
   ensureLoaded: () => Promise<void>;
   url: (id: string) => Promise<string | undefined>;
+  /** The stored file itself. */
+  blob: (id: string) => Promise<Blob | undefined>;
   add: (inputs: AddedLogo[], onProgress?: (done: number, total: number) => void) => Promise<AddReport>;
   /** Overwrites one entry's image in place — same id, same name/path, so
    * every reference to it (a repeating pattern's logoId, say) still points
@@ -339,7 +341,9 @@ function createLibrary(kind: LibraryKind): ImageLibrary {
     return out;
   }
 
-  return { kind, subscribe, version: getVersion, list, ensureLoaded, url: urlOf, add, replace, remove, removeAll, search };
+  const blobOf = async (id: string) => (await get(BLOB_KEY(id))) as Blob | undefined;
+
+  return { kind, subscribe, version: getVersion, list, ensureLoaded, url: urlOf, blob: blobOf, add, replace, remove, removeAll, search };
 }
 
 export const localLogos = createLibrary("logo");
