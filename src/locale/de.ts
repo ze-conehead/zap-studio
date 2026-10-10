@@ -142,6 +142,7 @@ export const de: Record<string, string> = {
   "Brush": "Pinsel",
   "Brush size {n} px": "Pinselgröße {n} px",
   "Paint over the parts to erase them. Set the brush size below; zoom in for fine work.": "Male über die Teile, um sie wegzuradieren. Die Pinselgröße stellst du darunter ein; für Feinarbeit zoom hinein.",
+  "Assets": "Assets",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -338,8 +339,8 @@ export const de: Record<string, string> = {
   "This short tour walks through the app once, in the order things build on each other. You can skip it and reopen it any time from Help ▸ Walkthrough.":
     "Dieser kurze Rundgang zeigt die App einmal der Reihe nach – so, wie die Schritte aufeinander aufbauen. Du kannst ihn überspringen und jederzeit unter Hilfe ▸ Rundgang wieder öffnen.",
   "1. Enter your API keys": "1. API-Schlüssel eintragen",
-  "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ API keys …":
-    "Die Cover-Suche läuft über einen kostenlosen API-Schlüssel: SteamGridDB oder IGDB für Spiele, TMDB für Filme. Ohne Schlüssel bleibt nur libretro-thumbnails – und das deckt nur Retro-Konsolen ab. Einstellungen ▸ API-Schlüssel …",
+  "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ System ▸ API keys …":
+    "Die Cover-Suche läuft über einen kostenlosen API-Schlüssel: SteamGridDB oder IGDB für Spiele, TMDB für Filme. Ohne Schlüssel bleibt nur libretro-thumbnails – und das deckt nur Retro-Konsolen ab. Einstellungen ▸ System ▸ API-Schlüssel …",
   "Open API keys …": "API-Schlüssel öffnen …",
   "2. Create a project": "2. Projekt anlegen",
   "A project is a library of its own — its own consoles, cards and templates, shared with nothing else. When you create one you choose games or movies, and the format: credit card, cassette label, DVD wrap, or your own size in mm. File ▸ New project …":
@@ -399,8 +400,8 @@ export const de: Record<string, string> = {
   "Fetch from TMDB": "Aus TMDB übernehmen",
   "Fetch from IGDB": "Aus IGDB übernehmen",
   "Found it, but it carries no usable details.": "Gefunden, aber ohne verwertbare Angaben.",
-  "No TMDB API key yet — Settings ▸ API keys …": "Noch kein TMDB-API-Schlüssel – Einstellungen ▸ API-Schlüssel …",
-  "No IGDB credentials yet — Settings ▸ API keys …": "Noch keine IGDB-Zugangsdaten – Einstellungen ▸ API-Schlüssel …",
+  "No TMDB API key yet — Settings ▸ System ▸ API keys …": "Noch kein TMDB-API-Schlüssel – Einstellungen ▸ System ▸ API-Schlüssel …",
+  "No IGDB credentials yet — Settings ▸ System ▸ API keys …": "Noch keine IGDB-Zugangsdaten – Einstellungen ▸ System ▸ API-Schlüssel …",
   "Nothing found for “{title}”.": "Nichts gefunden für „{title}“.",
   "Fetch metadata for all games": "Metadaten für alle Spiele holen",
   "Fetch metadata for all movies": "Metadaten für alle Filme holen",
@@ -808,8 +809,8 @@ export const de: Record<string, string> = {
   "Stroke color": "Konturfarbe",
 
   // ── custom fonts ─────────────────────────────────────────────────────────
-  "Custom fonts …": "Eigene Schriftarten …",
-  "Custom fonts": "Eigene Schriftarten",
+  "Manage fonts …": "Schriftarten verwalten …",
+  "Manage fonts": "Schriftarten verwalten",
   "Uploaded": "Hochgeladen",
   "Upload font …": "Schriftart hochladen …",
   "Upload a font file (.ttf, .otf, .woff, .woff2)":
@@ -936,13 +937,13 @@ export const de: Record<string, string> = {
   "Spacing {n} px": "Abstand {n} px",
   "Rotation {n}°": "Rotation {n}°",
   "Stagger {n}%": "Versatz {n}%",
-  "No logos yet — add some in Settings ▸ Manage logos …":
-    "Noch keine Logos – füge welche unter Einstellungen ▸ Logos verwalten … hinzu.",
+  "No logos yet — add some in Settings ▸ Assets ▸ Manage logos …":
+    "Noch keine Logos – füge welche unter Einstellungen ▸ Assets ▸ Logos verwalten … hinzu.",
   "Pick a logo …": "Logo auswählen …",
   "Pick a logo": "Logo auswählen",
   "Search logos …": "Logos durchsuchen …",
-  "No covers yet — add some in Settings ▸ Manage covers …":
-    "Noch keine Cover – füge welche unter Einstellungen ▸ Cover verwalten … hinzu.",
+  "No covers yet — add some in Settings ▸ Assets ▸ Manage covers …":
+    "Noch keine Cover – füge welche unter Einstellungen ▸ Assets ▸ Cover verwalten … hinzu.",
   "Pick a cover": "Cover auswählen",
   "Search covers …": "Cover durchsuchen …",
   "Add logo …": "Logo hinzufügen …",

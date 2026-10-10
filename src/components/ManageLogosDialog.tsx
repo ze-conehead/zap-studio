@@ -1,4 +1,4 @@
-// Settings ▸ Manage logos / covers: the user's own image libraries. Drop
+// Settings ▸ Assets ▸ Manage logos / covers: the user's own image libraries. Drop
 // image files, whole folders or a .zip (nested folders are fine) — they're
 // kept in the browser's IndexedDB and, with "Logo source: Local" / "Cover
 // source: Local", found by file name when a console asks for its logo or a

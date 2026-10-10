@@ -50,7 +50,7 @@ export function CustomFontsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80vh] max-w-md flex-col gap-4">
         <DialogHeader>
-          <DialogTitle>{t("Custom fonts")}</DialogTitle>
+          <DialogTitle>{t("Manage fonts")}</DialogTitle>
         </DialogHeader>
 
         <p className="text-xs text-muted-foreground">

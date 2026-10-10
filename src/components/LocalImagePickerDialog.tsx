@@ -85,18 +85,18 @@ export function LocalImagePickerDialog({
           {all.length === 0 ? (
             <p className="py-6 text-sm text-muted-foreground">
               {isCover
-                ? t("No covers yet — add some in Settings ▸ Manage covers …")
-                : t("No logos yet — add some in Settings ▸ Manage logos …")}
+                ? t("No covers yet — add some in Settings ▸ Assets ▸ Manage covers …")
+                : t("No logos yet — add some in Settings ▸ Assets ▸ Manage logos …")}
             </p>
           ) : filtered.length === 0 ? (
             <p className="py-6 text-sm text-muted-foreground">
               {isCover
                 ? t(
-                    "None of your covers matches “{title}”. Try another search term, or add files under Settings ▸ Manage covers …",
+                    "None of your covers matches “{title}”. Try another search term, or add files under Settings ▸ Assets ▸ Manage covers …",
                     { title: query },
                   )
                 : t(
-                    "None of your logos matches “{title}”. Try another search term, or add files under Settings ▸ Manage logos …",
+                    "None of your logos matches “{title}”. Try another search term, or add files under Settings ▸ Assets ▸ Manage logos …",
                     { title: query },
                   )}
             </p>

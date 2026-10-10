@@ -96,7 +96,7 @@ export function WalkthroughDialog({
       icon: KeyRound,
       title: t("1. Enter your API keys"),
       body: t(
-        "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ API keys …",
+        "Cover search runs on a free API key: SteamGridDB or IGDB for games, TMDB for movies. Without one, only the keyless libretro-thumbnails fallback works, and that only covers retro consoles. Settings ▸ System ▸ API keys …",
       ),
       actionLabel: t("Open API keys …"),
       action: () => jump(targets.onOpenApiKeys),

@@ -1,6 +1,6 @@
 // Which entries of a local image library (src/localLogos.ts) the saved
 // designs actually use — every console/global template and every saved card.
-// Shown in their own "In use" section at the top of Settings ▸ Manage logos /
+// Shown in their own "In use" section at the top of Settings ▸ Assets ▸ Manage logos /
 // covers.
 //
 // Two ways a design uses one: a repeating-image pattern (src/repeatingPattern.ts)

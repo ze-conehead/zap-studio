@@ -89,7 +89,7 @@ function certification(m: TmdbMovie, country: string): string | undefined {
 
 export async function fetchMovieMeta(title: string): Promise<MetaPatch> {
   if (!isConfigured("tmdb")) {
-    throw new Error(t("No TMDB API key yet — Settings ▸ API keys …"));
+    throw new Error(t("No TMDB API key yet — Settings ▸ System ▸ API keys …"));
   }
   const lang = getLang() === "de" ? "de-DE" : "en-US";
   const q = encodeURIComponent(title.trim());
@@ -242,7 +242,7 @@ function website(g: IgdbGameFull): string | undefined {
 
 export async function fetchGameMeta(title: string, consoleName?: string): Promise<MetaPatch> {
   if (!isConfigured("igdb")) {
-    throw new Error(t("No IGDB credentials yet — Settings ▸ API keys …"));
+    throw new Error(t("No IGDB credentials yet — Settings ▸ System ▸ API keys …"));
   }
   const escaped = title.trim().replace(/"/g, '\\"');
   const hits = await igdbFetch<IgdbGameFull[]>(

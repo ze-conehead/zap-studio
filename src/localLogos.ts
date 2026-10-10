@@ -1,4 +1,4 @@
-// The user's own image libraries — "Settings ▸ Manage logos / covers …".
+// The user's own image libraries — "Settings ▸ Assets ▸ Manage logos / covers …".
 // Files dropped in one by one, as whole folders, or as a .zip (nested
 // folders welcome) land in IndexedDB as Blobs; with "Logo source: Local" /
 // "Cover source: Local" the searches look them up by file name instead of

@@ -214,7 +214,7 @@ export function CoverSearchDialog({
 
         {localLogos ? (
           <p className="rounded-md border bg-muted/40 p-2.5 text-xs text-muted-foreground">
-            {t("Searching your own logos (Settings ▸ Manage logos …). Switch “Logo source” to SteamGridDB to search online.")}
+            {t("Searching your own logos (Settings ▸ Assets ▸ Manage logos …). Switch “Logo source” to SteamGridDB to search online.")}
           </p>
         ) : (
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2.5 text-xs">
@@ -238,7 +238,7 @@ export function CoverSearchDialog({
 
           {localCovers ? (
             <span className="text-muted-foreground">
-              {t("Searching your own covers by file name (Settings ▸ Manage covers …).")}
+              {t("Searching your own covers by file name (Settings ▸ Assets ▸ Manage covers …).")}
             </span>
           ) : configured && !editing ? (
             <div className="flex items-center justify-between gap-2">

@@ -718,7 +718,7 @@ export function RepeatingPatternControls({
         <>
           {logos.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              {t("No logos yet — add some in Settings ▸ Manage logos …")}
+              {t("No logos yet — add some in Settings ▸ Assets ▸ Manage logos …")}
             </p>
           ) : (
             <Field label={t("Logo")}>

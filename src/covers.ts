@@ -28,7 +28,7 @@ export interface CoverCandidate {
 // screenshots from it instead of box art — see searchCovers(). "tmdb" is The
 // Movie Database — movie posters, used instead of sgdb/igdb/libretro when
 // the active workspace is a movies one (none of the other three index films).
-// "local" is the user's own cover library (Settings ▸ Manage covers …).
+// "local" is the user's own cover library (Settings ▸ Assets ▸ Manage covers …).
 export type CoverSource = "sgdb" | "igdb" | "igdb-shots" | "libretro" | "tmdb" | "local";
 
 export function coverSourceLabel(s: CoverSource): string {
@@ -131,7 +131,7 @@ export function coverSourcesFor(kind: "games" | "movies"): CoverSource[] {
 export const setCoverSource = (s: CoverSource) => ls.set(SOURCE_KEY, s);
 
 // Where "Find logo(s)" looks: SteamGridDB's logo set, or the user's own
-// files from Settings ▸ Manage logos (src/localLogos.ts).
+// files from Settings ▸ Assets ▸ Manage logos (src/localLogos.ts).
 export type LogoSource = "sgdb" | "local";
 export const LOGO_SOURCES: readonly LogoSource[] = ["sgdb", "local"];
 export function getLogoSource(): LogoSource {

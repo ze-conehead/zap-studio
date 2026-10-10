@@ -396,6 +396,7 @@ export function MenuBar({
       </Menu>
 
       <Menu id="settings" open={open} setOpen={setOpen} label={t("Settings")}>
+        <Sub label={t("System")}>
         <Sub label={t("Theme")} value={t(theme.name)}>
           <Toggle checked={getThemeAuto()} onSelect={() => setThemeAuto(!getThemeAuto())}>
             {t("Follow system light / dark")}
@@ -481,19 +482,26 @@ export function MenuBar({
           ))}
         </Sub>
 
+
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onOpenApiKeys}>
+            {t("API keys …")}
+          </DropdownMenuItem>
+        </Sub>
+
+        <Sub label={t("Assets")}>
+          <DropdownMenuItem onClick={onOpenCustomFonts}>
+            {t("Manage fonts …")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onOpenManageLogos}>
+            {t("Manage logos …")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onOpenManageCovers}>
+            {t("Manage covers …")}
+          </DropdownMenuItem>
+        </Sub>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onOpenApiKeys}>
-          {t("API keys …")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenCustomFonts}>
-          {t("Custom fonts …")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenManageLogos}>
-          {t("Manage logos …")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onOpenManageCovers}>
-          {t("Manage covers …")}
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenManageMetadata}>
           {t("Manage metadata …")}
         </DropdownMenuItem>
