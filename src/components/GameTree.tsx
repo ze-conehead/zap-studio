@@ -43,7 +43,7 @@ import {
   subscribeCatalog,
 } from "../data/catalog";
 import { fitImageToMask, makeImageLayer } from "../factory";
-import { renameGameMeta } from "../gamelist";
+import { clearGamelist, importGamelistXml, loadGamelist, renameGameMeta } from "../gamelist";
 import { urlToLayerSource } from "../image";
 import {
   insertCover,
@@ -236,6 +236,41 @@ export function GameTree({
   // A console has no cover of its own: its menu sweeps the covers of its
   // games, and — once "All consoles" has a logo slot — finds the console's
   // logo.
+  // gamelist.xml (EmulationStation format) for one console: its entries are
+  // matched by title and shown in each card's Metadata tab.
+  const gamelistFile = useRef<HTMLInputElement>(null);
+  const gamelistFor = useRef<{ consoleId: string; consoleName: string } | null>(null);
+  const reportGamelist = (row: { consoleName: string }, n: number) =>
+    alert(t("{n} game(s) loaded for {name}.", { n, name: row.consoleName }));
+  const uploadGamelist = async (file: File) => {
+    const row = gamelistFor.current;
+    gamelistFor.current = null;
+    if (!row) return;
+    try {
+      reportGamelist(row, importGamelistXml(row.consoleId, await file.text()));
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+  const loadExampleGamelist = async (row: { consoleId: string; consoleName: string }) => {
+    try {
+      const res = await fetch(`/gamelists/${row.consoleId}.xml`);
+      if (!res.ok) throw new Error(t("No example available for this console."));
+      reportGamelist(row, importGamelistXml(row.consoleId, await res.text()));
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+  const removeGamelist = async (row: { consoleId: string; consoleName: string }) => {
+    const ok = await askConfirm({
+      title: t("Remove the gamelist of {name}?", { name: row.consoleName }),
+      body: t("The metadata of its {n} game(s) is deleted.", { n: loadGamelist(row.consoleId).length }),
+      confirmLabel: t("Remove"),
+      destructive: true,
+    });
+    if (ok) clearGamelist(row.consoleId);
+  };
+
   const consoleMenuItems = (row: { consoleId: string; consoleName: string }): ContextMenuItem[] => [
     ...(logoSlot
       ? [{ label: t("Find logo"), onSelect: () => setConsoleLogo(row) }]
@@ -244,6 +279,17 @@ export function GameTree({
     { label: t("Auto-fill …"), onSelect: () => setAutoFill(row) },
     ...(hasSpine()
       ? [{ label: t("Spine preview …"), onSelect: () => setSpinePreview(row) }]
+      : []),
+    {
+      label: t("Upload gamelist.xml …"),
+      onSelect: () => {
+        gamelistFor.current = row;
+        gamelistFile.current?.click();
+      },
+    },
+    { label: t("Load example gamelist"), onSelect: () => void loadExampleGamelist(row) },
+    ...(loadGamelist(row.consoleId).length > 0
+      ? [{ label: t("Remove gamelist"), destructive: true, onSelect: () => void removeGamelist(row) }]
       : []),
   ];
 
@@ -702,6 +748,18 @@ export function GameTree({
           })}
         </ul>
       </ScrollArea>
+
+      <input
+        ref={gamelistFile}
+        type="file"
+        accept=".xml,text/xml,application/xml"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void uploadGamelist(f);
+          e.target.value = "";
+        }}
+      />
 
       {menu && (
         <ContextMenu

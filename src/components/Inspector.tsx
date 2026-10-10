@@ -29,7 +29,7 @@ import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscr
 import { ConditionMembership, ConditionProps, MaskControls, MaskRoleControls } from "./inspector/masks";
 import { SpineBgProps } from "./inspector/spine";
 import { AccentPanel } from "./inspector/accent";
-import { BackFacePanel, BackgroundLayerProps, GamelistControls, GuidesPanel } from "./inspector/panels";
+import { BackFacePanel, BackgroundLayerProps, GuidesPanel } from "./inspector/panels";
 
 interface InspectorProps {
   consoleBg?: CardBackground;
@@ -159,12 +159,6 @@ export function Inspector({
                 </>
               )}
             </p>
-            {!global && state.project.consoleId && (
-              <GamelistControls
-                consoleId={state.project.consoleId}
-                consoleName={consoleLabel}
-              />
-            )}
           </Panel>
           {global && <GuidesPanel guides={guides} />}
           <AccentPanel masks={masks.map((m) => m.layer)} inherited={inheritedAccent} />

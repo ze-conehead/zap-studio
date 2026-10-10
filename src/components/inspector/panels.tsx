@@ -1,12 +1,11 @@
 // Whole panels the Inspector shows besides a layer's properties: the
-// background layer, the back face, the guides, the console gamelist.
+// background layer, the back face, the guides.
 
 import {
   ChevronDown,
   Lock,
   LockOpen,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -32,12 +31,6 @@ import { parseLocaleNumber } from "@/lib/utils";
 import { useT } from "../../i18n";
 import { askConfirm } from "../ConfirmDialog";
 import type { GuideApi } from "../../App";
-import {
-  clearGamelist,
-  loadGamelist,
-  parseGamelistXml,
-  saveGamelist,
-} from "../../gamelist";
 import { useStore } from "../../store";
 import {
   type BackgroundLayer,
@@ -360,99 +353,3 @@ export function GuideRow({
   );
 }
 
-// Console template: upload a gamelist.xml (EmulationStation format) whose
-// entries are matched by title and shown in the "Metadata" tab.
-export function GamelistControls({
-  consoleId,
-  consoleName,
-}: {
-  consoleId: string;
-  consoleName: string;
-}) {
-  const t = useT();
-  const [count, setCount] = useState(() => loadGamelist(consoleId).length);
-  const [busy, setBusy] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const applyXml = (xml: string) => {
-    try {
-      const parsed = parseGamelistXml(xml);
-      saveGamelist(consoleId, parsed);
-      setCount(parsed.length);
-    } catch (e) {
-      alert((e as Error).message);
-    }
-  };
-
-  const onFile = async (file: File) => {
-    try {
-      setBusy(t("Reading gamelist.xml …"));
-      applyXml(await file.text());
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const loadExample = async () => {
-    try {
-      setBusy(t("Loading example …"));
-      const res = await fetch(`/gamelists/${consoleId}.xml`);
-      if (!res.ok) throw new Error(t("No example available for this console."));
-      applyXml(await res.text());
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-2 border-t pt-3">
-      <Label>gamelist.xml</Label>
-      <p className="text-xs text-muted-foreground">
-        {count > 0
-          ? t("{n} game(s) loaded. Shown in the \u201cMetadata\u201d tab on matching game cards.", { n: count })
-          : t("No metadata for {name} yet.", { name: consoleName })}
-      </p>
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload /> {t("Upload …")}
-        </Button>
-        {count > 0 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive"
-            title={t("Remove")}
-            onClick={() => {
-              clearGamelist(consoleId);
-              setCount(0);
-            }}
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
-        )}
-      </div>
-      <Button variant="ghost" size="sm" onClick={loadExample}>
-        {t("Load example for {name}", { name: consoleName })}
-      </Button>
-      {busy && <p className="text-xs text-muted-foreground">{busy}</p>}
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".xml,text/xml,application/xml"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void onFile(f);
-          e.target.value = "";
-        }}
-      />
-    </div>
-  );
-}

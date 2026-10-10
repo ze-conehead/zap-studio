@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  clearGamelist,
   findMeta,
   formatReleaseDate,
   fromDateInputValue,
+  importGamelistXml,
   loadGamelist,
   parseGamelistXml,
   ratingOutOfFive,
@@ -86,5 +88,23 @@ describe("formatting helpers", () => {
     expect(ratingOutOfFive("1")).toBe("5.0");
     expect(ratingOutOfFive("abc")).toBeUndefined();
     expect(ratingOutOfFive(undefined)).toBeUndefined();
+  });
+});
+
+describe("importGamelistXml / clearGamelist", () => {
+  it("replaces a console's list with the file's entries and reports how many", () => {
+    localStorage.clear();
+    upsertGameMeta("psx", "Old Game", { genre: "Old" });
+    expect(importGamelistXml("psx", XML)).toBe(2); // the nameless entry is dropped
+    expect(loadGamelist("psx").map((g) => g.name)).toEqual(["Tekken 3", "Gran Turismo"]);
+    clearGamelist("psx");
+    expect(loadGamelist("psx")).toEqual([]);
+  });
+
+  it("throws on a file that isn't a gamelist and leaves the stored list alone", () => {
+    localStorage.clear();
+    upsertGameMeta("psx", "Keep Me", {});
+    expect(() => importGamelistXml("psx", "<nope/>")).toThrow();
+    expect(loadGamelist("psx").map((g) => g.name)).toEqual(["Keep Me"]);
   });
 });

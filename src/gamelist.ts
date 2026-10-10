@@ -87,6 +87,13 @@ export function saveGamelist(consoleId: string, games: GameMeta[]): void {
   notifyGamelistsChanged();
 }
 
+/** Replaces a console's gamelist with the entries of a gamelist.xml; returns how many. */
+export function importGamelistXml(consoleId: string, xml: string): number {
+  const parsed = parseGamelistXml(xml);
+  saveGamelist(consoleId, parsed);
+  return parsed.length;
+}
+
 export function clearGamelist(consoleId: string): void {
   localStorage.removeItem(KEY(consoleId));
   notifyGamelistsChanged();
