@@ -21,6 +21,27 @@ import { cn } from "@/lib/utils";
 
 type Tool = "erase" | "fill" | "rect";
 
+// What the picture is shown on while editing: the transparency checkerboard,
+// or a plain colour to see edges and leftovers against — magenta shows up
+// every stray pixel of a cut-out. One choice, remembered.
+type Backdrop = "transparent" | "black" | "white" | "magenta";
+const BACKDROPS: Backdrop[] = ["transparent", "black", "white", "magenta"];
+const BACKDROP_KEY = "stickerstudio:logoEditBackdrop";
+const BACKDROP_COLOR: Record<Exclude<Backdrop, "transparent">, string> = {
+  black: "#000000",
+  white: "#ffffff",
+  magenta: "#ff00ff",
+};
+const loadBackdrop = (): Backdrop => {
+  try {
+    const v = localStorage.getItem(BACKDROP_KEY);
+    if (BACKDROPS.includes(v as Backdrop)) return v as Backdrop;
+  } catch {
+    /* unavailable */
+  }
+  return "transparent";
+};
+
 const ZOOM_MAX = 8;
 const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(1, z));
 
@@ -55,6 +76,15 @@ export function LogoEditDialog({
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   // Zoom: the picture's width is baseW × zoom; the stage scrolls when it's bigger.
   const [zoom, setZoom] = useState(1);
+  const [backdrop, setBackdrop] = useState<Backdrop>(loadBackdrop);
+  const pickBackdrop = (b: Backdrop) => {
+    setBackdrop(b);
+    try {
+      localStorage.setItem(BACKDROP_KEY, b);
+    } catch {
+      /* unavailable */
+    }
+  };
   const [natural, setNatural] = useState({ w: 1, h: 1 });
   // The stage is in the dialog's portal, which mounts a render later — so the
   // element is kept in state too, for the effect that needs to see it.
@@ -72,7 +102,7 @@ export function LogoEditDialog({
   const stageH = Math.max(240, Math.round(window.innerHeight * 0.45));
   const baseW = Math.max(
     40,
-    Math.min(440, (stageH - 2 * STAGE_PAD) * (natural.w / natural.h)),
+    Math.min(440, (stageH - 2 * STAGE_PAD - 8) * (natural.w / natural.h)),
   );
 
   useEffect(() => {
@@ -403,10 +433,50 @@ export function LogoEditDialog({
           </Button>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">{t("Background")}</span>
+          <div role="radiogroup" aria-label={t("Background")} className="flex gap-1 rounded-md border p-0.5">
+            {BACKDROPS.map((b) => (
+              <button
+                key={b}
+                type="button"
+                role="radio"
+                aria-checked={backdrop === b}
+                onClick={() => pickBackdrop(b)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded px-2 py-1",
+                  backdrop === b ? "bg-primary text-primary-foreground" : "hover:bg-accent",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="size-3 rounded-sm border border-black/30"
+                  style={{
+                    background:
+                      b === "transparent"
+                        ? "repeating-conic-gradient(#9ca3af 0% 25%, #e5e7eb 0% 50%) 50% / 8px 8px"
+                        : BACKDROP_COLOR[b],
+                  }}
+                />
+                {b === "transparent"
+                  ? t("Transparent")
+                  : b === "black"
+                    ? t("Black")
+                    : b === "white"
+                      ? t("White")
+                      : t("Magenta")}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div
           ref={setStage}
-          className="canvas-checker relative overflow-auto rounded-md border"
-          style={{ height: stageH }}
+          className={cn("relative overflow-auto rounded-md border", backdrop === "transparent" && "canvas-checker")}
+          style={{
+            height: stageH,
+            background: backdrop === "transparent" ? undefined : BACKDROP_COLOR[backdrop],
+          }}
           title={t("Scroll to zoom, middle-drag or the scrollbars to move around")}
         >
           {loading && <Loader2 className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
@@ -418,7 +488,7 @@ export function LogoEditDialog({
             <canvas
               ref={canvasRef}
               onClick={handleClick}
-              className="block cursor-crosshair touch-none outline outline-2 outline-primary/70"
+              className="block cursor-crosshair touch-none shadow-[0_0_0_4px_rgba(0,0,0,0.55)] outline outline-2 outline-primary/80"
               style={{
                 imageRendering: "pixelated",
                 width: baseW * zoom,
