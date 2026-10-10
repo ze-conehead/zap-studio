@@ -3,11 +3,12 @@
 // transparency or flood it with a solid colour, spreading across every
 // connected pixel within a colour tolerance) and a rectangle tool (drag a
 // box and erase exactly that area — no colour matching, for a corner or
-// edge the wand can't isolate on its own). The picture can be zoomed
+// edge the wand can't isolate on its own) and a brush (paint over parts to
+// wipe them out, size adjustable). The picture can be zoomed
 // (wheel, slider or buttons; middle-drag or the scrollbars to move around),
 // and a frame always marks where it ends.
 
-import { Eraser, Loader2, PaintBucket, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { Brush, Eraser, Loader2, PaintBucket, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import { floodFill, parseHexColor, toleranceFromPercent } from "../logoEdit";
 import { ColorField, SliderField } from "./inspector/fields";
 import { cn } from "@/lib/utils";
 
-type Tool = "erase" | "fill" | "rect";
+type Tool = "erase" | "fill" | "rect" | "brush";
 
 // What the picture is shown on while editing: the transparency checkerboard,
 // or a plain colour to see edges and leftovers against — magenta shows up
@@ -68,6 +69,11 @@ export function LogoEditDialog({
   const [tool, setTool] = useState<Tool>("erase");
   const [color, setColor] = useState("#000000");
   const [tolerance, setTolerance] = useState(20);
+  // Brush diameter in picture pixels, and the stroke being painted.
+  const [brushSize, setBrushSize] = useState(12);
+  const stroke = useRef<{ x: number; y: number; before: ImageData } | null>(null);
+  // Pointer over the canvas (viewport px), for the brush-size ring.
+  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,6 +110,7 @@ export function LogoEditDialog({
     40,
     Math.min(440, (stageH - 2 * STAGE_PAD - 8) * (natural.w / natural.h)),
   );
+  const ringPx = (brushSize * baseW * zoom) / natural.w; // brush tip on screen, CSS px
 
   useEffect(() => {
     if (!open) return;
@@ -126,6 +133,8 @@ export function LogoEditDialog({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
         setNatural({ w: canvas.width, h: canvas.height });
+        // A sensible first brush: ~3 % of the picture's longer side.
+        setBrushSize(Math.min(200, Math.max(2, Math.round(Math.max(canvas.width, canvas.height) * 0.03))));
         setLoading(false);
       };
       img.src = url;
@@ -200,7 +209,7 @@ export function LogoEditDialog({
   // a similar colour.
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || loading || tool === "rect") return;
+    if (!canvas || loading || tool === "rect" || tool === "brush") return;
     const rect = canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
@@ -222,6 +231,59 @@ export function LogoEditDialog({
     if (painted === 0) return; // clicked outside the image, or nothing matched
     ctx.putImageData(after, 0, 0);
     setHistory((h) => [...h, before]);
+    setDirty(true);
+  };
+
+  // Brush: press and drag to wipe out whatever the round tip passes over.
+  // The whole stroke is one undo step.
+  const toPicture = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: ((e.clientX - r.left) / r.width) * canvas.width,
+      y: ((e.clientY - r.top) / r.height) * canvas.height,
+    };
+  };
+  const wipe = (from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = ctx.strokeStyle = "#000";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = brushSize;
+    ctx.beginPath();
+    ctx.arc(to.x, to.y, brushSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+    ctx.restore();
+  };
+  const brushDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (tool !== "brush" || loading || e.button !== 0) return;
+    const canvas = canvasRef.current!;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const p = toPicture(e);
+    stroke.current = { ...p, before: canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height) };
+    wipe(p, p);
+  };
+  const brushMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    setHover({ x: e.clientX, y: e.clientY });
+    const st = stroke.current;
+    if (!st) return;
+    const p = toPicture(e);
+    wipe(st, p);
+    st.x = p.x;
+    st.y = p.y;
+  };
+  const brushUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const st = stroke.current;
+    stroke.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    if (!st) return;
+    setHistory((h) => [...h, st.before]);
     setDirty(true);
   };
 
@@ -349,9 +411,11 @@ export function LogoEditDialog({
         <p className="text-xs text-muted-foreground">
           {tool === "rect"
             ? t("Drag a box over the area to erase — exactly that rectangle, no colour matching.")
-            : t(
-                "Click a spot to erase or fill everything connected to it that's a similar colour — handy for a stray circle, a square logo backing, or an unwanted background patch.",
-              )}
+            : tool === "brush"
+              ? t("Paint over the parts to erase them. Set the brush size below; zoom in for fine work.")
+              : t(
+                  "Click a spot to erase or fill everything connected to it that's a similar colour — handy for a stray circle, a square logo backing, or an unwanted background patch.",
+                )}
         </p>
 
         <div className="flex gap-2">
@@ -379,11 +443,30 @@ export function LogoEditDialog({
           >
             <Square /> {t("Rectangle")}
           </Button>
+          <Button
+            variant={tool === "brush" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setTool("brush")}
+          >
+            <Brush /> {t("Brush")}
+          </Button>
         </div>
 
         {tool === "fill" && <ColorField label={t("Color")} value={color} onChange={setColor} />}
 
-        {tool !== "rect" && (
+        {tool === "brush" && (
+          <SliderField
+            label={t("Brush size {n} px", { n: brushSize })}
+            min={1}
+            max={Math.max(20, Math.min(400, Math.round(Math.max(natural.w, natural.h) / 3)))}
+            step={1}
+            value={Math.min(brushSize, Math.max(20, Math.min(400, Math.round(Math.max(natural.w, natural.h) / 3))))}
+            onChange={(v) => setBrushSize(Math.round(v))}
+          />
+        )}
+
+        {(tool === "erase" || tool === "fill") && (
           <SliderField
             label={t("Tolerance {n}%", { n: tolerance })}
             min={0}
@@ -488,7 +571,15 @@ export function LogoEditDialog({
             <canvas
               ref={canvasRef}
               onClick={handleClick}
-              className="block cursor-crosshair touch-none shadow-[0_0_0_4px_rgba(0,0,0,0.55)] outline outline-2 outline-primary/80"
+              onPointerDown={brushDown}
+              onPointerMove={brushMove}
+              onPointerUp={brushUp}
+              onPointerCancel={brushUp}
+              onPointerLeave={() => setHover(null)}
+              className={cn(
+                "block touch-none shadow-[0_0_0_4px_rgba(0,0,0,0.55)] outline outline-2 outline-primary/80",
+                tool === "brush" ? "cursor-none" : "cursor-crosshair",
+              )}
               style={{
                 imageRendering: "pixelated",
                 width: baseW * zoom,
@@ -498,6 +589,22 @@ export function LogoEditDialog({
             />
           </div>
         </div>
+        {tool === "brush" &&
+          hover &&
+          // The tip's real size on screen (the picture is shown at baseW × zoom
+          // CSS px for its natural width), as a ring round the pointer.
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[60] rounded-full border border-white mix-blend-difference"
+              style={{
+                left: hover.x - ringPx / 2,
+                top: hover.y - ringPx / 2,
+                width: ringPx,
+                height: ringPx,
+              }}
+            />,
+            document.body,
+          )}
         {drag &&
           // Portalled to <body>: the dialog is transformed, which would make
           // `fixed` relative to it instead of the viewport.
