@@ -181,6 +181,7 @@ export const de: Record<string, string> = {
   "While zoomed in, show a small overview of the card with the visible part marked": "Zeigt beim Hineinzoomen eine kleine Übersicht der Karte, in der der sichtbare Ausschnitt markiert ist",
   "Minimap — click or drag to move around": "Minimap – klicken oder ziehen, um dich zu bewegen",
   "Every screenshot container already has a picture.": "Alle Screenshot-Container haben schon ein Bild.",
+  "Content based": "Inhaltsbasiert",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -1286,7 +1287,6 @@ export const de: Record<string, string> = {
   "Accent": "Akzent",
   "Accent color (from the card's cover)": "Akzentfarbe (aus dem Cover der Karte)",
   "Accent color": "Akzentfarbe",
-  "Default": "Standard",
   "Color fields set to “A” paint each card's accent — the main color of its cover, or the color set here. Pick a color to fix it for every card that doesn't override it.": "Farbfelder auf „A“ malen die Akzentfarbe jeder Karte – die Hauptfarbe ihres Covers oder die hier gesetzte Farbe. Wähle eine Farbe, um sie für alle Karten festzulegen, die sie nicht überschreiben.",
   "Color fields set to “A” paint each card's accent. “P” takes the color of the template above (global); an override applies to all cards of this console that stay on “P”.": "Farbfelder auf „A“ malen die Akzentfarbe jeder Karte. „P“ übernimmt die Farbe des übergeordneten Templates (Global); eine Überschreibung gilt für alle Karten dieser Konsole, die auf „P“ stehen.",
   "Color fields set to “A” paint this color. “P” takes the console's color — or the global one if the console is on “P” too, or the cover's main color if none is fixed. Or override it here.": "Farbfelder auf „A“ malen diese Farbe. „P“ übernimmt die Farbe der Konsole – oder die globale, wenn auch die Konsole auf „P“ steht, oder die Hauptfarbe des Covers, wenn keine fest ist. Oder hier überschreiben.",
@@ -1297,7 +1297,6 @@ export const de: Record<string, string> = {
   "Overridden": "Überschrieben",
   "Override": "Überschreiben",
   "Use parent (P)": "P verwenden",
-  "Automatic (from the cover)": "Automatisch (aus dem Cover)",
   "Choose a color": "Farbe wählen",
 
   // ── Paper sheets ──

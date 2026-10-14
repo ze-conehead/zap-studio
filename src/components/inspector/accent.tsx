@@ -24,7 +24,7 @@ export function AccentPanel({ masks, inherited }: { masks: Layer[]; inherited?: 
   const status = fixed
     ? hasParent ? t("Overridden") : t("Fixed")
     : !hasParent
-      ? project.isTemplate ? t("Default") : t("Automatic (from the cover)")
+      ? t("Content based")
       : inherited
         ? t("Parent (from the template above)")
         : project.isTemplate
@@ -56,7 +56,7 @@ export function AccentPanel({ masks, inherited }: { masks: Layer[]; inherited?: 
         <span className="flex-1 truncate">{status}</span>
         {fixed ? (
           <Button variant="outline" size="sm" className="h-7" onClick={() => set(undefined)}>
-            {hasParent ? t("Use parent (P)") : t("Automatic")}
+            {hasParent ? t("Use parent (P)") : t("Content based")}
           </Button>
         ) : (
           <Button variant="outline" size="sm" className="h-7" onClick={() => set(color)}>
