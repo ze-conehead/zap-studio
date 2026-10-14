@@ -157,6 +157,7 @@ export const de: Record<string, string> = {
   "Lock all children": "Alle Teile sperren",
   "Unlock all children": "Alle Teile entsperren",
   "Add a shape to this combined shape": "Ein Shape zu diesem Combined Shape hinzufügen",
+  "Deselect all layers (Esc)": "Alle Ebenen abwählen (Esc)",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",

@@ -23,6 +23,7 @@ import {
   Plus,
   QrCode,
   Shapes,
+  SquareDashedMousePointer,
   Trash2,
   Type,
 } from "lucide-react";
@@ -652,6 +653,18 @@ export function LayerList({
             </Button>
           )}
           <CoverButton masks={masks.map((m) => m.layer)} />
+          {/* With a layer picked the panel shows that layer's properties; this
+              lets go of the selection (same as Esc) to get the card's own back. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            title={t("Deselect all layers (Esc)")}
+            className="size-7 text-muted-foreground"
+            disabled={!state.selectedId && !foreignSelectedId && !selectedCombine}
+            onClick={() => onSelectOwn?.(null)}
+          >
+            <SquareDashedMousePointer className="size-4" />
+          </Button>
           {hasForeign && (
             <Button
               variant="ghost"
