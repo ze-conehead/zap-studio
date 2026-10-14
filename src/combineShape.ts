@@ -153,6 +153,32 @@ export function combineAfterResize(
   return scaled === before.combine ? undefined : scaled;
 }
 
+/**
+ * One part of a combined shape as a layer standing where that part is drawn
+ * on the card — position and rotation resolved through the container's own
+ * transform. Only for looking at it (the hover outline), never stored.
+ */
+export function partAsLayer(parent: ShapeLayer, part: CombineShape): ShapeLayer {
+  const rad = (parent.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const lx = part.x * parent.scaleX;
+  const ly = part.y * parent.scaleY;
+  return {
+    ...parent,
+    id: part.id,
+    name: part.name || parent.name,
+    shape: part.shape,
+    x: parent.x + lx * cos - ly * sin,
+    y: parent.y + lx * sin + ly * cos,
+    rotation: parent.rotation + part.rotation,
+    width: part.width,
+    height: part.height,
+    cornerRadius: part.cornerRadius,
+    combine: undefined,
+  };
+}
+
 /** An operand's rotated bounding box in the parent's local space. */
 export function operandBounds(op: ShapeOperand): { x: number; y: number; w: number; h: number } {
   return combinedBounds([op]);

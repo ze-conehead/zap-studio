@@ -271,8 +271,12 @@ export function LayerList({
     return (
       <li
         key={c.id}
+        // The canvas outlines this part while the pointer is on its row.
+        onMouseEnter={() => setHoveredLayer(c.id)}
+        onMouseLeave={() => setHoveredLayer(null)}
         draggable
         onDragStart={(e) => {
+          setHoveredLayer(null);
           combineDrag.current = { parentId: parent.id, index };
           e.dataTransfer.effectAllowed = "move";
         }}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { canJoin, extractPart, mergeIntoCombined } from "./combined";
-import { isCombined, legacyToCombined, operandsOf, recenterCombined, visibleBounds } from "./combineShape";
-import { makeCombinedLayer, makeShapeLayer, migrateProject, newProject } from "./factory";
+import { isCombined, legacyToCombined, operandsOf, partAsLayer, recenterCombined, visibleBounds } from "./combineShape";
+import { makeAlphaMaskLayer, makeCombinedLayer, makeShapeLayer, migrateProject, newProject } from "./factory";
 import type { CombineShape, ShapeLayer } from "./types";
 
 const part = (over: Partial<CombineShape> = {}): CombineShape => ({
@@ -177,5 +177,40 @@ describe("extractPart", () => {
 
   it("refuses an index that isn't there", () => {
     expect(extractPart(container([part()]), 5)).toBeNull();
+  });
+});
+
+describe("containers", () => {
+  it("a new cover or screenshot container is a combined shape marked as a frame", () => {
+    const cover = makeAlphaMaskLayer(1);
+    expect(isCombined(cover)).toBe(true);
+    expect(cover).toMatchObject({ alphaMask: true });
+    expect(cover.shotOnly).toBeUndefined();
+    expect(cover.combine).toHaveLength(1);
+    const shot = makeAlphaMaskLayer(2, "screenshot");
+    expect(isCombined(shot)).toBe(true);
+    expect(shot).toMatchObject({ alphaMask: true, shotOnly: true });
+  });
+
+  it("its box is the part's, so images fit into it as before", () => {
+    const c = makeAlphaMaskLayer(1);
+    const b = visibleBounds(operandsOf(c));
+    expect(b.w).toBeCloseTo(c.width);
+    expect(b.h).toBeCloseTo(c.height);
+    expect(c.height / c.width).toBeCloseTo(0.75); // 4:3
+    expect(recenterCombined(c)).toBe(c); // already centred
+  });
+});
+
+describe("partAsLayer", () => {
+  it("stands where the part is drawn on the card", () => {
+    const c = container([part({ x: 100, y: 0, width: 40, height: 20, rotation: 10 })], { x: 300, y: 400, rotation: 90, scaleX: 2, scaleY: 2 });
+    const l = partAsLayer(c, c.combine![0]);
+    // local (100, 0) scaled ×2 → (200, 0), turned 90° → (0, 200)
+    expect(l.x).toBeCloseTo(300);
+    expect(l.y).toBeCloseTo(600);
+    expect(l.rotation).toBe(100);
+    expect(l).toMatchObject({ id: c.combine![0].id, width: 40, height: 20, scaleX: 2 });
+    expect(l.combine).toBeUndefined();
   });
 });

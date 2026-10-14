@@ -300,26 +300,25 @@ export function fitImageToSlot(
   };
 }
 
-// An alpha mask: a frame in the global or a console template. A card image
-// pointing at it is clipped to its alpha and fitted to its box; the frame
-// itself is never drawn on a card. `index` only shapes the default name and
-// where it lands, so several don't stack on top of each other.
+// A container (alpha mask): a frame in the global or a console template. A
+// card image pointing at it is clipped to its alpha and fitted to its box; the
+// frame itself is never drawn on a card. It is a combined shape from the
+// start, so more shapes can join it and form the frame's outline. `index`
+// only shapes the default name and where it lands, so several don't stack on
+// top of each other.
 export function makeAlphaMaskLayer(index: number, role: "cover" | "screenshot" = "cover"): ShapeLayer {
   // 4:3 by default — a screenshot cover-fitted into a letterbox frame would
   // lose most of its height.
   const w = TRIM_RECT.w * 0.42;
   const h = w * 0.75;
+  const part = { ...makeCombineShape("rect", "add", w, h), width: w, height: h, cornerRadius: 12 };
   return {
-    ...base(role === "cover" ? t("Cover container {n}", { n: index }) : t("Screenshot container {n}", { n: index })),
-    type: "shape",
-    shape: "rect",
+    ...makeCombinedLayer(),
+    name: role === "cover" ? t("Cover container {n}", { n: index }) : t("Screenshot container {n}", { n: index }),
     width: w,
     height: h,
     y: TRIM_RECT.y + TRIM_RECT.h * 0.38 + (index - 1) * (h + TRIM_RECT.h * 0.012),
-    cornerRadius: 12,
-    fill: { ...DEFAULT_SHAPE_FILL },
-    stroke: "#000000",
-    strokeWidth: 0,
+    combine: [part],
     alphaMask: true,
     ...(role === "screenshot" ? { shotOnly: true } : {}),
   };

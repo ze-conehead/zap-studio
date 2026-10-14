@@ -55,7 +55,7 @@ import {
   TextFrameOutline,
 } from "./canvas/outlines";
 import { dominantAxis, layerBoxSize, snapBox, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./canvas/snapping";
-import { isCombined, operandBounds, operandsOf, visibleBounds } from "../combineShape";
+import { isCombined, operandBounds, operandsOf, partAsLayer, visibleBounds } from "../combineShape";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
 // for CardStage.
@@ -447,12 +447,16 @@ function FaceStage({
   // the face being edited. Looked up wherever it lives (drawn stack, own
   // list, the templates' layers, their alpha frames); a condition marks its cases.
   const hoveredId = useHoveredLayer();
-  const hoverTargets =
-    active && hoveredId
-      ? [...new Map([...faceLayersRaw, ...layerList, ...overlay, ...masks].map((l) => [l.id, l])).values()].filter(
-          (l) => l.id === hoveredId || l.condId === hoveredId,
-        )
-      : [];
+  // A part of a combined shape (its row under the layer) is outlined where it sits.
+  const hoverPool = active && hoveredId
+    ? [...new Map([...faceLayersRaw, ...layerList, ...overlay, ...masks].map((l) => [l.id, l])).values()]
+    : [];
+  const hoverTargets = [
+    ...hoverPool.filter((l) => l.id === hoveredId || l.condId === hoveredId),
+    ...hoverPool.flatMap((l) =>
+      isCombined(l) ? (l.combine ?? []).filter((c) => c.id === hoveredId).map((c) => partAsLayer(l, c)) : [],
+    ),
+  ];
   const cardAccentColor = useCardAccent(project, masks, inheritedAccent);
   // …and fields set to the contrast token black or white, by what's under
   // them — recomputed as pictures finish loading.
