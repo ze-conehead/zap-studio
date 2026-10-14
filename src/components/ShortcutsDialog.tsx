@@ -21,6 +21,7 @@ export function ShortcutsDialog({
     {
       title: t("Editor"),
       rows: [
+        [`${MOD} K`, t("Command palette")],
         [`${MOD} N`, t("New card")],
         [`${MOD} F`, t("Search consoles & games")],
         [`${MOD} Z`, t("Undo")],

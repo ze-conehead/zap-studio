@@ -83,6 +83,7 @@ interface Props {
   onOpenWalkthrough: () => void;
   onOpenShortcuts: () => void;
   onOpenAbout: () => void;
+  onOpenPalette: () => void;
 }
 
 type MenuId = "file" | "project" | "edit" | "view" | "settings" | "help";
@@ -207,6 +208,7 @@ export function MenuBar({
   onOpenWalkthrough,
   onOpenShortcuts,
   onOpenAbout,
+  onOpenPalette,
 }: Props) {
   const t = useT();
   const [lang, setLang] = useLang();
@@ -513,6 +515,10 @@ export function MenuBar({
       <Menu id="help" open={open} setOpen={setOpen} label={t("Help")}>
         <DropdownMenuItem onClick={onOpenWalkthrough}>
           {t("Walkthrough …")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpenPalette} className="justify-between">
+          {t("Command palette …")}
+          <span className="text-xs text-muted-foreground">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onOpenShortcuts} className="justify-between">
           {t("Keyboard shortcuts …")}

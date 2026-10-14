@@ -23,7 +23,10 @@ import { ApiKeysDialog } from "./components/ApiKeysDialog";
 import { CustomFontsDialog } from "./components/CustomFontsDialog";
 import { ManageLogosDialog } from "./components/ManageLogosDialog";
 import { SpotColorDialog } from "./components/SpotColorDialog";
+import { CommandPalette } from "./components/CommandPalette";
 import { ManageMetadataDialog } from "./components/ManageMetadataDialog";
+import { buildCommands } from "./commands";
+import { getKeepView, getMinimap, setKeepView, setMinimap } from "./viewState";
 import { BleedDialog } from "./components/BleedDialog";
 import { ConfirmHost } from "./components/ConfirmDialog";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
@@ -487,6 +490,7 @@ function Shell({
   const [manageCovers, setManageCovers] = useState(false);
   const [spotColors, setSpotColors] = useState(false);
   const [manageMeta, setManageMeta] = useState(false);
+  const [palette, setPalette] = useState(false);
   const [bleedOpen, setBleedOpen] = useState(false);
   // Opens by itself on a fresh install, then only from Help ▸ Walkthrough.
   // Marked seen as soon as it opens: the Shell remounts on every project
@@ -526,6 +530,18 @@ function Shell({
     return () => window.removeEventListener("keydown", onKey);
   }, [dispatch, guides, onNewProject]);
 
+  // ⌘K / Ctrl K opens the command palette from anywhere, text fields included.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPalette((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const bar = {
     canvas,
     guides,
@@ -558,6 +574,7 @@ function Shell({
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
     onOpenAbout: () => setAbout(true),
+    onOpenPalette: () => setPalette(true),
   };
   return (
     <div className="flex h-full flex-col">
@@ -664,6 +681,26 @@ function Shell({
       <ManageLogosDialog kind="cover" open={manageCovers} onOpenChange={setManageCovers} />
       <SpotColorDialog open={spotColors} onOpenChange={setSpotColors} />
       {manageMeta && <ManageMetadataDialog open onOpenChange={setManageMeta} />}
+      {palette && (
+        <CommandPalette
+          open
+          onOpenChange={setPalette}
+          commands={buildCommands({
+            t,
+            bar,
+            dispatch,
+            toggles: {
+              snap: () => guides.setSnap(!guides.state.snap),
+              guides: () => guides.toggle(),
+              keepView: () => setKeepView(!getKeepView()),
+              minimap: () => setMinimap(!getMinimap()),
+            },
+            isTemplate: !!project.isTemplate,
+            layers: state.side === "back" ? project.back?.layers ?? [] : project.layers,
+            go: { pickGame: onPickGame, openConsole: onOpenConsole, openGlobal: onOpenGlobal, selectLayer: selectOwn },
+          })}
+        />
+      )}
       <BleedDialog
         open={bleedOpen}
         onOpenChange={setBleedOpen}
