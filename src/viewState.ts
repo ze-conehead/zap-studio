@@ -62,3 +62,64 @@ export function scrollFromFraction(f: number, scrollSize: number, clientSize: nu
 export function recallView(): { zoom: number; fx: number; fy: number } {
   return getKeepView() ? { zoom, ...scroll } : { zoom: 1, fx: 0, fy: 0 };
 }
+
+// The minimap: a small overview of the card, with the visible part marked,
+// while zoomed in. A plain on/off setting, remembered.
+const MINIMAP_KEY = "stickerstudio:minimap";
+const mapListeners = new Set<() => void>();
+
+export function getMinimap(): boolean {
+  try {
+    return localStorage.getItem(MINIMAP_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setMinimap(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(MINIMAP_KEY, "1");
+    else localStorage.removeItem(MINIMAP_KEY);
+  } catch {
+    /* the choice just isn't remembered */
+  }
+  for (const fn of mapListeners) fn();
+}
+
+const subscribeMap = (fn: () => void) => {
+  mapListeners.add(fn);
+  return () => mapListeners.delete(fn);
+};
+export const useMinimap = (): boolean => useSyncExternalStore(subscribeMap, getMinimap, getMinimap);
+
+/**
+ * How much of a card is in view: the part of `card` that `view` covers, as
+ * fractions (0..1) of the card, and whether that is all of it. Boxes are
+ * { left, top, width, height } in the same (screen) space.
+ */
+export interface Box {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+export function visiblePart(card: Box, view: Box): { x: number; y: number; w: number; h: number; full: boolean } {
+  if (card.width <= 0 || card.height <= 0) return { x: 0, y: 0, w: 1, h: 1, full: true };
+  const x1 = Math.max(card.left, view.left);
+  const y1 = Math.max(card.top, view.top);
+  const x2 = Math.min(card.left + card.width, view.left + view.width);
+  const y2 = Math.min(card.top + card.height, view.top + view.height);
+  const w = Math.max(0, x2 - x1) / card.width;
+  const h = Math.max(0, y2 - y1) / card.height;
+  const tol = 1.5; // px: a hair of rounding doesn't count as "cut off"
+  const full = card.width - (x2 - x1) <= tol && card.height - (y2 - y1) <= tol;
+  return { x: (x1 - card.left) / card.width, y: (y1 - card.top) / card.height, w, h, full };
+}
+
+/** How far to scroll so the card point at fractions (fx, fy) lands in the middle of the view. */
+export function scrollDeltaToCenter(card: Box, view: Box, fx: number, fy: number): { dx: number; dy: number } {
+  return {
+    dx: card.left + fx * card.width - (view.left + view.width / 2),
+    dy: card.top + fy * card.height - (view.top + view.height / 2),
+  };
+}

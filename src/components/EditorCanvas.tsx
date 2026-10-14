@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Layer, Line, Stage, Transformer } from "react-konva";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CanvasMinimap } from "./CanvasMinimap";
 import { cn } from "@/lib/utils";
 import type { GuideApi } from "../App";
 import { isBackground, makeImageLayer } from "../factory";
@@ -30,7 +31,7 @@ import { applyContrast } from "../contrast";
 import { useImageCacheVersion } from "../hooks/useImage";
 import { useHoveredLayer } from "../layerHover";
 import { useSnapStrength } from "../snapSettings";
-import { recallView, rememberScroll, scrollFraction, scrollFromFraction } from "../viewState";
+import { recallView, rememberScroll, scrollFraction, scrollFromFraction, useMinimap } from "../viewState";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
 import { placeholderContextFor } from "../placeholders";
@@ -167,6 +168,14 @@ export function EditorCanvas({
     );
   };
 
+  // The minimap shows the face being edited. It listens to the project too:
+  // the picture is re-taken a moment after anything on the card changes.
+  const minimapOn = useMinimap();
+  const [wrapEl, setWrapEl] = useState<HTMLDivElement | null>(null);
+  useLayoutEffect(() => setWrapEl(wrapRef.current), []);
+  const imageVersion = useImageCacheVersion();
+  const getActiveStage = useCallback(() => stages.current[side], [side]);
+
   const registerFront = useCallback((s: Konva.Stage | null) => {
     stages.current.front = s;
   }, []);
@@ -277,6 +286,14 @@ export function EditorCanvas({
   };
 
   return (
+    <div className="relative flex min-w-0 flex-1">
+    {minimapOn && (
+      <CanvasMinimap
+        viewport={wrapEl}
+        getStage={getActiveStage}
+        watch={[side, hasBack, zoom, imageVersion, project]}
+      />
+    )}
     <ScrollArea
       orientation="both"
       className={cn("canvas-checker flex-1", panning && "cursor-grabbing")}
@@ -347,6 +364,7 @@ export function EditorCanvas({
         </div>
       </div>
     </ScrollArea>
+    </div>
   );
 }
 

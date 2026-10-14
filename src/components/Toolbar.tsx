@@ -26,7 +26,7 @@ import {
   useSnapStrength,
 } from "../snapSettings";
 import { useSnapSuspended } from "../snapSuspend";
-import { setKeepView, useKeepView } from "../viewState";
+import { setKeepView, setMinimap, useKeepView, useMinimap } from "../viewState";
 import type { GuideApi } from "../App";
 
 interface Props {
@@ -48,6 +48,7 @@ export function Toolbar({
   const t = useT();
   const { past, future, showBleed } = state;
   const keepView = useKeepView();
+  const minimap = useMinimap();
   const snapStrength = useSnapStrength();
   // Ctrl held: snapping is paused — the checkbox shows it while the key is down.
   const paused = useSnapSuspended() && guides.state.snap;
@@ -68,7 +69,11 @@ export function Toolbar({
 
 
   return (
-    <header className="relative z-20 flex flex-wrap items-center gap-x-4 gap-y-2 border-b bg-sidebar px-3.5 py-2">
+    // Left controls | preview + zoom | (empty, takes what is left). The left
+    // side wraps when the bar is too narrow for everything — it never runs
+    // into the preview buttons.
+    <header className="relative z-20 flex items-center gap-4 border-b bg-sidebar px-3.5 py-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
       <div className="flex items-center gap-1">
         <IconBtn
           label={t("Undo (⌘Z)")}
@@ -196,11 +201,20 @@ export function Toolbar({
           <Checkbox checked={keepView} onCheckedChange={(v) => setKeepView(!!v)} />
           {t("Keep view")}
         </label>
+        <label
+          className="flex items-center gap-1.5"
+          title={t("While zoomed in, show a small overview of the card with the visible part marked")}
+        >
+          <Checkbox checked={minimap} onCheckedChange={(v) => setMinimap(!!v)} />
+          {t("Minimap")}
+        </label>
       </div>
 
-      {/* Centred on the whole bar, independent of the controls on the left. */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="pointer-events-auto flex items-center gap-1.5">
+      </div>
+
+      {/* Follows the left controls; the empty block after it takes the rest. */}
+      <div className="flex shrink-0 items-center justify-center">
+        <div className="flex items-center gap-1.5">
           <Button variant="outline" size="sm" onClick={onOpenPreview}>
             <Box /> {t("Preview")}
           </Button>
@@ -232,6 +246,7 @@ export function Toolbar({
           </div>
         </div>
       </div>
+      <div className="min-w-0 flex-1" />
     </header>
   );
 }
