@@ -248,11 +248,13 @@ export function NumberField({
   value,
   onChange,
   step = 1,
+  disabled,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
   step?: number;
+  disabled?: boolean;
 }) {
   // While typing, show exactly what was typed instead of the (possibly
   // clamped, e.g. Math.max(4, v)) committed value — otherwise typing "1"
@@ -266,6 +268,7 @@ export function NumberField({
         type="number"
         step={step}
         value={shown}
+        disabled={disabled}
         onChange={(e) => {
           setDraft(e.target.value);
           const v = Number(e.target.value);

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { combinedBounds, makeCombineShape, operandsOf } from "./combineShape";
+import {
+  combineAfterResize,
+  combinedBounds,
+  makeCombineShape,
+  operandBounds,
+  operandsOf,
+  scaleCombine,
+  visibleBounds,
+} from "./combineShape";
 import type { CombineShape } from "./types";
 
 describe("operandsOf", () => {
@@ -77,5 +85,57 @@ describe("makeCombineShape", () => {
     const a = makeCombineShape("circle", "add", 100, 100);
     const b = makeCombineShape("circle", "add", 100, 100);
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+const entry = (over: Partial<CombineShape> = {}): CombineShape => ({
+  id: "e", shape: "rect", op: "add", x: 20, y: 10, width: 40, height: 20, rotation: 0, cornerRadius: 4, ...over,
+});
+
+describe("scaleCombine / combineAfterResize", () => {
+  it("scales an entry's position and size with the main shape", () => {
+    const [c] = scaleCombine([entry()], 2, 3);
+    expect(c).toMatchObject({ x: 40, y: 30, width: 80, height: 60, cornerRadius: 4 });
+  });
+
+  it("a quarter-turned entry stretches along its own axes", () => {
+    const [c] = scaleCombine([entry({ rotation: 90 })], 2, 3);
+    expect(c.width).toBeCloseTo(40 * 3); // its width now runs along y
+    expect(c.height).toBeCloseTo(20 * 2);
+  });
+
+  it("uniform scaling keeps a rotated entry's shape", () => {
+    const [c] = scaleCombine([entry({ rotation: 33 })], 1.5, 1.5);
+    expect(c.width).toBeCloseTo(60);
+    expect(c.height).toBeCloseTo(30);
+  });
+
+  it("follows a width / height patch, and leaves everything alone otherwise", () => {
+    const before = { width: 100, height: 50, combine: [entry()] };
+    expect(combineAfterResize(before, { width: 200 })?.[0]).toMatchObject({ x: 40, y: 10, width: 80, height: 20 });
+    expect(combineAfterResize(before, { height: 50 })).toBeUndefined(); // no change
+    expect(combineAfterResize(before, {} as { width: number })).toBeUndefined();
+    expect(combineAfterResize(before, { width: 200, combine: [] })).toBeUndefined(); // the patch decides
+    expect(combineAfterResize({ width: 100, height: 50 }, { width: 200 })).toBeUndefined(); // nothing combined
+  });
+});
+
+describe("visibleBounds", () => {
+  it("covers the added parts only — a subtract entry never widens it", () => {
+    const ops = operandsOf({
+      shape: "rect",
+      width: 100,
+      height: 50,
+      cornerRadius: 0,
+      combine: [
+        entry({ x: 70, y: 0, width: 40, height: 40 }), // sticks out to the right
+        entry({ id: "cut", op: "subtract", x: -90, y: 0, width: 60, height: 60 }), // cuts far to the left
+      ],
+    });
+    const v = visibleBounds(ops);
+    expect(v.x).toBeCloseTo(-50);
+    expect(v.x + v.w).toBeCloseTo(90);
+    expect(combinedBounds(ops).x).toBeLessThan(-100); // the generous box does include the cut
+    expect(operandBounds(ops[1])).toMatchObject({ x: 50, w: 40 });
   });
 });

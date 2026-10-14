@@ -8,13 +8,14 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { combineAfterResize } from "./combineShape";
 import { t } from "./i18n";
 import { copyStyle, pasteStyle } from "./layerStyle";
 import { isBackground, isCondition, makeBackFace, newProject } from "./factory";
 import { setFillOverride } from "./fillOverrides";
 import { getFormat } from "./formats";
 import { saveProject } from "./persist";
-import type { CardSide, Layer, LayerStyleOverride, Project } from "./types";
+import type { CardSide, Layer, LayerStyleOverride, Project, ShapeLayer } from "./types";
 
 interface State {
   project: Project;
@@ -207,6 +208,11 @@ function reducer(state: State, action: Action): State {
       let next = layers.map((l, j) =>
         j === i ? ({ ...l, ...action.patch } as Layer) : l,
       );
+      // Resizing a combined shape resizes the shapes combined onto it too.
+      if (layers[i].type === "shape") {
+        const combine = combineAfterResize(layers[i] as ShapeLayer, action.patch as Partial<ShapeLayer>);
+        if (combine) next = next.map((l, j) => (j === i ? ({ ...l, combine } as Layer) : l));
+      }
       // An image promoted to the main image is always labelled "Main image".
       if (action.patch.main === true && next[i].type === "image") {
         next = next.map((l, j) =>

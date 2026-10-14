@@ -305,7 +305,7 @@ export function LayerList({
         >
           <CornerDownRight className="size-3.5 shrink-0 text-fuchsia-500" />
           <Shapes className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="truncate">{t(COMBINE_SHAPE_LABEL[c.shape])}</span>
+          <span className="truncate">{c.name || t(COMBINE_SHAPE_LABEL[c.shape])}</span>
           <OpIcon
             className={cn(
               "size-3.5 shrink-0",
@@ -313,6 +313,19 @@ export function LayerList({
             )}
           />
         </button>
+        <LayerIcon
+          title={c.locked ? t("Unlock") : t("Lock")}
+          onClick={() => {
+            if (!parent.combine) return;
+            dispatch({
+              type: "PATCH_LAYER",
+              id: parent.id,
+              patch: { combine: parent.combine.map((x) => (x.id === c.id ? { ...x, locked: !x.locked || undefined } : x)) },
+            });
+          }}
+        >
+          {c.locked ? <Lock /> : <LockOpen />}
+        </LayerIcon>
         <LayerIcon
           title={t("Delete")}
           className="hover:text-destructive"

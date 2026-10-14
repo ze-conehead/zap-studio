@@ -228,6 +228,10 @@ export interface CombineShape {
   height: number;
   rotation: number; // degrees
   cornerRadius: number; // rect only
+  name?: string; // shown in the Layers panel; absent = the shape's kind
+  // Position, size and rotation are frozen: the entry can't be dragged on the
+  // canvas or edited by number, only the main shape moves (carrying it along).
+  locked?: boolean;
 }
 
 // Console-level "smart" badge: shows the rating, release year and player

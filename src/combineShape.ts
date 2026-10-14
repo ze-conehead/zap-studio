@@ -104,6 +104,61 @@ function corners(op: ShapeOperand): { x: number; y: number }[] {
 }
 
 /**
+ * The combine entries after the main shape was resized by (fx, fy): each
+ * entry's position and size grow with it, so the compound keeps its look.
+ * For a rotated entry the new width / height follow how the scale stretches
+ * its own axes (exact for quarter turns and uniform scaling). Corner radii
+ * stay as they are, like the main shape's own.
+ */
+export function scaleCombine(combine: CombineShape[], fx: number, fy: number): CombineShape[] {
+  if (!Number.isFinite(fx) || !Number.isFinite(fy) || (fx === 1 && fy === 1)) return combine;
+  return combine.map((c) => {
+    const rad = (c.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return {
+      ...c,
+      x: c.x * fx,
+      y: c.y * fy,
+      width: Math.max(1, c.width * Math.hypot(fx * cos, fy * sin)),
+      height: Math.max(1, c.height * Math.hypot(fx * sin, fy * cos)),
+    };
+  });
+}
+
+/**
+ * What a patch to a combined shape's width / height should do to its combine
+ * entries: the scaled list, or undefined when nothing changes (no resize, no
+ * entries, or the patch sets the entries itself).
+ */
+export function combineAfterResize(
+  before: { width: number; height: number; combine?: CombineShape[] },
+  patch: { width?: number; height?: number; combine?: CombineShape[] },
+): CombineShape[] | undefined {
+  if (!before.combine?.length || "combine" in patch) return undefined;
+  if (before.width <= 0 || before.height <= 0) return undefined;
+  const fx = (patch.width ?? before.width) / before.width;
+  const fy = (patch.height ?? before.height) / before.height;
+  const scaled = scaleCombine(before.combine, fx, fy);
+  return scaled === before.combine ? undefined : scaled;
+}
+
+/** An operand's rotated bounding box in the parent's local space. */
+export function operandBounds(op: ShapeOperand): { x: number; y: number; w: number; h: number } {
+  return combinedBounds([op]);
+}
+
+/**
+ * The box (parent-local space) the combined shape actually shows: the union
+ * of its "add" operands. Subtract operands only ever cut, so unlike
+ * combinedBounds they never widen it — what snapping should align.
+ */
+export function visibleBounds(ops: ShapeOperand[]): { x: number; y: number; w: number; h: number } {
+  const adds = ops.filter((o) => o.op === "add");
+  return combinedBounds(adds.length ? adds : ops);
+}
+
+/**
  * A box (in the parent's own local space) that fully contains every
  * operand — including subtract ones, a harmlessly generous superset since
  * cutting only ever shrinks what shows. Empty when there are no operands.

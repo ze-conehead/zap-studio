@@ -54,7 +54,8 @@ import {
   PanelGuides,
   TextFrameOutline,
 } from "./canvas/outlines";
-import { layerBoxSize, snapNodeToGuides, type SnapHit, type SnapLines } from "./canvas/snapping";
+import { dominantAxis, layerBoxSize, snapBox, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./canvas/snapping";
+import { operandBounds, operandsOf, visibleBounds } from "../combineShape";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
 // for CardStage.
@@ -526,6 +527,30 @@ function FaceStage({
     const stage = stageRef.current;
     const pointer = stage?.getPointerPosition();
     if (!parent || !stage || !pointer) return;
+    if (parent.type === "shape" && parent.combine?.[index]?.locked) return;
+    // Snapping: the entry's own box against the guides, the card, the other
+    // layers and the parts of this same combined shape (the main shape and
+    // its other entries).
+    const sx = parent.scaleX || 1;
+    const sy = parent.scaleY || 1;
+    const lines: SnapLines | undefined =
+      snapLines && parent.type === "shape" && !parent.rotation
+        ? (() => {
+            const smartX = [...snapLines.smartX];
+            const smartY = [...snapLines.smartY];
+            operandsOf(parent).forEach((op, i) => {
+              if (i === index + 1) return; // the dragged one
+              const b = operandBounds(op);
+              const xa = parent.x + b.x * sx;
+              const xb = parent.x + (b.x + b.w) * sx;
+              const ya = parent.y + b.y * sy;
+              const yb = parent.y + (b.y + b.h) * sy;
+              smartX.push(Math.min(xa, xb), (xa + xb) / 2, Math.max(xa, xb));
+              smartY.push(Math.min(ya, yb), (ya + yb) / 2, Math.max(ya, yb));
+            });
+            return { ...snapLines, smartX, smartY };
+          })()
+        : undefined;
     const rad = (-parent.rotation * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -533,14 +558,30 @@ function FaceStage({
       stage.setPointersPositions(ev);
       const p = stage.getPointerPosition();
       if (!p) return;
-      const dx = (p.x - pointer.x) / scale;
-      const dy = (p.y - pointer.y) / scale;
-      combineChange(
-        parentId,
-        index,
-        { x: start.x + (dx * cos - dy * sin), y: start.y + (dx * sin + dy * cos) },
-        history,
-      );
+      let dx = (p.x - pointer.x) / scale;
+      let dy = (p.y - pointer.y) / scale;
+      // Shift (as in Photoshop): one axis only — the one dragged further.
+      const held = "shiftKey" in ev && ev.shiftKey ? (dominantAxis(dx, dy) === "x" ? "y" : "x") : null;
+      if (held === "y") dy = 0;
+      if (held === "x") dx = 0;
+      let x = start.x + (dx * cos - dy * sin);
+      let y = start.y + (dx * sin + dy * cos);
+      if (lines && parent.type === "shape") {
+        const op = operandsOf(parent)[index + 1];
+        const b = operandBounds({ ...op, x, y });
+        const xa = parent.x + b.x * sx;
+        const xb = parent.x + (b.x + b.w) * sx;
+        const ya = parent.y + b.y * sy;
+        const yb = parent.y + (b.y + b.h) * sy;
+        const snap = snapBox(
+          { x: Math.min(xa, xb), y: Math.min(ya, yb), width: Math.abs(xb - xa), height: Math.abs(yb - ya) },
+          lines,
+        );
+        if (held !== "x") x += snap.dx / sx;
+        if (held !== "y") y += snap.dy / sy;
+        reportSnap(history ? null : withoutAxis(snap.hit, held));
+      }
+      combineChange(parentId, index, { x, y }, history);
     };
     const onMove = (ev: MouseEvent | TouchEvent) => apply(ev, false);
     const onUp = (ev: MouseEvent | TouchEvent) => {
@@ -648,8 +689,20 @@ function FaceStage({
 
     // Every other layer on this face, from its unrotated box. Rotated layers
     // are skipped — their bounding box would snap to something invisible.
+    // A combined shape counts by everything it shows (its added parts), not
+    // just the main shape's own box.
     for (const l of layerList) {
       if (l.id === selectedId || !l.visible || l.rotation) continue;
+      if (l.type === "shape" && l.combine?.length) {
+        const b = visibleBounds(operandsOf(l));
+        const xa = l.x + b.x * l.scaleX;
+        const xb = l.x + (b.x + b.w) * l.scaleX;
+        const ya = l.y + b.y * l.scaleY;
+        const yb = l.y + (b.y + b.h) * l.scaleY;
+        smartX.push(Math.min(xa, xb), (xa + xb) / 2, Math.max(xa, xb));
+        smartY.push(Math.min(ya, yb), (ya + yb) / 2, Math.max(ya, yb));
+        continue;
+      }
       const w = layerBoxSize(l);
       if (!w) continue;
       const hw = (w.w * Math.abs(l.scaleX)) / 2;
@@ -702,7 +755,8 @@ function FaceStage({
     if (active && selectedCombine) {
       const parent = layerList.find((l) => l.id === selectedCombine.parentId);
       const c = parent?.type === "shape" ? parent.combine?.[selectedCombine.index] : undefined;
-      if (parent && c) {
+      // A locked entry can't be dragged — the drag moves the main shape.
+      if (parent && c && !c.locked) {
         startCombineDrag(selectedCombine.parentId, selectedCombine.index, { x: c.x, y: c.y });
         return;
       }
@@ -715,7 +769,16 @@ function FaceStage({
     if (!id || !node || !layer || layer.locked || !stage || !pointer) return;
 
     proxyDrag.current = { id, startX: node.x(), startY: node.y(), startPointer: pointer };
+    // A combined shape snaps by everything it shows, not by its helper nodes.
+    const localBox =
+      layer.type === "shape" && layer.combine?.length
+        ? (() => {
+            const b = visibleBounds(operandsOf(layer));
+            return { x: b.x, y: b.y, width: b.w, height: b.h };
+          })()
+        : undefined;
 
+    let held: "x" | "y" | null = null; // the axis Shift is holding still
     const onMove = (ev: MouseEvent | TouchEvent) => {
       const pd = proxyDrag.current;
       const st = stageRef.current;
@@ -725,9 +788,20 @@ function FaceStage({
       if (!p) return;
       const n = nodeRefs.current.get(pd.id);
       if (!n) return;
-      n.x(pd.startX + (p.x - pd.startPointer.x) / scale);
-      n.y(pd.startY + (p.y - pd.startPointer.y) / scale);
-      if (snapLines) reportSnap(snapNodeToGuides(n, snapLines));
+      let dx = (p.x - pd.startPointer.x) / scale;
+      let dy = (p.y - pd.startPointer.y) / scale;
+      // Shift (as in Photoshop): move along one axis only.
+      held = "shiftKey" in ev && ev.shiftKey ? (dominantAxis(dx, dy) === "x" ? "y" : "x") : null;
+      if (held === "y") dy = 0;
+      if (held === "x") dx = 0;
+      n.x(pd.startX + dx);
+      n.y(pd.startY + dy);
+      if (snapLines) {
+        const hit = snapNodeToGuides(n, snapLines, localBox);
+        if (held === "y") n.y(pd.startY);
+        if (held === "x") n.x(pd.startX);
+        reportSnap(withoutAxis(hit, held));
+      }
       dispatch({ type: "PATCH_LAYER", id: pd.id, patch: { x: n.x(), y: n.y() }, history: false });
     };
     const endDrag = () => {
@@ -735,7 +809,11 @@ function FaceStage({
       if (pd) {
         const n = nodeRefs.current.get(pd.id);
         if (n) {
-          if (snapLines) snapNodeToGuides(n, snapLines);
+          if (snapLines) {
+            snapNodeToGuides(n, snapLines, localBox);
+            if (held === "y") n.y(pd.startY);
+            if (held === "x") n.x(pd.startX);
+          }
           reportSnap(null);
           const patch = { x: n.x(), y: n.y() };
           dispatch({ type: "PATCH_LAYER", id: pd.id, patch, history: true });

@@ -392,12 +392,16 @@ function CombineOperandHandle({
   op,
   index,
   active,
+  locked,
   onSelect,
   onGrab,
 }: {
   op: ShapeOperand;
   index: number;
   active: boolean;
+  // A locked entry can't be grabbed — clicks fall through to the main shape —
+  // but still shows its outline while picked.
+  locked?: boolean;
   onSelect?: (index: number) => void;
   onGrab: (
     e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
@@ -414,7 +418,14 @@ function CombineOperandHandle({
     onGrab(e, index, { x: op.x, y: op.y });
   };
   return (
-    <Group x={op.x} y={op.y} rotation={op.rotation} onMouseDown={grab} onTouchStart={grab}>
+    <Group
+      x={op.x}
+      y={op.y}
+      rotation={op.rotation}
+      listening={!locked}
+      onMouseDown={locked ? undefined : grab}
+      onTouchStart={locked ? undefined : grab}
+    >
       {op.shape === "circle" ? (
         <Ellipse radiusX={op.width / 2} radiusY={op.height / 2} {...line} />
       ) : (
@@ -474,6 +485,7 @@ function CompoundShapeInner({
             op={ops[i + 1]}
             index={i}
             active={combineIndex === i}
+            locked={layer.combine?.[i]?.locked}
             onSelect={onCombineSelect}
             onGrab={onCombineGrab}
           />

@@ -11,6 +11,8 @@ import {
   ClipboardPaste,
   Italic,
   Loader2,
+  Lock,
+  LockOpen,
   MinusCircle,
   MoveHorizontal,
   MoveVertical,
@@ -22,6 +24,7 @@ import {
 import { Fragment, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -409,11 +412,28 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
   const remove = (id: string) => patch({ combine: combine.filter((c) => c.id !== id) });
   const add = (shape: ShapeKind, op: CombineOp) =>
     patch({ combine: [...combine, makeCombineShape(shape, op, layer.width, layer.height)] });
+  // Locking freezes an entry's position, size and rotation; only the main
+  // shape moves then, carrying the locked parts along.
+  const allLocked = combine.length > 0 && combine.every((c) => c.locked);
+  const lockAll = (locked: boolean) => patch({ combine: combine.map((c) => ({ ...c, locked })) });
 
   return (
     <div className="flex flex-col gap-1.5 rounded-md border p-2.5">
       <div className="flex items-center justify-between">
         <Label>{t("Combine shapes")}</Label>
+        <div className="flex items-center gap-0.5">
+        {combine.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 text-xs"
+            title={allLocked ? t("Let the combined shapes be moved again") : t("Lock the combined shapes — only the main shape can be moved")}
+            onClick={() => lockAll(!allLocked)}
+          >
+            {allLocked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+            {allLocked ? t("Unlock all") : t("Lock all")}
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs">
@@ -428,6 +448,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
       {combine.length === 0 ? (
         <p className="text-xs text-muted-foreground">
@@ -439,6 +460,13 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
         <ul className="flex flex-col gap-2">
           {combine.map((c) => (
             <li key={c.id} className="flex flex-col gap-1.5 rounded-md border p-2">
+              <Input
+                className="h-7 text-xs"
+                value={c.name ?? ""}
+                placeholder={t(COMBINE_SHAPES.find((s) => s.id === c.shape)?.label ?? "")}
+                aria-label={t("Name")}
+                onChange={(e) => update(c.id, { name: e.target.value || undefined })}
+              />
               <div className="flex items-center gap-1.5">
                 <Select value={c.shape} onValueChange={(v) => update(c.id, { shape: v as ShapeKind })}>
                   <SelectTrigger className="h-7 flex-1 text-xs">
@@ -477,6 +505,15 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="size-7 shrink-0 text-muted-foreground"
+                  title={c.locked ? t("Unlock") : t("Lock")}
+                  onClick={() => update(c.id, { locked: !c.locked || undefined })}
+                >
+                  {c.locked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
                   title={t("Remove")}
                   onClick={() => remove(c.id)}
@@ -485,15 +522,17 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
                 </Button>
               </div>
               <div className="grid grid-cols-4 gap-1.5">
-                <NumberField label="X" value={round(c.x)} onChange={(v) => update(c.id, { x: v })} />
-                <NumberField label="Y" value={round(c.y)} onChange={(v) => update(c.id, { y: v })} />
+                <NumberField label="X" disabled={c.locked} value={round(c.x)} onChange={(v) => update(c.id, { x: v })} />
+                <NumberField label="Y" disabled={c.locked} value={round(c.y)} onChange={(v) => update(c.id, { y: v })} />
                 <NumberField
                   label={t("W")}
+                  disabled={c.locked}
                   value={round(c.width)}
                   onChange={(v) => update(c.id, { width: Math.max(4, v) })}
                 />
                 <NumberField
                   label={t("H")}
+                  disabled={c.locked}
                   value={round(c.height)}
                   onChange={(v) => update(c.id, { height: Math.max(4, v) })}
                 />
@@ -501,6 +540,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
               <div className="grid grid-cols-2 gap-1.5">
                 <NumberField
                   label={t("Rotation °")}
+                  disabled={c.locked}
                   value={round(c.rotation)}
                   onChange={(v) => update(c.id, { rotation: v })}
                 />

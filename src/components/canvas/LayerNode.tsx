@@ -11,7 +11,7 @@ import { DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import type { PlaceholderContext } from "../../placeholders";
 import type { Layer as TLayer } from "../../types";
 import { LayerInner } from "./layerInner";
-import { snapNodeToGuides, type SnapHit, type SnapLines } from "./snapping";
+import { lockNodeAxis, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./snapping";
 
 interface GroupSnapshot {
   x: number;
@@ -97,6 +97,10 @@ export function LayerNode({
     register(ref.current);
     return () => register(null);
   }, [register]);
+
+  // Where a plain drag began, and the axis Shift currently holds still.
+  const dragFrom = useRef<{ x: number; y: number } | null>(null);
+  const heldAxis = useRef<"x" | "y" | null>(null);
 
   const snapshot = () => {
     snap.current = {
@@ -206,19 +210,43 @@ export function LayerNode({
       onSelect();
       onContextMenu?.(e.evt);
     },
-    onDragStart: grouped ? snapshot : undefined,
-    onDragMove: grouped
-      ? () => applyGroup(false)
+    onDragStart: grouped
+      ? snapshot
       : (e: Konva.KonvaEventObject<DragEvent>) => {
-          if (snapLines) onSnap?.(snapNodeToGuides(e.target, snapLines));
+          dragFrom.current = { x: e.target.x(), y: e.target.y() };
+          heldAxis.current = null;
+        },
+    onDragMove: grouped
+      ? (e: Konva.KonvaEventObject<DragEvent>) => {
+          // Shift: the whole selection moves along one axis only.
+          const o = snap.current;
+          if (e.evt.shiftKey && o) lockNodeAxis(e.target, o);
+          applyGroup(false);
+        }
+      : (e: Konva.KonvaEventObject<DragEvent>) => {
+          // Shift held (as in Photoshop): move along one axis only. The held
+          // axis stays put, snapping included.
+          const from = dragFrom.current;
+          heldAxis.current = e.evt.shiftKey && from ? lockNodeAxis(e.target, from) : null;
+          if (snapLines) {
+            const hit = snapNodeToGuides(e.target, snapLines);
+            if (heldAxis.current && from) e.target[heldAxis.current](from[heldAxis.current]);
+            onSnap?.(withoutAxis(hit, heldAxis.current));
+          }
           onChange({ x: e.target.x(), y: e.target.y() }, false);
         },
     onDragEnd: grouped
       ? () => applyGroup(true)
       : (e: Konva.KonvaEventObject<DragEvent>) => {
-          if (snapLines) snapNodeToGuides(e.target, snapLines);
+          const from = dragFrom.current;
+          if (snapLines) {
+            snapNodeToGuides(e.target, snapLines);
+            if (heldAxis.current && from) e.target[heldAxis.current](from[heldAxis.current]);
+          }
           onSnap?.(null);
           onChange({ x: e.target.x(), y: e.target.y() }, true);
+          dragFrom.current = null;
+          heldAxis.current = null;
         },
     onTransformStart: grouped ? snapshot : undefined,
     onTransformEnd: grouped
