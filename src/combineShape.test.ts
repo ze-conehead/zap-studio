@@ -11,28 +11,33 @@ import {
 import type { CombineShape } from "./types";
 
 describe("operandsOf", () => {
-  it("puts the parent's own box first, always adding", () => {
+  it("a plain shape is just its own box, always adding", () => {
     const ops = operandsOf({ shape: "rect", width: 100, height: 60, cornerRadius: 8 });
     expect(ops).toEqual([
       { shape: "rect", op: "add", x: 0, y: 0, width: 100, height: 60, rotation: 0, cornerRadius: 8 },
     ]);
   });
 
-  it("rounds a capsule's corners to half its shorter side, base and children alike", () => {
-    const child: CombineShape = {
+  it("rounds a capsule's corners to half its shorter side, plain and as a part", () => {
+    const part: CombineShape = {
       id: "c1", shape: "capsule", op: "add", x: 10, y: 0, width: 40, height: 20, rotation: 0, cornerRadius: 99,
     };
-    const ops = operandsOf({ shape: "capsule", width: 80, height: 30, cornerRadius: 0, combine: [child] });
-    expect(ops[0].cornerRadius).toBe(15); // min(80,30)/2
-    expect(ops[1].cornerRadius).toBe(10); // min(40,20)/2, ignores the stored 99
+    expect(operandsOf({ shape: "capsule", width: 80, height: 30, cornerRadius: 0 })[0].cornerRadius).toBe(15);
+    const ops = operandsOf({ shape: "combined", width: 40, height: 20, cornerRadius: 0, combine: [part] });
+    expect(ops).toHaveLength(1);
+    expect(ops[0].cornerRadius).toBe(10); // min(40,20)/2, ignores the stored 99
   });
 
-  it("appends combine entries in order, each carrying its own op", () => {
+  it("a combined shape has no box of its own — just its parts, in order, each with its op", () => {
     const a: CombineShape = { id: "a", shape: "rect", op: "add", x: 20, y: 0, width: 10, height: 10, rotation: 0, cornerRadius: 0 };
     const b: CombineShape = { id: "b", shape: "circle", op: "subtract", x: -20, y: 0, width: 10, height: 10, rotation: 45, cornerRadius: 0 };
-    const ops = operandsOf({ shape: "rect", width: 50, height: 50, cornerRadius: 0, combine: [a, b] });
-    expect(ops.map((o) => o.op)).toEqual(["add", "add", "subtract"]);
-    expect(ops[2].rotation).toBe(45);
+    const ops = operandsOf({ shape: "combined", width: 999, height: 999, cornerRadius: 0, combine: [a, b] });
+    expect(ops.map((o) => o.op)).toEqual(["add", "subtract"]);
+    expect(ops[1].rotation).toBe(45);
+  });
+
+  it("a combined shape with no parts is empty", () => {
+    expect(operandsOf({ shape: "combined", width: 10, height: 10, cornerRadius: 0 })).toEqual([]);
   });
 });
 
@@ -42,9 +47,10 @@ describe("combinedBounds", () => {
     expect(combinedBounds(ops)).toEqual({ x: -50, y: -30, w: 100, h: 60 });
   });
 
-  it("grows to include an operand that extends past the parent", () => {
+  it("covers every part, wherever they sit", () => {
+    const main: CombineShape = { id: "m", shape: "rect", op: "add", x: 0, y: 0, width: 100, height: 60, rotation: 0, cornerRadius: 0 };
     const child: CombineShape = { id: "c", shape: "rect", op: "add", x: 80, y: 0, width: 20, height: 20, rotation: 0, cornerRadius: 0 };
-    const ops = operandsOf({ shape: "rect", width: 100, height: 60, cornerRadius: 0, combine: [child] });
+    const ops = operandsOf({ shape: "combined", width: 100, height: 60, cornerRadius: 0, combine: [main, child] });
     const b = combinedBounds(ops);
     expect(b.x).toBe(-50);
     expect(b.x + b.w).toBe(90); // child's right edge, 80 + 10
@@ -64,8 +70,9 @@ describe("combinedBounds", () => {
   });
 
   it("still counts a subtract-only operand toward the bounds (a safe superset)", () => {
+    const main: CombineShape = { id: "m", shape: "rect", op: "add", x: 0, y: 0, width: 20, height: 20, rotation: 0, cornerRadius: 0 };
     const child: CombineShape = { id: "c", shape: "rect", op: "subtract", x: 200, y: 0, width: 10, height: 10, rotation: 0, cornerRadius: 0 };
-    const ops = operandsOf({ shape: "rect", width: 20, height: 20, cornerRadius: 0, combine: [child] });
+    const ops = operandsOf({ shape: "combined", width: 20, height: 20, cornerRadius: 0, combine: [main, child] });
     const b = combinedBounds(ops);
     expect(b.x + b.w).toBeGreaterThan(200);
   });
@@ -123,11 +130,12 @@ describe("scaleCombine / combineAfterResize", () => {
 describe("visibleBounds", () => {
   it("covers the added parts only — a subtract entry never widens it", () => {
     const ops = operandsOf({
-      shape: "rect",
+      shape: "combined",
       width: 100,
       height: 50,
       cornerRadius: 0,
       combine: [
+        entry({ id: "main", x: 0, y: 0, width: 100, height: 50 }),
         entry({ x: 70, y: 0, width: 40, height: 40 }), // sticks out to the right
         entry({ id: "cut", op: "subtract", x: -90, y: 0, width: 60, height: 60 }), // cuts far to the left
       ],

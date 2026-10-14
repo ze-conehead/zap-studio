@@ -32,9 +32,6 @@ export const de: Record<string, string> = {
   "Show the global / console template layers": "Globale / Konsolen-Vorlagenebenen einblenden",
 
   // ── Combine shapes (#1) ──────────────────────────────────────────────────
-  "Combine shapes": "Formen kombinieren",
-  "Add another shape to union or subtract onto this one – several simple shapes can combine into one alpha mask (or one visual shape) this way.":
-    "Füge eine weitere Form hinzu, die mit dieser vereinigt oder von ihr subtrahiert wird – so lassen sich mehrere einfache Formen zu einer Alpha-Maske (oder einer sichtbaren Form) kombinieren.",
   "Add shape": "Form hinzufügen",
   Subtract: "Subtrahieren",
 
@@ -153,6 +150,12 @@ export const de: Record<string, string> = {
   "Unlock all": "Alle entsperren",
   "Let the combined shapes be moved again": "Die kombinierten Shapes wieder verschiebbar machen",
   "Lock the combined shapes — only the main shape can be moved": "Die kombinierten Shapes sperren – nur das Haupt-Shape lässt sich verschieben",
+  "Combined shape": "Combined Shape",
+  "Shapes": "Shapes",
+  "Add to combined shape …": "Zu Combined Shape hinzufügen …",
+  "Add to “{name}”": "Zu „{name}“ hinzufügen",
+  "Take out as its own shape layer": "Als eigene Shape-Ebene herauslösen",
+  "A combined shape has no outline of its own: add shapes here — or move shape layers in from the Layers panel (right-click ▸ Add to combined shape) — and they form one alpha mask, or one visual shape.": "Ein Combined Shape hat keine eigene Grundform: Füge hier Shapes hinzu – oder schiebe Shape-Ebenen aus dem Layers-Panel hinein (Rechtsklick ▸ Zu … hinzufügen oder per Drag & Drop auf die Zeile) – sie bilden zusammen eine Alpha-Maske oder eine sichtbare Form.",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",

@@ -202,7 +202,7 @@ function ShapeInner({
   // stays stable regardless of which branch this render takes.
   const patternTile = usePatternTile(layer.fill.pattern);
 
-  if (layer.combine?.length)
+  if (layer.shape === "combined")
     return (
       <CompoundShapeInner
         layer={layer}
@@ -475,14 +475,13 @@ function CompoundShapeInner({
     outerRef.current?.cache();
   });
 
-  // ops[0] is the parent's own box (edited via width/height, not draggable
-  // this way); ops[1..] are layer.combine, one index ahead.
+  // ops[i] is layer.combine[i].
   const handles =
     layerSelected && onCombineGrab && layer.combine?.length
       ? layer.combine.map((_, i) => (
           <CombineOperandHandle
             key={i}
-            op={ops[i + 1]}
+            op={ops[i]}
             index={i}
             active={combineIndex === i}
             locked={layer.combine?.[i]?.locked}

@@ -1,12 +1,14 @@
 // Right-click actions for one layer — shared by the canvas (EditorCanvas)
 // and the Layers panel (LayerList), so both offer the same menu.
 
+import { canJoin } from "../combined";
+import { isCombined } from "../combineShape";
 import { isBackground } from "../factory";
 import { useT } from "../i18n";
 import { copyLayer, layerClipboard, pasteLayer } from "../layerClipboard";
 import { copyStyle, pasteStyle, styleClipboard } from "../layerStyle";
 import type { Action } from "../store";
-import type { Layer } from "../types";
+import type { Layer, ShapeLayer } from "../types";
 import type { ContextMenuItem } from "./ContextMenu";
 
 export function buildLayerMenuItems(opts: {
@@ -26,7 +28,17 @@ export function buildLayerMenuItems(opts: {
   const bottom = faceLayers.findIndex((l) => !isBackground(l)); // first movable slot
   const stylePatch = pasteStyle(layer);
 
+  // A shape can be folded into any combined shape on this face.
+  const joinInto =
+    layer.type === "shape"
+      ? faceLayers.filter((l): l is ShapeLayer => isCombined(l) && canJoin(l, layer))
+      : [];
+
   return [
+    ...joinInto.map((c) => ({
+      label: t("Add to “{name}”", { name: c.name }),
+      onSelect: () => dispatch({ type: "MERGE_INTO_COMBINED", containerId: c.id, shapeId: layer.id }),
+    })),
     { label: t("Duplicate"), onSelect: () => dispatch({ type: "DUPLICATE_LAYER", id: layer.id }) },
     { label: t("Copy"), onSelect: () => copyLayer(layer) },
     ...(layerClipboard()

@@ -249,12 +249,17 @@ export function NumberField({
   onChange,
   step = 1,
   disabled,
+  commitOnBlur,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
   step?: number;
   disabled?: boolean;
+  // Apply the typed number once (on Enter / leaving the field) instead of
+  // with every keystroke — for values that move the ground under later
+  // keystrokes, such as a part of a combined shape.
+  commitOnBlur?: boolean;
 }) {
   // While typing, show exactly what was typed instead of the (possibly
   // clamped, e.g. Math.max(4, v)) committed value — otherwise typing "1"
@@ -271,10 +276,20 @@ export function NumberField({
         disabled={disabled}
         onChange={(e) => {
           setDraft(e.target.value);
+          if (commitOnBlur) return;
           const v = Number(e.target.value);
           if (e.target.value.trim() !== "" && Number.isFinite(v)) onChange(v);
         }}
-        onBlur={() => setDraft(null)}
+        onKeyDown={(e) => {
+          if (commitOnBlur && e.key === "Enter") e.currentTarget.blur();
+        }}
+        onBlur={() => {
+          if (commitOnBlur && draft !== null) {
+            const v = Number(draft);
+            if (draft.trim() !== "" && Number.isFinite(v) && v !== value) onChange(v);
+          }
+          setDraft(null);
+        }}
       />
     </Field>
   );

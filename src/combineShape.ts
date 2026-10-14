@@ -1,13 +1,17 @@
-// Combining shapes: a shape layer's own outline plus its `combine` entries
-// (ShapeLayer.combine) — simple shapes unioned or subtracted together to
-// form one alpha mask, or one visual shape. Pure geometry only; the actual
+// Combined shapes: a shape layer whose `shape` is "combined" has no outline
+// of its own — its `combine` entries (ShapeLayer.combine) are simple shapes
+// unioned or subtracted together to form one alpha mask, or one visual
+// shape. Pure geometry only; the actual
 // Konva rendering (silhouette compositing, fill-then-cut) lives in
 // src/components/canvas/layerInner.tsx.
 
-import type { CombineOp, CombineShape, ShapeKind } from "./types";
+import type { CombineOp, CombineShape, Layer, ShapeKind, ShapeLayer } from "./types";
 
-// One shape to composite: the parent's own box (always first, always
-// "add") or one of its `combine` entries, normalised to the same shape.
+/** A shape layer that is a container of parts rather than one outline. */
+export const isCombined = (l: Layer): l is ShapeLayer => l.type === "shape" && l.shape === "combined";
+
+// One shape to composite: a plain shape's own box, or one of a combined
+// shape's parts, normalised to the same form.
 export interface ShapeOperand {
   shape: ShapeKind;
   op: CombineOp;
@@ -22,7 +26,7 @@ export interface ShapeOperand {
 const newId = () =>
   crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-/** A new combine entry, sized to sit inside `parentW × parentH`, centred. */
+/** A new part, sized to sit inside `parentW × parentH`, centred. */
 export function makeCombineShape(
   shape: ShapeKind,
   op: CombineOp,
@@ -49,25 +53,32 @@ export function makeCombineShape(
 const cornerRadiusOf = (shape: ShapeKind, w: number, h: number, own: number) =>
   shape === "capsule" ? Math.min(w, h) / 2 : own;
 
-/** The parent's own box plus its `combine` entries, in draw order. */
+/**
+ * What a shape layer is made of, in draw order: a combined shape's parts
+ * (operand i is `combine[i]`), or just its own box for a plain shape.
+ */
 export function operandsOf(layer: {
-  shape: ShapeKind;
+  shape: ShapeKind | "combined";
   width: number;
   height: number;
   cornerRadius: number;
   combine?: CombineShape[];
 }): ShapeOperand[] {
-  const base: ShapeOperand = {
-    shape: layer.shape,
-    op: "add",
-    x: 0,
-    y: 0,
-    width: layer.width,
-    height: layer.height,
-    rotation: 0,
-    cornerRadius: cornerRadiusOf(layer.shape, layer.width, layer.height, layer.cornerRadius),
-  };
-  const rest = (layer.combine ?? []).map(
+  if (layer.shape !== "combined") {
+    return [
+      {
+        shape: layer.shape,
+        op: "add",
+        x: 0,
+        y: 0,
+        width: layer.width,
+        height: layer.height,
+        rotation: 0,
+        cornerRadius: cornerRadiusOf(layer.shape, layer.width, layer.height, layer.cornerRadius),
+      },
+    ];
+  }
+  return (layer.combine ?? []).map(
     (c): ShapeOperand => ({
       shape: c.shape,
       op: c.op,
@@ -79,7 +90,6 @@ export function operandsOf(layer: {
       cornerRadius: cornerRadiusOf(c.shape, c.width, c.height, c.cornerRadius),
     }),
   );
-  return [base, ...rest];
 }
 
 // The 4 corners of an operand's box, rotated around its own centre and
@@ -183,4 +193,67 @@ export function combinedBounds(ops: ShapeOperand[]): {
   }
   if (!Number.isFinite(minX)) return { x: 0, y: 0, w: 0, h: 0 };
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+const EPS = 1e-6;
+
+/**
+ * Keeps a combined shape's layer box honest: its position becomes the centre
+ * of what its parts show and width / height their size, with the parts
+ * shifted the other way so nothing moves on screen. Everything that treats a
+ * shape as a box centred on x / y (alignment, snapping, the selection box,
+ * hover, preflight, fitting an image into a frame) then works unchanged.
+ * Other layers, and a combined shape with no parts, come back as they were.
+ */
+export function recenterCombined<L extends Layer>(l: L): L {
+  if (!isCombined(l) || !l.combine?.length) return l;
+  const b = visibleBounds(operandsOf(l));
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  const w = Math.max(1, b.w);
+  const h = Math.max(1, b.h);
+  if (
+    Math.abs(cx) < EPS &&
+    Math.abs(cy) < EPS &&
+    Math.abs(w - l.width) < EPS &&
+    Math.abs(h - l.height) < EPS
+  ) {
+    return l;
+  }
+  // The new origin is the local point (cx, cy): node transform is
+  // position + rotate(scale ⊙ local).
+  const rad = (l.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = l.scaleX * cx;
+  const dy = l.scaleY * cy;
+  return {
+    ...l,
+    x: l.x + dx * cos - dy * sin,
+    y: l.y + dx * sin + dy * cos,
+    width: w,
+    height: h,
+    combine: l.combine.map((c) => ({ ...c, x: c.x - cx, y: c.y - cy })),
+  };
+}
+
+/**
+ * Older projects let any shape carry extra combined shapes on top of its own
+ * outline. Such a shape becomes a combined shape of its own outline plus
+ * those parts — it looks exactly as before.
+ */
+export function legacyToCombined<L extends Layer>(l: L): L {
+  if (l.type !== "shape" || l.shape === "combined" || !l.combine?.length) return l;
+  const own: CombineShape = {
+    id: newId(),
+    shape: l.shape,
+    op: "add",
+    x: 0,
+    y: 0,
+    width: l.width,
+    height: l.height,
+    rotation: 0,
+    cornerRadius: l.cornerRadius,
+  };
+  return recenterCombined({ ...l, shape: "combined", cornerRadius: 0, combine: [own, ...l.combine] } as L);
 }

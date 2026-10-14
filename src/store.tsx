@@ -8,7 +8,8 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { combineAfterResize } from "./combineShape";
+import { canJoin, extractPart, mergeIntoCombined } from "./combined";
+import { combineAfterResize, isCombined, recenterCombined } from "./combineShape";
 import { t } from "./i18n";
 import { copyStyle, pasteStyle } from "./layerStyle";
 import { isBackground, isCondition, makeBackFace, newProject } from "./factory";
@@ -46,6 +47,10 @@ type Action =
     }
   | { type: "DELETE_LAYER"; id: string }
   | { type: "DUPLICATE_LAYER"; id: string }
+  // Fold a shape layer into a combined shape as part of it (the layer goes
+  // away), or take one part back out as a shape layer of its own.
+  | { type: "MERGE_INTO_COMBINED"; containerId: string; shapeId: string }
+  | { type: "EXTRACT_COMBINED_PART"; id: string; index: number }
   // `stackAnchor` additionally sets (or clears, with `afterId: undefined`)
   // the dragged layer's `stackAfterId` — see src/faceLayers.ts.
   | {
@@ -208,10 +213,14 @@ function reducer(state: State, action: Action): State {
       let next = layers.map((l, j) =>
         j === i ? ({ ...l, ...action.patch } as Layer) : l,
       );
-      // Resizing a combined shape resizes the shapes combined onto it too.
-      if (layers[i].type === "shape") {
+      // Resizing a combined shape resizes its parts too.
+      if (isCombined(layers[i])) {
         const combine = combineAfterResize(layers[i] as ShapeLayer, action.patch as Partial<ShapeLayer>);
         if (combine) next = next.map((l, j) => (j === i ? ({ ...l, combine } as Layer) : l));
+        // Once its parts are committed (not mid-drag), the box follows them.
+        if ("combine" in action.patch && action.history !== false) {
+          next = next.map((l, j) => (j === i ? recenterCombined(l) : l));
+        }
       }
       // An image promoted to the main image is always labelled "Main image".
       if (action.patch.main === true && next[i].type === "image") {
@@ -267,6 +276,28 @@ function reducer(state: State, action: Action): State {
         ...commit(state, write(project, next)),
         selectedId: state.selectedId === action.id ? null : state.selectedId,
       };
+    }
+
+    case "MERGE_INTO_COMBINED": {
+      const container = layers.find((l) => l.id === action.containerId);
+      const shape = layers.find((l) => l.id === action.shapeId);
+      if (!container || !shape || container.type !== "shape" || shape.type !== "shape") return state;
+      if (!canJoin(container, shape)) return state;
+      const merged = mergeIntoCombined(container, shape);
+      const next = layers
+        .filter((l) => l.id !== shape.id)
+        .map((l) => (l.id === container.id ? merged : l));
+      return { ...commit(state, write(project, next)), selectedId: container.id };
+    }
+
+    case "EXTRACT_COMBINED_PART": {
+      const i = idx(action.id);
+      const container = layers[i];
+      if (i < 0 || !container || container.type !== "shape") return state;
+      const out = extractPart(container, action.index);
+      if (!out) return state;
+      const next = [...layers.slice(0, i), out.container, out.shape, ...layers.slice(i + 1)];
+      return { ...commit(state, write(project, next)), selectedId: out.shape.id };
     }
 
     case "DUPLICATE_LAYER": {

@@ -1,6 +1,7 @@
 import {
   Award,
   ClipboardPaste,
+  Combine,
   Copy,
   CornerDownRight,
   Crop,
@@ -40,7 +41,9 @@ import {
   subscribeLayerClipboard,
 } from "../layerClipboard";
 import { useStore } from "../store";
-import type { CombineShape, Layer, ShapeKind } from "../types";
+import { canJoin } from "../combined";
+import { isCombined } from "../combineShape";
+import type { CombineShape, Layer, ShapeKind, ShapeLayer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { CoverButton } from "./CoverButton";
@@ -61,7 +64,9 @@ function iconFor(l: Layer) {
       : isImage(l)
         ? ImageIcon
         : isShape(l)
-          ? Shapes
+          ? isCombined(l)
+            ? Combine
+            : Shapes
           : isMetaBadge(l)
             ? Award
             : l.type === "qr"
@@ -150,12 +155,15 @@ export function LayerList({
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<{ id: string; after: boolean } | null>(null);
+  // A shape row held over the middle of a combined shape's row: dropping adds it to that shape.
+  const [joinOver, setJoinOver] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   const reset = () => {
     dragId.current = null;
     setDragging(null);
     setOver(null);
+    setJoinOver(null);
   };
 
   // One combined, top-of-stack-first row list: own layers slot in right
@@ -421,6 +429,16 @@ export function LayerList({
     );
   };
 
+  // Dragging a plain shape's row onto the middle of a combined shape's row
+  // adds it to that combined shape (top / bottom edge: reorder as usual).
+  const joinsHere = (target: Layer, e: React.DragEvent<HTMLElement>) => {
+    const src = layers.find((x) => x.id === dragId.current);
+    if (!src || src.type !== "shape" || !isCombined(target) || !canJoin(target as ShapeLayer, src)) return false;
+    const r = e.currentTarget.getBoundingClientRect();
+    const f = (e.clientY - r.top) / r.height;
+    return f > 0.25 && f < 0.75;
+  };
+
   const ownRow = (l: Layer, nested = false) => {
     const active = l.id === state.selectedId;
     const bg = isBackground(l);
@@ -445,13 +463,22 @@ export function LayerList({
           if (!dragId.current || dragId.current === l.id || bg) return;
           e.preventDefault();
           const r = e.currentTarget.getBoundingClientRect();
+          if (joinsHere(l, e)) {
+            setJoinOver(l.id);
+            setOver(null);
+            return;
+          }
+          setJoinOver(null);
           setOver({ id: l.id, after: e.clientY > r.top + r.height / 2 });
         }}
         onDrop={(e) => {
           e.preventDefault();
           const src = dragId.current;
           const r = e.currentTarget.getBoundingClientRect();
-          if (src && !bg) applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+          if (src && !bg) {
+            if (joinsHere(l, e)) dispatch({ type: "MERGE_INTO_COMBINED", containerId: l.id, shapeId: src });
+            else applyDrop(src, l.id, e.clientY > r.top + r.height / 2);
+          }
           reset();
         }}
         onContextMenu={(e) => {
@@ -470,6 +497,7 @@ export function LayerList({
           nested && "ml-3 border-l-2 border-l-sky-500/60",
           dimmed && "opacity-50",
           dragging === l.id && "opacity-40",
+          joinOver === l.id && "bg-primary/10 ring-2 ring-primary",
           over?.id === l.id &&
             (over.after
               ? "border-b-2 border-b-primary"
@@ -589,7 +617,7 @@ export function LayerList({
               return (
                 <Fragment key={r.layer.id}>
                   {ownRow(r.layer)}
-                  {r.layer.type === "shape" &&
+                  {isCombined(r.layer) &&
                     r.layer.combine?.map((c, i) => combineRow(r.layer, i, c))}
                 </Fragment>
               );

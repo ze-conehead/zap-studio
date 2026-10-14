@@ -1,3 +1,4 @@
+import { legacyToCombined, makeCombineShape } from "./combineShape";
 import { t } from "./i18n";
 import { DEFAULT_BACKGROUND, DEFAULT_SHAPE_FILL, resolveBackground } from "./background";
 import { CANVAS, TRIM_RECT } from "./card";
@@ -218,6 +219,26 @@ export function makeQrLayer(): QrLayer {
   };
 }
 
+// A combined shape: no outline of its own, only the shapes (its parts) that
+// make it up. Starts with one rounded square so there is something to see
+// and grab; more join through "Add shape" or from the Layers panel.
+export function makeCombinedLayer(): ShapeLayer {
+  const square = TRIM_RECT.w * 0.4;
+  const part = makeCombineShape("rect", "add", square * 2, square * 2);
+  return {
+    ...base(t("Combined shape")),
+    type: "shape",
+    shape: "combined",
+    width: part.width,
+    height: part.height,
+    cornerRadius: 0,
+    fill: { ...DEFAULT_SHAPE_FILL },
+    stroke: "#000000",
+    strokeWidth: 0,
+    combine: [part],
+  };
+}
+
 export function makeShapeLayer(shape: ShapeKind): ShapeLayer {
   const square = TRIM_RECT.w * 0.4;
   const size =
@@ -429,11 +450,18 @@ export function migrateProject(p: Project): Project {
     });
   };
 
+  // Shapes that carried extra combined shapes on top of their own outline
+  // become combined shapes (src/combineShape.ts#legacyToCombined).
+  const toCombined = (layers: Layer[]): Layer[] =>
+    layers.some((l) => l.type === "shape" && l.shape !== "combined" && l.combine?.length)
+      ? layers.map(legacyToCombined)
+      : layers;
+
   // Templates never inherit; a game card keeps its previous source default.
   const frontSource = p.isTemplate
     ? "card"
     : p.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  const migrated = toAlphaMask(faceLayers(p.layers, p, frontSource));
+  const migrated = toCombined(toAlphaMask(faceLayers(p.layers, p, frontSource)));
   // The global template always keeps a background layer — backfill one for
   // templates saved before that became the default.
   const nextLayers =
@@ -441,7 +469,7 @@ export function migrateProject(p: Project): Project {
       ? [makeBackgroundLayer(), ...migrated]
       : migrated;
   const nextBack = p.back
-    ? { ...p.back, layers: toAlphaMask(faceLayers(p.back.layers, p.back, "card")) }
+    ? { ...p.back, layers: toCombined(toAlphaMask(faceLayers(p.back.layers, p.back, "card"))) }
     : p.back;
 
   if (nextLayers === p.layers && nextBack === p.back) return p;

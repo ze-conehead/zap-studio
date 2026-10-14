@@ -198,26 +198,30 @@ export interface TextLayer extends BaseLayer {
 
 export interface ShapeLayer extends BaseLayer {
   type: "shape";
-  shape: ShapeKind;
+  // "combined": a container with no outline of its own — its shape is the
+  // union (minus the cut-outs) of the `combine` entries. See src/combineShape.ts.
+  shape: ShapeKind | "combined";
   width: number;
   height: number;
   cornerRadius: number; // rect only; capsule rounds automatically
   fill: CardBackground; // solid / gradient + noise, same model as the card
   stroke: string;
   strokeWidth: number;
-  // Extra shapes unioned / subtracted onto this one's own outline, so
-  // several simple shapes can combine into one alpha mask or one visual
-  // shape — see src/combineShape.ts. Absent/empty = just this one shape.
+  // A "combined" shape's parts, in draw order: simple shapes unioned or
+  // subtracted into one alpha mask or one visual shape. Plain shapes have
+  // none. width / height always equal the parts' bounding box and the layer's
+  // position is the centre of it (src/combined.ts keeps that true), so
+  // alignment, snapping and the selection box treat it like any other shape.
   combine?: CombineShape[];
 }
 
 export type CombineOp = "add" | "subtract";
 
-// One shape combined into its parent's outline (ShapeLayer.combine). A
-// light, self-contained descriptor rather than a full layer, so it travels
-// with the parent on copy/paste and export with no id-linking to keep in
-// sync. x/y/rotation are in the parent's own local space (its centre is
-// 0,0) — the whole compound moves and scales together as the parent layer.
+// One part of a combined shape (ShapeLayer.combine). A light,
+// self-contained descriptor rather than a full layer, so it travels with the
+// container on copy/paste and export with no id-linking to keep in sync.
+// x/y/rotation are in the container's own local space (its centre is 0,0) —
+// the whole compound moves and scales together as the container layer.
 export interface CombineShape {
   id: string; // stable key for the editor list — not a layer id
   shape: ShapeKind;

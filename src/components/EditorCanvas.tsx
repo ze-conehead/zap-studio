@@ -55,7 +55,7 @@ import {
   TextFrameOutline,
 } from "./canvas/outlines";
 import { dominantAxis, layerBoxSize, snapBox, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./canvas/snapping";
-import { operandBounds, operandsOf, visibleBounds } from "../combineShape";
+import { isCombined, operandBounds, operandsOf, visibleBounds } from "../combineShape";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
 // for CardStage.
@@ -529,8 +529,7 @@ function FaceStage({
     if (!parent || !stage || !pointer) return;
     if (parent.type === "shape" && parent.combine?.[index]?.locked) return;
     // Snapping: the entry's own box against the guides, the card, the other
-    // layers and the parts of this same combined shape (the main shape and
-    // its other entries).
+    // layers and the other parts of this same combined shape.
     const sx = parent.scaleX || 1;
     const sy = parent.scaleY || 1;
     const lines: SnapLines | undefined =
@@ -539,7 +538,7 @@ function FaceStage({
             const smartX = [...snapLines.smartX];
             const smartY = [...snapLines.smartY];
             operandsOf(parent).forEach((op, i) => {
-              if (i === index + 1) return; // the dragged one
+              if (i === index) return; // the dragged one
               const b = operandBounds(op);
               const xa = parent.x + b.x * sx;
               const xb = parent.x + (b.x + b.w) * sx;
@@ -567,7 +566,7 @@ function FaceStage({
       let x = start.x + (dx * cos - dy * sin);
       let y = start.y + (dx * sin + dy * cos);
       if (lines && parent.type === "shape") {
-        const op = operandsOf(parent)[index + 1];
+        const op = operandsOf(parent)[index];
         const b = operandBounds({ ...op, x, y });
         const xa = parent.x + b.x * sx;
         const xb = parent.x + (b.x + b.w) * sx;
@@ -693,7 +692,7 @@ function FaceStage({
     // just the main shape's own box.
     for (const l of layerList) {
       if (l.id === selectedId || !l.visible || l.rotation) continue;
-      if (l.type === "shape" && l.combine?.length) {
+      if (isCombined(l) && l.combine?.length) {
         const b = visibleBounds(operandsOf(l));
         const xa = l.x + b.x * l.scaleX;
         const xb = l.x + (b.x + b.w) * l.scaleX;
@@ -771,7 +770,7 @@ function FaceStage({
     proxyDrag.current = { id, startX: node.x(), startY: node.y(), startPointer: pointer };
     // A combined shape snaps by everything it shows, not by its helper nodes.
     const localBox =
-      layer.type === "shape" && layer.combine?.length
+      isCombined(layer) && layer.combine?.length
         ? (() => {
             const b = visibleBounds(operandsOf(layer));
             return { x: b.x, y: b.y, width: b.w, height: b.h };

@@ -167,7 +167,7 @@ export function LayerNode({
   // hijacking those grabs. It drags manually instead, the same
   // onProxyDragStart already used to move the selected layer from anywhere
   // on the canvas (see EditorCanvas.tsx's startProxyDrag).
-  const compound = layer.type === "shape" && !!layer.combine?.length;
+  const compound = layer.type === "shape" && layer.shape === "combined";
 
   const common = {
     ref,

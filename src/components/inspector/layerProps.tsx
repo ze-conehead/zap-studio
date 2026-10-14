@@ -7,12 +7,14 @@ import {
   AlignRight,
   Bold,
   Braces,
+  Combine,
   ClipboardCopy,
   ClipboardPaste,
   Italic,
   Loader2,
   Lock,
   LockOpen,
+  LogOut,
   MinusCircle,
   MoveHorizontal,
   MoveVertical,
@@ -49,6 +51,7 @@ import { copyStyle, getStyleClipboardVersion, pasteStyle, styleClipboard, subscr
 import { cn } from "@/lib/utils";
 import { useT } from "../../i18n";
 import { croppedNatural, metaBadgeKind } from "../../factory";
+import { useStore } from "../../store";
 import { getWorkspaceKind } from "../../workspace";
 import {
   addCustomFont,
@@ -73,7 +76,8 @@ import {
   type ShapeLayer,
   type TextLayer,
 } from "../../types";
-import { makeCombineShape } from "../../combineShape";
+import { canJoin } from "../../combined";
+import { isCombined, makeCombineShape } from "../../combineShape";
 import { TRIM_RECT } from "../../card";
 
 import { AdjustControls, ColorField, Field, IconToggle, NumberField, round, SliderField, trimOrigin, trimSpan, type Patch, FillEditor } from "./fields";
@@ -358,7 +362,11 @@ export function ShapeProps({
         )}
       </div>
 
-      <CombineEditor layer={layer} patch={patch} />
+      {layer.shape === "combined" ? (
+        <CombineEditor layer={layer} patch={patch} />
+      ) : (
+        <JoinCombined layer={layer} />
+      )}
 
       {frame ? (
         <p className="text-xs text-muted-foreground">
@@ -399,12 +407,41 @@ const COMBINE_SHAPES: { id: ShapeKind; label: string }[] = [
   { id: "capsule", label: "Capsule" },
 ];
 
-// Extra shapes unioned / subtracted onto this one's own outline — see
-// src/combineShape.ts. Works the same for a plain shape and an alpha mask
-// (frame) or a "As mask" clipping shape: whatever consumes this layer's
-// alpha sees the combined result.
+// A plain shape can be folded into a combined shape on the same face.
+function JoinCombined({ layer }: { layer: ShapeLayer }) {
+  const t = useT();
+  const { state, dispatch } = useStore();
+  const faceLayers = state.side === "back" ? state.project.back?.layers ?? [] : state.project.layers;
+  const targets = faceLayers.filter((l): l is ShapeLayer => isCombined(l) && canJoin(l, layer));
+  if (!targets.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="self-start">
+          <Combine /> {t("Add to combined shape …")}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {targets.map((c) => (
+          <DropdownMenuItem
+            key={c.id}
+            onClick={() => dispatch({ type: "MERGE_INTO_COMBINED", containerId: c.id, shapeId: layer.id })}
+          >
+            {c.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// The shapes a combined shape is made of, unioned or subtracted into one
+// outline — see src/combineShape.ts. A combined shape works like any shape
+// layer, including as an alpha mask (frame) or "As mask" clipping shape:
+// whatever consumes its alpha sees the combined result.
 function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
   const t = useT();
+  const { dispatch } = useStore();
   const combine = layer.combine ?? [];
 
   const update = (id: string, p: Partial<CombineShape>) =>
@@ -420,7 +457,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
   return (
     <div className="flex flex-col gap-1.5 rounded-md border p-2.5">
       <div className="flex items-center justify-between">
-        <Label>{t("Combine shapes")}</Label>
+        <Label>{t("Shapes")}</Label>
         <div className="flex items-center gap-0.5">
         {combine.length > 0 && (
           <Button
@@ -453,7 +490,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
       {combine.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           {t(
-            "Add another shape to union or subtract onto this one – several simple shapes can combine into one alpha mask (or one visual shape) this way.",
+            "A combined shape has no outline of its own: add shapes here — or move shape layers in from the Layers panel (right-click ▸ Add to combined shape) — and they form one alpha mask, or one visual shape.",
           )}
         </p>
       ) : (
@@ -514,6 +551,15 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="size-7 shrink-0 text-muted-foreground"
+                  title={t("Take out as its own shape layer")}
+                  onClick={() => dispatch({ type: "EXTRACT_COMBINED_PART", id: layer.id, index: combine.findIndex((x) => x.id === c.id) })}
+                >
+                  <LogOut className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
                   title={t("Remove")}
                   onClick={() => remove(c.id)}
@@ -522,16 +568,18 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
                 </Button>
               </div>
               <div className="grid grid-cols-4 gap-1.5">
-                <NumberField label="X" disabled={c.locked} value={round(c.x)} onChange={(v) => update(c.id, { x: v })} />
-                <NumberField label="Y" disabled={c.locked} value={round(c.y)} onChange={(v) => update(c.id, { y: v })} />
+                <NumberField label="X" commitOnBlur disabled={c.locked} value={round(c.x)} onChange={(v) => update(c.id, { x: v })} />
+                <NumberField label="Y" commitOnBlur disabled={c.locked} value={round(c.y)} onChange={(v) => update(c.id, { y: v })} />
                 <NumberField
                   label={t("W")}
+                  commitOnBlur
                   disabled={c.locked}
                   value={round(c.width)}
                   onChange={(v) => update(c.id, { width: Math.max(4, v) })}
                 />
                 <NumberField
                   label={t("H")}
+                  commitOnBlur
                   disabled={c.locked}
                   value={round(c.height)}
                   onChange={(v) => update(c.id, { height: Math.max(4, v) })}
@@ -540,6 +588,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
               <div className="grid grid-cols-2 gap-1.5">
                 <NumberField
                   label={t("Rotation °")}
+                  commitOnBlur
                   disabled={c.locked}
                   value={round(c.rotation)}
                   onChange={(v) => update(c.id, { rotation: v })}

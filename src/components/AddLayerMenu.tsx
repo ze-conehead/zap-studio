@@ -2,6 +2,7 @@ import {
   Award,
   CalendarDays,
   Circle,
+  Combine,
   Database,
   Crop,
   GitBranch,
@@ -46,6 +47,7 @@ import {
   makeMetaBadgeLayer,
   makeMetaTextLayer,
   makeQrLayer,
+  makeCombinedLayer,
   makeShapeLayer,
   makeTextLayer,
   uid,
@@ -345,6 +347,9 @@ export function AddLayerMenu() {
               <Icon /> {t(label)}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuItem onClick={() => dispatch({ type: "ADD_LAYER", layer: makeCombinedLayer() })}>
+            <Combine /> {t("Combined shape")}
+          </DropdownMenuItem>
 
           {!onBack && (
             <>
