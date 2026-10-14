@@ -42,7 +42,8 @@ import {
   reorderGames,
   subscribeCatalog,
 } from "../data/catalog";
-import { fitImageToMask, makeImageLayer } from "../factory";
+import { GLOBAL_TEMPLATE_ID, fitImageToMask, makeImageLayer, templateId } from "../factory";
+import { loadProject } from "../persist";
 import { clearGamelist, importGamelistXml, loadGamelist, renameGameMeta } from "../gamelist";
 import { urlToLayerSource } from "../image";
 import {
@@ -50,7 +51,7 @@ import {
   loadImagedGameKeys,
   type QuickImportRow,
 } from "../quickImport";
-import { mainMaskOf } from "../templates";
+import { alphaMasksOf, isAlphaMask, mainMaskOf, screenshotMasksOf } from "../templates";
 import type { Layer } from "../types";
 import { useT } from "../i18n";
 import { useStore } from "../store";
@@ -60,6 +61,7 @@ import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 import { ConsoleLogoDialog } from "./ConsoleLogoDialog";
 import { makeConsoleLogoLayer, insertConsoleLogo } from "../consoleLogos";
 import { loadLogoSlot } from "../templates";
+import { FindScreenshotsFlow } from "./FindScreenshotsFlow";
 import { CoverSearchDialog } from "./CoverSearchDialog";
 import { CoverSweepDialog } from "./CoverSweepDialog";
 import { MetaSweepDialog } from "./MetaSweepDialog";
@@ -142,6 +144,7 @@ export function GameTree({
   const [consoleLogos, setConsoleLogos] = useState(false);
   const [consoleLogo, setConsoleLogo] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
+  const [gameShots, setGameShots] = useState<QuickImportRow | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [metaSweep, setMetaSweep] = useState<{ consoleId: string; consoleName: string } | null>(null);
 
@@ -206,16 +209,41 @@ export function GameTree({
     }
   };
 
-  const promptCoverUrl = (row: QuickImportRow) => {
-    setPrompt({
-      title: t("Image URL for the cover:"),
-      onSubmit: (url) => void insertCoverForGame(row, url),
-    });
-  };
+  // Which consoles have a screenshot container to fill (global + console
+  // template) — "Find screenshots" is offered for their cards only. The open
+  // template is read live, the others from disk.
+  const [shotConsoles, setShotConsoles] = useState<Set<string>>(() => new Set());
+  const liveFrames = state.project.isTemplate
+    ? state.project.layers
+        .filter(isAlphaMask)
+        .map((l) => `${l.id}:${l.visible ? 1 : 0}:${l.shotOnly ? 1 : 0}`)
+        .join(",")
+    : "";
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const live = state.project;
+      const globalP = live.isGlobalTemplate ? live : await loadProject(GLOBAL_TEMPLATE_ID);
+      const found = new Set<string>();
+      for (const c of getCatalog()) {
+        const consoleP =
+          live.isTemplate && live.consoleId === c.id ? live : await loadProject(templateId(c.id));
+        if (screenshotMasksOf([...alphaMasksOf(globalP), ...alphaMasksOf(consoleP)]).length) found.add(c.id);
+      }
+      if (alive) setShotConsoles(found);
+    })();
+    return () => {
+      alive = false;
+    };
+    // Re-read when the catalogue or the open template's frames change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogVersion, state.project.id, liveFrames]);
 
   const coverMenuItems = (row: QuickImportRow): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setGameCover(row) },
-    { label: t("Insert cover by URL"), onSelect: () => promptCoverUrl(row) },
+    ...(shotConsoles.has(row.gameKey.split("/")[0])
+      ? [{ label: t("Find screenshots"), onSelect: () => setGameShots(row) }]
+      : []),
   ];
 
   const addConsolePrompt = () => {
@@ -831,6 +859,8 @@ export function GameTree({
           }}
         />
       )}
+
+      {gameShots && <FindScreenshotsFlow row={gameShots} onClose={() => setGameShots(null)} />}
 
       <PromptDialog state={prompt} onOpenChange={(o) => !o && setPrompt(null)} />
 

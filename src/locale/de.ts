@@ -168,6 +168,9 @@ export const de: Record<string, string> = {
   "A container above it already holds the cover, so this one is treated as a screenshot container.": "Ein Container darüber hält schon das Cover, deshalb zählt dieser als Screenshot-Container.",
   "Where a screenshot goes: the image is clipped to this layer's alpha and sized to its box, and “Find cover” skips this frame. Make every frame in a stack a screenshot container if the template has no cover slot.": "Hier landet ein Screenshot: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Größe gebracht, und „Cover suchen“ überspringt diesen Rahmen. Mach bei einem Stapel Rahmen alle zu Screenshot-Containern, wenn das Template keinen Cover-Platz hat.",
   "No containers yet — add one in a console template or “Global Layout”.": "Noch keine Container – leg einen in einer Konsolen-Vorlage oder in „Global Layout“ an.",
+  "Find screenshots": "Screenshots suchen",
+  "Every screenshot container of this card already has a picture.": "Alle Screenshot-Container dieser Karte haben schon ein Bild.",
+  "There is no screenshot container for this console yet.": "Für diese Konsole gibt es noch keinen Screenshot-Container.",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -259,8 +262,6 @@ export const de: Record<string, string> = {
   "Shows this value from the card's metadata; nothing is drawn where the entry has none.":
     "Zeigt diesen Wert aus den Metadaten der Karte; fehlt er im Eintrag, wird nichts gezeichnet.",
   "Search consoles & games": "Konsolen & Spiele durchsuchen",
-  "Insert cover by URL": "Cover per URL einfügen",
-  "Image URL for the cover:": "Bild-URL für das Cover:",
   Shape: "Form",
   Square: "Quadrat",
   Circle: "Kreis",
