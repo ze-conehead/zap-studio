@@ -438,6 +438,10 @@ function Shell({
     parentId: string;
     index: number;
   } | null>(null);
+  // A picked part only stays picked while its combined shape is the selected layer.
+  useEffect(() => {
+    if (selectedCombine && state.selectedId !== selectedCombine.parentId) setSelectedCombine(null);
+  }, [state.selectedId, selectedCombine]);
   const selectOwn = (id: string | null) => {
     setForeignSelected(null);
     setSelectedCombine(null);

@@ -475,20 +475,22 @@ function CompoundShapeInner({
     outerRef.current?.cache();
   });
 
-  // ops[i] is layer.combine[i].
+  // ops[i] is layer.combine[i]. Only a part picked in the Layers panel gets a
+  // handle of its own (it is the thing to move); with just the combined shape
+  // selected, a drag anywhere on it moves everything together.
   const handles =
-    layerSelected && onCombineGrab && layer.combine?.length
-      ? layer.combine.map((_, i) => (
+    layerSelected && onCombineGrab && combineIndex !== undefined && layer.combine?.[combineIndex]
+      ? [
           <CombineOperandHandle
-            key={i}
-            op={ops[i]}
-            index={i}
-            active={combineIndex === i}
-            locked={layer.combine?.[i]?.locked}
+            key={combineIndex}
+            op={ops[combineIndex]}
+            index={combineIndex}
+            active
+            locked={layer.combine[combineIndex].locked}
             onSelect={onCombineSelect}
             onGrab={onCombineGrab}
-          />
-        ))
+          />,
+        ]
       : null;
 
   // As a mask, only the combined alpha matters — the outer cached group's
