@@ -236,19 +236,19 @@ export function MaskRoleControls({
         .slice(0, own.findIndex((l) => l.id === selected.id))
         .some((l) => l.type === "shape" && l.alphaMask && !l.shotOnly && l.visible);
     const roles: [ContainerRole, string][] = [
-      ["none", t("No container")],
+      ["none", t("Shape")],
       ["cover", t("Cover container")],
       ["screenshot", t("Screenshot container")],
     ];
     return (
       <div className="flex flex-col gap-1.5">
-        <div role="radiogroup" aria-label={t("Container")} className="flex flex-col gap-1">
+        <div role="radiogroup" aria-label={t("Container")} className="grid grid-cols-3 gap-2">
           {roles.map(([r, label]) => (
-            <label key={r} className="flex items-center gap-2 text-sm">
+            <label key={r} className="flex items-start gap-1.5 text-xs leading-tight">
               <input
                 type="radio"
                 name="container-role"
-                className="size-3.5 accent-[var(--accent-solid)]"
+                className="mt-px size-3.5 shrink-0 accent-[var(--accent-solid)]"
                 checked={role === r}
                 onChange={() => pick(r)}
               />

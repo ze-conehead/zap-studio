@@ -162,7 +162,6 @@ export const de: Record<string, string> = {
   "Screenshot container {n}": "Screenshot-Container {n}",
   "Cover container": "Cover-Container",
   "Screenshot container": "Screenshot-Container",
-  "No container": "Kein Container",
   "Container": "Container",
   "A container is a frame cards drop an image into. This layer is a plain shape.": "Ein Container ist ein Rahmen, in den Karten ein Bild legen. Diese Ebene ist eine normale Form.",
   "Where a game's cover goes: “Find cover” drops it into this frame, clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.": "Hier landet das Cover eines Spiels: „Cover suchen“ legt es in diesen Rahmen, beschnitten auf den Alphakanal dieser Ebene und auf ihre Größe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
