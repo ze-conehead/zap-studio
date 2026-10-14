@@ -203,6 +203,8 @@ export const faceOf = (state: { side: string; project: { layers: Layer[]; back?:
 // The card's main image is always clipped by the global main mask.
 // In a template: mark this layer as an alpha mask. On a card: pick which of
 // the available masks an image is clipped to.
+type ContainerRole = "none" | "cover" | "screenshot";
+
 export function MaskRoleControls({
   patch,
   masks,
@@ -219,35 +221,62 @@ export function MaskRoleControls({
     // Only a shape can be an alpha mask — its geometry is the frame. An
     // image would clip cards to its own pixels, which is never what's wanted.
     if (selected.type !== "shape") return null;
+    // One choice: not a container, the cover's, or a screenshot's.
+    const role: ContainerRole = !selected.alphaMask ? "none" : selected.shotOnly ? "screenshot" : "cover";
+    const pick = (r: ContainerRole) =>
+      patch(
+        r === "none"
+          ? { alphaMask: false, shotOnly: undefined }
+          : { alphaMask: true, shotOnly: r === "screenshot" ? true : undefined },
+      );
+    const own = state.project.layers;
+    const earlierCover =
+      role === "cover" &&
+      own
+        .slice(0, own.findIndex((l) => l.id === selected.id))
+        .some((l) => l.type === "shape" && l.alphaMask && !l.shotOnly && l.visible);
+    const roles: [ContainerRole, string][] = [
+      ["none", t("No container")],
+      ["cover", t("Cover container")],
+      ["screenshot", t("Screenshot container")],
+    ];
     return (
       <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={!!selected.alphaMask}
-            onCheckedChange={(v) => patch({ alphaMask: !!v })}
-          />
-          {t("Alpha mask")}
-        </label>
-        <p className="text-xs text-muted-foreground">
-          {t(
-            "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.",
-          )}
-        </p>
-        {selected.alphaMask && (
-          <>
-            <label className="flex items-center gap-2 pl-0.5 text-sm">
-              <Checkbox
-                checked={!!selected.shotOnly}
-                onCheckedChange={(v) => patch({ shotOnly: !!v })}
+        <div role="radiogroup" aria-label={t("Container")} className="flex flex-col gap-1">
+          {roles.map(([r, label]) => (
+            <label key={r} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="container-role"
+                className="size-3.5 accent-[var(--accent-solid)]"
+                checked={role === r}
+                onChange={() => pick(r)}
               />
-              {t("Screenshot only")}
+              {label}
             </label>
-            <p className="pl-0.5 text-xs text-muted-foreground">
-              {t(
-                "“Find cover” skips this frame — for a stack of screenshot frames with no dedicated cover slot, flag all of them so every one counts as a screenshot to find.",
-              )}
-            </p>
-          </>
+          ))}
+        </div>
+        {role === "none" && (
+          <p className="text-xs text-muted-foreground">
+            {t("A container is a frame cards drop an image into. This layer is a plain shape.")}
+          </p>
+        )}
+        {role === "cover" && (
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Where a game's cover goes: “Find cover” drops it into this frame, clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.",
+            )}
+            {earlierCover && (
+              <> {t("A container above it already holds the cover, so this one is treated as a screenshot container.")}</>
+            )}
+          </p>
+        )}
+        {role === "screenshot" && (
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Where a screenshot goes: the image is clipped to this layer's alpha and sized to its box, and “Find cover” skips this frame. Make every frame in a stack a screenshot container if the template has no cover slot.",
+            )}
+          </p>
         )}
       </div>
     );
@@ -257,10 +286,10 @@ export function MaskRoleControls({
 
   const value = selected.maskId ?? (selected.main && masks[0] ? masks[0].layer.id : "");
   return (
-    <Field label={t("Alpha mask")}>
+    <Field label={t("Container")}>
       {masks.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {t("No alpha masks yet — add one in a console template or “Global Layout”.")}
+          {t("No containers yet — add one in a console template or “Global Layout”.")}
         </p>
       ) : (
         <Select

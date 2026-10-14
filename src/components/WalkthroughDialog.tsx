@@ -119,9 +119,9 @@ export function WalkthroughDialog({
     },
     {
       icon: SquareDashed,
-      title: t("4. Add an alpha mask"),
+      title: t("4. Add a cover container"),
       body: t(
-        "In “Global Layout”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.",
+        "In “Global Layout”, add a “Cover container” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.",
       ),
       actionLabel: t("Open “Global Layout”"),
       action: () => jump(targets.onOpenGlobal),

@@ -176,7 +176,7 @@ export function AutoFillDialog({
                     n: counts.screenshots,
                     cards: plan.screenshots.length,
                   })
-                : t("No empty screenshot frames — add alpha masks to a template first."),
+                : t("No empty screenshot frames — add screenshot containers to a template first."),
               counts.screenshots === 0,
             )}
             {row(

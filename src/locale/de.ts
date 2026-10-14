@@ -158,6 +158,17 @@ export const de: Record<string, string> = {
   "Unlock all children": "Alle Teile entsperren",
   "Add a shape to this combined shape": "Ein Shape zu diesem Combined Shape hinzufügen",
   "Deselect all layers (Esc)": "Alle Ebenen abwählen (Esc)",
+  "Cover container {n}": "Cover-Container {n}",
+  "Screenshot container {n}": "Screenshot-Container {n}",
+  "Cover container": "Cover-Container",
+  "Screenshot container": "Screenshot-Container",
+  "No container": "Kein Container",
+  "Container": "Container",
+  "A container is a frame cards drop an image into. This layer is a plain shape.": "Ein Container ist ein Rahmen, in den Karten ein Bild legen. Diese Ebene ist eine normale Form.",
+  "Where a game's cover goes: “Find cover” drops it into this frame, clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.": "Hier landet das Cover eines Spiels: „Cover suchen“ legt es in diesen Rahmen, beschnitten auf den Alphakanal dieser Ebene und auf ihre Größe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
+  "A container above it already holds the cover, so this one is treated as a screenshot container.": "Ein Container darüber hält schon das Cover, deshalb zählt dieser als Screenshot-Container.",
+  "Where a screenshot goes: the image is clipped to this layer's alpha and sized to its box, and “Find cover” skips this frame. Make every frame in a stack a screenshot container if the template has no cover slot.": "Hier landet ein Screenshot: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Größe gebracht, und „Cover suchen“ überspringt diesen Rahmen. Mach bei einem Stapel Rahmen alle zu Screenshot-Containern, wenn das Template keinen Cover-Platz hat.",
+  "No containers yet — add one in a console template or “Global Layout”.": "Noch keine Container – leg einen in einer Konsolen-Vorlage oder in „Global Layout“ an.",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -364,9 +375,9 @@ export const de: Record<string, string> = {
   "3. How the levels stack": "3. Wie die Ebenen aufeinander liegen",
   "Three levels, bottom to top: “Global Layout” is the global template and shows on every card, each console has its own template, and each game has its own card. Every level holds layers — images, text, shapes, metadata badges from the gamelist, and conditions that swap layers by genre, year or rating.":
     "Drei Ebenen, von unten nach oben: „Global Layout“ ist die globale Vorlage und erscheint auf jeder Karte, jede Konsole hat ihre eigene Vorlage, und jedes Spiel hat seine eigene Karte. Jede Ebene trägt Layer – Bilder, Text, Formen, Metadaten-Badges aus der gamelist und Bedingungen, die Layer nach Genre, Jahr oder Wertung austauschen.",
-  "4. Add an alpha mask": "4. Alpha-Maske anlegen",
-  "In “Global Layout”, add an “Alpha mask” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.":
-    "Lege in „Global Layout“ einen „Alpha-Maske“-Layer an und schiebe ihn dorthin, wo das Artwork sitzen soll. Er ist der Rahmen, in den jedes Spielecover fällt: Cover werden daran zugeschnitten und auf seine Größe gebracht – auf allen Karten gleichzeitig. Verschiebst du ihn später, ziehen die Cover mit.",
+  "4. Add a cover container": "4. Cover-Container anlegen",
+  "In “Global Layout”, add a “Cover container” layer and put it where the artwork belongs. It is the frame every game cover drops into: covers are clipped to it and sized to its box, on all cards at once. Move it later and the covers follow.":
+    "Lege in „Global Layout“ einen „Cover-Container“-Layer an und schiebe ihn dorthin, wo das Artwork sitzen soll. Er ist der Rahmen, in den jedes Spielecover fällt: Cover werden daran zugeschnitten und auf seine Größe gebracht – auf allen Karten gleichzeitig. Verschiebst du ihn später, ziehen die Cover mit.",
   "Open “Global Layout”": "„Global Layout“ öffnen",
   "5. Check it in the preview": "5. In der Vorschau prüfen",
   "“Preview” shows the card in 3D — drag to tilt it, and turn it over if it has a back side. “Preview all” lays out every card of the project side by side.":
@@ -1046,14 +1057,6 @@ export const de: Record<string, string> = {
   "Could not build the sheet.": "Bogen konnte nicht erstellt werden.",
 
   // ── Alpha masks ──────────────────────────────────────────────────────────
-  "Alpha mask {n}": "Alpha-Maske {n}",
-  "Cards can drop an image into this frame: the image is clipped to this layer's alpha and sized to its box. The frame itself is not drawn on the cards.":
-    "Karten k\u00f6nnen ein Bild in diesen Rahmen legen: Das Bild wird auf den Alphakanal dieser Ebene beschnitten und auf ihre Gr\u00f6\u00dfe gebracht. Der Rahmen selbst wird auf den Karten nicht gezeichnet.",
-  "No alpha masks yet — add one in a console template or \u201cGlobal Layout\u201d.":
-    "Noch keine Alpha-Masken \u2013 leg eine in einer Konsolen-Vorlage oder in \u201eGlobal Layout\u201c an.",
-  "Screenshot only": "Nur Screenshot",
-  "“Find cover” skips this frame — for a stack of screenshot frames with no dedicated cover slot, flag all of them so every one counts as a screenshot to find.":
-    "„Cover suchen“ überspringt diesen Rahmen – bei mehreren Screenshot-Rahmen ohne eigenen Cover-Platz markiere sie alle, damit jeder als zu suchender Screenshot zählt.",
   "Find {n} screenshot(s)": "{n} Screenshot(s) suchen",
   None: "Keine",
   global: "global",
@@ -1231,7 +1234,7 @@ export const de: Record<string, string> = {
   "Not available for movies.": "Für Filme nicht verfügbar.",
   "{n} console(s) without a logo": "{n} Konsole(n) ohne Logo",
   "{n} empty frame(s) in {cards} card(s)": "{n} leere(r) Rahmen in {cards} Karte(n)",
-  "No empty screenshot frames — add alpha masks to a template first.": "Keine leeren Screenshot-Rahmen – lege zuerst Alpha-Masken in einem Template an.",
+  "No empty screenshot frames — add screenshot containers to a template first.": "Keine leeren Screenshot-Rahmen – lege zuerst Screenshot-Container in einem Template an.",
   "{n} card(s) without a cover": "{n} Karte(n) ohne Cover",
   "No cover frame, or every card already has one.": "Kein Cover-Rahmen, oder jede Karte hat schon eins.",
   "Starting …": "Starte …",

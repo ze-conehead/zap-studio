@@ -304,13 +304,13 @@ export function fitImageToSlot(
 // pointing at it is clipped to its alpha and fitted to its box; the frame
 // itself is never drawn on a card. `index` only shapes the default name and
 // where it lands, so several don't stack on top of each other.
-export function makeAlphaMaskLayer(index: number): ShapeLayer {
+export function makeAlphaMaskLayer(index: number, role: "cover" | "screenshot" = "cover"): ShapeLayer {
   // 4:3 by default — a screenshot cover-fitted into a letterbox frame would
   // lose most of its height.
   const w = TRIM_RECT.w * 0.42;
   const h = w * 0.75;
   return {
-    ...base(t("Alpha mask {n}", { n: index })),
+    ...base(role === "cover" ? t("Cover container {n}", { n: index }) : t("Screenshot container {n}", { n: index })),
     type: "shape",
     shape: "rect",
     width: w,
@@ -321,6 +321,7 @@ export function makeAlphaMaskLayer(index: number): ShapeLayer {
     stroke: "#000000",
     strokeWidth: 0,
     alphaMask: true,
+    ...(role === "screenshot" ? { shotOnly: true } : {}),
   };
 }
 

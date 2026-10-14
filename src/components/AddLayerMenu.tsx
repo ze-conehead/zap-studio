@@ -263,11 +263,21 @@ export function AddLayerMenu() {
                 onClick={() =>
                   dispatch({
                     type: "ADD_LAYER",
-                    layer: makeAlphaMaskLayer(nextMask),
+                    layer: makeAlphaMaskLayer(nextMask, "cover"),
                   })
                 }
               >
-                <Crop /> {t("Alpha mask")}
+                <Crop /> {t("Cover container")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  dispatch({
+                    type: "ADD_LAYER",
+                    layer: makeAlphaMaskLayer(nextMask, "screenshot"),
+                  })
+                }
+              >
+                <Crop /> {t("Screenshot container")}
               </DropdownMenuItem>
               {project.isGlobalTemplate && (
                 <DropdownMenuItem
