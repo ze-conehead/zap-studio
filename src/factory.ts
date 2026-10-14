@@ -413,6 +413,22 @@ export function makeBackgroundLayer(
 // stack. Idempotent — a face that already has a background layer is left
 // alone, and a disabled legacy background (console-template opt-out) adds
 // nothing.
+/** An image / QR code with its scale folded into its width and height (a mirror stays as -1). */
+export function bakeScale<L extends Layer>(l: L): L {
+  if ((l.type !== "image" && l.type !== "qr") || (l as { spineBg?: boolean }).spineBg) return l;
+  const ax = Math.abs(l.scaleX);
+  const ay = Math.abs(l.scaleY);
+  if (ax === 1 && ay === 1) return l;
+  const sized = l as unknown as { width: number; height: number };
+  return {
+    ...l,
+    width: sized.width * (ax || 1),
+    height: sized.height * (ay || 1),
+    scaleX: l.scaleX < 0 ? -1 : 1,
+    scaleY: l.scaleY < 0 ? -1 : 1,
+  };
+}
+
 export function migrateProject(p: Project): Project {
   const faceLayers = (
     layers: Layer[],
@@ -457,11 +473,19 @@ export function migrateProject(p: Project): Project {
       ? layers.map(legacyToCombined)
       : layers;
 
+  // Images and QR codes used to keep a resize as a scale on top of width /
+  // height, so the Sizing fields didn't follow it. The scale is folded into the
+  // size now (a mirror stays as ±1) — the layer looks the same.
+  const bakeScales = (layers: Layer[]): Layer[] =>
+    layers.some((l) => bakeScale(l) !== l)
+      ? layers.map(bakeScale)
+      : layers;
+
   // Templates never inherit; a game card keeps its previous source default.
   const frontSource = p.isTemplate
     ? "card"
     : p.backgroundSource ?? DEFAULT_BACKGROUND_SOURCE;
-  const migrated = toCombined(toAlphaMask(faceLayers(p.layers, p, frontSource)));
+  const migrated = bakeScales(toCombined(toAlphaMask(faceLayers(p.layers, p, frontSource))));
   // The global template always keeps a background layer — backfill one for
   // templates saved before that became the default.
   const nextLayers =
@@ -469,7 +493,7 @@ export function migrateProject(p: Project): Project {
       ? [makeBackgroundLayer(), ...migrated]
       : migrated;
   const nextBack = p.back
-    ? { ...p.back, layers: toCombined(toAlphaMask(faceLayers(p.back.layers, p.back, "card"))) }
+    ? { ...p.back, layers: bakeScales(toCombined(toAlphaMask(faceLayers(p.back.layers, p.back, "card")))) }
     : p.back;
 
   if (nextLayers === p.layers && nextBack === p.back) return p;

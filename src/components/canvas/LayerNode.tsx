@@ -287,6 +287,30 @@ export function LayerNode({
             );
             return;
           }
+          // Images and QR codes bake the resize into width / height as well, so
+          // the Sizing fields show the size they now have; only a mirror
+          // (negative scale) stays on the scale.
+          if (layer.type === "image" || layer.type === "qr") {
+            const sx = n.scaleX();
+            const sy = n.scaleY();
+            const fx = sx < 0 ? -1 : 1;
+            const fy = sy < 0 ? -1 : 1;
+            n.scaleX(fx);
+            n.scaleY(fy);
+            onChange(
+              {
+                x: n.x(),
+                y: n.y(),
+                rotation: n.rotation(),
+                scaleX: fx,
+                scaleY: fy,
+                width: Math.max(4, layer.width * Math.abs(sx)),
+                height: Math.max(4, layer.height * Math.abs(sy)),
+              },
+              true,
+            );
+            return;
+          }
           if (layer.type === "shape") {
             const sx = n.scaleX();
             const sy = n.scaleY();
