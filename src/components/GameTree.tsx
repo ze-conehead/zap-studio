@@ -145,6 +145,7 @@ export function GameTree({
   const [consoleLogo, setConsoleLogo] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [gameCover, setGameCover] = useState<QuickImportRow | null>(null);
   const [gameShots, setGameShots] = useState<QuickImportRow | null>(null);
+  const [consoleShots, setConsoleShots] = useState<{ consoleId: string; consoleName: string } | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [metaSweep, setMetaSweep] = useState<{ consoleId: string; consoleName: string } | null>(null);
 
@@ -304,6 +305,9 @@ export function GameTree({
       ? [{ label: t("Find logo"), onSelect: () => setConsoleLogo(row) }]
       : []),
     { label: t("Find covers"), onSelect: () => setSweep(row) },
+    ...(shotConsoles.has(row.consoleId)
+      ? [{ label: t("Find screenshots"), onSelect: () => setConsoleShots(row) }]
+      : []),
     { label: t("Auto-fill …"), onSelect: () => setAutoFill(row) },
     ...(hasSpine()
       ? [{ label: t("Spine preview …"), onSelect: () => setSpinePreview(row) }]
@@ -860,7 +864,17 @@ export function GameTree({
         />
       )}
 
-      {gameShots && <FindScreenshotsFlow row={gameShots} onClose={() => setGameShots(null)} />}
+      {gameShots && <FindScreenshotsFlow rows={[gameShots]} onClose={() => setGameShots(null)} />}
+      {consoleShots && (
+        <FindScreenshotsFlow
+          rows={(getCatalog().find((c) => c.id === consoleShots.consoleId)?.games ?? []).map((g) => ({
+            gameKey: `${consoleShots.consoleId}/${g.id}`,
+            consoleName: consoleShots.consoleName,
+            gameTitle: g.title,
+          }))}
+          onClose={() => setConsoleShots(null)}
+        />
+      )}
 
       <PromptDialog state={prompt} onOpenChange={(o) => !o && setPrompt(null)} />
 
