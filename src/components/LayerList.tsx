@@ -28,6 +28,14 @@ import {
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { activeCases } from "../conditions";
 import { isBackground, isCondition, isImage, isMetaBadge, isShape } from "../factory";
@@ -44,7 +52,7 @@ import {
 } from "../layerClipboard";
 import { useStore } from "../store";
 import { canJoin } from "../combined";
-import { isCombined } from "../combineShape";
+import { isCombined, makeCombineShape } from "../combineShape";
 import type { CombineShape, Layer, ShapeKind, ShapeLayer } from "../types";
 import { AddLayerMenu } from "./AddLayerMenu";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
@@ -546,6 +554,45 @@ export function LayerList({
         >
           {l.locked ? <Lock /> : <LockOpen />}
         </LayerIcon>
+        {isCombined(l) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                title={t("Add a shape to this combined shape")}
+                className="size-6 text-muted-foreground [&_svg]:size-3.5"
+              >
+                <Plus />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {(["add", "subtract"] as const).map((op, n) => (
+                <Fragment key={op}>
+                  {n > 0 && <DropdownMenuSeparator />}
+                  <DropdownMenuLabel>{op === "add" ? t("Add") : t("Subtract")}</DropdownMenuLabel>
+                  {(Object.keys(COMBINE_SHAPE_LABEL) as ShapeKind[]).map((kind) => (
+                    <DropdownMenuItem
+                      key={kind}
+                      onClick={() => {
+                        const parts = l.combine ?? [];
+                        dispatch({
+                          type: "PATCH_LAYER",
+                          id: l.id,
+                          patch: { combine: [...parts, makeCombineShape(kind, op, l.width, l.height)] },
+                        });
+                        // the new part is the one picked, ready to drag
+                        onSelectCombine?.(l.id, parts.length);
+                      }}
+                    >
+                      {t(COMBINE_SHAPE_LABEL[kind])}
+                    </DropdownMenuItem>
+                  ))}
+                </Fragment>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         {isCombined(l) && !!l.combine?.length && (
           <LayerIcon
             title={

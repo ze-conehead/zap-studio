@@ -156,6 +156,7 @@ export const de: Record<string, string> = {
   "A combined shape has no outline of its own: add shapes here — or move shape layers in from the Layers panel (right-click ▸ Add to combined shape) — and they form one alpha mask, or one visual shape.": "Ein Combined Shape hat keine eigene Grundform: Füge hier Shapes hinzu – oder schiebe Shape-Ebenen aus dem Layers-Panel hinein (Rechtsklick ▸ Zu … hinzufügen oder per Drag & Drop auf die Zeile) – sie bilden zusammen eine Alpha-Maske oder eine sichtbare Form.",
   "Lock all children": "Alle Teile sperren",
   "Unlock all children": "Alle Teile entsperren",
+  "Add a shape to this combined shape": "Ein Shape zu diesem Combined Shape hinzufügen",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
