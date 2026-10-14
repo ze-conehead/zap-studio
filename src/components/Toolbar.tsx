@@ -1,4 +1,4 @@
-import { Box, Check, History, LayoutGrid, Redo2, Undo2 } from "lucide-react";
+import { Box, Check, History, LayoutGrid, Redo2, SlidersHorizontal, Undo2 } from "lucide-react";
 import { useMemo } from "react";
 import {
   DropdownMenu,
@@ -12,11 +12,19 @@ import { describeChange } from "../historyLabel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { MIN_ZOOM, MAX_ZOOM } from "./EditorCanvas";
 import { useStore } from "../store";
 import { useT } from "../i18n";
+import {
+  DEFAULT_SNAP_STRENGTH,
+  MAX_SNAP_STRENGTH,
+  MIN_SNAP_STRENGTH,
+  setSnapStrength,
+  useSnapStrength,
+} from "../snapSettings";
 import { setKeepView, useKeepView } from "../viewState";
 import type { GuideApi } from "../App";
 
@@ -39,6 +47,7 @@ export function Toolbar({
   const t = useT();
   const { past, future, showBleed } = state;
   const keepView = useKeepView();
+  const snapStrength = useSnapStrength();
 
   // The history list: every step, newest first, the current one marked.
   // Labels come from diffing neighbouring snapshots (src/historyLabel.ts).
@@ -125,6 +134,50 @@ export function Toolbar({
           />
           {t("Snap")}
         </label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-ml-1.5 size-6 text-muted-foreground"
+              title={t("Snap settings")}
+            >
+              <SlidersHorizontal className="size-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="flex w-64 flex-col gap-2.5 p-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("Snap strength")}
+              </span>
+              <span className="text-xs tabular-nums text-muted-foreground">{t("{n} px", { n: snapStrength })}</span>
+            </div>
+            <Slider
+              min={MIN_SNAP_STRENGTH}
+              max={MAX_SNAP_STRENGTH}
+              step={1}
+              value={[snapStrength]}
+              onValueChange={([v]) => setSnapStrength(v)}
+              aria-label={t("Snap strength")}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>{t("Weak")}</span>
+              <span>{t("Strong")}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("How close, in screen pixels, a layer has to get to a guide, the card edge or another layer before it jumps onto it.")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start"
+              disabled={snapStrength === DEFAULT_SNAP_STRENGTH}
+              onClick={() => setSnapStrength(DEFAULT_SNAP_STRENGTH)}
+            >
+              {t("Reset")}
+            </Button>
+          </PopoverContent>
+        </Popover>
         <label
           className="flex items-center gap-1.5"
           title={t("Keep the zoom and the scroll position when you switch to another card")}

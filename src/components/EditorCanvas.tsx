@@ -29,6 +29,7 @@ import { applyAccent, useCardAccent } from "../accent";
 import { applyContrast } from "../contrast";
 import { useImageCacheVersion } from "../hooks/useImage";
 import { useHoveredLayer } from "../layerHover";
+import { useSnapStrength } from "../snapSettings";
 import { recallView, rememberScroll, scrollFraction, scrollFromFraction } from "../viewState";
 import { applySpine, isSpineBg, spineSliceForConsole } from "../spine";
 import { isAlphaMask } from "../templates";
@@ -672,8 +673,9 @@ function FaceStage({
 
   // What a dragged layer can snap to: the user's guides (when those are
   // shown), the trim box, and every other visible layer's edges and centre.
-  // Tolerance is a fixed on-screen distance (≈ 7 px).
+  // Tolerance is a fixed on-screen distance (Snap settings, 7 px by default).
   const gs = guides.state;
+  const snapStrength = useSnapStrength();
   const snapLines: SnapLines | undefined = useMemo(() => {
     if (!gs.snap) return undefined;
 
@@ -714,9 +716,9 @@ function FaceStage({
       smartY.push(l.y - hh, l.y, l.y + hh);
     }
 
-    return { xs, ys, smartX, smartY, tol: 7 / scale };
+    return { xs, ys, smartX, smartY, tol: snapStrength / scale };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gs.snap, gs.on, gs.items, layerList, selectedId, scale]);
+  }, [gs.snap, gs.on, gs.items, layerList, selectedId, scale, snapStrength]);
 
   // Which guides the dragged layer is snapped to right now — highlighted so
   // it's clear what it's aligning to. Only updates when the set changes.
