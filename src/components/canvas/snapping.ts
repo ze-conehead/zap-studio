@@ -134,6 +134,98 @@ export function snapNodeToGuides(node: Konva.Node, lines: SnapLines, localBox?: 
   return hit;
 }
 
+/** A Transformer box in absolute (stage) pixels: Konva's own shape for it. */
+export interface TransformBox extends SnapBox {
+  rotation: number;
+}
+
+/**
+ * Snaps the edges a resize is moving onto the nearest guide / card edge /
+ * layer edge. `anchor` is the Transformer's active handle ("top-left",
+ * "middle-right" …); only the edges that handle moves are touched, the others
+ * stay where they are. The box is in stage pixels, the lines in canvas px, so
+ * `scale` (stage px per canvas px) converts between them — and the reach is
+ * the snap strength in screen pixels. A corner drag that keeps the aspect
+ * ratio keeps it: snapping one edge moves the other to match. A rotated box
+ * is left alone.
+ */
+export function snapResizeBox(
+  oldBox: TransformBox,
+  newBox: TransformBox,
+  anchor: string | null,
+  lines: SnapLines,
+  scale: number,
+): { box: TransformBox; hit: SnapHit } {
+  const none = { box: newBox, hit: { xs: [], ys: [], smartX: [], smartY: [] } as SnapHit };
+  if (!anchor || Math.abs(newBox.rotation) > 1e-6 || Math.abs(oldBox.rotation) > 1e-6) return none;
+  const L = anchor.includes("left");
+  const R = anchor.includes("right");
+  const T = anchor.includes("top");
+  const B = anchor.includes("bottom");
+  if (!L && !R && !T && !B) return none;
+  const reach = lines.tol * scale; // stage px
+  const find = (edge: number, guides: number[], smart: number[]) => {
+    let best: { pos: number; d: number; smart: boolean } | null = null;
+    const scan = (list: number[], isSmart: boolean) => {
+      for (const g of list) {
+        const d = Math.abs(g * scale - edge);
+        if (d <= reach && (!best || d < best.d)) best = { pos: g, d, smart: isSmart };
+      }
+    };
+    scan(guides, false); // placed on purpose: wins ties
+    scan(smart, true);
+    return best as { pos: number; d: number; smart: boolean } | null;
+  };
+
+  let { x, y, width, height } = newBox;
+  const hit: SnapHit = { xs: [], ys: [], smartX: [], smartY: [] };
+  const mark = (axis: "x" | "y", f: { pos: number; smart: boolean }) =>
+    (axis === "x" ? (f.smart ? hit.smartX : hit.xs) : f.smart ? hit.smartY : hit.ys).push(f.pos);
+
+  // Which edge of each axis moves (a corner moves one of each).
+  const fx = L ? find(x, lines.xs, lines.smartX) : R ? find(x + width, lines.xs, lines.smartX) : null;
+  const fy = T ? find(y, lines.ys, lines.smartY) : B ? find(y + height, lines.ys, lines.smartY) : null;
+  const ratioKept =
+    (L || R) && (T || B) && Math.abs(newBox.width / newBox.height - oldBox.width / oldBox.height) < 1e-3;
+  const ratio = oldBox.width / oldBox.height;
+
+  // With the ratio locked, only the nearer of the two snaps can be honoured.
+  let useX = !!fx;
+  let useY = !!fy;
+  if (ratioKept && fx && fy) {
+    if (fx.d <= fy.d) useY = false;
+    else useX = false;
+  }
+  if (useX && fx) {
+    const edge = fx.pos * scale;
+    if (L) {
+      width = x + width - edge;
+      x = edge;
+    } else width = edge - x;
+    mark("x", fx);
+    if (ratioKept) {
+      const h = width / ratio;
+      if (T) y = y + height - h;
+      height = h;
+    }
+  }
+  if (useY && fy) {
+    const edge = fy.pos * scale;
+    if (T) {
+      height = y + height - edge;
+      y = edge;
+    } else height = edge - y;
+    mark("y", fy);
+    if (ratioKept) {
+      const w = height * ratio;
+      if (L) x = x + width - w;
+      width = w;
+    }
+  }
+  if (width < 8 || height < 8) return none;
+  return { box: { ...newBox, x, y, width, height }, hit };
+}
+
 // The box a layer occupies before its own scale/rotation, for snap anchors.
 export function layerBoxSize(l: TLayer): { w: number; h: number } | null {
   if (l.type === "text") return null; // height depends on wrapping

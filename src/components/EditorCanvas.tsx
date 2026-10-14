@@ -55,7 +55,8 @@ import {
   PanelGuides,
   TextFrameOutline,
 } from "./canvas/outlines";
-import { dominantAxis, layerBoxSize, snapBox, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./canvas/snapping";
+import { dominantAxis, layerBoxSize, snapBox, snapNodeToGuides, snapResizeBox, withoutAxis, type SnapHit, type SnapLines } from "./canvas/snapping";
+import { isSnapSuspended } from "../snapSuspend";
 import { isCombined, operandBounds, operandsOf, partAsLayer, visibleBounds } from "../combineShape";
 
 // The face rendering itself lives in ./canvas/*; these stay exported here
@@ -570,7 +571,7 @@ function FaceStage({
       if (held === "x") dx = 0;
       let x = start.x + (dx * cos - dy * sin);
       let y = start.y + (dx * sin + dy * cos);
-      if (lines && parent.type === "shape") {
+      if (lines && parent.type === "shape" && !isSnapSuspended()) {
         const op = operandsOf(parent)[index];
         const b = operandBounds({ ...op, x, y });
         const xa = parent.x + b.x * sx;
@@ -585,6 +586,7 @@ function FaceStage({
         if (held !== "y") y += snap.dy / sy;
         reportSnap(history ? null : withoutAxis(snap.hit, held));
       }
+      else if (lines) reportSnap(null);
       combineChange(parentId, index, { x, y }, history);
     };
     const onMove = (ev: MouseEvent | TouchEvent) => apply(ev, false);
@@ -801,12 +803,12 @@ function FaceStage({
       if (held === "x") dx = 0;
       n.x(pd.startX + dx);
       n.y(pd.startY + dy);
-      if (snapLines) {
+      if (snapLines && !isSnapSuspended()) {
         const hit = snapNodeToGuides(n, snapLines, localBox);
         if (held === "y") n.y(pd.startY);
         if (held === "x") n.x(pd.startX);
         reportSnap(withoutAxis(hit, held));
-      }
+      } else reportSnap(null);
       dispatch({ type: "PATCH_LAYER", id: pd.id, patch: { x: n.x(), y: n.y() }, history: false });
     };
     const endDrag = () => {
@@ -814,7 +816,7 @@ function FaceStage({
       if (pd) {
         const n = nodeRefs.current.get(pd.id);
         if (n) {
-          if (snapLines) {
+          if (snapLines && !isSnapSuspended()) {
             snapNodeToGuides(n, snapLines, localBox);
             if (held === "y") n.y(pd.startY);
             if (held === "x") n.x(pd.startX);
@@ -1071,9 +1073,24 @@ function FaceStage({
               borderStroke={accent}
               anchorStroke={accent}
               anchorFill={accent}
-              boundBoxFunc={(oldBox, newBox) =>
-                newBox.width < 8 || newBox.height < 8 ? oldBox : newBox
-              }
+              boundBoxFunc={(oldBox, newBox) => {
+                if (newBox.width < 8 || newBox.height < 8) return oldBox;
+                // Resizing snaps the edges being dragged onto the same lines a
+                // move snaps to — unless snapping is off or Ctrl (⌘) is held.
+                if (!snapLines || isSnapSuspended()) {
+                  reportSnap(null);
+                  return newBox;
+                }
+                const { box, hit } = snapResizeBox(
+                  oldBox,
+                  newBox,
+                  trRef.current?.getActiveAnchor() ?? null,
+                  snapLines,
+                  scale,
+                );
+                reportSnap(hit);
+                return box;
+              }}
             />
           </Layer>
         </Stage>

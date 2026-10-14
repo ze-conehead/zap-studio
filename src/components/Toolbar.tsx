@@ -25,6 +25,7 @@ import {
   setSnapStrength,
   useSnapStrength,
 } from "../snapSettings";
+import { useSnapSuspended } from "../snapSuspend";
 import { setKeepView, useKeepView } from "../viewState";
 import type { GuideApi } from "../App";
 
@@ -48,6 +49,8 @@ export function Toolbar({
   const { past, future, showBleed } = state;
   const keepView = useKeepView();
   const snapStrength = useSnapStrength();
+  // Ctrl held: snapping is paused — the checkbox shows it while the key is down.
+  const paused = useSnapSuspended() && guides.state.snap;
 
   // The history list: every step, newest first, the current one marked.
   // Labels come from diffing neighbouring snapshots (src/historyLabel.ts).
@@ -127,12 +130,20 @@ export function Toolbar({
           />
           {t("Guides")}
         </label>
-        <label className="flex items-center gap-1.5" title={t("Snap to guides, the card edges and other layers")}>
+        <label
+          className={cn("flex items-center gap-1.5", paused && "text-muted-foreground")}
+          title={
+            paused
+              ? t("Snapping is paused while Ctrl is held")
+              : t("Snap to guides, the card edges and other layers — hold Ctrl while moving or resizing to switch it off")
+          }
+        >
           <Checkbox
-            checked={guides.state.snap}
+            checked={guides.state.snap && !paused}
             onCheckedChange={(v) => guides.setSnap(!!v)}
           />
           {t("Snap")}
+          {paused && <span className="rounded border px-1 text-[10px] leading-4">Ctrl</span>}
         </label>
         <Popover>
           <PopoverTrigger asChild>

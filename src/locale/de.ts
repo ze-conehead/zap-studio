@@ -177,6 +177,8 @@ export const de: Record<string, string> = {
   "Weak": "Schwach",
   "Strong": "Stark",
   "How close, in screen pixels, a layer has to get to a guide, the card edge or another layer before it jumps onto it.": "Wie nah eine Ebene – in Bildschirmpixeln – an eine Führung, den Kartenrand oder eine andere Ebene kommen muss, bevor sie dort einrastet.",
+  "Snapping is paused while Ctrl is held": "Snapping ist pausiert, solange Strg gedrückt ist",
+  "Snap to guides, the card edges and other layers — hold Ctrl while moving or resizing to switch it off": "Rastet an Führungen, Kartenrändern und anderen Ebenen ein – halte beim Verschieben oder Skalieren Strg gedrückt, um es auszuschalten",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -1105,8 +1107,6 @@ export const de: Record<string, string> = {
   "line(s)": "Zeile(n)",
   "\u201cSize px\u201d is the largest it may get \u2014 long titles shrink to fit the box width.":
     "\u201eGr\u00f6\u00dfe px\u201c ist das Maximum \u2013 lange Titel werden verkleinert, bis sie in die Boxbreite passen.",
-  "Snap to guides, the card edges and other layers":
-    "An Hilfslinien, Kartenr\u00e4ndern und anderen Ebenen einrasten",
   "Find logos": "Logos suchen",
   "Logo {n} / {total}:": "Logo {n} / {total}:",
   "Click a logo to insert it \u2013 then it moves to the next console.":

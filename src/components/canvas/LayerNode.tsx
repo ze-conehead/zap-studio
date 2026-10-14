@@ -11,6 +11,7 @@ import { DEFAULT_FLOW_HEIGHT } from "../../textFlow";
 import type { PlaceholderContext } from "../../placeholders";
 import type { Layer as TLayer } from "../../types";
 import { LayerInner } from "./layerInner";
+import { isSnapSuspended } from "../../snapSuspend";
 import { lockNodeAxis, snapNodeToGuides, withoutAxis, type SnapHit, type SnapLines } from "./snapping";
 
 interface GroupSnapshot {
@@ -228,18 +229,19 @@ export function LayerNode({
           // axis stays put, snapping included.
           const from = dragFrom.current;
           heldAxis.current = e.evt.shiftKey && from ? lockNodeAxis(e.target, from) : null;
-          if (snapLines) {
+          // Ctrl (⌘) held: no snapping for as long as it is.
+          if (snapLines && !isSnapSuspended()) {
             const hit = snapNodeToGuides(e.target, snapLines);
             if (heldAxis.current && from) e.target[heldAxis.current](from[heldAxis.current]);
             onSnap?.(withoutAxis(hit, heldAxis.current));
-          }
+          } else onSnap?.(null);
           onChange({ x: e.target.x(), y: e.target.y() }, false);
         },
     onDragEnd: grouped
       ? () => applyGroup(true)
       : (e: Konva.KonvaEventObject<DragEvent>) => {
           const from = dragFrom.current;
-          if (snapLines) {
+          if (snapLines && !isSnapSuspended()) {
             snapNodeToGuides(e.target, snapLines);
             if (heldAxis.current && from) e.target[heldAxis.current](from[heldAxis.current]);
           }
@@ -250,8 +252,12 @@ export function LayerNode({
         },
     onTransformStart: grouped ? snapshot : undefined,
     onTransformEnd: grouped
-      ? () => applyGroup(true)
+      ? () => {
+          onSnap?.(null);
+          applyGroup(true);
+        }
       : () => {
+          onSnap?.(null);
           const n = ref.current!;
           // Shapes bake the resize into width/height and keep scale at 1, so
           // a rounded corner stays a true constant radius instead of being
