@@ -14,6 +14,8 @@ import {
   GripVertical,
   Image as ImageIcon,
   Lock,
+  LockKeyhole,
+  LockKeyholeOpen,
   LockOpen,
   MinusCircle,
   PaintBucket,
@@ -544,6 +546,25 @@ export function LayerList({
         >
           {l.locked ? <Lock /> : <LockOpen />}
         </LayerIcon>
+        {isCombined(l) && !!l.combine?.length && (
+          <LayerIcon
+            title={
+              l.combine.every((c) => c.locked)
+                ? t("Unlock all children")
+                : t("Lock all children")
+            }
+            onClick={() => {
+              const lock = !l.combine!.every((c) => c.locked);
+              dispatch({
+                type: "PATCH_LAYER",
+                id: l.id,
+                patch: { combine: l.combine!.map((c) => ({ ...c, locked: lock || undefined })) },
+              });
+            }}
+          >
+            {l.combine.every((c) => c.locked) ? <LockKeyhole /> : <LockKeyholeOpen />}
+          </LayerIcon>
+        )}
         {!bg && (
           <LayerIcon
             title={t("Duplicate")}

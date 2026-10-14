@@ -468,7 +468,7 @@ function CombineEditor({ layer, patch }: { layer: ShapeLayer; patch: Patch }) {
             onClick={() => lockAll(!allLocked)}
           >
             {allLocked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
-            {allLocked ? t("Unlock all") : t("Lock all")}
+            {allLocked ? t("Unlock all children") : t("Lock all children")}
           </Button>
         )}
         <DropdownMenu>
