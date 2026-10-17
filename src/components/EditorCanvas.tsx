@@ -772,7 +772,7 @@ function FaceStage({
     startPointer: { x: number; y: number };
   } | null>(null);
 
-  const startProxyDrag = () => {
+  const startProxyDrag = (startEvt?: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     // A combine entry picked in the Layers panel (or grabbed directly on
     // canvas — see CombineOperandHandle) is the thing a drag anywhere
     // should move, same as a plain layer: it stays "selected" even though
@@ -793,6 +793,10 @@ function FaceStage({
     const pointer = stage?.getPointerPosition();
     if (!id || !node || !layer || layer.locked || !stage || !pointer) return;
 
+    // ⌥ held as the drag starts: a copy stays behind, the original moves on.
+    if (startEvt && "altKey" in startEvt.evt && startEvt.evt.altKey && !isBackground(layer)) {
+      dispatch({ type: "CLONE_LAYER_IN_PLACE", id });
+    }
     proxyDrag.current = { id, startX: node.x(), startY: node.y(), startPointer: pointer };
     // A combined shape snaps by everything it shows, not by its helper nodes.
     const localBox =
@@ -974,6 +978,7 @@ function FaceStage({
                   vars={vars}
                   snapLines={snapLines}
                   onSnap={reportSnap}
+                  onAltDrag={() => dispatch({ type: "CLONE_LAYER_IN_PLACE", id: layer.id })}
                   register={(n) => {
                     if (n) nodeRefs.current.set(layer.id, n);
                     else nodeRefs.current.delete(layer.id);

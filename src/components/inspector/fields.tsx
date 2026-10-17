@@ -4,11 +4,12 @@
 import {
   ChevronDown,
   Minus,
+  Palette,
   Pipette,
   Plus,
   Search,
 } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { gradientStops } from "../../background";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,7 +28,9 @@ import {
 import { cn } from "@/lib/utils";
 import { ACCENT_TOKEN, DEFAULT_ACCENT, isAccent } from "../../accent";
 import { CONTRAST_TOKEN, isContrast } from "../../contrast";
+import { colorsOnCard } from "../../cardColors";
 import { useT } from "../../i18n";
+import { useStoreOptional } from "../../store";
 import { PX_PER_MM, TRIM_RECT } from "../../card";
 import { DEFAULT_ADJUST, type AdjustMode, type ImageAdjust } from "../../imageAdjust";
 import {
@@ -234,7 +237,7 @@ export function Panel({
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label>{label}</Label>
@@ -267,9 +270,77 @@ export function NumberField({
   // finished. The draft is dropped on blur, falling back to the real value.
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? String(Number.isFinite(value) ? value : 0);
+  const t = useT();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Always the latest, for the wheel listener and the drag.
+  const live = useRef({ value, onChange, commitOnBlur, step });
+  live.current = { value, onChange, commitOnBlur, step };
+
+  // Set a number from the wheel or a label drag: live, or — for fields that
+  // apply on leaving — as the typed draft, applied then.
+  const apply = (v: number) => {
+    const n = Math.round(v * 100) / 100;
+    if (live.current.commitOnBlur) setDraft(String(n));
+    else live.current.onChange(n);
+  };
+  // How much a unit of wheel / drag is worth: ⇧ ten times, ⌥ a tenth.
+  const unit = (e: { shiftKey: boolean; altKey: boolean }) => live.current.step * (e.shiftKey ? 10 : e.altKey ? 0.1 : 1);
+
+  // The wheel over the field you are typing in changes its number (a native,
+  // non-passive listener, so the panel doesn't scroll as well).
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (document.activeElement !== el || el.disabled) return;
+      e.preventDefault();
+      const cur = el.value.trim() === "" ? 0 : Number(el.value);
+      apply((Number.isFinite(cur) ? cur : 0) + (e.deltaY < 0 ? 1 : -1) * unit(e));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+    // apply / unit only read the ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Dragging the label sideways scrubs the number (Photoshop style).
+  const scrub = useRef<{ x: number; from: number } | null>(null);
+  const label_ = disabled ? (
+    label
+  ) : (
+    <span
+      className="cursor-ew-resize select-none"
+      title={t("Drag sideways to change the value (⇧ ×10, ⌥ ×0.1)")}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        scrub.current = { x: e.clientX, from: Number.isFinite(live.current.value) ? live.current.value : 0 };
+      }}
+      onPointerMove={(e) => {
+        const s = scrub.current;
+        if (!s) return;
+        apply(s.from + Math.round((e.clientX - s.x) / 3) * unit(e));
+      }}
+      onPointerUp={(e) => {
+        const s = scrub.current;
+        scrub.current = null;
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+        // A field that applies on leaving applies the scrubbed number now.
+        if (s && live.current.commitOnBlur) {
+          const v = Number(inputRef.current?.value);
+          setDraft(null);
+          if (Number.isFinite(v) && v !== live.current.value) live.current.onChange(v);
+        }
+      }}
+      onPointerCancel={() => (scrub.current = null)}
+    >
+      {label}
+    </span>
+  );
   return (
-    <Field label={label}>
+    <Field label={label_}>
       <Input
+        ref={inputRef}
         type="number"
         step={step}
         value={shown}
@@ -307,6 +378,10 @@ export function ColorField({
   const t = useT();
   useSyncExternalStore(subscribeRecentColors, getRecentColorsVersion, getRecentColorsVersion);
   const recent = recentColors();
+  // The colours already on this card (the face being edited).
+  const store = useStoreOptional();
+  const faceLayers = store ? (store.state.side === "back" ? store.state.project.back?.layers : store.state.project.layers) : undefined;
+  const onCard = useMemo(() => (faceLayers ? colorsOnCard(faceLayers) : []), [faceLayers]);
   const [moreOpen, setMoreOpen] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const accent = isAccent(value);
@@ -430,6 +505,14 @@ export function ColorField({
           </Popover>
         )}
       </div>
+      {onCard.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1" title={t("Colors on this card")}>
+          <Palette className="size-3 shrink-0 text-muted-foreground" />
+          {onCard.map((c) => (
+            <RecentSwatch key={c} color={c} value={value} onPick={onChange} />
+          ))}
+        </div>
+      )}
     </Field>
   );
 }

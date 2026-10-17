@@ -163,6 +163,43 @@ export function LayerList({
 
   useSyncExternalStore(subscribeLayerClipboard, getLayerClipboardVersion, getLayerClipboardVersion);
 
+  // Double-click a name to rename it in place: a layer, or a part of a combined shape.
+  const [renaming, setRenaming] = useState<{ id: string; part?: { parentId: string; partId: string }; value: string } | null>(null);
+  const commitRename = () => {
+    const r = renaming;
+    setRenaming(null);
+    if (!r) return;
+    const name = r.value.trim();
+    if (r.part) {
+      const parent = layers.find((l) => l.id === r.part!.parentId);
+      if (parent?.type !== "shape" || !parent.combine) return;
+      dispatch({
+        type: "PATCH_LAYER",
+        id: parent.id,
+        patch: { combine: parent.combine.map((c) => (c.id === r.part!.partId ? { ...c, name: name || undefined } : c)) },
+      });
+    } else if (name) {
+      dispatch({ type: "PATCH_LAYER", id: r.id, patch: { name } });
+    }
+  };
+  const renameInput = (placeholder: string) => (
+    <input
+      autoFocus
+      className="h-6 min-w-0 flex-1 rounded border border-primary bg-background px-1 text-sm outline-none"
+      value={renaming!.value}
+      placeholder={placeholder}
+      onChange={(e) => setRenaming((r) => r && { ...r, value: e.target.value })}
+      onFocus={(e) => e.currentTarget.select()}
+      onBlur={commitRename}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") commitRename();
+        else if (e.key === "Escape") setRenaming(null);
+      }}
+    />
+  );
+
   const dragId = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<{ id: string; after: boolean } | null>(null);
@@ -322,20 +359,33 @@ export function LayerList({
         )}
       >
         <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
-        <button
+        <RowMain
+          as={renaming?.part?.partId === c.id ? "div" : "button"}
           className="flex min-w-0 flex-1 items-center gap-1.5"
           onClick={() => onSelectCombine?.(parent.id, index)}
         >
           <CornerDownRight className="size-3.5 shrink-0 text-fuchsia-500" />
           <Shapes className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="truncate">{c.name || t(COMBINE_SHAPE_LABEL[c.shape])}</span>
+          {renaming?.part?.partId === c.id ? (
+            renameInput(t(COMBINE_SHAPE_LABEL[c.shape]))
+          ) : (
+            <span
+              className="truncate"
+              title={t("Double-click to rename")}
+              onDoubleClick={() =>
+                setRenaming({ id: c.id, part: { parentId: parent.id, partId: c.id }, value: c.name ?? "" })
+              }
+            >
+              {c.name || t(COMBINE_SHAPE_LABEL[c.shape])}
+            </span>
+          )}
           <OpIcon
             className={cn(
               "size-3.5 shrink-0",
               c.op === "subtract" ? "text-rose-500" : "text-primary",
             )}
           />
-        </button>
+        </RowMain>
         <LayerIcon
           title={c.locked ? t("Unlock") : t("Lock")}
           onClick={() => {
@@ -464,6 +514,7 @@ export function LayerList({
     return (
       <li
         key={l.id}
+        data-layer-row={l.id}
         onMouseEnter={() => setHoveredLayer(l.id)}
         onMouseLeave={() => setHoveredLayer(null)}
         draggable={!bg}
@@ -525,9 +576,11 @@ export function LayerList({
           <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground/40" />
         )}
 
-        <button
+        <RowMain
+          as={renaming?.id === l.id && !renaming.part ? "div" : "button"}
           className="flex min-w-0 flex-1 items-center gap-1.5"
           onClick={() => onSelectOwn?.(l.id)}
+          onDoubleClick={() => !bg && setRenaming({ id: l.id, value: l.name })}
         >
           {l.clipped && (
             <CornerDownRight className="size-3.5 shrink-0 text-primary" />
@@ -537,11 +590,15 @@ export function LayerList({
           )}
           {nested && <CornerDownRight className="size-3.5 shrink-0 text-sky-500" />}
           <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="truncate" title={nameOf(l, t)}>
-            {nameOf(l, t)}
-          </span>
+          {renaming?.id === l.id && !renaming.part ? (
+            renameInput(l.name)
+          ) : (
+            <span className="truncate" title={t("{name} — double-click to rename", { name: nameOf(l, t) })}>
+              {nameOf(l, t)}
+            </span>
+          )}
           {l.mask && <Crop className="size-3.5 shrink-0 text-primary" />}
-        </button>
+        </RowMain>
 
         <LayerIcon
           title={l.visible ? t("Hide") : t("Show")}
@@ -690,6 +747,39 @@ export function LayerList({
 
       <ul
         className="flex flex-col gap-1"
+        // ↑ / ↓ pick the layer above / below; ⌥ ↑ / ⌥ ↓ move the picked one in
+        // the stack. Stops the keys from nudging the layer on the canvas.
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+          const from = e.target as HTMLElement;
+          if (from.tagName === "INPUT" || from.tagName === "TEXTAREA") return;
+          const row = from.closest<HTMLElement>("[data-layer-row]");
+          if (!row) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const list = e.currentTarget;
+          const id = row.dataset.layerRow!;
+          const up = e.key === "ArrowUp";
+          if (e.altKey) {
+            const ids = faceLayers.map((l) => l.id);
+            const i = ids.indexOf(id);
+            const to = up ? i + 1 : i - 1; // the stack's top is the end of the list
+            const lowest = faceLayers.findIndex((l) => !isBackground(l));
+            if (i < 0 || isBackground(faceLayers[i]) || to < lowest || to >= ids.length) return;
+            const next = ids.filter((x) => x !== id);
+            next.splice(to, 0, id);
+            dispatch({ type: "SET_LAYER_ORDER", order: next });
+            return;
+          }
+          const rows = [...list.querySelectorAll<HTMLElement>("[data-layer-row]")];
+          const target = rows[rows.indexOf(row) + (up ? -1 : 1)];
+          if (!target) return;
+          const targetId = target.dataset.layerRow!;
+          onSelectOwn?.(targetId);
+          requestAnimationFrame(() =>
+            list.querySelector<HTMLElement>(`[data-layer-row="${targetId}"] button`)?.focus(),
+          );
+        }}
         onContextMenu={(e) => {
           if (e.target !== e.currentTarget) return; // a row handles its own menu
           e.preventDefault();
@@ -743,5 +833,27 @@ function LayerIcon({
     >
       {children}
     </Button>
+  );
+}
+
+// The clickable name area of a row — a button, or a plain box while its name
+// is being edited (a text field can't live inside a button).
+function RowMain({
+  as,
+  children,
+  ...props
+}: {
+  as: "button" | "div";
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  onDoubleClick?: () => void;
+}) {
+  return as === "button" ? (
+    <button type="button" {...props}>
+      {children}
+    </button>
+  ) : (
+    <div {...props}>{children}</div>
   );
 }

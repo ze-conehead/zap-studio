@@ -42,6 +42,7 @@ export function LayerNode({
   obstacles,
   snapLines,
   onSnap,
+  onAltDrag,
   register,
   onSelect,
   onProxyDragStart,
@@ -69,6 +70,8 @@ export function LayerNode({
   obstacles?: TLayer[];
   snapLines?: SnapLines;
   onSnap?: (hit: SnapHit | null) => void;
+  // ⌥ held as a drag starts: leave a copy behind (the original is what moves).
+  onAltDrag?: () => void;
   register: (n: Konva.Node | null) => void;
   onSelect: () => void;
   onProxyDragStart?: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
@@ -216,6 +219,7 @@ export function LayerNode({
       : (e: Konva.KonvaEventObject<DragEvent>) => {
           dragFrom.current = { x: e.target.x(), y: e.target.y() };
           heldAxis.current = null;
+          if (e.evt.altKey) onAltDrag?.();
         },
     onDragMove: grouped
       ? (e: Konva.KonvaEventObject<DragEvent>) => {

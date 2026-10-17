@@ -77,6 +77,7 @@ import {
   type TextLayer,
 } from "../../types";
 import { canJoin } from "../../combined";
+import { canFit, fitPatch, type FitMode } from "../../fitLayer";
 import { isCombined, makeCombineShape } from "../../combineShape";
 import { TRIM_RECT } from "../../card";
 
@@ -982,7 +983,38 @@ export function PositionControls({
       />
 
       <AlignButtons layer={layer} patch={patch} />
+      <FitButtons layer={layer} patch={patch} />
     </div>
+  );
+}
+
+// One-click sizing against the card: its width, the trimmed card, the whole
+// artboard including the bleed. Pictures, shapes and QR codes.
+export function FitButtons({ layer, patch }: { layer: Layer; patch: Patch }) {
+  const t = useT();
+  if (!canFit(layer)) return null;
+  const modes: [FitMode, string, string][] = [
+    ["width", t("Card width"), t("As wide as the card, keeping the proportions")],
+    ["trim", t("Fill card"), t("Cover the trimmed card")],
+    ["bleed", t("Fill bleed"), t("Cover the whole artboard, bleed included")],
+  ];
+  return (
+    <Field label={t("Fit to card")}>
+      <div className="flex gap-1">
+        {modes.map(([mode, label, tip]) => (
+          <Button
+            key={mode}
+            variant="outline"
+            size="sm"
+            className="h-7 flex-1 px-1 text-xs"
+            title={tip}
+            onClick={() => patch(fitPatch(layer, mode))}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+    </Field>
   );
 }
 

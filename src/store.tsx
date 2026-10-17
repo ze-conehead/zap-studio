@@ -30,6 +30,9 @@ interface State {
   pending: Project | null;
   showBleed: boolean;
   dirty: boolean;
+  // The last committed layer edit, so a quick run of the same edit (a number
+  // scrubbed or typed, a wheel turned) stays one undo step — see storeReducer.
+  coalesce?: { key: string; at: number };
 }
 
 type Action =
@@ -47,6 +50,9 @@ type Action =
     }
   | { type: "DELETE_LAYER"; id: string }
   | { type: "DUPLICATE_LAYER"; id: string }
+  // A copy right under the layer, same place, nothing re-selected: what
+  // ⌥-dragging leaves behind when the original is carried off.
+  | { type: "CLONE_LAYER_IN_PLACE"; id: string }
   // Fold a shape layer into a combined shape as part of it (the layer goes
   // away), or take one part back out as a shape layer of its own.
   | { type: "MERGE_INTO_COMBINED"; containerId: string; shapeId: string }
@@ -98,7 +104,7 @@ function touch(state: State, project: Project): State {
   };
 }
 
-function reducer(state: State, action: Action): State {
+function baseReducer(state: State, action: Action): State {
   const { project, side } = state;
   // The layer stack of whichever face is active.
   const layers = side === "back" ? project.back?.layers ?? [] : project.layers;
@@ -300,6 +306,21 @@ function reducer(state: State, action: Action): State {
       return { ...commit(state, write(project, next)), selectedId: out.shape.id };
     }
 
+    case "CLONE_LAYER_IN_PLACE": {
+      const i = idx(action.id);
+      if (i < 0 || isBackground(layers[i]) || isCondition(layers[i])) return state;
+      const orig = layers[i];
+      const copy = {
+        ...orig,
+        id: crypto.randomUUID?.() ?? `${Date.now()}`,
+        name: t("{name} copy", { name: orig.name }),
+        // not a template role: a copy of a frame / slot is a plain shape
+        stackAfterId: undefined,
+      } as Layer;
+      const next = [...layers.slice(0, i), copy, ...layers.slice(i)];
+      return commit(state, write(project, next));
+    }
+
     case "DUPLICATE_LAYER": {
       const i = idx(action.id);
       if (i < 0 || isBackground(layers[i])) return state;
@@ -416,6 +437,31 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+const COALESCE_MS = 700;
+
+/**
+ * The editor's reducer. Layer edits that follow each other within 0.7 s and
+ * touch the same fields of the same layer share one undo step — scrubbing a
+ * number or typing "100" is one change, not a hundred.
+ */
+export function reduceAt(state: State, action: Action, now: number): State {
+  if (action.type === "PATCH_LAYER" && action.history !== false) {
+    const next = baseReducer(state, action);
+    if (next === state) return state;
+    const key = `${state.side}:${action.id}:${Object.keys(action.patch).sort().join(",")}`;
+    const co = state.coalesce;
+    if (co && co.key === key && now - co.at < COALESCE_MS && state.past.length > 0 && !state.pending) {
+      // Another step of the same run: the history keeps its older entry.
+      return { ...next, past: state.past, future: [], coalesce: { key, at: now } };
+    }
+    return { ...next, coalesce: { key, at: now } };
+  }
+  const next = baseReducer(state, action);
+  return next.coalesce ? { ...next, coalesce: undefined } : next;
+}
+
+const storeReducer = (state: State, action: Action): State => reduceAt(state, action, Date.now());
+
 interface Ctx {
   state: State;
   dispatch: React.Dispatch<Action>;
@@ -431,7 +477,7 @@ export function StoreProvider({
   initial: Project;
   children: ReactNode;
 }) {
-  const [state, dispatch] = useReducer(reducer, {
+  const [state, dispatch] = useReducer(storeReducer, {
     project: initial,
     side: "front",
     selectedId: null,
@@ -601,6 +647,11 @@ export function StoreProvider({
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
+/** The store, or null where there is none (a colour field in a stray dialog). */
+export function useStoreOptional(): Ctx | null {
+  return useContext(StoreContext);
+}
+
 export function useStore(): Ctx {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error("useStore outside provider");
@@ -609,3 +660,4 @@ export function useStore(): Ctx {
 
 export { newProject };
 export type { Action, State };
+export { baseReducer as reducerForTests };
