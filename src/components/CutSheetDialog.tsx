@@ -173,6 +173,8 @@ export function CutSheetDialog({
     marginMM: opts.marginMM,
     whiteBackground: opts.background === "white",
     cropMarks: opts.cropMarks,
+    orientation: opts.orientation,
+    grid: opts.grid,
   };
   const settingsChanged = !!savedHit?.settings && !sameSettings(savedHit.settings, currentSettings);
   // What to call the sheet: a standard size, a saved one, or its dimensions.
@@ -479,7 +481,7 @@ export function CutSheetDialog({
                         const mine = id.startsWith("saved:") ? saved.find((x) => `saved:${x.id}` === id) : undefined;
                         const pick = PAPER_PRESETS.find((p) => p.id === id);
                         setOpts((o) => {
-                          // A saved size brings its gap, margin, background and crop marks along.
+                          // A saved size brings its gap, margin, background, crop marks and layout along.
                           if (mine) {
                             const s = mine.settings;
                             return {
@@ -491,6 +493,8 @@ export function CutSheetDialog({
                                     marginMM: s.marginMM,
                                     background: s.whiteBackground ? ("white" as const) : ("transparent" as const),
                                     cropMarks: s.cropMarks,
+                                    orientation: s.orientation,
+                                    grid: s.grid,
                                   }
                                 : {}),
                             };
@@ -565,7 +569,7 @@ export function CutSheetDialog({
                     <button
                       type="button"
                       className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-accent"
-                      title={t("Keep this size in the list for next time, with the gap, margin, background and crop marks set now")}
+                      title={t("Keep this size in the list for next time, with the gap, margin, background, crop marks and layout set now")}
                       onClick={() =>
                         setNamePrompt({
                           title: t("Name for this sheet size:"),
@@ -582,7 +586,7 @@ export function CutSheetDialog({
                     <button
                       type="button"
                       className="flex items-center gap-1 rounded border border-primary/50 px-2 py-1 hover:bg-accent"
-                      title={t("Save the gap, margin, background and crop marks set now with “{name}”", { name: savedHit.name })}
+                      title={t("Save the gap, margin, background, crop marks and layout set now with “{name}”", { name: savedHit.name })}
                       onClick={() => setSaved(updateSizeSettings(savedHit.id, currentSettings))}
                     >
                       <Star className="size-3" /> {t("Update “{name}”", { name: savedHit.name })}

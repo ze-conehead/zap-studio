@@ -1,4 +1,4 @@
-import { Box, Check, History, LayoutGrid, Redo2, SlidersHorizontal, Undo2 } from "lucide-react";
+import { Box, Check, History, LayoutGrid, Redo2, Search, SlidersHorizontal, Undo2 } from "lucide-react";
 import { useMemo } from "react";
 import {
   DropdownMenu,
@@ -35,7 +35,11 @@ interface Props {
   onZoomChange: (zoom: number) => void;
   onOpenPreview: () => void;
   onOpenOverview: () => void;
+  onOpenPalette: () => void;
 }
+
+// ⌘ on a Mac, Ctrl everywhere else.
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl";
 
 export function Toolbar({
   guides,
@@ -43,6 +47,7 @@ export function Toolbar({
   onZoomChange,
   onOpenPreview,
   onOpenOverview,
+  onOpenPalette,
 }: Props) {
   const { state, dispatch } = useStore();
   const t = useT();
@@ -246,7 +251,19 @@ export function Toolbar({
           </div>
         </div>
       </div>
-      <div className="min-w-0 flex-1" />
+      {/* The search box: opens the command palette (same as ⌘K / Ctrl K). */}
+      <div className="flex min-w-0 flex-1 justify-end">
+        <button
+          type="button"
+          onClick={onOpenPalette}
+          title={t("Search and run any command, card or layer ({key})", { key: `${MOD} K` })}
+          className="flex h-8 w-60 min-w-0 max-w-full cursor-text items-center gap-2 rounded-md border border-input bg-background/40 px-2.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+        >
+          <Search className="size-3.5 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{t("Search …")}</span>
+          <kbd className="shrink-0 rounded border px-1 text-[10px] leading-4">{MOD} K</kbd>
+        </button>
+      </div>
     </header>
   );
 }

@@ -48,9 +48,16 @@ describe("saved paper sizes", () => {
 });
 
 describe("sheet settings saved with a size", () => {
-  const mine: PaperSettings = { gapMM: 2, marginMM: 8, whiteBackground: true, cropMarks: true };
+  const mine: PaperSettings = {
+    gapMM: 2,
+    marginMM: 8,
+    whiteBackground: true,
+    cropMarks: true,
+    orientation: "landscape",
+    grid: { cols: 5, rows: 2 },
+  };
 
-  it("keeps the gap, margin, white background and crop marks with the size", () => {
+  it("keeps the gap, margin, white background, crop marks and layout with the size", () => {
     const [s] = saveSize("Photo printer", 330, 483, mine);
     expect(s.settings).toEqual(mine);
     expect(loadSavedSizes()[0].settings).toEqual(mine);
@@ -92,5 +99,35 @@ describe("sheet settings saved with a size", () => {
     expect(sameSettings(mine, { ...mine, gapMM: 2.5 })).toBe(false);
     expect(sameSettings(mine, { ...mine, whiteBackground: false })).toBe(false);
     expect(sameSettings(mine, { ...mine, cropMarks: false })).toBe(false);
+  });
+
+  it("a block saved before the layout was kept comes back as best fit, no fixed grid", () => {
+    localStorage.setItem(
+      "stickerstudio:savedPaperSizes",
+      JSON.stringify([{ id: "x", name: "Four", wMM: 100, hMM: 200, settings: { gapMM: 1, marginMM: 2, whiteBackground: false, cropMarks: true } }]),
+    );
+    expect(loadSavedSizes()[0].settings).toEqual({
+      gapMM: 1,
+      marginMM: 2,
+      whiteBackground: false,
+      cropMarks: true,
+      orientation: "auto",
+      grid: null,
+    });
+  });
+
+  it("orientation and grid count as settings when comparing", () => {
+    expect(sameSettings(mine, { ...mine, orientation: "portrait" })).toBe(false);
+    expect(sameSettings(mine, { ...mine, grid: null })).toBe(false);
+    expect(sameSettings(mine, { ...mine, grid: { cols: 5, rows: 3 } })).toBe(false);
+    expect(sameSettings({ ...mine, grid: null }, { ...mine, grid: null })).toBe(true);
+  });
+
+  it("junk in the layout falls back to the defaults instead of dropping the block", () => {
+    localStorage.setItem(
+      "stickerstudio:savedPaperSizes",
+      JSON.stringify([{ id: "x", name: "Odd", wMM: 100, hMM: 200, settings: { gapMM: 1, marginMM: 2, whiteBackground: false, cropMarks: false, orientation: "sideways", grid: { cols: 0, rows: "x" } } }]),
+    );
+    expect(loadSavedSizes()[0].settings).toMatchObject({ orientation: "auto", grid: null, gapMM: 1 });
   });
 });

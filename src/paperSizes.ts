@@ -1,6 +1,7 @@
 // Page sizes the user saved for the print sheet (a printer that takes some
 // odd format, say), each with the sheet settings that go with it: the gap,
-// the margin, a white background and crop marks. Kept in localStorage —
+// the margin, a white background, crop marks and the layout (page
+// orientation and a fixed grid). Kept in localStorage —
 // global, not per project, since they describe the printer, not the work.
 // See CutSheetDialog's size picker.
 
@@ -14,6 +15,8 @@ export interface PaperSettings {
   marginMM: number;
   whiteBackground: boolean;
   cropMarks: boolean;
+  orientation: "auto" | "portrait" | "landscape";
+  grid: { cols: number; rows: number } | null; // null = as many as fit
 }
 
 export interface SavedPaperSize {
@@ -26,22 +29,46 @@ export interface SavedPaperSize {
   settings?: PaperSettings;
 }
 
-const validSettings = (v: unknown): v is PaperSettings => {
+const ORIENTATIONS = ["auto", "portrait", "landscape"];
+
+/**
+ * A stored settings block, completed: sizes saved before the layout was kept
+ * come back with "best fit" and no fixed grid. undefined when it is damaged.
+ */
+function readSettings(v: unknown): PaperSettings | undefined {
   const s = v as Partial<PaperSettings> | null;
-  return (
-    !!s &&
-    typeof s.gapMM === "number" &&
-    typeof s.marginMM === "number" &&
-    typeof s.whiteBackground === "boolean" &&
-    typeof s.cropMarks === "boolean"
-  );
-};
+  if (
+    !s ||
+    typeof s.gapMM !== "number" ||
+    typeof s.marginMM !== "number" ||
+    typeof s.whiteBackground !== "boolean" ||
+    typeof s.cropMarks !== "boolean"
+  ) {
+    return undefined;
+  }
+  const g = s.grid as { cols?: unknown; rows?: unknown } | null | undefined;
+  const grid =
+    g && typeof g.cols === "number" && typeof g.rows === "number" && g.cols >= 1 && g.rows >= 1
+      ? { cols: Math.round(g.cols), rows: Math.round(g.rows) }
+      : null;
+  return {
+    gapMM: s.gapMM,
+    marginMM: s.marginMM,
+    whiteBackground: s.whiteBackground,
+    cropMarks: s.cropMarks,
+    orientation: ORIENTATIONS.includes(s.orientation as string) ? (s.orientation as PaperSettings["orientation"]) : "auto",
+    grid,
+  };
+}
 
 export const sameSettings = (a: PaperSettings, b: PaperSettings): boolean =>
   Math.abs(a.gapMM - b.gapMM) < 0.005 &&
   Math.abs(a.marginMM - b.marginMM) < 0.005 &&
   a.whiteBackground === b.whiteBackground &&
-  a.cropMarks === b.cropMarks;
+  a.cropMarks === b.cropMarks &&
+  a.orientation === b.orientation &&
+  a.grid?.cols === b.grid?.cols &&
+  a.grid?.rows === b.grid?.rows;
 
 const valid = (v: unknown): v is SavedPaperSize => {
   const s = v as Partial<SavedPaperSize> | null;
@@ -61,7 +88,7 @@ export function loadSavedSizes(): SavedPaperSize[] {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "[]") as unknown;
     if (!Array.isArray(raw)) return [];
     // A damaged settings block is dropped, the size itself kept.
-    return raw.filter(valid).map((s) => (s.settings !== undefined && !validSettings(s.settings) ? { ...s, settings: undefined } : s));
+    return raw.filter(valid).map((s) => (s.settings === undefined ? s : { ...s, settings: readSettings(s.settings) }));
   } catch {
     return [];
   }
