@@ -193,6 +193,9 @@ export const de: Record<string, string> = {
   "Turn snapping on / off": "Snapping ein- / ausschalten",
   "Turn “Keep view” on / off": "„Ansicht behalten“ ein- / ausschalten",
   "Turn the minimap on / off": "Minimap ein- / ausschalten",
+  "Update “{name}”": "„{name}“ aktualisieren",
+  "Save the gap, margin, background and crop marks set now with “{name}”": "Abstand, Rand, Hintergrund und Schnittmarken, wie jetzt eingestellt, bei „{name}“ speichern",
+  "Keep this size in the list for next time, with the gap, margin, background and crop marks set now": "Diese Größe für das nächste Mal in der Liste behalten, mit Abstand, Rand, Hintergrund und Schnittmarken, wie jetzt eingestellt",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",
@@ -1454,7 +1457,6 @@ export const de: Record<string, string> = {
   // ── Saved sheet sizes ──
   "Saved sizes": "Gespeicherte Größen",
   "Save size …": "Größe speichern …",
-  "Keep this size in the list for next time": "Diese Größe für das nächste Mal in der Liste behalten",
   "Name for this sheet size:": "Name für diese Blattgröße:",
   "Remove “{name}” from the saved sizes": "„{name}“ aus den gespeicherten Größen entfernen",
   "Delete the saved size “{name}”?": "Die gespeicherte Größe „{name}“ löschen?",

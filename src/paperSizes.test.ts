@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deleteSize, loadSavedSizes, savedMatch, saveSize } from "./paperSizes";
+import { deleteSize, loadSavedSizes, sameSettings, savedMatch, saveSize, updateSizeSettings, type PaperSettings } from "./paperSizes";
 
 describe("saved paper sizes", () => {
   it("starts empty, keeps what is saved and survives a reload of the list", () => {
@@ -44,5 +44,53 @@ describe("saved paper sizes", () => {
     expect(loadSavedSizes()).toEqual([]);
     localStorage.setItem("stickerstudio:savedPaperSizes", JSON.stringify([{ id: 1 }, null, "x"]));
     expect(loadSavedSizes()).toEqual([]);
+  });
+});
+
+describe("sheet settings saved with a size", () => {
+  const mine: PaperSettings = { gapMM: 2, marginMM: 8, whiteBackground: true, cropMarks: true };
+
+  it("keeps the gap, margin, white background and crop marks with the size", () => {
+    const [s] = saveSize("Photo printer", 330, 483, mine);
+    expect(s.settings).toEqual(mine);
+    expect(loadSavedSizes()[0].settings).toEqual(mine);
+  });
+
+  it("saving again under the name replaces the settings too", () => {
+    saveSize("Photo printer", 330, 483, mine);
+    const [s] = saveSize("photo printer", 330, 483, { ...mine, gapMM: 5, cropMarks: false });
+    expect(s.settings).toEqual({ ...mine, gapMM: 5, cropMarks: false });
+  });
+
+  it("updates just the settings of one size", () => {
+    const list = saveSize("A", 100, 200, mine);
+    const after = updateSizeSettings(list[0].id, { ...mine, marginMM: 0 });
+    expect(after[0]).toMatchObject({ name: "A", wMM: 100, hMM: 200, settings: { marginMM: 0, gapMM: 2 } });
+  });
+
+  it("a size saved before settings were kept has none, and loads as it was", () => {
+    localStorage.setItem(
+      "stickerstudio:savedPaperSizes",
+      JSON.stringify([{ id: "x", name: "Old", wMM: 100, hMM: 200 }]),
+    );
+    expect(loadSavedSizes()[0].settings).toBeUndefined();
+    expect(loadSavedSizes()).toHaveLength(1);
+  });
+
+  it("a damaged settings block is dropped but the size survives", () => {
+    localStorage.setItem(
+      "stickerstudio:savedPaperSizes",
+      JSON.stringify([{ id: "x", name: "Odd", wMM: 100, hMM: 200, settings: { gapMM: "wide" } }]),
+    );
+    const [s] = loadSavedSizes();
+    expect(s.name).toBe("Odd");
+    expect(s.settings).toBeUndefined();
+  });
+
+  it("compares settings with a hair of tolerance on the millimetres", () => {
+    expect(sameSettings(mine, { ...mine, gapMM: 2.001 })).toBe(true);
+    expect(sameSettings(mine, { ...mine, gapMM: 2.5 })).toBe(false);
+    expect(sameSettings(mine, { ...mine, whiteBackground: false })).toBe(false);
+    expect(sameSettings(mine, { ...mine, cropMarks: false })).toBe(false);
   });
 });

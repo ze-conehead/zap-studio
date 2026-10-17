@@ -12,7 +12,16 @@ import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
 import { cardTrayPdf, stickerSheetPdf } from "../pdf";
-import { deleteSize, loadSavedSizes, saveSize, savedMatch, type SavedPaperSize } from "../paperSizes";
+import {
+  deleteSize,
+  loadSavedSizes,
+  sameSettings,
+  saveSize,
+  savedMatch,
+  updateSizeSettings,
+  type PaperSettings,
+  type SavedPaperSize,
+} from "../paperSizes";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
@@ -157,6 +166,15 @@ export function CutSheetDialog({
   const pageSize = paperSize(opts);
   const builtin = presetOf(pageSize);
   const savedHit = savedMatch(saved, pageSize);
+  // The gap, margin, background and crop marks as they are set now — kept
+  // with a saved size, and put back when it is picked again.
+  const currentSettings: PaperSettings = {
+    gapMM: opts.gapMM,
+    marginMM: opts.marginMM,
+    whiteBackground: opts.background === "white",
+    cropMarks: opts.cropMarks,
+  };
+  const settingsChanged = !!savedHit?.settings && !sameSettings(savedHit.settings, currentSettings);
   // What to call the sheet: a standard size, a saved one, or its dimensions.
   const sheetName = builtin?.name ?? savedHit?.name ?? paperName(opts);
 
@@ -461,8 +479,22 @@ export function CutSheetDialog({
                         const mine = id.startsWith("saved:") ? saved.find((x) => `saved:${x.id}` === id) : undefined;
                         const pick = PAPER_PRESETS.find((p) => p.id === id);
                         setOpts((o) => {
-                          // A saved size is just a size to start from.
-                          if (mine) return { ...o, pageMM: { w: mine.wMM, h: mine.hMM } };
+                          // A saved size brings its gap, margin, background and crop marks along.
+                          if (mine) {
+                            const s = mine.settings;
+                            return {
+                              ...o,
+                              pageMM: { w: mine.wMM, h: mine.hMM },
+                              ...(s
+                                ? {
+                                    gapMM: s.gapMM,
+                                    marginMM: s.marginMM,
+                                    background: s.whiteBackground ? ("white" as const) : ("transparent" as const),
+                                    cropMarks: s.cropMarks,
+                                  }
+                                : {}),
+                            };
+                          }
                           // "Custom" keeps the current size, now editable.
                           if (!pick) return { ...o, pageMM: { w: size.wMM, h: size.hMM } };
                           // The target's own sheet needs no override.
@@ -533,17 +565,27 @@ export function CutSheetDialog({
                     <button
                       type="button"
                       className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-accent"
-                      title={t("Keep this size in the list for next time")}
+                      title={t("Keep this size in the list for next time, with the gap, margin, background and crop marks set now")}
                       onClick={() =>
                         setNamePrompt({
                           title: t("Name for this sheet size:"),
                           defaultValue: `${+pageSize.wMM.toFixed(1)} × ${+pageSize.hMM.toFixed(1)} mm`,
                           submitLabel: t("Save"),
-                          onSubmit: (name) => setSaved(saveSize(name, pageSize.wMM, pageSize.hMM)),
+                          onSubmit: (name) => setSaved(saveSize(name, pageSize.wMM, pageSize.hMM, currentSettings)),
                         })
                       }
                     >
                       <Star className="size-3" /> {t("Save size …")}
+                    </button>
+                  )}
+                  {savedHit && (!savedHit.settings || settingsChanged) && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded border border-primary/50 px-2 py-1 hover:bg-accent"
+                      title={t("Save the gap, margin, background and crop marks set now with “{name}”", { name: savedHit.name })}
+                      onClick={() => setSaved(updateSizeSettings(savedHit.id, currentSettings))}
+                    >
+                      <Star className="size-3" /> {t("Update “{name}”", { name: savedHit.name })}
                     </button>
                   )}
                   {savedHit && (
