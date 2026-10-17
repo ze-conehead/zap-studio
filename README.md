@@ -15,7 +15,9 @@ login; everything lives in the browser's IndexedDB / localStorage.
 
 Download the latest release for your OS from
 [Releases](https://github.com/ze-conehead/zap-studio/releases) (macOS
-`.dmg`, Windows portable `.exe`, Linux `.AppImage` / `.deb`), or run the
+`.dmg`, Windows portable `.exe`, Linux `.AppImage` / `.deb`; the file names
+say the platform: `Zap-Studio-<version>-macOS-arm64.dmg`,
+`…-Windows-x64.exe`, `…-Linux-x64.AppImage` / `.deb`), or run the
 web version:
 
 ```bash

@@ -81,6 +81,7 @@
     ],
     "afterPack": "scripts/electron-afterpack.cjs",
     "mac": {
+      "artifactName": "${productName}-${version}-macOS-${arch}.${ext}",
       "category": "public.app-category.graphics-design",
       "target": [
         "dmg"
@@ -88,12 +89,14 @@
       "icon": "build/icon.png"
     },
     "win": {
+      "artifactName": "${productName}-${version}-Windows-${arch}.${ext}",
       "target": [
         "portable"
       ],
       "icon": "build/icon.png"
     },
     "linux": {
+      "artifactName": "${productName}-${version}-Linux-x64.${ext}",
       "target": [
         "AppImage",
         "deb"
