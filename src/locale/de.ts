@@ -197,6 +197,7 @@ export const de: Record<string, string> = {
   "Save the gap, margin, background, crop marks and layout set now with “{name}”": "Abstand, Rand, Hintergrund, Schnittmarken und Layout, wie jetzt eingestellt, bei „{name}“ speichern",
   "Keep this size in the list for next time, with the gap, margin, background, crop marks and layout set now": "Diese Größe für das nächste Mal in der Liste behalten, mit Abstand, Rand, Hintergrund, Schnittmarken und Layout, wie jetzt eingestellt",
   "Search and run any command, card or layer ({key})": "Befehle, Karten und Ebenen suchen und ausführen ({key})",
+  "With gaps (no cover, screenshot or logo)": "Mit Lücken (kein Cover, Screenshot oder Logo)",
   "Recent colors": "Zuletzt verwendete Farben",
   "Older colors": "Ältere Farben",
   "Pick a color from anywhere on screen": "Eine Farbe von einer beliebigen Stelle auf dem Bildschirm auswählen",

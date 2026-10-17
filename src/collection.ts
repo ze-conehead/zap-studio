@@ -4,7 +4,8 @@
 // storage; the dialog (CollectionStatusDialog) turns it into a to-do list.
 
 import { consolesWithoutLogo } from "./consoleLogos";
-import { getCatalog } from "./data/catalog";
+import { planAutoFill } from "./autoFill";
+import { gameKeyOf, getCatalog } from "./data/catalog";
 import { GLOBAL_TEMPLATE_ID } from "./factory";
 import { loadProject } from "./persist";
 import { findDuplicates } from "./duplicates";
@@ -41,6 +42,25 @@ export const hasGaps = (g: GameStatus) =>
   !g.hasMeta ||
   g.errors > 0 ||
   g.sharesPictureWith.length > 0;
+
+/**
+ * The cards with a gap a picture would fill: an empty cover or screenshot
+ * container, or — when "All consoles" has a logo slot — a console without a
+ * logo (which leaves all of its cards without one). The card list's
+ * "with gaps" filter. A light read: no preflight, no duplicate search.
+ */
+export async function loadGapKeys(): Promise<Set<string>> {
+  const plan = await planAutoFill();
+  const keys = new Set<string>();
+  for (const task of [...plan.covers, ...plan.screenshots]) keys.add(task.row.gameKey);
+  if (plan.logoSlot) {
+    const noLogo = new Set(plan.logos.map((r) => r.consoleId));
+    for (const c of getCatalog()) {
+      if (noLogo.has(c.id)) for (const g of c.games) keys.add(gameKeyOf(c, g));
+    }
+  }
+  return keys;
+}
 
 export async function loadCollectionStatus(): Promise<ConsoleStatus[]> {
   const cards = await loadOverviewCards();

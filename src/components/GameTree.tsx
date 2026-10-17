@@ -68,26 +68,29 @@ import { MetaSweepDialog } from "./MetaSweepDialog";
 import { AutoFillDialog } from "./AutoFillDialog";
 import { SpinePreviewDialog } from "./SpinePreviewDialog";
 import { hasSpine } from "../spine";
+import { loadGapKeys } from "../collection";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
-type TreeFilter = "all" | "with" | "without";
+type TreeFilter = "all" | "with" | "without" | "gaps";
 
 const FILTER_KEY = "stickerstudio:treeFilter";
 const FILTER_LABEL: Record<TreeFilter, string> = {
   all: "All games",
   with: "With image only",
   without: "Without image only",
+  gaps: "With gaps (no cover, screenshot or logo)",
 };
 const FILTER_LABEL_MOVIES: Record<TreeFilter, string> = {
   all: "All movies",
   with: "With image only",
   without: "Without image only",
+  gaps: "With gaps (no cover, screenshot or logo)",
 };
 
 function loadTreeFilter(): TreeFilter {
   try {
     const v = localStorage.getItem(FILTER_KEY);
-    return v === "with" || v === "without" ? v : "all";
+    return v === "with" || v === "without" || v === "gaps" ? v : "all";
   } catch {
     return "all";
   }
@@ -339,6 +342,8 @@ export function GameTree({
 
   const [filter, setFilter] = useState<TreeFilter>(loadTreeFilter);
   const [imaged, setImaged] = useState<Set<string>>(() => new Set());
+  // The cards with a gap (no cover / screenshot / logo) — only read while that filter is on.
+  const [gapKeys, setGapKeys] = useState<Set<string>>(() => new Set());
   // Title search: a console whose own name matches shows all its games;
   // otherwise only the games that match. Consoles with nothing left are
   // hidden, and everything still shown is expanded.
@@ -411,6 +416,16 @@ export function GameTree({
     };
   }, [activeGameKey, activeConsoleId, catalogVersion, currentHasImage]);
 
+  const layerCount = state.project.layers.length;
+  useEffect(() => {
+    if (filter !== "gaps") return;
+    let alive = true;
+    void loadGapKeys().then((s) => alive && setGapKeys(s));
+    return () => {
+      alive = false;
+    };
+  }, [filter, activeGameKey, activeConsoleId, catalogVersion, layerCount, state.dirty]); // dirty → saved: the disk has the edit
+
   const changeFilter = (f: TreeFilter) => {
     setFilter(f);
     try {
@@ -425,7 +440,11 @@ export function GameTree({
 
   const matchesFilter = (gameKey: string) =>
     filter === "all" ||
-    (filter === "with" ? gameHasImage(gameKey) : !gameHasImage(gameKey));
+    (filter === "gaps"
+      ? gapKeys.has(gameKey)
+      : filter === "with"
+        ? gameHasImage(gameKey)
+        : !gameHasImage(gameKey));
 
   const countText = (shown: number, total: number) =>
     filter === "all" && !q ? `(${total})` : `(${shown}/${total})`;
