@@ -80,6 +80,7 @@ export function GamePicker({
   };
   const shownKeys = shown.map((g) => g.gameKey);
   const allShownPicked = shownKeys.length > 0 && shownKeys.every((k) => picked.has(k));
+  const pickedPrinted = games.filter((g) => picked.has(g.gameKey) && printed.has(g.gameKey)).map((g) => g.gameKey);
   const hiddenPicked = games.filter((g) => picked.has(g.gameKey) && !shownKeys.includes(g.gameKey)).length;
 
   const filterLabel: Record<Filter, string> = {
@@ -128,14 +129,25 @@ export function GamePicker({
             {t("{n} of {total} selected", { n: picked.size, total: games.length })}
             {hiddenPicked > 0 && ` · ${t("{n} not shown by the filter", { n: hiddenPicked })}`}
           </span>
-          <button
-            type="button"
-            className="rounded px-1.5 hover:bg-accent disabled:opacity-50"
-            disabled={shownKeys.length === 0}
-            onClick={() => set(shownKeys, !allShownPicked)}
-          >
-            {allShownPicked ? t("Deselect all") : t("Select all")}
-          </button>
+          <span className="flex items-center gap-1">
+            <button
+              type="button"
+              className="rounded px-1.5 hover:bg-accent disabled:opacity-50"
+              disabled={pickedPrinted.length === 0}
+              title={t("Takes every card marked as printed out of the selection.")}
+              onClick={() => set(pickedPrinted, false)}
+            >
+              {t("Deselect printed")}
+            </button>
+            <button
+              type="button"
+              className="rounded px-1.5 hover:bg-accent disabled:opacity-50"
+              disabled={shownKeys.length === 0}
+              onClick={() => set(shownKeys, !allShownPicked)}
+            >
+              {allShownPicked ? t("Deselect all") : t("Select all")}
+            </button>
+          </span>
         </div>
         <ul className={cn("min-h-0 flex-1 overflow-y-auto text-sm", listClassName)}>
           {groups.map((grp) => {
