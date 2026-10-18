@@ -22,6 +22,8 @@ import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { CardStage } from "./CardStage";
+import { GamePicker } from "./GamePicker";
+import { usePictureGaps } from "./PictureGapHint";
 
 type Phase = "pick" | "rendering" | "done" | "error";
 
@@ -53,6 +55,7 @@ export function ExportAllDialog({
   const [cards, setCards] = useState<DemoCard[]>([]);
   const [count, setCount] = useState(0);
   const [error, setError] = useState("");
+  const gaps = usePictureGaps(open);
 
   // One stage per face: index i = front of cards[i], cards.length + i = back.
   const stages = useRef<(Konva.Stage | null)[]>([]);
@@ -154,16 +157,6 @@ export function ExportAllDialog({
     };
   }, [phase, cards, mode, dedupeBacks, t]);
 
-  const toggle = (key: string) =>
-    setPicked((p) => {
-      const n = new Set(p);
-      if (n.has(key)) n.delete(key);
-      else n.add(key);
-      return n;
-    });
-
-  const allPicked = games.length > 0 && picked.size === games.length;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[88vh] max-w-lg flex-col gap-4">
@@ -236,33 +229,13 @@ export function ExportAllDialog({
                 {t("No card has a design yet.")}
               </p>
             ) : (
-              <>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox
-                    checked={allPicked}
-                    onCheckedChange={(v) =>
-                      setPicked(v ? new Set(games.map((g) => g.gameKey)) : new Set())
-                    }
-                  />
-                  {t("{n} of {total} selected", { n: picked.size, total: games.length })}
-                </label>
-                <ul className="max-h-64 overflow-y-auto rounded-md border text-sm">
-                  {games.map((g) => (
-                    <li key={g.gameKey} className="border-b last:border-b-0">
-                      <label className="flex cursor-pointer items-center gap-2 px-2.5 py-1.5">
-                        <Checkbox
-                          checked={picked.has(g.gameKey)}
-                          onCheckedChange={() => toggle(g.gameKey)}
-                        />
-                        <span className="truncate">{g.gameTitle}</span>
-                        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-                          {g.consoleName}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </>
+              <GamePicker
+                games={games}
+                picked={picked}
+                onChange={setPicked}
+                gaps={gaps}
+                listClassName="max-h-72"
+              />
             )}
 
             <div className="flex justify-end gap-2">

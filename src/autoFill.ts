@@ -27,6 +27,8 @@ export interface AutoFillOptions {
 export interface FillTask {
   row: QuickImportRow;
   masks: Layer[];
+  // How many frames of this kind the card has in all (filled or not).
+  of: number;
 }
 
 export interface AutoFillPlan {
@@ -102,9 +104,9 @@ export async function planAutoFill(consoleId?: string): Promise<AutoFillPlan> {
           .map((l) => resolveMask(l, masks)?.id),
       );
       const row = { gameKey, consoleName: c.name, gameTitle: g.title };
-      if (cover && !filled.has(cover.id)) covers.push({ row, masks: [cover] });
+      if (cover && !filled.has(cover.id)) covers.push({ row, masks: [cover], of: 1 });
       const empty = shots.filter((m) => !filled.has(m.id));
-      if (empty.length) screenshots.push({ row, masks: empty });
+      if (empty.length) screenshots.push({ row, masks: empty, of: shots.length });
     }
   }
   return { logoSlot, logos, covers, screenshots };

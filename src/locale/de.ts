@@ -105,6 +105,14 @@ export const de: Record<string, string> = {
   Top: "Oben",
   Middle: "Mitte",
   Bottom: "Unten",
+  // ── Export: gaps per card ──
+  "No cover": "Kein Cover",
+  "Cover or screenshots missing": "Cover oder Screenshots fehlen",
+  Complete: "Vollständig",
+  Filter: "Filter",
+  "{n} not shown by the filter": "{n} durch den Filter ausgeblendet",
+  "No screenshots": "Keine Screenshots",
+  "{n} of {total} screenshots missing": "{n} von {total} Screenshots fehlen",
   // ── Printed cards ──
   "Printed cards …": "Gedruckte Karten …",
   "Printed cards": "Gedruckte Karten",

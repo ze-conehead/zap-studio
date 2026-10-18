@@ -55,6 +55,8 @@ import {
 } from "./ui/dialog";
 import { CardStage } from "./CardStage";
 import { askConfirm } from "./ConfirmDialog";
+import { GamePicker } from "./GamePicker";
+import { usePictureGaps } from "./PictureGapHint";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
 type Phase = "pick" | "rendering" | "done" | "error";
@@ -80,6 +82,7 @@ export function CutSheetDialog({
   // Page sizes the user saved (kept in the browser, see src/paperSizes.ts).
   const [saved, setSaved] = useState<SavedPaperSize[]>(loadSavedSizes);
   const [namePrompt, setNamePrompt] = useState<PromptState | null>(null);
+  const gaps = usePictureGaps(open);
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
   const backStages = useRef<(Konva.Stage | null)[]>([]);
@@ -764,48 +767,7 @@ export function CutSheetDialog({
                 {t("No saved designs yet.")}
               </p>
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
-                <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
-                  <span>{t("{n} game(s) selected", { n: picked.size })}</span>
-                  <button
-                    className="rounded px-1.5 hover:bg-accent"
-                    onClick={() =>
-                      setPicked((p) =>
-                        p.size === games.length
-                          ? new Set()
-                          : new Set(games.map((g) => g.gameKey)),
-                      )
-                    }
-                  >
-                    {picked.size === games.length
-                      ? t("Deselect all")
-                      : t("Select all")}
-                  </button>
-                </div>
-                <ul className="p-1">
-                  {games.map((g) => (
-                    <li key={g.gameKey}>
-                      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent">
-                        <Checkbox
-                          checked={picked.has(g.gameKey)}
-                          onCheckedChange={() =>
-                            setPicked((p) => {
-                              const n = new Set(p);
-                              if (n.has(g.gameKey)) n.delete(g.gameKey);
-                              else n.add(g.gameKey);
-                              return n;
-                            })
-                          }
-                        />
-                        <span className="flex-1 truncate">{g.gameTitle}</span>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          {g.consoleName}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <GamePicker games={games} picked={picked} onChange={setPicked} gaps={gaps} />
             )}
 
             <div className="flex justify-end gap-2">

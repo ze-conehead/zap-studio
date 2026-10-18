@@ -62,6 +62,35 @@ export async function loadGapKeys(): Promise<Set<string>> {
   return keys;
 }
 
+/** What one card's picture frames still lack. */
+export interface PictureGap {
+  cover: boolean; // an empty cover container
+  shotsMissing: number; // empty screenshot containers …
+  shotsTotal: number; // … of this many
+}
+
+/**
+ * Per card (by game key): the cover and screenshot frames still empty.
+ * Cards with every frame filled — and cards of a template without such
+ * frames — are left out. The export dialogs flag these.
+ */
+export async function loadPictureGaps(): Promise<Map<string, PictureGap>> {
+  const plan = await planAutoFill();
+  const out = new Map<string, PictureGap>();
+  const gap = (key: string) => {
+    let g = out.get(key);
+    if (!g) out.set(key, (g = { cover: false, shotsMissing: 0, shotsTotal: 0 }));
+    return g;
+  };
+  for (const task of plan.covers) gap(task.row.gameKey).cover = true;
+  for (const task of plan.screenshots) {
+    const g = gap(task.row.gameKey);
+    g.shotsMissing = task.masks.length;
+    g.shotsTotal = task.of;
+  }
+  return out;
+}
+
 export async function loadCollectionStatus(): Promise<ConsoleStatus[]> {
   const cards = await loadOverviewCards();
   const noLogo = new Set((await consolesWithoutLogo()).map((r) => r.consoleId));
