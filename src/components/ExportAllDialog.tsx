@@ -16,14 +16,13 @@ import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
 import { rememberExport } from "../printed";
-import { listSheetGames, loadSheetCards, type SheetGame } from "../sheet";
+import { loadSheetCards } from "../sheet";
 import { getWorkspace } from "../workspace";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { CardStage } from "./CardStage";
-import { GamePicker } from "./GamePicker";
-import { usePictureGaps } from "./PictureGapHint";
+import { GamePicker, useExportSelection } from "./GamePicker";
 
 type Phase = "pick" | "rendering" | "done" | "error";
 
@@ -48,14 +47,12 @@ export function ExportAllDialog({
 }) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>("pick");
-  const [games, setGames] = useState<SheetGame[]>([]);
-  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const { games, picked, setPicked, gaps } = useExportSelection(open);
   const [mode, setMode] = useState<ExportMode>("trim");
   const [dedupeBacks, setDedupeBacks] = useState(true);
   const [cards, setCards] = useState<DemoCard[]>([]);
   const [count, setCount] = useState(0);
   const [error, setError] = useState("");
-  const gaps = usePictureGaps(open);
 
   // One stage per face: index i = front of cards[i], cards.length + i = back.
   const stages = useRef<(Konva.Stage | null)[]>([]);
@@ -65,9 +62,6 @@ export function ExportAllDialog({
     setPhase("pick");
     setCards([]);
     setError("");
-    const g = listSheetGames();
-    setGames(g);
-    setPicked(new Set(g.map((x) => x.gameKey)));
   }, [open]);
 
   const start = async () => {
@@ -226,6 +220,10 @@ export function ExportAllDialog({
             {games.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("No games yet.")}
+              </p>
+            ) : !gaps ? (
+              <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> {t("Checking cards …")}
               </p>
             ) : (
               <GamePicker

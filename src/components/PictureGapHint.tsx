@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { loadPictureGaps, type PictureGap } from "../collection";
 import { useT } from "../i18n";
 
-/** The cards' empty cover / screenshot frames, read when `open` turns true. */
-export function usePictureGaps(open: boolean): Map<string, PictureGap> {
-  const [gaps, setGaps] = useState<Map<string, PictureGap>>(() => new Map());
+/** The cards' empty cover / screenshot frames, read when `open` turns true; null until then. */
+export function usePictureGaps(open: boolean): Map<string, PictureGap> | null {
+  const [gaps, setGaps] = useState<Map<string, PictureGap> | null>(null);
   useEffect(() => {
     if (!open) return;
+    setGaps(null);
     let alive = true;
     void loadPictureGaps().then((g) => alive && setGaps(g));
     return () => {

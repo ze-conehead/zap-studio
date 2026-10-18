@@ -35,11 +35,9 @@ import {
   paperSize,
   planPaperSheet,
   presetOf,
-  listSheetGames,
   loadSheetCards,
   PRINT_H_MM,
   PRINT_W_MM,
-  type SheetGame,
   type SheetOptions,
   type SheetResult,
   type SheetTarget,
@@ -55,8 +53,7 @@ import {
 } from "./ui/dialog";
 import { CardStage } from "./CardStage";
 import { askConfirm } from "./ConfirmDialog";
-import { GamePicker } from "./GamePicker";
-import { usePictureGaps } from "./PictureGapHint";
+import { GamePicker, useExportSelection } from "./GamePicker";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
 type Phase = "pick" | "rendering" | "done" | "error";
@@ -70,8 +67,7 @@ export function CutSheetDialog({
 }) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>("pick");
-  const [games, setGames] = useState<SheetGame[]>([]);
-  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const { games, picked, setPicked, gaps } = useExportSelection(open);
   const [opts, setOpts] = useState<SheetOptions>(DEFAULT_SHEET_OPTIONS);
   const [cards, setCards] = useState<DemoCard[]>([]);
   const [result, setResult] = useState<SheetResult | null>(null);
@@ -82,7 +78,6 @@ export function CutSheetDialog({
   // Page sizes the user saved (kept in the browser, see src/paperSizes.ts).
   const [saved, setSaved] = useState<SavedPaperSize[]>(loadSavedSizes);
   const [namePrompt, setNamePrompt] = useState<PromptState | null>(null);
-  const gaps = usePictureGaps(open);
 
   const stages = useRef<(Konva.Stage | null)[]>([]);
   const backStages = useRef<(Konva.Stage | null)[]>([]);
@@ -95,9 +90,6 @@ export function CutSheetDialog({
     setCards([]);
     setPageIdx(0);
     setError("");
-    const g = listSheetGames();
-    setGames(g);
-    setPicked(new Set(g.map((x) => x.gameKey)));
   }, [open]);
 
   const start = async () => {
@@ -764,6 +756,10 @@ export function CutSheetDialog({
             {games.length === 0 ? (
               <p className="py-6 text-sm text-muted-foreground">
                 {t("No games yet.")}
+              </p>
+            ) : !gaps ? (
+              <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> {t("Checking cards …")}
               </p>
             ) : (
               <GamePicker games={games} picked={picked} onChange={setPicked} gaps={gaps} />

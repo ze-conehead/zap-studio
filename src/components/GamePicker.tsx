@@ -1,25 +1,48 @@
 import { ChevronDown, ChevronRight, Printer, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PictureGap } from "../collection";
 import { useT } from "../i18n";
 import { printedKeys } from "../printed";
-import type { SheetGame } from "../sheet";
+import { listSheetGames, type SheetGame } from "../sheet";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { PictureGapHint } from "./PictureGapHint";
+import { PictureGapHint, usePictureGaps } from "./PictureGapHint";
 
 // The game list of the "Export to print" dialogs: a tree like Settings ▸
 // Manage metadata — one folding group per console, a tick per game or for
 // the whole console, a search and a filter (gaps, printed). The selection is
 // the caller's; what a filter hides stays selected, and says so.
 
-type Filter = "all" | "gaps" | "complete" | "unprinted" | "printed";
+type Filter = "all" | "ready" | "gaps" | "complete" | "unprinted" | "printed";
 
 // With more games than this, the consoles start folded.
 const OPEN_ALL_UP_TO = 300;
+
+/**
+ * What the export dialogs list and select: every game, with the cards that
+ * are complete (cover and screenshots there) and not printed yet selected —
+ * the picker's default filter shows the same ones. `gaps` is null while the
+ * cards are still being checked.
+ */
+export function useExportSelection(open: boolean) {
+  const [games, setGames] = useState<SheetGame[]>([]);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const gaps = usePictureGaps(open);
+  useEffect(() => {
+    if (!open) return;
+    setGames(listSheetGames());
+    setPicked(new Set());
+  }, [open]);
+  useEffect(() => {
+    if (!gaps) return;
+    const printed = printedKeys();
+    setPicked(new Set(listSheetGames().filter((g) => !gaps.has(g.gameKey) && !printed.has(g.gameKey)).map((g) => g.gameKey)));
+  }, [gaps]);
+  return { games, picked, setPicked, gaps };
+}
 
 export function GamePicker({
   games,
@@ -37,7 +60,8 @@ export function GamePicker({
   const t = useT();
   const [printed] = useState(printedKeys);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  // The default: what is ready to print. The hook below selects exactly those.
+  const [filter, setFilter] = useState<Filter>("ready");
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const q = query.trim().toLowerCase();
@@ -45,6 +69,8 @@ export function GamePicker({
   const shown = games.filter((g) => {
     if (q && !g.gameTitle.toLowerCase().includes(q)) return false;
     switch (filter) {
+      case "ready":
+        return !gaps.has(g.gameKey) && !printed.has(g.gameKey);
       case "gaps":
         return gaps.has(g.gameKey);
       case "complete":
@@ -86,6 +112,7 @@ export function GamePicker({
 
   const filterLabel: Record<Filter, string> = {
     all: t("All"),
+    ready: t("Complete & not printed"),
     gaps: t("Cover or screenshots missing"),
     complete: t("Complete"),
     unprinted: t("Not printed yet"),
