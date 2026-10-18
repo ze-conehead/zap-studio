@@ -112,7 +112,7 @@ export function GamePicker({
 
   const filterLabel: Record<Filter, string> = {
     all: t("All"),
-    ready: t("Ready"),
+    ready: t("Complete & not printed"),
     gaps: t("Cover or screenshots missing"),
     complete: t("Complete"),
     unprinted: t("Not printed yet"),

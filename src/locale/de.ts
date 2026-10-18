@@ -107,7 +107,7 @@ export const de: Record<string, string> = {
   Bottom: "Unten",
   // ── Export: gaps per card ──
   "No cover": "Kein Cover",
-  Ready: "Bereit",
+  "Complete & not printed": "Vollständig & noch nicht gedruckt",
   "Checking cards …": "Karten werden geprüft …",
   "Deselect with warnings": "Mit Warnungen abwählen",
   "Takes every card with a warning (no cover, missing screenshots) out of the selection.": "Nimmt alle Karten mit einer Warnung (kein Cover, fehlende Screenshots) aus der Auswahl.",
