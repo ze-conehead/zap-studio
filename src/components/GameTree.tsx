@@ -70,7 +70,7 @@ import { AutoFillDialog } from "./AutoFillDialog";
 import { SpinePreviewDialog } from "./SpinePreviewDialog";
 import { hasSpine } from "../spine";
 import { loadGapKeys } from "../collection";
-import { getPrintedVersion, printedKeys, setPrinted, subscribePrinted } from "../printed";
+import { getPrintedVersion, printedKeys, subscribePrinted } from "../printed";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
 type TreeFilter = "all" | "with" | "without" | "gaps" | "unprinted";
@@ -139,7 +139,7 @@ export function GameTree({
     getCatalogVersion,
   );
   const catalog = getCatalog();
-  // Re-render when a card is marked printed (here or in Settings ▸ Printed cards).
+  // Re-render when a card is marked printed (Settings ▸ Printed cards).
   useSyncExternalStore(subscribePrinted, getPrintedVersion, getPrintedVersion);
   const printed = printedKeys();
 
@@ -249,25 +249,6 @@ export function GameTree({
     // Re-read when the catalogue or the open template's frames change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogVersion, state.project.id, liveFrames]);
-
-  // "Mark as printed" / "… not printed" for one card, or for a console's cards:
-  // the one that would change something (a console offers both when mixed).
-  const printedMenuItems = (keys: string[]): ContextMenuItem[] => {
-    const done = keys.filter((k) => printed.has(k)).length;
-    const one = keys.length === 1;
-    const items: ContextMenuItem[] = [];
-    if (done < keys.length)
-      items.push({
-        label: one ? t("Mark as printed") : t("Mark all as printed"),
-        onSelect: () => setPrinted(keys, true),
-      });
-    if (done > 0)
-      items.push({
-        label: one ? t("Mark as not printed") : t("Mark all as not printed"),
-        onSelect: () => setPrinted(keys, false),
-      });
-    return items;
-  };
 
   const coverMenuItems = (row: QuickImportRow): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setGameCover(row) },
@@ -686,7 +667,6 @@ export function GameTree({
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
                           ...consoleMenuItems({ consoleId: c.id, consoleName: c.name }),
-                          ...printedMenuItems(c.games.map((g) => gameKeyOf(c, g))),
                           {
                             label: isMovies
                               ? t("Fetch metadata for all movies")
@@ -807,7 +787,6 @@ export function GameTree({
                                   consoleName: c.name,
                                   gameTitle: g.title,
                                 }),
-                                ...printedMenuItems([key]),
                                 {
                                   label: t("Remove"),
                                   destructive: true,

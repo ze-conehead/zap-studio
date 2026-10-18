@@ -126,8 +126,6 @@ export const de: Record<string, string> = {
   "Every card is printed.": "Alle Karten sind gedruckt.",
   "Mark as printed": "Als gedruckt markieren",
   "Mark as not printed": "Als nicht gedruckt markieren",
-  "Mark all as printed": "Alle als gedruckt markieren",
-  "Mark all as not printed": "Alle als nicht gedruckt markieren",
   "Select all of {name}": "Alle von {name} auswählen",
   "{n} selected": "{n} ausgewählt",
   "Clear selection": "Auswahl aufheben",
