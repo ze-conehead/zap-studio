@@ -42,6 +42,9 @@ const SETTING_KEYS = [
   // Own metadata columns and which columns the table shows (src/metaColumns.ts).
   "stickerstudio:metaColumns",
   "stickerstudio:metaHidden",
+  // Which cards are marked printed, and what the last export covered (src/printed.ts).
+  "stickerstudio:printed",
+  "stickerstudio:lastExport",
 ];
 const wsKey = (base: string) => `${base}${wsSuffix()}`;
 // A key belongs to this workspace when it carries its suffix — the

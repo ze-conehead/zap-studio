@@ -15,6 +15,7 @@ import { downloadBlob, EXPORT_MODES, exportLabel, exportPng, type ExportMode } f
 import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
+import { rememberExport } from "../printed";
 import { listGameDesigns, loadSheetCards, type SheetGame } from "../sheet";
 import { getWorkspace } from "../workspace";
 import { Button } from "./ui/button";
@@ -70,6 +71,7 @@ export function ExportAllDialog({
   const start = async () => {
     const keys = games.map((g) => g.gameKey).filter((k) => picked.has(k));
     if (!keys.length) return;
+    rememberExport(keys);
     setPhase("rendering");
     setError("");
     try {

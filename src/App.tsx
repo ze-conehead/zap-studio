@@ -25,6 +25,7 @@ import { ManageLogosDialog } from "./components/ManageLogosDialog";
 import { SpotColorDialog } from "./components/SpotColorDialog";
 import { CommandPalette } from "./components/CommandPalette";
 import { ManageMetadataDialog } from "./components/ManageMetadataDialog";
+import { PrintedCardsDialog } from "./components/PrintedCardsDialog";
 import { buildCommands } from "./commands";
 import { getKeepView, getMinimap, setKeepView, setMinimap } from "./viewState";
 import { BleedDialog } from "./components/BleedDialog";
@@ -490,6 +491,7 @@ function Shell({
   const [manageCovers, setManageCovers] = useState(false);
   const [spotColors, setSpotColors] = useState(false);
   const [manageMeta, setManageMeta] = useState(false);
+  const [printedCards, setPrintedCards] = useState(false);
   const [palette, setPalette] = useState(false);
   const [bleedOpen, setBleedOpen] = useState(false);
   // Opens by itself on a fresh install, then only from Help ▸ Walkthrough.
@@ -570,6 +572,7 @@ function Shell({
     onOpenManageCovers: () => setManageCovers(true),
     onOpenSpotColors: () => setSpotColors(true),
     onOpenManageMetadata: () => setManageMeta(true),
+    onOpenPrintedCards: () => setPrintedCards(true),
     onOpenBleed: () => setBleedOpen(true),
     onOpenWalkthrough: () => setWalkthrough(true),
     onOpenShortcuts: () => setShortcuts(true),
@@ -681,6 +684,7 @@ function Shell({
       <ManageLogosDialog kind="cover" open={manageCovers} onOpenChange={setManageCovers} />
       <SpotColorDialog open={spotColors} onOpenChange={setSpotColors} />
       {manageMeta && <ManageMetadataDialog open onOpenChange={setManageMeta} />}
+      {printedCards && <PrintedCardsDialog open onOpenChange={setPrintedCards} />}
       {palette && (
         <CommandPalette
           open

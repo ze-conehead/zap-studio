@@ -7,6 +7,7 @@ import {
   Globe,
   ListFilter,
   Plus,
+  Printer,
   Search,
   X,
 } from "lucide-react";
@@ -69,9 +70,10 @@ import { AutoFillDialog } from "./AutoFillDialog";
 import { SpinePreviewDialog } from "./SpinePreviewDialog";
 import { hasSpine } from "../spine";
 import { loadGapKeys } from "../collection";
+import { getPrintedVersion, printedKeys, setPrinted, subscribePrinted } from "../printed";
 import { PromptDialog, type PromptState } from "./PromptDialog";
 
-type TreeFilter = "all" | "with" | "without" | "gaps";
+type TreeFilter = "all" | "with" | "without" | "gaps" | "unprinted";
 
 const FILTER_KEY = "stickerstudio:treeFilter";
 const FILTER_LABEL: Record<TreeFilter, string> = {
@@ -79,18 +81,20 @@ const FILTER_LABEL: Record<TreeFilter, string> = {
   with: "With image only",
   without: "Without image only",
   gaps: "With gaps (no cover, screenshot or logo)",
+  unprinted: "Not printed yet",
 };
 const FILTER_LABEL_MOVIES: Record<TreeFilter, string> = {
   all: "All movies",
   with: "With image only",
   without: "Without image only",
   gaps: "With gaps (no cover, screenshot or logo)",
+  unprinted: "Not printed yet",
 };
 
 function loadTreeFilter(): TreeFilter {
   try {
     const v = localStorage.getItem(FILTER_KEY);
-    return v === "with" || v === "without" || v === "gaps" ? v : "all";
+    return v === "with" || v === "without" || v === "gaps" || v === "unprinted" ? v : "all";
   } catch {
     return "all";
   }
@@ -135,6 +139,9 @@ export function GameTree({
     getCatalogVersion,
   );
   const catalog = getCatalog();
+  // Re-render when a card is marked printed (here or in Settings ▸ Printed cards).
+  useSyncExternalStore(subscribePrinted, getPrintedVersion, getPrintedVersion);
+  const printed = printedKeys();
 
   const { state, dispatch } = useStore();
   const currentGameKey = state.project.gameKey;
@@ -242,6 +249,25 @@ export function GameTree({
     // Re-read when the catalogue or the open template's frames change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogVersion, state.project.id, liveFrames]);
+
+  // "Mark as printed" / "… not printed" for one card, or for a console's cards:
+  // the one that would change something (a console offers both when mixed).
+  const printedMenuItems = (keys: string[]): ContextMenuItem[] => {
+    const done = keys.filter((k) => printed.has(k)).length;
+    const one = keys.length === 1;
+    const items: ContextMenuItem[] = [];
+    if (done < keys.length)
+      items.push({
+        label: one ? t("Mark as printed") : t("Mark all as printed"),
+        onSelect: () => setPrinted(keys, true),
+      });
+    if (done > 0)
+      items.push({
+        label: one ? t("Mark as not printed") : t("Mark all as not printed"),
+        onSelect: () => setPrinted(keys, false),
+      });
+    return items;
+  };
 
   const coverMenuItems = (row: QuickImportRow): ContextMenuItem[] => [
     { label: t("Find cover"), onSelect: () => setGameCover(row) },
@@ -442,9 +468,11 @@ export function GameTree({
     filter === "all" ||
     (filter === "gaps"
       ? gapKeys.has(gameKey)
-      : filter === "with"
-        ? gameHasImage(gameKey)
-        : !gameHasImage(gameKey));
+      : filter === "unprinted"
+        ? !printed.has(gameKey)
+        : filter === "with"
+          ? gameHasImage(gameKey)
+          : !gameHasImage(gameKey));
 
   const countText = (shown: number, total: number) =>
     filter === "all" && !q ? `(${total})` : `(${shown}/${total})`;
@@ -658,6 +686,7 @@ export function GameTree({
                             onSelect: () => handleRenameConsole(c.id, c.name),
                           },
                           ...consoleMenuItems({ consoleId: c.id, consoleName: c.name }),
+                          ...printedMenuItems(c.games.map((g) => gameKeyOf(c, g))),
                           {
                             label: isMovies
                               ? t("Fetch metadata for all movies")
@@ -723,7 +752,9 @@ export function GameTree({
                       <p className="px-1.5 py-1.5 text-[11px] text-muted-foreground">
                         {filter === "with"
                           ? t("No game with an image.")
-                          : t("Every game has an image.")}
+                          : filter === "unprinted"
+                            ? t("Every card is printed.")
+                            : t("Every game has an image.")}
                       </p>
                     )}
                     {games.map(({ g, i }) => {
@@ -776,6 +807,7 @@ export function GameTree({
                                   consoleName: c.name,
                                   gameTitle: g.title,
                                 }),
+                                ...printedMenuItems([key]),
                                 {
                                   label: t("Remove"),
                                   destructive: true,
@@ -789,6 +821,11 @@ export function GameTree({
                             {i + 1}
                           </span>
                           <span className="min-w-0 flex-1 truncate">{g.title}</span>
+                          {printed.has(key) && (
+                            <span className="shrink-0" title={t("Printed")}>
+                              <Printer className="size-3 opacity-60" />
+                            </span>
+                          )}
                         </button>
                       );
                     })}

@@ -45,6 +45,7 @@ export interface CommandContext {
     onOpenManageLogos: () => void;
     onOpenManageCovers: () => void;
     onOpenManageMetadata: () => void;
+    onOpenPrintedCards: () => void;
     onOpenSpotColors: () => void;
     onOpenWalkthrough: () => void;
     onOpenShortcuts: () => void;
@@ -97,6 +98,7 @@ export function buildCommands(ctx: CommandContext): Command[] {
   act("logos", t("Manage logos …"), bar.onOpenManageLogos);
   act("covers", t("Manage covers …"), bar.onOpenManageCovers);
   act("metadata", t("Manage metadata …"), bar.onOpenManageMetadata, "metadaten tabelle spalten");
+  act("printed", t("Printed cards …"), bar.onOpenPrintedCards, "gedruckt druck markieren printed");
   act("spot", t("Cut & fold lines …"), bar.onOpenSpotColors, "schnitt falz");
   act("walkthrough", t("Walkthrough …"), bar.onOpenWalkthrough, "tour hilfe");
   act("shortcuts", t("Keyboard shortcuts …"), bar.onOpenShortcuts, "tastatur");

@@ -22,6 +22,7 @@ import {
   type PaperSettings,
   type SavedPaperSize,
 } from "../paperSizes";
+import { rememberExport } from "../printed";
 import {
   composeSheet,
   DEFAULT_SHEET_OPTIONS,
@@ -102,6 +103,7 @@ export function CutSheetDialog({
       .map((g) => g.gameKey)
       .filter((k) => picked.has(k));
     if (!keys.length) return;
+    rememberExport(keys);
     setPhase("rendering");
     setError("");
     try {
