@@ -16,7 +16,7 @@ import { ensureFontsLoaded } from "../fonts";
 import { preloadImage } from "../hooks/useImage";
 import { useT } from "../i18n";
 import { rememberExport } from "../printed";
-import { listGameDesigns, loadSheetCards, type SheetGame } from "../sheet";
+import { listSheetGames, loadSheetCards, type SheetGame } from "../sheet";
 import { getWorkspace } from "../workspace";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -65,10 +65,9 @@ export function ExportAllDialog({
     setPhase("pick");
     setCards([]);
     setError("");
-    listGameDesigns().then((g) => {
-      setGames(g);
-      setPicked(new Set(g.map((x) => x.gameKey)));
-    });
+    const g = listSheetGames();
+    setGames(g);
+    setPicked(new Set(g.map((x) => x.gameKey)));
   }, [open]);
 
   const start = async () => {
@@ -226,7 +225,7 @@ export function ExportAllDialog({
 
             {games.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t("No card has a design yet.")}
+                {t("No games yet.")}
               </p>
             ) : (
               <GamePicker

@@ -5,11 +5,11 @@
 
 import { BLEED_PX, CANVAS, CORNER_RADIUS_PX, PX_PER_MM, TRIM_RECT } from "./card";
 import { gameKeyOf, getCatalog } from "./data/catalog";
-import { GLOBAL_TEMPLATE_ID, isBackground, templateId } from "./factory";
+import { GLOBAL_TEMPLATE_ID, isBackground, newProject, templateId } from "./factory";
 import { backgroundFillOverrides } from "./fillOverrides";
 import { buildOverlay } from "./faceLayers";
 import { getGameProject } from "./gameIndex";
-import { loadAllProjects, loadProject } from "./persist";
+import { loadProject } from "./persist";
 import { alphaMasksOf } from "./templates";
 import type { DemoCard } from "./demo";
 import { inheritedAccent } from "./accent";
@@ -25,18 +25,14 @@ export interface SheetGame {
   gameTitle: string;
 }
 
-// Every catalogue game that has a saved sticker design.
-export async function listGameDesigns(): Promise<SheetGame[]> {
-  const projects = await loadAllProjects();
-  const ids = new Set(projects.map((p) => p.id));
+// Every catalogue game — also the ones never opened in the editor, which
+// have no design of their own yet and are printed as their templates (the
+// same as the "All cards" overview shows them).
+export function listSheetGames(): SheetGame[] {
   const out: SheetGame[] = [];
   for (const c of getCatalog()) {
     for (const g of c.games) {
-      const key = gameKeyOf(c, g);
-      const pid = getGameProject(key);
-      if (pid && ids.has(pid)) {
-        out.push({ gameKey: key, consoleName: c.name, gameTitle: g.title });
-      }
+      out.push({ gameKey: gameKeyOf(c, g), consoleName: c.name, gameTitle: g.title });
     }
   }
   return out;
@@ -76,10 +72,12 @@ export async function loadSheetCards(gameKeys: string[]): Promise<DemoCard[]> {
   const out: DemoCard[] = [];
   for (const gameKey of gameKeys) {
     const m = meta.get(gameKey);
+    if (!m) continue;
     const pid = getGameProject(gameKey);
-    if (!m || !pid) continue;
-    const project = await loadProject(pid);
-    if (!project) continue;
+    const saved = pid ? await loadProject(pid) : undefined;
+    // No design yet: an empty project still renders the console and global
+    // templates, which is exactly what that card looks like.
+    const project = saved ?? newProject(m.gameTitle);
     if (!tplCache.has(m.consoleId)) {
       tplCache.set(m.consoleId, await loadProject(templateId(m.consoleId)));
     }

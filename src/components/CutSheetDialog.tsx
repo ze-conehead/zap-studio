@@ -35,7 +35,7 @@ import {
   paperSize,
   planPaperSheet,
   presetOf,
-  listGameDesigns,
+  listSheetGames,
   loadSheetCards,
   PRINT_H_MM,
   PRINT_W_MM,
@@ -95,10 +95,9 @@ export function CutSheetDialog({
     setCards([]);
     setPageIdx(0);
     setError("");
-    listGameDesigns().then((g) => {
-      setGames(g);
-      setPicked(new Set(g.map((x) => x.gameKey)));
-    });
+    const g = listSheetGames();
+    setGames(g);
+    setPicked(new Set(g.map((x) => x.gameKey)));
   }, [open]);
 
   const start = async () => {
@@ -764,7 +763,7 @@ export function CutSheetDialog({
 
             {games.length === 0 ? (
               <p className="py-6 text-sm text-muted-foreground">
-                {t("No saved designs yet.")}
+                {t("No games yet.")}
               </p>
             ) : (
               <GamePicker games={games} picked={picked} onChange={setPicked} gaps={gaps} />

@@ -515,7 +515,7 @@ export const de: Record<string, string> = {
     "Ein PNG pro Karte, sortiert in einen Ordner je Konsole. Dieselben drei Varianten wie beim Einzelexport.",
   "One file per distinct back (most cards share the console's or global back)":
     "Eine Datei je unterschiedlicher Rückseite (die meisten Karten teilen sich die Konsolen- oder globale Rückseite)",
-  "No card has a design yet.": "Noch keine Karte hat ein Design.",
+  "No games yet.": "Noch keine Spiele.",
   "{n} of {total} selected": "{n} von {total} ausgewählt",
   "Export .zip": ".zip exportieren",
   "Rendering {n} card(s) …": "Rendere {n} Karte(n) …",
