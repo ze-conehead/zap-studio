@@ -158,7 +158,7 @@ export function ExportAllDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] max-w-lg flex-col gap-4">
+      <DialogContent className="flex max-h-[88vh] max-w-3xl flex-col gap-4">
         <DialogHeader>
           <DialogTitle>{t("All cards as PNG")}</DialogTitle>
         </DialogHeader>

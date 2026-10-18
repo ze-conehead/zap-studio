@@ -81,6 +81,7 @@ export function GamePicker({
   const shownKeys = shown.map((g) => g.gameKey);
   const allShownPicked = shownKeys.length > 0 && shownKeys.every((k) => picked.has(k));
   const pickedPrinted = games.filter((g) => picked.has(g.gameKey) && printed.has(g.gameKey)).map((g) => g.gameKey);
+  const pickedWarned = games.filter((g) => picked.has(g.gameKey) && gaps.has(g.gameKey)).map((g) => g.gameKey);
   const hiddenPicked = games.filter((g) => picked.has(g.gameKey) && !shownKeys.includes(g.gameKey)).length;
 
   const filterLabel: Record<Filter, string> = {
@@ -129,7 +130,16 @@ export function GamePicker({
             {t("{n} of {total} selected", { n: picked.size, total: games.length })}
             {hiddenPicked > 0 && ` · ${t("{n} not shown by the filter", { n: hiddenPicked })}`}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              className="rounded px-1.5 hover:bg-accent disabled:opacity-50"
+              disabled={pickedWarned.length === 0}
+              title={t("Takes every card with a warning (no cover, missing screenshots) out of the selection.")}
+              onClick={() => set(pickedWarned, false)}
+            >
+              {t("Deselect with warnings")}
+            </button>
             <button
               type="button"
               className="rounded px-1.5 hover:bg-accent disabled:opacity-50"
