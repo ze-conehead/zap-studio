@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, History, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, History, Printer, Search } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { gameKeyOf, getCatalog, getCatalogVersion, subscribeCatalog } from "../data/catalog";
 import { useT } from "../i18n";
@@ -16,9 +16,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 
 // Settings ▸ Printed cards: every game in one table, grouped by console (each
-// group folds away), with a tick for "printed" per game or for a whole
-// console. "Last export" ticks the games the last "all cards" export (PNG
-// .zip or PDF) was started with.
+// group folds away). The ticks only select — nothing is saved until
+// "Mark as printed" (or "… not printed") is pressed for the selection, which
+// then starts over. Printed games carry a printer icon. "Last export"
+// selects the games the last "all cards" export (PNG .zip or PDF) was
+// started with.
 
 const OPEN_ALL_UP_TO = 300;
 
@@ -42,6 +44,7 @@ export function PrintedCardsDialog({
   const printedCount = [...printed].filter((k) => allKeys.has(k)).length;
   const last = lastExportKeys().filter((k) => allKeys.has(k));
 
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
   const [show, setShow] = useState<Show>("all");
   const [expanded, setExpanded] = useState<Set<string>>(() =>
@@ -56,13 +59,31 @@ export function PrintedCardsDialog({
       return n;
     });
 
+  const select = (keys: string[], on: boolean) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      for (const k of keys) {
+        if (on) n.add(k);
+        else n.delete(k);
+      }
+      return n;
+    });
+
   const tickLastExport = () => {
-    setPrinted(last, true);
+    select(last, true);
     // Open the consoles those games are in, so the ticks are visible.
     const ids = new Set(last.map((k) => k.split("/")[0]));
     setExpanded((s) => new Set([...s, ...ids]));
     setShow("all");
   };
+
+  // Only what is selected, and still exists.
+  const picked = [...selected].filter((k) => allKeys.has(k));
+  const apply = (value: boolean) => {
+    setPrinted(picked, value);
+    setSelected(new Set());
+  };
+  const pickedPrinted = picked.filter((k) => printed.has(k)).length;
 
   const visible = (c: (typeof consoles)[number]) =>
     c.games.filter((g) => {
@@ -123,11 +144,25 @@ export function PrintedCardsDialog({
             title={
               last.length === 0
                 ? t("No export has been started yet.")
-                : t("Ticks the games that were selected in the last “all cards” export (PNG .zip or PDF).")
+                : t("Selects the games that were selected in the last “all cards” export (PNG .zip or PDF).")
             }
             onClick={tickLastExport}
           >
-            <History /> {t("Tick last export ({n})", { n: last.length })}
+            <History /> {t("Select last export ({n})", { n: last.length })}
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+          <span className="text-sm">{t("{n} selected", { n: picked.length })}</span>
+          <Button variant="ghost" size="sm" disabled={picked.length === 0} onClick={() => setSelected(new Set())}>
+            {t("Clear selection")}
+          </Button>
+          <div className="ml-auto" />
+          <Button variant="outline" size="sm" disabled={pickedPrinted === 0} onClick={() => apply(false)}>
+            {t("Mark as not printed")}
+          </Button>
+          <Button size="sm" disabled={pickedPrinted === picked.length} onClick={() => apply(true)}>
+            <Printer /> {t("Mark as printed")}
           </Button>
         </div>
 
@@ -137,17 +172,20 @@ export function PrintedCardsDialog({
               const games = visible(c);
               if ((q || show !== "all") && games.length === 0) return null;
               const isOpen = !!q || show !== "all" || expanded.has(c.id);
-              const keys = c.games.map((g) => gameKeyOf(c, g));
-              const done = keys.filter((k) => printed.has(k)).length;
-              const state = done === 0 ? false : done === keys.length ? true : "indeterminate";
+              const all = c.games.map((g) => gameKeyOf(c, g));
+              const done = all.filter((k) => printed.has(k)).length;
+              // The console's tick selects the games shown in it.
+              const keys = games.map((g) => gameKeyOf(c, g));
+              const on = keys.filter((k) => selected.has(k)).length;
+              const state = on === 0 ? false : on === keys.length ? true : "indeterminate";
               return (
                 <li key={c.id} className="border-b last:border-b-0">
                   <div className="flex items-center gap-2 bg-muted/60 px-2 py-1.5">
                     <Checkbox
-                      aria-label={t("Mark all of {name} as printed", { name: c.name })}
+                      aria-label={t("Select all of {name}", { name: c.name })}
                       checked={state}
                       disabled={keys.length === 0}
-                      onCheckedChange={() => setPrinted(keys, state !== true)}
+                      onCheckedChange={() => select(keys, state !== true)}
                     />
                     <button
                       type="button"
@@ -157,7 +195,7 @@ export function PrintedCardsDialog({
                       {isOpen ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
                       <span className="truncate">{c.name}</span>
                       <span className="shrink-0 font-normal text-muted-foreground">
-                        ({done}/{keys.length})
+                        ({done}/{all.length})
                       </span>
                     </button>
                   </div>
@@ -169,10 +207,15 @@ export function PrintedCardsDialog({
                           key={g.id}
                           className="flex cursor-pointer items-center gap-2 border-t py-1 pl-8 pr-2 hover:bg-muted/40"
                         >
-                          <Checkbox checked={printed.has(key)} onCheckedChange={(v) => setPrinted([key], !!v)} />
+                          <Checkbox checked={selected.has(key)} onCheckedChange={(v) => select([key], !!v)} />
                           <span className="truncate" title={g.title}>
                             {g.title}
                           </span>
+                          {printed.has(key) && (
+                            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                              <Printer className="size-3" /> {t("Printed")}
+                            </span>
+                          )}
                         </label>
                       );
                     })}
