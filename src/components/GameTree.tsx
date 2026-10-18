@@ -507,6 +507,43 @@ export function GameTree({
     });
   };
 
+  // Double-click renames in place (the right-click "Rename" asks in a dialog).
+  const [renaming, setRenaming] = useState<{
+    kind: "game" | "console";
+    consoleId: string;
+    id: string;
+    old: string;
+    value: string;
+  } | null>(null);
+  const commitRename = () => {
+    const r = renaming;
+    setRenaming(null);
+    if (!r) return;
+    const next = r.value.trim();
+    if (!next || next === r.old) return;
+    if (r.kind === "console") renameConsole(r.consoleId, next);
+    else if (renameGame(r.consoleId, r.id, next)) renameGameMeta(r.consoleId, r.old, next);
+  };
+  const renameInput = (className: string) => (
+    <input
+      autoFocus
+      className={cn("min-w-0 flex-1 rounded border border-primary bg-background px-1 outline-none", className)}
+      value={renaming!.value}
+      onChange={(e) => setRenaming((r) => r && { ...r, value: e.target.value })}
+      onFocus={(e) => e.currentTarget.select()}
+      onBlur={commitRename}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") commitRename();
+        else if (e.key === "Escape") setRenaming(null);
+      }}
+    />
+  );
+  const startRename = (kind: "game" | "console", consoleId: string, id: string, old: string) =>
+    setRenaming({ kind, consoleId, id, old, value: old });
+
   const handleRenameConsole = (consoleId: string, consoleName: string) => {
     setPrompt({
       title: isMovies ? t("Rename collection:") : t("Rename console:"),
@@ -696,6 +733,16 @@ export function GameTree({
                         <ChevronRight className="size-3.5" />
                       )}
                     </CollapsibleTrigger>
+                    {renaming?.kind === "console" && renaming.id === c.id ? (
+                      <div className="flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1 text-sm font-semibold">
+                        {isMovies ? (
+                          <Clapperboard className="size-4 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
+                        )}
+                        {renameInput("h-6 text-sm")}
+                      </div>
+                    ) : (
                     <button
                       className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-semibold hover:bg-accent"
                       title={
@@ -704,6 +751,7 @@ export function GameTree({
                           : t("{name} – edit shared template (right-click: add game / rename console)", { name: c.name })
                       }
                       onClick={() => onOpenConsole(c.id, c.name)}
+                      onDoubleClick={() => startRename("console", c.id, c.id, c.name)}
                     >
                       {isMovies ? (
                         <Clapperboard className="size-4 shrink-0 text-muted-foreground" />
@@ -715,6 +763,7 @@ export function GameTree({
                         {countText(games.length, c.games.length)}
                       </span>
                     </button>
+                    )}
                     <button
                       className="mr-1 shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                       title={isMovies ? t("Add movie") : t("Add game")}
@@ -740,6 +789,17 @@ export function GameTree({
                     {games.map(({ g, i }) => {
                       const key = gameKeyOf(c, g);
                       const active = key === activeGameKey;
+                      if (renaming?.kind === "game" && renaming.consoleId === c.id && renaming.id === g.id) {
+                        return (
+                          <div
+                            key={g.id}
+                            className="flex w-full min-w-0 items-center gap-2 rounded-md border border-transparent px-1.5 py-1 text-[13px]"
+                          >
+                            <span className="w-4 shrink-0 text-right text-[11px] tabular-nums opacity-70">{i + 1}</span>
+                            {renameInput("h-6 text-[13px]")}
+                          </div>
+                        );
+                      }
                       return (
                         <button
                           key={g.id}
@@ -771,6 +831,7 @@ export function GameTree({
                             resetDrag();
                           }}
                           onClick={() => onPickGame(c.name, g.title, key)}
+                          onDoubleClick={() => startRename("game", c.id, g.id, g.title)}
                           onContextMenu={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
